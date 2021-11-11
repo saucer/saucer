@@ -14,10 +14,12 @@ namespace saucer
     {
         struct impl;
         using message_callback_t = std::function<void(const std::string &)>;
+        using url_changed_callback_t = std::function<void(const std::string &)>;
 
       protected:
         std::unique_ptr<impl> m_impl;
         message_callback_t m_message_callback;
+        url_changed_callback_t m_url_changed_callback;
 
       public:
         webview();
@@ -44,5 +46,6 @@ namespace saucer
 
       public:
         void set_message_callback(const message_callback_t &callback);
+        void set_url_changed_callback(const url_changed_callback_t &callback);
     };
 } // namespace saucer

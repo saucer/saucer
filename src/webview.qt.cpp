@@ -46,8 +46,15 @@ namespace saucer
     webview::webview() : m_impl(std::make_unique<impl>())
     {
         m_impl->web_view = std::make_unique<QWebEngineView>();
-
         m_impl->web_view->show();
+
+        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::urlChanged, [this](const QUrl &url) {
+            if (m_url_changed_callback)
+            {
+                m_url_changed_callback(url.toString().toStdString());
+            }
+        });
+
         window::m_impl->window->setCentralWidget(m_impl->web_view.get());
     }
 
@@ -153,11 +160,27 @@ namespace saucer
             if (web_channel_api.open(QIODevice::ReadOnly))
             {
                 inject(web_channel_api.readAll().toStdString(), load_time_t::creation);
-                inject("new QWebChannel(qt.webChannelTransport, function(channel) { var saucer=channel.objects.saucer; window.saucer = saucer; });",
+                inject(R"js(
+                    window.saucer = {
+                        async on_message(message) 
+                        {   
+                            (await window._saucer).on_message(message);
+                        }
+                    };
+                    window._saucer = new Promise((resolve) => 
+                    {
+                        new QWebChannel(qt.webChannelTransport, function(channel) { resolve(channel.objects.saucer); });
+                    });
+                    )js",
                        load_time_t::creation);
             }
             web_channel_api.close();
         }
+    }
+
+    void webview::set_url_changed_callback(const url_changed_callback_t &callback)
+    {
+        m_url_changed_callback = callback;
     }
 } // namespace saucer
 
