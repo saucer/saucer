@@ -144,7 +144,7 @@ namespace saucer
         m_impl->web_view->page()->scripts().clear();
     }
 
-    void webview::set_message_callback(const message_callback_t &callback)
+    void webview::on_message(const message_callback_t &callback)
     {
         m_message_callback = callback;
 
@@ -178,7 +178,7 @@ namespace saucer
         }
     }
 
-    void webview::set_url_changed_callback(const url_changed_callback_t &callback)
+    void webview::on_url_changed(const url_changed_callback_t &callback)
     {
         m_url_changed_callback = callback;
     }

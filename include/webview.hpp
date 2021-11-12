@@ -45,7 +45,7 @@ namespace saucer
         void clear_scripts();
 
       public:
-        void set_message_callback(const message_callback_t &callback);
-        void set_url_changed_callback(const url_changed_callback_t &callback);
+        void on_message(const message_callback_t &callback);
+        void on_url_changed(const url_changed_callback_t &callback);
     };
 } // namespace saucer
