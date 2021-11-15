@@ -20,29 +20,29 @@
 QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
-struct qt_meta_stringdata_saucer__saucer_web_class_t {
+struct qt_meta_stringdata_saucer__webview__impl__saucer_web_class_t {
     QByteArrayData data[4];
-    char stringdata0[45];
+    char stringdata0[60];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
-    qptrdiff(offsetof(qt_meta_stringdata_saucer__saucer_web_class_t, stringdata0) + ofs \
+    qptrdiff(offsetof(qt_meta_stringdata_saucer__webview__impl__saucer_web_class_t, stringdata0) + ofs \
         - idx * sizeof(QByteArrayData)) \
     )
-static const qt_meta_stringdata_saucer__saucer_web_class_t qt_meta_stringdata_saucer__saucer_web_class = {
+static const qt_meta_stringdata_saucer__webview__impl__saucer_web_class_t qt_meta_stringdata_saucer__webview__impl__saucer_web_class = {
     {
-QT_MOC_LITERAL(0, 0, 24), // "saucer::saucer_web_class"
-QT_MOC_LITERAL(1, 25, 10), // "on_message"
-QT_MOC_LITERAL(2, 36, 0), // ""
-QT_MOC_LITERAL(3, 37, 7) // "message"
+QT_MOC_LITERAL(0, 0, 39), // "saucer::webview::impl::saucer..."
+QT_MOC_LITERAL(1, 40, 10), // "on_message"
+QT_MOC_LITERAL(2, 51, 0), // ""
+QT_MOC_LITERAL(3, 52, 7) // "message"
 
     },
-    "saucer::saucer_web_class\0on_message\0"
-    "\0message"
+    "saucer::webview::impl::saucer_web_class\0"
+    "on_message\0\0message"
 };
 #undef QT_MOC_LITERAL
 
-static const uint qt_meta_data_saucer__saucer_web_class[] = {
+static const uint qt_meta_data_saucer__webview__impl__saucer_web_class[] = {
 
  // content:
        8,       // revision
@@ -64,7 +64,7 @@ static const uint qt_meta_data_saucer__saucer_web_class[] = {
        0        // eod
 };
 
-void saucer::saucer_web_class::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+void saucer::webview::impl::saucer_web_class::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
 {
     if (_c == QMetaObject::InvokeMetaMethod) {
         auto *_t = static_cast<saucer_web_class *>(_o);
@@ -76,30 +76,30 @@ void saucer::saucer_web_class::qt_static_metacall(QObject *_o, QMetaObject::Call
     }
 }
 
-QT_INIT_METAOBJECT const QMetaObject saucer::saucer_web_class::staticMetaObject = { {
+QT_INIT_METAOBJECT const QMetaObject saucer::webview::impl::saucer_web_class::staticMetaObject = { {
     QMetaObject::SuperData::link<QObject::staticMetaObject>(),
-    qt_meta_stringdata_saucer__saucer_web_class.data,
-    qt_meta_data_saucer__saucer_web_class,
+    qt_meta_stringdata_saucer__webview__impl__saucer_web_class.data,
+    qt_meta_data_saucer__webview__impl__saucer_web_class,
     qt_static_metacall,
     nullptr,
     nullptr
 } };
 
 
-const QMetaObject *saucer::saucer_web_class::metaObject() const
+const QMetaObject *saucer::webview::impl::saucer_web_class::metaObject() const
 {
     return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
 }
 
-void *saucer::saucer_web_class::qt_metacast(const char *_clname)
+void *saucer::webview::impl::saucer_web_class::qt_metacast(const char *_clname)
 {
     if (!_clname) return nullptr;
-    if (!strcmp(_clname, qt_meta_stringdata_saucer__saucer_web_class.stringdata0))
+    if (!strcmp(_clname, qt_meta_stringdata_saucer__webview__impl__saucer_web_class.stringdata0))
         return static_cast<void*>(this);
     return QObject::qt_metacast(_clname);
 }
 
-int saucer::saucer_web_class::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+int saucer::webview::impl::saucer_web_class::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QObject::qt_metacall(_c, _id, _a);
     if (_id < 0)

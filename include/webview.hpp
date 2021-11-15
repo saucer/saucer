@@ -10,24 +10,23 @@ namespace saucer
         creation,
     };
 
-    class webview final : public window
+    class webview : public window
     {
         struct impl;
-        using message_callback_t = std::function<void(const std::string &)>;
         using url_changed_callback_t = std::function<void(const std::string &)>;
+
+      private:
+        url_changed_callback_t m_url_changed_callback;
 
       protected:
         std::unique_ptr<impl> m_impl;
-        message_callback_t m_message_callback;
-        url_changed_callback_t m_url_changed_callback;
+
+      protected:
+        virtual void on_message(const std::string &);
 
       public:
         webview();
-        ~webview() final;
-
-      public:
-        webview(webview &&) = delete;
-        webview(const webview &) = delete;
+        ~webview() override;
 
       public:
         std::string get_url() const;
@@ -38,14 +37,15 @@ namespace saucer
         void set_url(const std::string &url);
 
       public:
-        void call(const std::string &java_script);
+        void run_java_script(const std::string &java_script);
         void inject(const std::string &java_script, const load_time_t &load_time);
 
       public:
         void clear_scripts();
 
       public:
-        void on_message(const message_callback_t &callback);
         void on_url_changed(const url_changed_callback_t &callback);
     };
+
+    template <typename bridge_t, std::enable_if_t<std::is_base_of_v<window, bridge_t>> * = nullptr> using bridged_webview = bridge_t;
 } // namespace saucer

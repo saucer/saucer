@@ -8,27 +8,6 @@
 
 namespace saucer
 {
-    class saucer_web_class : public QObject
-    {
-        // NOLINTNEXTLINE
-        Q_OBJECT
-
-      private:
-        std::function<void(const std::string &)> &m_callback;
-
-      public:
-        saucer_web_class(std::function<void(const std::string &)> &callback) : m_callback(callback) {}
-
-      public slots:
-        void on_message(const QString &message)
-        {
-            if (m_callback)
-            {
-                m_callback(message.toStdString());
-            }
-        }
-    };
-
     struct window::impl
     {
         std::unique_ptr<QApplication> application;
@@ -37,16 +16,62 @@ namespace saucer
 
     struct webview::impl
     {
+        // NOLINTNEXTLINE
+        class saucer_web_class;
+
+      public:
         std::unique_ptr<saucer_web_class> web_class;
         std::unique_ptr<QWebChannel> web_channel;
         std::shared_ptr<QWebEngineView> web_view;
+    };
+
+    class webview::impl::saucer_web_class : public QObject
+    {
+        // NOLINTNEXTLINE
+        Q_OBJECT
+
+      private:
+        webview &m_webview;
+
+      public:
+        saucer_web_class(webview &webview) : m_webview(webview) {}
+
+      public slots:
+        void on_message(const QString &message)
+        {
+            m_webview.on_message(message.toStdString());
+        }
     };
 
     webview::~webview() = default;
     webview::webview() : m_impl(std::make_unique<impl>())
     {
         m_impl->web_view = std::make_unique<QWebEngineView>();
-        m_impl->web_view->show();
+        m_impl->web_class = std::make_unique<impl::saucer_web_class>(*this);
+        m_impl->web_channel = std::make_unique<QWebChannel>(window::m_impl->window.get());
+
+        m_impl->web_view->page()->setWebChannel(m_impl->web_channel.get());
+        m_impl->web_channel->registerObject("saucer", m_impl->web_class.get());
+
+        QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
+        if (web_channel_api.open(QIODevice::ReadOnly))
+        {
+            inject(web_channel_api.readAll().toStdString(), load_time_t::creation);
+            inject(R"js(
+                    window.saucer = {
+                        async on_message(message)
+                        {
+                            (await window._saucer).on_message(message);
+                        }
+                    };
+                    window._saucer = new Promise((resolve) =>
+                    {
+                        new QWebChannel(qt.webChannelTransport, function(channel) { resolve(channel.objects.saucer); });
+                    });
+                    )js",
+                   load_time_t::creation);
+        }
+        web_channel_api.close();
 
         m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::urlChanged, [this](const QUrl &url) {
             if (m_url_changed_callback)
@@ -55,6 +80,7 @@ namespace saucer
             }
         });
 
+        m_impl->web_view->show();
         window::m_impl->window->setCentralWidget(m_impl->web_view.get());
     }
 
@@ -85,7 +111,7 @@ namespace saucer
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
     }
 
-    void webview::call(const std::string &java_script)
+    void webview::run_java_script(const std::string &java_script)
     {
         m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
     }
@@ -144,44 +170,12 @@ namespace saucer
         m_impl->web_view->page()->scripts().clear();
     }
 
-    void webview::on_message(const message_callback_t &callback)
-    {
-        m_message_callback = callback;
-
-        if (!m_impl->web_channel)
-        {
-            m_impl->web_class = std::make_unique<saucer_web_class>(m_message_callback);
-            m_impl->web_channel = std::make_unique<QWebChannel>(window::m_impl->window.get());
-
-            m_impl->web_channel->registerObject("saucer", m_impl->web_class.get());
-            m_impl->web_view->page()->setWebChannel(m_impl->web_channel.get());
-
-            QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
-            if (web_channel_api.open(QIODevice::ReadOnly))
-            {
-                inject(web_channel_api.readAll().toStdString(), load_time_t::creation);
-                inject(R"js(
-                    window.saucer = {
-                        async on_message(message) 
-                        {   
-                            (await window._saucer).on_message(message);
-                        }
-                    };
-                    window._saucer = new Promise((resolve) => 
-                    {
-                        new QWebChannel(qt.webChannelTransport, function(channel) { resolve(channel.objects.saucer); });
-                    });
-                    )js",
-                       load_time_t::creation);
-            }
-            web_channel_api.close();
-        }
-    }
-
     void webview::on_url_changed(const url_changed_callback_t &callback)
     {
         m_url_changed_callback = callback;
     }
+
+    void webview::on_message(const std::string &) {}
 } // namespace saucer
 
 #include "webview.qt.moc.h"
