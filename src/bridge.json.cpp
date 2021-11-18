@@ -1,4 +1,5 @@
 #include <bridge/json/bridge.hpp>
+#include <future>
 
 namespace saucer
 {
@@ -60,6 +61,8 @@ namespace saucer
 
         void json::on_message(const std::string &message)
         {
+            webview::on_message(message);
+
             auto data = nlohmann::json::parse(message, nullptr, false);
             if (!data.is_discarded())
             {
@@ -69,9 +72,19 @@ namespace saucer
                     const std::string name = data["name"];
                     const auto params = data["params"];
 
-                    if (m_callbacks.count(name))
+                    auto locked = m_callbacks.read();
+                    if (locked->count(name))
                     {
-                        m_callbacks[name](id, params);
+                        const auto &callback = locked->at(name);
+                        if (callback.second)
+                        {
+                            auto fut = std::make_shared<std::future<void>>();
+                            *fut = std::async(std::launch::async, callback.first, id, params);
+                        }
+                        else
+                        {
+                            callback.first(id, params);
+                        }
                     }
                 }
                 else if (data["id"].is_number() && data.contains("result"))
@@ -79,10 +92,11 @@ namespace saucer
                     const int id = data["id"];
                     const auto result = data["result"];
 
-                    if (m_promises.count(id))
+                    auto locked = m_promises.write();
+                    if (locked->count(id))
                     {
-                        m_promises[id]->resolve(result);
-                        m_promises.erase(id);
+                        locked->at(id)->resolve(result);
+                        locked->erase(id);
                     }
                 }
             }

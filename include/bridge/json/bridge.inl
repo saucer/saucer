@@ -55,9 +55,13 @@ namespace saucer
             }
         } // namespace internal
 
-        template <typename func_t> void json::expose(const std::string &name, const func_t &function)
+        template <typename func_t> void json::expose(const std::string &name, const func_t &function, bool async)
         {
-            m_callbacks.emplace(name, [this, function](int id, const nlohmann::json &data) {
+            auto locked = m_callbacks.write();
+
+            // clang-format off
+            locked->emplace(name, std::make_pair<callback_t, bool>(
+            [this, function](int id, const nlohmann::json &data) {
                 using traits = internal::function_traits<func_t>;
 
                 using rtn_t = typename traits::rtn_t;
@@ -88,15 +92,23 @@ namespace saucer
                 {
                     reject(id, "Invalid arguments");
                 }
-            });
+            },
+                std::forward<bool>(async)));
+            // clang-format on
+        }
+
+        template <typename func_t> void json::expose_async(const std::string &name, const func_t &function)
+        {
+            expose(name, function, true);
         }
 
         template <typename rtn_t, typename... args_t>
         std::shared_ptr<promise<rtn_t>> json::call(const std::string &function_name, const args_t &...args)
         {
             static_assert(std::conjunction_v<internal::is_serializable<args_t>...>);
-            // ? We dump twice to escape everything properly.
+            auto locked = m_promises.write();
 
+            // ? We dump twice to escape everything properly.
             const auto idc = m_idc++;
             std::string query("window.saucer._resolve(" + std::to_string(idc) + ", " + function_name + "(");
             (query.append("JSON.parse(" + nlohmann::json(nlohmann::json(args).dump()).dump() + "),"), ...);
@@ -107,7 +119,7 @@ namespace saucer
             query.append("))");
 
             auto rtn = std::make_shared<promise<rtn_t>>();
-            m_promises.emplace(idc, rtn);
+            locked->emplace(idc, rtn);
 
             run_java_script(query);
             return rtn;
