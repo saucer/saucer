@@ -55,4 +55,5 @@ Checks: "*,\
   -altera-*,\
   -performance-no-int-to-ptr,\
   -readability-named-parameter,\
-  -bugprone-easily-swappable-parameters"
+  -bugprone-easily-swappable-parameters,\
+  -readability-identifier-length"
