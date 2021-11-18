@@ -58,6 +58,7 @@ namespace saucer
     {
         static int argc{};
         static char **argv{};
+        qputenv("QT_LOGGING_RULES", "*=false");
 
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
         m_impl->application = std::make_unique<QApplication>(argc, argv);
