@@ -23,6 +23,7 @@ namespace saucer
         std::unique_ptr<saucer_web_class> web_class;
         std::unique_ptr<QWebChannel> web_channel;
         std::shared_ptr<QWebEngineView> web_view;
+        std::atomic<bool> is_loaded = false;
     };
 
     class webview::impl::saucer_web_class : public QObject
@@ -68,6 +69,8 @@ namespace saucer
                     {
                         new QWebChannel(qt.webChannelTransport, function(channel) { resolve(channel.objects.saucer); });
                     });
+
+                    window.saucer.on_message("js_ready");
                     )js",
                    load_time_t::creation);
         }
@@ -79,6 +82,8 @@ namespace saucer
                 m_url_changed_callback(url.toString().toStdString());
             }
         });
+
+        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::loadStarted, [this]() { m_impl->is_loaded = false; });
 
         m_impl->web_view->show();
         window::m_impl->window->setCentralWidget(m_impl->web_view.get());
@@ -113,7 +118,30 @@ namespace saucer
 
     void webview::run_java_script(const std::string &java_script)
     {
-        m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
+        if (m_impl->is_loaded)
+        {
+            m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
+        }
+        else
+        {
+            auto script = m_impl->web_view->page()->scripts().findScript("_run_js");
+
+            if (script.isNull())
+            {
+                script.setName("_run_js");
+                script.setRunsOnSubFrames(false);
+                script.setWorldId(QWebEngineScript::MainWorld);
+                script.setInjectionPoint(QWebEngineScript::DocumentReady);
+                script.setSourceCode("window.saucer.on_message(\"js_finished\")");
+            }
+            else
+            {
+                m_impl->web_view->page()->scripts().remove(script);
+            }
+
+            script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(java_script));
+            m_impl->web_view->page()->scripts().insert(script);
+        }
     }
 
     void webview::inject(const std::string &java_script, const load_time_t &load_time)
@@ -175,7 +203,22 @@ namespace saucer
         m_url_changed_callback = callback;
     }
 
-    void webview::on_message(const std::string &) {}
+    void webview::on_message(const std::string &message)
+    {
+        if (message == "js_finished")
+        {
+            auto script = m_impl->web_view->page()->scripts().findScript("_run_js");
+            if (!script.isNull())
+            {
+                m_impl->web_view->page()->scripts().remove(script);
+                m_impl->is_loaded = true;
+            }
+        }
+        else if (message == "js_ready")
+        {
+            m_impl->is_loaded = true;
+        }
+    }
 } // namespace saucer
 
 #include "webview.qt.moc.h"
