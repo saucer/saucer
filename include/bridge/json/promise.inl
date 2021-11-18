@@ -15,7 +15,17 @@ namespace saucer
         {
             if constexpr (!std::is_same_v<type_t, void>)
             {
-                m_callback(m_result);
+                try
+                {
+                    m_callback(m_result);
+                }
+                catch (const nlohmann::json::type_error &)
+                {
+                    if constexpr (std::is_default_constructible_v<type_t>)
+                    {
+                        m_callback(type_t{});
+                    }
+                }
             }
             else
             {
@@ -39,7 +49,14 @@ namespace saucer
             }
             else
             {
-                return std::tuple<type_t>(data);
+                try
+                {
+                    return std::tuple<type_t>(data);
+                }
+                catch (const nlohmann::json::type_error &)
+                {
+                    return std::tuple<type_t>();
+                }
             }
         }
 

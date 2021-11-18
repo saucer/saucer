@@ -83,7 +83,16 @@ namespace saucer
                     };
 
                     args_t args;
-                    internal::tuple_visit(args, [&](std::size_t index, auto &arg) { arg = data.at(index); });
+                    
+                    try
+                    {
+                        internal::tuple_visit(args, [&](std::size_t index, auto &arg) { arg = data.at(index); });
+                    }
+                    catch (const nlohmann::json::type_error &)
+                    {
+                        reject(id, "Bad arguments");
+                        return;
+                    }
 
                     std::apply(unpacked_call, args);
                     resolve(id, rtn);
@@ -93,7 +102,7 @@ namespace saucer
                     reject(id, "Invalid arguments");
                 }
             },
-                std::forward<bool>(async)));
+            std::forward<bool>(async)));
             // clang-format on
         }
 
