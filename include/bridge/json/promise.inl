@@ -1,6 +1,7 @@
 #pragma once
 #include "promise.hpp"
 #include <atomic>
+#include <tuple>
 
 namespace saucer
 {
@@ -10,18 +11,17 @@ namespace saucer
     {
         m_result = result;
 
-        if constexpr (!std::is_same_v<type_t, void>)
+        if (m_callback)
         {
-            if (m_callback)
+            if constexpr (!std::is_same_v<type_t, void>)
             {
                 m_callback(m_result);
             }
+            else
+            {
+                m_callback();
+            }
         }
-    }
-
-    template <typename... args_t> void promise<std::tuple<args_t...>>::resolve(const nlohmann::json &result)
-    {
-        m_result = result;
     }
 
     template <typename type_t> void promise<type_t>::then(const callback_t &callback)
@@ -29,30 +29,54 @@ namespace saucer
         m_callback = callback;
     }
 
-    template <typename... args_t> void promise<std::tuple<args_t...>>::finish(const args_t &...results)
+    namespace internal
     {
-        m_callback(results...);
-    }
+        template <typename type_t> auto tuple_or_data(const nlohmann::json &data)
+        {
+            if constexpr (std::is_same_v<type_t, void>)
+            {
+                return std::tuple<>();
+            }
+            else
+            {
+                return std::tuple<type_t>(data);
+            }
+        }
 
-    template <typename... args_t> void promise<std::tuple<args_t...>>::then(const callback_t &callback)
-    {
-        m_callback = callback;
-    }
+        template <typename... args_t> void grouped_promise<args_t...>::then(const callback_t &callback)
+        {
+            m_callback = callback;
+        }
 
-    template <typename... args> std::shared_ptr<promise<std::tuple<args...>>> all(std::shared_ptr<promise<args>>... promises)
+        template <typename... args_t> void grouped_promise<args_t...>::resolve(args_t... args)
+        {
+            if (m_callback)
+            {
+                m_callback(args...);
+            }
+        }
+    } // namespace internal
+
+    template <typename... args> auto all(std::shared_ptr<promise<args>>... promises)
     {
         auto counter = std::make_shared<std::atomic<std::uint64_t>>();
-        auto rtn = std::make_shared<promise<std::tuple<args...>>>();
+        auto rtn = std::make_shared<internal::grouped_promise<decltype(std::tuple_cat(
+            std::tuple<>(), std::conditional_t<std::is_same_v<typename decltype(promises)::element_type::type, void>, std::tuple<>,
+                                               std::tuple<typename decltype(promises)::element_type::type>>()...))>>();
 
-        auto callback = [counter, rtn, promises...](auto...) {
+        auto then_callback = [rtn, counter, promises...](const auto &...) {
             counter->fetch_add(1);
+
             if (counter->load() == sizeof...(promises))
             {
-                rtn->finish((promises->m_result)...);
+                auto result =
+                    std::tuple_cat(std::tuple<>(), internal::tuple_or_data<typename decltype(promises)::element_type::type>(promises->m_result)...);
+                auto call_fn = [&](auto... params) { rtn->resolve(params...); };
+                std::apply(call_fn, result);
             }
         };
 
-        (promises->then(callback), ...);
+        (promises->then(then_callback), ...);
         return rtn;
     }
 } // namespace saucer
