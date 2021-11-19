@@ -132,7 +132,7 @@ namespace saucer
                 script.setRunsOnSubFrames(false);
                 script.setWorldId(QWebEngineScript::MainWorld);
                 script.setInjectionPoint(QWebEngineScript::DocumentReady);
-                script.setSourceCode("window.saucer.on_message(\"js_finished\")");
+                script.setSourceCode("window.saucer.on_message(\"js_finished\");");
             }
             else
             {
