@@ -119,13 +119,13 @@ namespace saucer
 
             // ? We dump twice to escape everything properly.
             const auto idc = m_idc++;
-            std::string query("window.saucer._resolve(" + std::to_string(idc) + ", " + function_name + "(");
+            std::string query("(async () => {window.saucer._resolve(" + std::to_string(idc) + ", " + function_name + "(");
             (query.append("JSON.parse(" + nlohmann::json(nlohmann::json(args).dump()).dump() + "),"), ...);
 
             if constexpr (sizeof...(args) > 0)
                 query.pop_back();
 
-            query.append("))");
+            query.append("))})();");
 
             auto rtn = std::make_shared<promise<rtn_t>>();
             locked->emplace(idc, rtn);
