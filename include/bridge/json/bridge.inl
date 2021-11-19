@@ -18,10 +18,6 @@ namespace saucer
                 static const bool value = sizeof(test(reinterpret_cast<type_t *>(0))) == sizeof(std::uint16_t);
             };
 
-            template <typename T> struct function_traits : public function_traits<decltype(&T::operator())>
-            {
-            };
-
             template <typename T> struct remove_const_ref
             {
                 using type = T;
@@ -32,6 +28,27 @@ namespace saucer
             };
             template <typename T> using remove_const_ref_t = typename remove_const_ref<T>::type;
 
+            template <typename T> struct function_traits : public function_traits<decltype(&T::operator())>
+            {
+            };
+            template <typename _rtn_t, typename... _args> struct function_traits<_rtn_t(_args...)>
+            {
+                using rtn_t = _rtn_t;
+                using args_t = std::tuple<remove_const_ref_t<_args>...>;
+                static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            };
+            template <typename _rtn_t, typename... _args> struct function_traits<_rtn_t(_args...) const>
+            {
+                using rtn_t = _rtn_t;
+                using args_t = std::tuple<remove_const_ref_t<_args>...>;
+                static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            };
+            template <typename _rtn_t, typename... _args> struct function_traits<_rtn_t(_args...) noexcept>
+            {
+                using rtn_t = _rtn_t;
+                using args_t = std::tuple<remove_const_ref_t<_args>...>;
+                static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            };
             template <typename _class, typename _rtn_t, typename... _args> struct function_traits<_rtn_t (_class::*)(_args...) const>
             {
                 using rtn_t = _rtn_t;
