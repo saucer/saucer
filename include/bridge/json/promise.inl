@@ -1,7 +1,6 @@
 #pragma once
 #include "promise.hpp"
 #include <atomic>
-#include <tuple>
 
 namespace saucer
 {

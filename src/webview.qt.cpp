@@ -2,7 +2,6 @@
 #include <QMainWindow>
 #include <QWebChannel>
 #include <QWebEngineScriptCollection>
-#include <QWebEngineUrlRequestInterceptor>
 #include <QWebEngineView>
 #include <webview.hpp>
 

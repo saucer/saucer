@@ -1,7 +1,5 @@
 #pragma once
 #include "bridge.hpp"
-#include <chrono>
-#include <functional>
 
 namespace saucer
 {
