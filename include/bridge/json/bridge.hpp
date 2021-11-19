@@ -19,7 +19,7 @@ namespace saucer
             lockpp::lock<std::map<std::string, std::pair<callback_t, bool>>> m_callbacks;
 
           private:
-            lockpp::lock<std::map<std::uint64_t, std::shared_ptr<base_promise>>> m_promises;
+            lockpp::lock<std::map<std::uint64_t, std::shared_ptr<base_promise>>, std::recursive_mutex> m_promises;
 
           public:
             json();
