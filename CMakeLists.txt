@@ -26,7 +26,7 @@ set(saucer_bridge_types None JSON)
 set(saucer_bridge JSON CACHE STRING "The bridge to use")
 set_property(CACHE saucer_bridge PROPERTY STRINGS ${saucer_bridge_types})
 
-set(saucer_backend_types Default Qt WebView2)
+set(saucer_backend_types Default Qt Qt6 WebView2)
 set(saucer_backend Default CACHE STRING "The backend to use")
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
 
@@ -58,9 +58,17 @@ endif()
 include(FetchContent)
 
 if (saucer_backend STREQUAL "Qt")
-    target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt.cpp" "src/window.qt.cpp")
-    find_package(Qt5 COMPONENTS Widgets WebEngine WebEngineWidgets WebChannel REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::WebEngine Qt5::WebEngineWidgets Qt5::WebChannel)
+    target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt5.cpp" "src/window.qt5.cpp")
+
+    find_package(Qt5 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::WebEngineWidgets Qt5::WebChannel)
+endif()
+
+if (saucer_backend STREQUAL "Qt6")
+    target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt6.cpp" "src/window.qt6.cpp")
+
+    find_package(Qt6 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::WebEngineWidgets Qt6::WebChannel)
 endif()
 
 if (saucer_bridge STREQUAL "JSON")
