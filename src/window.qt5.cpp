@@ -1,7 +1,9 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QMainWindow>
+#include <mutex>
 #include <optional>
+#include <utility>
 #include <window.hpp>
 
 namespace saucer
@@ -47,29 +49,37 @@ namespace saucer
 
     struct window::impl
     {
-        std::unique_ptr<QApplication> application;
+        static std::unique_ptr<QApplication> application;
         std::unique_ptr<QMainWindow> window;
         std::optional<QSize> max_size;
         std::optional<QSize> min_size;
     };
+    std::unique_ptr<QApplication> window::impl::application;
 
     window::~window() = default;
     window::window() : m_impl(std::make_unique<impl>())
     {
-        static int argc{};
-        static char **argv{};
         qputenv("QT_LOGGING_RULES", "*=false");
 
-        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-        m_impl->application = std::make_unique<QApplication>(argc, argv);
+        if (!m_impl->application)
+        {
+            QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+            static int argc = 0;
+            m_impl->application = std::make_unique<QApplication>(argc, nullptr);
+        }
 
         m_impl->window = std::make_unique<saucer_main_window>(m_close_callback, m_resize_callback);
     }
 
     void window::run()
     {
-        m_impl->window->show();
-        m_impl->application->exec();
+        QApplication::exec();
+    }
+
+    void window::clean_up()
+    {
+        impl::application.reset();
     }
 
     void window::set_title(const std::string &title)

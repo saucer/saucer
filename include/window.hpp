@@ -34,9 +34,12 @@ namespace saucer
         std::pair<std::size_t, std::size_t> get_min_size() const;
 
       public:
-        void run();
         void hide();
         void show();
+
+      public:
+        static void run();
+        static void clean_up();
 
       public:
         void on_close(const close_callback_t &callback);

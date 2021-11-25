@@ -9,7 +9,7 @@ namespace saucer
 {
     struct window::impl
     {
-        std::unique_ptr<QApplication> application;
+        static std::unique_ptr<QApplication> application;
         std::unique_ptr<QMainWindow> window;
     };
 
@@ -220,4 +220,4 @@ namespace saucer
     }
 } // namespace saucer
 
-#include "webview.qt.moc.h"
+#include "webview.qt5.moc.h"
