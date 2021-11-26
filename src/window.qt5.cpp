@@ -49,37 +49,37 @@ namespace saucer
 
     struct window::impl
     {
-        static std::unique_ptr<QApplication> application;
+        std::shared_ptr<QApplication> application;
         std::unique_ptr<QMainWindow> window;
         std::optional<QSize> max_size;
         std::optional<QSize> min_size;
+
+      public:
+        static std::weak_ptr<QApplication> g_application;
     };
-    std::unique_ptr<QApplication> window::impl::application;
+    std::weak_ptr<QApplication> window::impl::g_application;
 
     window::~window() = default;
     window::window() : m_impl(std::make_unique<impl>())
     {
         qputenv("QT_LOGGING_RULES", "*=false");
 
-        if (!m_impl->application)
+        auto application = m_impl->g_application.lock();
+        if (!application)
         {
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
             static int argc = 0;
-            m_impl->application = std::make_unique<QApplication>(argc, nullptr);
+            m_impl->g_application = (application = std::make_shared<QApplication>(argc, nullptr));
         }
 
+        m_impl->application = application;
         m_impl->window = std::make_unique<saucer_main_window>(m_close_callback, m_resize_callback);
     }
 
     void window::run()
     {
         QApplication::exec();
-    }
-
-    void window::clean_up()
-    {
-        impl::application.reset();
     }
 
     void window::set_title(const std::string &title)

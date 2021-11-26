@@ -39,7 +39,6 @@ namespace saucer
 
       public:
         static void run();
-        static void clean_up();
 
       public:
         void on_close(const close_callback_t &callback);

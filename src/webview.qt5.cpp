@@ -9,7 +9,7 @@ namespace saucer
 {
     struct window::impl
     {
-        static std::unique_ptr<QApplication> application;
+        std::shared_ptr<QApplication> application;
         std::unique_ptr<QMainWindow> window;
     };
 
