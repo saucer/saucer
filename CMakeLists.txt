@@ -7,8 +7,13 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 
 add_library(${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wextra -pedantic)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wextra -pedantic)
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Include "include" folder
@@ -62,23 +67,50 @@ if (saucer_backend STREQUAL "Qt")
 
     find_package(Qt5 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::WebEngineWidgets Qt5::WebChannel)
-endif()
-
-if (saucer_backend STREQUAL "Qt6")
+elseif (saucer_backend STREQUAL "Qt6")
     target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt6.cpp" "src/window.qt6.cpp")
 
     find_package(Qt6 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::WebEngineWidgets Qt6::WebChannel)
+elseif (saucer_backend STREQUAL "WebView2")
+    target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.cpp" "src/webview.webview2.cpp")
+
+    option(WIL_BUILD_PACKAGING "" OFF)
+    option(WIL_BUILD_TESTS  "" OFF)
+    FetchContent_Declare(wil GIT_REPOSITORY "https://github.com/microsoft/wil")
+    FetchContent_MakeAvailable(wil)
+
+    include("NuGet.cmake")
+    nuget_add(WebView2 "Microsoft.Web.WebView2" 1.0.865-prerelease)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/include)
+
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/x64/WebView2LoaderStatic.lib)
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/x86/WebView2LoaderStatic.lib)
+    endif()
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE WIL::WIL Dwmapi)
 endif()
 
 if (saucer_bridge STREQUAL "JSON")
     target_sources(${PROJECT_NAME} PRIVATE "src/bridge.json.cpp")
-
-    FetchContent_Declare(lockpp GIT_REPOSITORY "https://github.com/Soundux/lockpp" GIT_TAG v1.0.0)
+    
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(json)
 
-    FetchContent_MakeAvailable(json lockpp)
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json lockpp pthread)
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
+
+    if (UNIX)
+        target_link_libraries(${PROJECT_NAME} PUBLIC pthread)
+    endif()
+endif()
+
+if (saucer_bridge STREQUAL "JSON" OR saucer_backend STREQUAL "WebView2")
+    FetchContent_Declare(lockpp GIT_REPOSITORY "https://github.com/Soundux/lockpp" GIT_TAG v1.0.0)
+    FetchContent_MakeAvailable(lockpp)
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC lockpp)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -87,7 +119,7 @@ endif()
 
 if (saucer_examples)
     if (saucer_bridge STREQUAL "JSON")
-        message(STATUS "[Saucer] Building JSON-Bridge Test")
+        message(STATUS "[Saucer] Building JSON-Bridge Example")
         add_subdirectory("examples/json_bridge")
     endif()
 endif()
