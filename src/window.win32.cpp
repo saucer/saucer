@@ -22,12 +22,11 @@ namespace saucer
     LRESULT window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         const auto *thiz = reinterpret_cast<window *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-        switch (msg)
+        if (thiz)
         {
-        case WM_GETMINMAXINFO:
-            if (thiz)
+            switch (msg)
             {
+            case WM_GETMINMAXINFO: {
                 auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
                 if (thiz->m_impl->max_height && thiz->m_impl->max_width)
                 {
@@ -41,21 +40,16 @@ namespace saucer
                 }
             }
             break;
-        case WM_SIZE:
-            if (thiz)
-            {
-                std::size_t width = LOWORD(l_param);
-                std::size_t height = HIWORD(l_param);
-
+            case WM_SIZE:
                 if (thiz->m_resize_callback)
                 {
+                    std::size_t width = LOWORD(l_param);
+                    std::size_t height = HIWORD(l_param);
+
                     thiz->m_resize_callback(width, height);
                 }
-            }
-            break;
-        case WM_CLOSE:
-            if (thiz)
-            {
+                break;
+            case WM_CLOSE:
                 if (thiz->m_close_callback)
                 {
                     if (thiz->m_close_callback())
@@ -63,8 +57,8 @@ namespace saucer
                         return 0;
                     }
                 }
+                break;
             }
-            break;
         }
 
         return DefWindowProc(hwnd, msg, w_param, l_param);
