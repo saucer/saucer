@@ -168,13 +168,6 @@ namespace saucer
             script.setName("_ready");
             script.setInjectionPoint(QWebEngineScript::DocumentReady);
             break;
-        case load_time_t::done:
-            script = m_impl->web_view->page()->scripts().findScript("_finish");
-            found = !script.isNull();
-
-            script.setName("_finish");
-            script.setInjectionPoint(QWebEngineScript::Deferred);
-            break;
         }
 
         if (!found)

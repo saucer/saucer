@@ -5,7 +5,6 @@ namespace saucer
 {
     enum class load_time_t
     {
-        done,
         ready,
         creation,
     };
