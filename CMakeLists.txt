@@ -82,6 +82,7 @@ elseif (saucer_backend STREQUAL "WebView2")
 
     include("NuGet.cmake")
     nuget_add(WebView2 "Microsoft.Web.WebView2" 1.0.1020.30)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
     target_include_directories(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/include)
 
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)

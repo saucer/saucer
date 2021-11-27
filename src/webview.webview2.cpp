@@ -1,5 +1,5 @@
+#include "utils.win32.hpp"
 #include <WebView2.h>
-#include <eventtoken.h>
 #include <lock.hpp>
 #include <system_error>
 #include <webview.hpp>
@@ -39,7 +39,7 @@ namespace saucer
     WNDPROC webview::impl::original_wnd_proc;
     LRESULT webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        const auto *thiz = reinterpret_cast<webview *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        const auto *thiz = reinterpret_cast<webview *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
         if (thiz)
         {
@@ -56,34 +56,7 @@ namespace saucer
             }
         }
 
-        return CallWindowProc(original_wnd_proc, hwnd, msg, w_param, l_param);
-    }
-
-    std::string narrow(const std::wstring &w_str)
-    {
-        auto sz = WideCharToMultiByte(65001, 0, w_str.c_str(), static_cast<int>(w_str.length()), nullptr, 0, nullptr, nullptr);
-        if (!sz)
-        {
-            return {};
-        }
-
-        std::string out(sz, 0);
-        WideCharToMultiByte(CP_UTF8, 0, w_str.c_str(), -1, out.data(), sz, nullptr, nullptr);
-        return out;
-    }
-
-    std::wstring widen(const std::string &str)
-    {
-        auto wsz = MultiByteToWideChar(65001, 0, str.c_str(), -1, nullptr, 0);
-        if (!wsz)
-        {
-            return {};
-        }
-
-        std::wstring out(wsz, 0);
-        MultiByteToWideChar(65001, 0, str.c_str(), -1, out.data(), wsz);
-        out.resize(wsz - 1);
-        return out;
+        return CallWindowProcW(original_wnd_proc, hwnd, msg, w_param, l_param);
     }
 
     webview::~webview() = default;
@@ -142,7 +115,7 @@ namespace saucer
                                     LPWSTR message{};
                                     args->TryGetWebMessageAsString(&message);
 
-                                    on_message(narrow(message));
+                                    on_message(utils::narrow(message));
                                     return S_OK;
                                 }).Get(),
                                 &m_impl->message_received_token);
@@ -204,7 +177,7 @@ namespace saucer
             return;
         }
 
-        m_impl->webview_window->Navigate(widen(url).c_str());
+        m_impl->webview_window->Navigate(utils::widen(url).c_str());
     }
 
     std::string webview::get_url() const
@@ -212,7 +185,7 @@ namespace saucer
         wil::unique_cotaskmem_string url;
         m_impl->webview_window->get_Source(&url);
 
-        return narrow(url.get());
+        return utils::narrow(url.get());
     }
 
     void webview::set_context_menu(bool enabled)
@@ -250,7 +223,7 @@ namespace saucer
         if (!m_impl->js_ready)
         {
             m_impl->webview_window->AddScriptToExecuteOnDocumentCreated(
-                widen(java_script).c_str(),
+                utils::widen(java_script).c_str(),
                 Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
                     m_impl->scripts_once.write()->push_back(id);
                     return S_OK;
@@ -258,7 +231,7 @@ namespace saucer
         }
         else
         {
-            m_impl->webview_window->ExecuteScript(widen(java_script).c_str(), nullptr);
+            m_impl->webview_window->ExecuteScript(utils::widen(java_script).c_str(), nullptr);
         }
     }
 
@@ -273,7 +246,7 @@ namespace saucer
             }
 
             m_impl->webview_window->AddScriptToExecuteOnDocumentCreated(
-                widen(java_script).c_str(),
+                utils::widen(java_script).c_str(),
                 Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
                     m_impl->injected_scripts.write()->push_back(id);
                     return S_OK;
