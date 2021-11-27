@@ -28,10 +28,12 @@ namespace saucer
         ~webview() override;
 
       public:
+        bool get_dev_tools() const;
         std::string get_url() const;
         bool get_context_menu() const;
 
       public:
+        void set_dev_tools(bool enabled);
         void set_context_menu(bool enabled);
         void set_url(const std::string &url);
 
