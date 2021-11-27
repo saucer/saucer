@@ -182,10 +182,44 @@ namespace saucer
 
     std::string webview::get_url() const
     {
+        if (m_impl->webview_window)
+        {
+            return {};
+        }
+
         wil::unique_cotaskmem_string url;
         m_impl->webview_window->get_Source(&url);
 
         return utils::narrow(url.get());
+    }
+
+    void webview::set_dev_tools(bool enabled)
+    {
+        if (!m_impl->webview_controller)
+        {
+            m_impl->call_on_initialize.write()->push_back([=]() { set_dev_tools(enabled); });
+            return;
+        }
+
+        wil::com_ptr<ICoreWebView2Settings> settings;
+        m_impl->webview_window->get_Settings(&settings);
+        settings->put_AreDevToolsEnabled(enabled);
+    }
+
+    bool webview::get_dev_tools() const
+    {
+        if (m_impl->webview_window)
+        {
+            return false;
+        }
+
+        wil::com_ptr<ICoreWebView2Settings> settings;
+        m_impl->webview_window->get_Settings(&settings);
+
+        BOOL result{};
+        settings->get_AreDevToolsEnabled(&result);
+
+        return result;
     }
 
     void webview::set_context_menu(bool enabled)
@@ -203,6 +237,11 @@ namespace saucer
 
     bool webview::get_context_menu() const
     {
+        if (m_impl->webview_window)
+        {
+            return false;
+        }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
 
