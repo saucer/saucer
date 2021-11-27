@@ -98,6 +98,16 @@ namespace saucer
         return m_impl->web_view->url().toString().toStdString();
     }
 
+    void webview::set_dev_tools([[maybe_unused]] bool enabled)
+    {
+        //? The QtWebEngine does not provide Dev-Tools. You can only access them from an external chrome window.
+    }
+
+    bool webview::get_dev_tools() const
+    {
+        return false;
+    }
+
     void webview::set_context_menu(bool enabled)
     {
         if (!enabled)
