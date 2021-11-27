@@ -9,7 +9,11 @@ int main()
 
     webview.set_title("Hello World!");
     webview.set_size(500, 600);
+
+    webview.set_min_size(400, 500);
     webview.set_max_size(1000, 1200);
+
+    webview.on_resize([&](std::size_t width, std::size_t height) { std::cout << width << ":" << height << std::endl; });
     webview.on_url_changed([](const std::string &url) { std::cout << "New url:" << url << std::endl; });
 
     webview.call<float>("Math.random")->then([](float result) { std::cout << "Random: " << result << std::endl; });
@@ -26,7 +30,8 @@ int main()
     });
 
     webview.set_url("https://google.com");
-    webview.run();
 
+    webview.show();
+    webview.run();
     return 0;
 }
