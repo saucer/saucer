@@ -47,6 +47,4 @@ namespace saucer
       public:
         void on_url_changed(const url_changed_callback_t &callback);
     };
-
-    template <typename bridge_t, std::enable_if_t<std::is_base_of_v<webview, bridge_t>> * = nullptr> using bridged_webview = bridge_t;
 } // namespace saucer

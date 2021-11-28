@@ -1,9 +1,10 @@
 #pragma once
-#include "bridge.hpp"
+#include "json_bridge.hpp"
+#include <webview.hpp>
 
 namespace saucer
 {
-    namespace bridge
+    namespace bridges
     {
         namespace internal
         {
@@ -145,8 +146,8 @@ namespace saucer
             auto rtn = std::make_shared<promise<rtn_t>>();
             locked->emplace(idc, rtn);
 
-            run_java_script(query);
+            m_webview.run_java_script(query);
             return rtn;
         }
-    } // namespace bridge
+    } // namespace bridges
 } // namespace saucer
