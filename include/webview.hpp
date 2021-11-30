@@ -10,18 +10,11 @@ namespace saucer
         creation,
     };
 
-    struct embedded_file
-    {
-        const std::string mime;
-        const std::size_t size;
-        const std::uint8_t *data;
-    };
-
     class webview : public window
     {
         struct impl;
-        using embedded_files = std::map<const std::string, embedded_file>;
         using url_changed_callback_t = std::function<void(const std::string &)>;
+        using embedded_files = std::map<const std::string, std::tuple<std::string, std::size_t, const std::uint8_t *>>;
 
       private:
         embedded_files m_embedded_files;

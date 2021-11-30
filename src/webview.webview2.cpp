@@ -291,8 +291,8 @@ namespace saucer
                                 const auto &file = m_embedded_files.at(url);
 
                                 wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                                wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
-                                env->CreateWebResourceResponse(data.get(), 200, L"OK", utils::widen("Content-Type: " + file.mime).c_str(), &response);
+                                wil::com_ptr<IStream> data = SHCreateMemStream(std::get<2>(file), static_cast<UINT>(std::get<1>(file)));
+                                env->CreateWebResourceResponse(data.get(), 200, L"OK", utils::widen("Content-Type: " + std::get<0>(file)).c_str(), &response);
 
                                 args->put_Response(response.get());
                             }

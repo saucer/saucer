@@ -77,11 +77,11 @@ namespace saucer
 
                 auto *buffer = new QBuffer;
                 buffer->open(QIODevice::WriteOnly);
-                buffer->write(reinterpret_cast<const char *>(file.data), static_cast<std::int64_t>(file.size));
+                buffer->write(reinterpret_cast<const char *>(std::get<2>(file)), static_cast<std::int64_t>(std::get<1>(file)));
                 buffer->close();
 
                 connect(request, &QObject::destroyed, buffer, &QObject::deleteLater);
-                request->reply(QString::fromStdString(file.mime).toUtf8(), buffer);
+                request->reply(QString::fromStdString(std::get<0>(file)).toUtf8(), buffer);
             }
             else
             {
