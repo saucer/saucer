@@ -1,7 +1,11 @@
+#include <QBuffer>
 #include <QFile>
 #include <QMainWindow>
 #include <QWebChannel>
+#include <QWebEngineProfile>
 #include <QWebEngineScriptCollection>
+#include <QWebEngineUrlRequestJob>
+#include <QWebEngineUrlSchemeHandler>
 #include <QWebEngineView>
 #include <webview.hpp>
 
@@ -16,9 +20,11 @@ namespace saucer
     struct webview::impl
     {
         // NOLINTNEXTLINE
+        class url_scheme_handler;
         class saucer_web_class;
 
       public:
+        std::unique_ptr<url_scheme_handler> resource_handler;
         std::unique_ptr<saucer_web_class> web_class;
         std::unique_ptr<QWebChannel> web_channel;
         std::shared_ptr<QWebEngineView> web_view;
@@ -40,6 +46,47 @@ namespace saucer
         void on_message(const QString &message)
         {
             m_webview.on_message(message.toStdString());
+        }
+    };
+
+    class webview::impl::url_scheme_handler : public QWebEngineUrlSchemeHandler
+    {
+      private:
+        webview &m_webview;
+
+      public:
+        url_scheme_handler(webview &webview) : m_webview(webview) {}
+
+      public:
+        void requestStarted(QWebEngineUrlRequestJob *request) override
+        {
+            auto url = request->requestUrl().toString().toStdString();
+            if (url.size() > 9)
+            {
+                url = url.substr(9);
+            }
+            else
+            {
+                request->fail(QWebEngineUrlRequestJob::UrlInvalid);
+                return;
+            }
+
+            if (m_webview.m_embedded_files.count(url))
+            {
+                const auto &file = m_webview.m_embedded_files.at(url);
+
+                auto *buffer = new QBuffer;
+                buffer->open(QIODevice::WriteOnly);
+                buffer->write(reinterpret_cast<const char *>(file.data), static_cast<std::int64_t>(file.size));
+                buffer->close();
+
+                connect(request, &QObject::destroyed, buffer, &QObject::deleteLater);
+                request->reply(QString::fromStdString(file.mime).toUtf8(), buffer);
+            }
+            else
+            {
+                request->fail(QWebEngineUrlRequestJob::UrlNotFound);
+            }
         }
     };
 
@@ -123,6 +170,30 @@ namespace saucer
     bool webview::get_context_menu() const
     {
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
+    }
+
+    void webview::embed_files(const embedded_files &files)
+    {
+        m_embedded_files = files;
+
+        if (!m_impl->resource_handler)
+        {
+            m_impl->resource_handler = std::make_unique<impl::url_scheme_handler>(*this);
+            m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->resource_handler.get());
+        }
+    }
+
+    void webview::clear_embedded()
+    {
+        m_embedded_files.clear();
+
+        m_impl->web_view->page()->profile()->removeUrlSchemeHandler(m_impl->resource_handler.get());
+        m_impl->resource_handler.reset();
+    }
+
+    void webview::serve_embedded(const std::string &file)
+    {
+        set_url("saucer://" + file);
     }
 
     void webview::run_java_script(const std::string &java_script)
