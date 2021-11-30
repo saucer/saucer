@@ -123,4 +123,6 @@ if (saucer_examples)
         message(STATUS "[Saucer] Building JSON-Bridge Example")
         add_subdirectory("examples/json_bridge")
     endif()
+        
+    add_subdirectory("examples/manual-embedding")
 endif()
