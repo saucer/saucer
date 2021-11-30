@@ -1,4 +1,5 @@
 #include "utils.win32.hpp"
+#include <Shlwapi.h>
 #include <WebView2.h>
 #include <lock.hpp>
 #include <system_error>
@@ -31,6 +32,7 @@ namespace saucer
         EventRegistrationToken source_changed_token;
         EventRegistrationToken message_received_token;
         EventRegistrationToken navigation_completed_token;
+        std::unique_ptr<EventRegistrationToken> resource_requested_token;
 
         static WNDPROC original_wnd_proc;
         static LRESULT wnd_proc(HWND, UINT, WPARAM, LPARAM);
@@ -249,6 +251,96 @@ namespace saucer
         settings->get_AreDefaultContextMenusEnabled(&enabled);
 
         return enabled;
+    }
+
+    void webview::embed_files(const embedded_files &files)
+    {
+        if (!m_impl->webview_window)
+        {
+            m_impl->call_on_initialize.write()->emplace_back([this, files]() { embed_files(files); });
+            return;
+        }
+
+        m_embedded_files = files;
+        if (!m_impl->resource_requested_token)
+        {
+            m_impl->resource_requested_token = std::make_unique<EventRegistrationToken>();
+            m_impl->webview_window->AddWebResourceRequestedFilter(L"https://saucer/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+
+            m_impl->webview_window->add_WebResourceRequested(
+                Callback<ICoreWebView2WebResourceRequestedEventHandler>([this](ICoreWebView2 *, ICoreWebView2WebResourceRequestedEventArgs *args) {
+                    wil::com_ptr<ICoreWebView2WebResourceRequest> request;
+                    args->get_Request(&request);
+
+                    auto webview_2 = m_impl->webview_window.try_query<ICoreWebView2_2>();
+                    if (webview_2)
+                    {
+                        wil::com_ptr<ICoreWebView2Environment> env;
+                        webview_2->get_Environment(&env);
+
+                        LPWSTR raw_url{};
+                        request->get_Uri(&raw_url);
+                        auto url = utils::narrow(raw_url);
+
+                        if (url.size() > 15)
+                        {
+                            url = url.substr(15);
+
+                            if (m_embedded_files.count(url))
+                            {
+                                const auto &file = m_embedded_files.at(url);
+
+                                wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+                                wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
+                                env->CreateWebResourceResponse(data.get(), 200, L"OK", utils::widen("Content-Type: " + file.mime).c_str(), &response);
+
+                                args->put_Response(response.get());
+                            }
+                            else
+                            {
+                                wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+                                env->CreateWebResourceResponse(nullptr, 404, L"Not found", L"", &response);
+
+                                args->put_Response(response.get());
+                            }
+                        }
+                        else
+                        {
+                            wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+                            env->CreateWebResourceResponse(nullptr, 500, L"Bad request", L"", &response);
+
+                            args->put_Response(response.get());
+                        }
+                    }
+
+                    return S_OK;
+                }).Get(),
+                m_impl->resource_requested_token.get());
+        }
+    }
+
+    void webview::clear_embedded()
+    {
+        if (!m_impl->webview_window)
+        {
+            m_impl->call_on_initialize.write()->emplace_back([this]() { clear_embedded(); });
+            return;
+        }
+
+        m_embedded_files.clear();
+
+        if (m_impl->resource_requested_token)
+        {
+            m_impl->webview_window->remove_WebResourceRequested(*m_impl->resource_requested_token);
+            m_impl->webview_window->RemoveWebResourceRequestedFilter(L"https://saucer/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+
+            m_impl->resource_requested_token.reset();
+        }
+    }
+
+    void webview::serve_embedded(const std::string &file)
+    {
+        set_url("https://saucer/" + file);
     }
 
     void webview::run_java_script(const std::string &java_script)

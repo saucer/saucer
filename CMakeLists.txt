@@ -91,7 +91,7 @@ elseif (saucer_backend STREQUAL "WebView2")
         target_link_libraries(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/x86/WebView2LoaderStatic.lib)
     endif()
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE WIL::WIL Dwmapi)
+    target_link_libraries(${PROJECT_NAME} PRIVATE WIL::WIL Dwmapi Shlwapi)
 endif()
 
 if (saucer_bridge STREQUAL "JSON")
