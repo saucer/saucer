@@ -95,7 +95,7 @@ elseif (saucer_backend STREQUAL "WebView2")
 endif()
 
 if (saucer_bridge STREQUAL "JSON")
-    target_sources(${PROJECT_NAME} PRIVATE "src/bridge.json.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/bridge.json.cpp" "src/bridge.cpp")
     
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
     FetchContent_MakeAvailable(json)

@@ -1,11 +1,11 @@
-#include <bridge/json/bridge.hpp>
+#include <bridge/bridged_webview.hpp>
+#include <bridge/json/json_bridge.hpp>
 #include <bridge/json/promise.hpp>
 #include <iostream>
-#include <webview.hpp>
 
 int main()
 {
-    saucer::bridged_webview<saucer::bridge::json> webview;
+    saucer::bridged_webview<saucer::bridges::json> webview;
 
     webview.set_title("Hello World!");
     webview.set_size(500, 600);

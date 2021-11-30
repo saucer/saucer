@@ -204,9 +204,10 @@ namespace saucer
         }
         else
         {
-            auto script = m_impl->web_view->page()->scripts().findScript("_run_js");
+            auto scripts = m_impl->web_view->page()->scripts().find("_run_js");
+            QWebEngineScript script;
 
-            if (script.isNull())
+            if (scripts.empty())
             {
                 script.setName("_run_js");
                 script.setRunsOnSubFrames(false);
@@ -216,6 +217,7 @@ namespace saucer
             }
             else
             {
+                script = scripts.front();
                 m_impl->web_view->page()->scripts().remove(script);
             }
 
@@ -235,20 +237,30 @@ namespace saucer
 
         switch (load_time)
         {
-        case load_time_t::creation:
-            script = m_impl->web_view->page()->scripts().findScript("_creation");
-            found = !script.isNull();
+        case load_time_t::creation: {
+            auto scripts = m_impl->web_view->page()->scripts().find("_creation");
+            if (!scripts.empty())
+            {
+                script = scripts.front();
+                found = true;
+            }
 
             script.setName("_creation");
             script.setInjectionPoint(QWebEngineScript::DocumentCreation);
-            break;
-        case load_time_t::ready:
-            script = m_impl->web_view->page()->scripts().findScript("_ready");
-            found = !script.isNull();
+        }
+        break;
+        case load_time_t::ready: {
+            auto scripts = m_impl->web_view->page()->scripts().find("_ready");
+            if (!scripts.empty())
+            {
+                script = scripts.front();
+                found = true;
+            }
 
             script.setName("_ready");
             script.setInjectionPoint(QWebEngineScript::DocumentReady);
-            break;
+        }
+        break;
         }
 
         if (!found)
@@ -280,10 +292,10 @@ namespace saucer
     {
         if (message == "js_finished")
         {
-            auto script = m_impl->web_view->page()->scripts().findScript("_run_js");
-            if (!script.isNull())
+            auto scripts = m_impl->web_view->page()->scripts().find("_run_js");
+            if (!scripts.empty())
             {
-                m_impl->web_view->page()->scripts().remove(script);
+                m_impl->web_view->page()->scripts().remove(scripts.front());
                 m_impl->is_loaded = true;
             }
         }
@@ -294,4 +306,4 @@ namespace saucer
     }
 } // namespace saucer
 
-#include "webview.qt5.moc.h"
+#include "webview.qt6.moc.h"

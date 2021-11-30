@@ -1,13 +1,13 @@
-#include <bridge/json/bridge.hpp>
+#include <bridge/json/json_bridge.hpp>
 #include <future>
 
 namespace saucer
 {
-    namespace bridge
+    namespace bridges
     {
-        json::json()
+        json::json(webview &webview) : bridge(webview)
         {
-            inject(R"js(
+            m_webview.inject(R"js(
         window.saucer._idc = 0;
         window.saucer._rpc = [];
         
@@ -56,13 +56,11 @@ namespace saucer
             }
         }
         )js",
-                   load_time_t::creation);
+                             load_time_t::creation);
         }
 
         void json::on_message(const std::string &message)
         {
-            webview::on_message(message);
-
             auto data = nlohmann::json::parse(message, nullptr, false);
             if (!data.is_discarded())
             {
@@ -107,7 +105,7 @@ namespace saucer
             //? We dump twice to properly escape everything.
 
             // clang-format off
-            run_java_script(
+            m_webview.run_java_script(
                 "window.saucer._rpc[" + std::to_string(id) + "].reject(JSON.parse(" + nlohmann::json(data.dump()).dump() + "));\n" 
                             "delete window.saucer._rpc["+ std::to_string(id) + "]"
             );
@@ -117,11 +115,11 @@ namespace saucer
         void json::resolve(int id, const nlohmann::json &data)
         {
             // clang-format off
-            run_java_script(
+            m_webview.run_java_script(
                 "window.saucer._rpc[" + std::to_string(id) + "].resolve(JSON.parse(" + nlohmann::json(data.dump()).dump()  + "));\n"
                             "delete window.saucer._rpc["+ std::to_string(id) + "]"
             );
             // clang-format on
         }
-    } // namespace bridge
+    } // namespace bridges
 } // namespace saucer

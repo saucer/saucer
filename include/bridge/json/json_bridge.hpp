@@ -1,16 +1,16 @@
 #pragma once
 #include "promise.hpp"
 #include <atomic>
+#include <bridge/bridge.hpp>
 #include <lock.hpp>
 #include <map>
 #include <nlohmann/json.hpp>
-#include <webview.hpp>
 
 namespace saucer
 {
-    namespace bridge
+    namespace bridges
     {
-        class json : public webview
+        class json : public bridge
         {
             using callback_t = std::function<void(int, const nlohmann::json &)>;
 
@@ -22,11 +22,13 @@ namespace saucer
             lockpp::lock<std::map<std::uint64_t, std::shared_ptr<base_promise>>, std::recursive_mutex> m_promises;
 
           public:
-            json();
+            json(webview &);
 
           protected:
             void reject(int, const nlohmann::json &);
             void resolve(int, const nlohmann::json &);
+
+          public:
             void on_message(const std::string &) override;
 
           public:
@@ -35,7 +37,7 @@ namespace saucer
             template <typename rtn_t, typename... args_t> std::shared_ptr<promise<rtn_t>> call(const std::string &function_name, const args_t &...);
         };
 
-    } // namespace bridge
+    } // namespace bridges
 } // namespace saucer
 
-#include "bridge.inl"
+#include "json_bridge.inl"
