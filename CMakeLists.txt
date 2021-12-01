@@ -6,7 +6,7 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_examples "Build examples" OFF)
-option(saucer_shared "Build a shared library" ON)
+option(saucer_shared "Build a shared library" OFF)
 
 set(saucer_bridge_types None JSON)
 set(saucer_bridge JSON CACHE STRING "The bridge to use")
