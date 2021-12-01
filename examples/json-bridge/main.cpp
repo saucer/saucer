@@ -2,7 +2,6 @@
 #include <bridge/json/json_bridge.hpp>
 #include <bridge/json/promise.hpp>
 #include <iostream>
-
 int main()
 {
     saucer::bridged_webview<saucer::bridges::json> webview;
@@ -33,5 +32,6 @@ int main()
 
     webview.show();
     webview.run();
+
     return 0;
 }
