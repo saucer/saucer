@@ -19,7 +19,11 @@ class saucer::bridged_webview : public saucer::webview
     void on_message(const std::string &message) override
     {
         webview::on_message(message);
-        on_message_callback(message.c_str());
+
+        if (on_message_callback)
+        {
+            on_message_callback(message.c_str());
+        }
     }
 };
 
@@ -226,7 +230,12 @@ void webview_clear_scripts(saucer::webview *webview)
 
 void webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))
 {
-    webview->on_url_changed([callback](const std::string &url) { callback(url.c_str()); });
+    webview->on_url_changed([callback](const std::string &url) {
+        if (callback)
+        {
+            callback(url.c_str());
+        }
+    });
 }
 
 void bridged_webview_on_message(saucer::bridged_webview *webview, void (*callback)(const char *))
