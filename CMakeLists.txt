@@ -2,30 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 project(saucer LANGUAGES CXX VERSION 1.0)
 
 # --------------------------------------------------------------------------------------------------------
-# Create library
-# --------------------------------------------------------------------------------------------------------
-
-add_library(${PROJECT_NAME})
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-
-if (MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
-else()
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wextra -pedantic)
-endif()
-
-# --------------------------------------------------------------------------------------------------------
-# Include "include" folder
-# --------------------------------------------------------------------------------------------------------
-
-target_include_directories(${PROJECT_NAME} PUBLIC "include")
-
-# --------------------------------------------------------------------------------------------------------
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_examples "Build examples" OFF)
+option(saucer_shared "Build a shared library" ON)
 
 set(saucer_bridge_types None JSON)
 set(saucer_bridge JSON CACHE STRING "The bridge to use")
@@ -57,10 +38,39 @@ else()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
+# Create library
+# --------------------------------------------------------------------------------------------------------
+if (saucer_shared)
+    add_library(${PROJECT_NAME} SHARED)
+    set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+else()
+    add_library(${PROJECT_NAME})
+endif()
+
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wextra -pedantic)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Include "include" folder
+# --------------------------------------------------------------------------------------------------------
+
+target_include_directories(${PROJECT_NAME} PUBLIC "include")
+
+# --------------------------------------------------------------------------------------------------------
 # Configure Library depending on options
 # --------------------------------------------------------------------------------------------------------
 
 include(FetchContent)
+
+if (saucer_shared)
+    target_sources(${PROJECT_NAME} PRIVATE "shared/exports.cpp")
+endif()
 
 if (saucer_backend STREQUAL "Qt")
     target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt5.cpp" "src/window.qt5.cpp")
@@ -94,7 +104,7 @@ elseif (saucer_backend STREQUAL "WebView2")
     target_link_libraries(${PROJECT_NAME} PRIVATE WIL::WIL Dwmapi Shlwapi)
 endif()
 
-if (saucer_bridge STREQUAL "JSON")
+if (saucer_bridge STREQUAL "JSON" AND NOT saucer_shared)
     target_sources(${PROJECT_NAME} PRIVATE "src/bridge.json.cpp" "src/bridge.cpp")
     
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
@@ -121,7 +131,7 @@ endif()
 if (saucer_examples)
     if (saucer_bridge STREQUAL "JSON")
         message(STATUS "[Saucer] Building JSON-Bridge Example")
-        add_subdirectory("examples/json_bridge")
+        add_subdirectory("examples/json-bridge")
     endif()
         
     add_subdirectory("examples/manual-embedding")
