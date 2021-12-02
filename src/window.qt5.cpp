@@ -187,4 +187,13 @@ namespace saucer
     {
         m_close_callback = callback;
     }
+
+    void window::exit()
+    {
+        auto old_callback = m_close_callback;
+        m_close_callback = nullptr;
+
+        m_impl->window->close();
+        m_close_callback = old_callback;
+    }
 } // namespace saucer

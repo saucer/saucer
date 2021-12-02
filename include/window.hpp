@@ -36,6 +36,7 @@ namespace saucer
       public:
         void hide();
         void show();
+        void exit();
 
       public:
         static void run();

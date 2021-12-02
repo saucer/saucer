@@ -247,4 +247,13 @@ namespace saucer
     {
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
     }
+
+    void window::exit()
+    {
+        auto old_callback = m_close_callback;
+        m_close_callback = nullptr;
+
+        DestroyWindow(m_impl->hwnd);
+        m_close_callback = old_callback;
+    }
 } // namespace saucer
