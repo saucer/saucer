@@ -17,7 +17,7 @@ namespace saucer
           public:
             static const bool value = sizeof(test(reinterpret_cast<bridge_t *>(0))) == sizeof(std::uint16_t);
         };
-        template <typename bridge_t> inline constexpr bool is_bridge_t = is_bridge<bridge_t>::value;
+        template <class bridge_t> inline constexpr bool is_bridge_t = is_bridge<bridge_t>::value;
     } // namespace internal
 
     class webview;
