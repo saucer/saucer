@@ -4,20 +4,20 @@
 
 namespace saucer::serializers
 {
+    json::~json() = default;
     json_data::~json_data() = default;
-    json_serializer::~json_serializer() = default;
 
-    std::string json_serializer::java_script_serializer() const
+    std::string json::java_script_serializer() const
     {
         return "JSON.stringify";
     }
 
-    std::string json_serializer::initialization_script() const
+    std::string json::initialization_script() const
     {
         return "";
     }
 
-    std::shared_ptr<message_data> json_serializer::parse(const std::string &data)
+    std::shared_ptr<message_data> json::parse(const std::string &data)
     {
         auto parsed = nlohmann::json::parse(data, nullptr, false);
         if (!parsed.is_discarded())
@@ -100,7 +100,7 @@ namespace saucer::serializers
         }
     } // namespace internal
 
-    template <typename func_t> auto json_serializer::encode_function(const func_t &func)
+    template <typename func_t> auto json::encode_function(const func_t &func)
     {
         return [func](const std::shared_ptr<message_data> &data) -> tl::expected<std::string, error> {
             if (auto json_message = std::dynamic_pointer_cast<json_data>(data); json_message)

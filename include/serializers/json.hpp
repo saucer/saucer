@@ -1,6 +1,6 @@
 #pragma once
 #include <nlohmann/json.hpp>
-#include <serializer.hpp>
+#include <serializers/serializer.hpp>
 
 namespace saucer
 {
@@ -12,10 +12,10 @@ namespace saucer
             ~json_data() override;
         };
 
-        struct json_serializer : public serializer
+        struct json : public serializer
         {
           public:
-            ~json_serializer() override;
+            ~json() override;
             std::string initialization_script() const override;
             std::string java_script_serializer() const override;
             std::shared_ptr<message_data> parse(const std::string &data) override;
