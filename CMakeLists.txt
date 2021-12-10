@@ -5,21 +5,16 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_examples "Build examples" OFF)
-option(saucer_shared "Build a shared library" OFF)
-
-set(saucer_bridge_types None JSON)
-set(saucer_bridge JSON CACHE STRING "The bridge to use")
-set_property(CACHE saucer_bridge PROPERTY STRINGS ${saucer_bridge_types})
+option(saucer_examples  "Build examples" ON)
+option(saucer_smartview "Enable the smartview" ON)
+option(saucer_shared    "Build a shared library" OFF)
 
 set(saucer_backend_types Default Qt Qt6 WebView2)
 set(saucer_backend Default CACHE STRING "The backend to use")
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
 
-if (NOT saucer_bridge IN_LIST saucer_bridge_types)
-    message(FATAL_ERROR "[Saucer] Bridge must be one of ${saucer_bridge_types}")
-else()
-    message(STATUS "[Saucer] Using bridge: ${saucer_bridge}")
+if (NOT saucer_smartview)
+    message("[Saucer] Not using smartview, native interoperability will be disabled")
 endif()
 
 if (NOT saucer_backend IN_LIST saucer_backend_types)
@@ -104,20 +99,17 @@ elseif (saucer_backend STREQUAL "WebView2")
     target_link_libraries(${PROJECT_NAME} PRIVATE WIL::WIL Dwmapi Shlwapi)
 endif()
 
-if (saucer_bridge STREQUAL "JSON" AND NOT saucer_shared)
-    target_sources(${PROJECT_NAME} PRIVATE "src/bridge.json.cpp" "src/bridge.cpp" "src/module.cpp")
+if (saucer_smartview)
+    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp")
     
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
-    FetchContent_MakeAvailable(json)
+    FetchContent_Declare(expected GIT_REPOSITORY "https://github.com/TartanLlama/expected" GIT_TAG v1.0.0)
+    FetchContent_MakeAvailable(json expected)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
-
-    if (UNIX)
-        target_link_libraries(${PROJECT_NAME} PUBLIC pthread)
-    endif()
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json expected)
 endif()
 
-if (saucer_bridge STREQUAL "JSON" OR saucer_backend STREQUAL "WebView2")
+if (saucer_smartview OR saucer_backend STREQUAL "WebView2")
     FetchContent_Declare(lockpp GIT_REPOSITORY "https://github.com/Soundux/lockpp" GIT_TAG v1.0.0)
     FetchContent_MakeAvailable(lockpp)
 
@@ -129,7 +121,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_examples)
-    if (saucer_bridge STREQUAL "JSON")
+    if (saucer_smartview)
         message(STATUS "[Saucer] Building JSON-Bridge Example")
         add_subdirectory("examples/json-bridge")
     endif()
