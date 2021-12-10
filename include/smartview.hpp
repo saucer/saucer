@@ -30,6 +30,12 @@ namespace saucer
       public:
         template <typename serializer_t, typename func_t> void expose(const std::string &name, const func_t &func);
     };
+
+    template <typename default_serializer> class simple_smartview : public smartview
+    {
+      public:
+        template <typename serializer_t = default_serializer, typename func_t> void expose(const std::string &name, const func_t &func);
+    };
 } // namespace saucer
 
 #include "smartview.inl"
