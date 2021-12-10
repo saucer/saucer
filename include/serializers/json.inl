@@ -12,6 +12,11 @@ namespace saucer::serializers
         return "JSON.stringify";
     }
 
+    std::string json_serializer::initialization_script() const
+    {
+        return "";
+    }
+
     std::shared_ptr<message_data> json_serializer::parse(const std::string &data)
     {
         auto parsed = nlohmann::json::parse(data, nullptr, false);

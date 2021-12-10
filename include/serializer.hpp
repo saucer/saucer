@@ -21,6 +21,7 @@ namespace saucer
         };
 
         virtual ~serializer() = default;
+        virtual std::string initialization_script() const = 0;
         virtual std::string java_script_serializer() const = 0;
         virtual std::shared_ptr<message_data> parse(const std::string &) = 0;
     };
