@@ -73,6 +73,11 @@ namespace saucer
 
         m_impl->application = application;
         m_impl->window = std::make_unique<saucer_main_window>(m_close_callback, m_resize_callback);
+
+        auto palette = m_impl->window->palette();
+        palette.setColor(QPalette::ColorRole::Window, QColor(255, 255, 255));
+
+        m_impl->window->setPalette(palette);
     }
 
     void window::run()
