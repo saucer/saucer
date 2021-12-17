@@ -8,8 +8,18 @@ namespace saucer
     struct message_data
     {
         std::size_t id;
-        std::string function;
         virtual ~message_data() = default;
+    };
+
+    struct function_data : public message_data
+    {
+        std::string function;
+        ~function_data() override = default;
+    };
+
+    struct result_data : public message_data
+    {
+        ~result_data() override = default;
     };
 
     struct serializer
@@ -25,4 +35,14 @@ namespace saucer
         virtual std::string java_script_serializer() const = 0;
         virtual std::shared_ptr<message_data> parse(const std::string &) = 0;
     };
+
+    template <typename... T> class arguments : public std::tuple<T...>
+    {
+      public:
+        using std::tuple<T...>::tuple;
+    };
+
+    template <typename... T> auto make_arguments(T &&...);
 } // namespace saucer
+
+#include "serializer.inl"

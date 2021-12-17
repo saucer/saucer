@@ -1,4 +1,3 @@
-#include "webview.hpp"
 #include <smartview.hpp>
 
 namespace saucer
@@ -49,6 +48,14 @@ namespace saucer
                 throw "Invalid arguments";
             }
         }
+
+        window.saucer._resolve = async (id, value, serializer = null) =>
+        {
+            await window.saucer.on_message(serializer({
+                id,
+                result: value | null,
+            }));
+        }
         )js",
                load_time_t::creation);
     }
@@ -61,25 +68,49 @@ namespace saucer
         for (const auto &[serializer_type, serializer] : m_serializers)
         {
             auto parsed_message = serializer->parse(message);
-            if (parsed_message)
+            if (auto function_message = std::dynamic_pointer_cast<function_data>(parsed_message); function_message)
             {
-                if (!m_callbacks.count(parsed_message->function))
+                if (!m_callbacks.count(function_message->function))
                 {
-                    reject(parsed_message->id, "\"Invalid function\"");
+                    reject(function_message->id, "\"Invalid function\"");
                     return;
                 }
 
-                auto result = m_callbacks.at(parsed_message->function)(parsed_message);
+                auto result = m_callbacks.at(function_message->function)(function_message);
                 if (result.has_value())
                 {
-                    resolve(parsed_message->id, *result);
+                    resolve(function_message->id, *result);
                     return;
                 }
 
                 switch (result.error())
                 {
                 case serializer::error::argument_mismatch:
-                    reject(parsed_message->id, "\"Invalid arguments\"");
+                    reject(function_message->id, "\"Invalid arguments\"");
+                    return;
+                case serializer::error::parser_mismatch:
+                    continue;
+                }
+            }
+            else if (auto result_message = std::dynamic_pointer_cast<result_data>(parsed_message); result_message)
+            {
+                if (!m_evals.count(result_message->id))
+                {
+                    reject(result_message->id, "\"Invalid ID\"");
+                    return;
+                }
+
+                auto result = m_evals.at(result_message->id)(result_message);
+                if (result.has_value())
+                {
+                    m_evals.erase(result_message->id);
+                    return;
+                }
+
+                switch (result.error())
+                {
+                case serializer::error::argument_mismatch:
+                    throw std::runtime_error("Argument mismatch");
                     return;
                 case serializer::error::parser_mismatch:
                     continue;
@@ -92,6 +123,16 @@ namespace saucer
     {
         m_callbacks.emplace(name, callback);
         inject("window.saucer._known_functions.set(\"" + name + "\", " + serializer->java_script_serializer() + ");", load_time_t::creation);
+    }
+
+    void smartview::add_eval(const std::shared_ptr<serializer> &serializer, const resolve_callback_t &resolve_callback, const std::string &code, const arg_store_t &params)
+    {
+        auto id = m_id_counter++;
+        m_evals.emplace(id, resolve_callback);
+
+        // TODO(smartview): Inject to run once or just run normally
+        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + fmt::vformat(code, params) + ", " + serializer->java_script_serializer() + "))();";
+        run_java_script(resolve_code);
     }
 
     void smartview::resolve(const std::size_t &id, const std::string &result)

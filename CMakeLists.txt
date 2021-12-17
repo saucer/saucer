@@ -101,12 +101,14 @@ endif()
 
 if (saucer_smartview)
     target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp")
+    set(CMAKE_CXX_STANDARD 17)
     
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
     FetchContent_Declare(expected GIT_REPOSITORY "https://github.com/TartanLlama/expected" GIT_TAG v1.0.0)
-    FetchContent_MakeAvailable(json expected)
+    FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt" GIT_TAG 8.0.1)
+    FetchContent_MakeAvailable(json expected fmt)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json expected)
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json expected fmt)
 endif()
 
 if (saucer_smartview OR saucer_backend STREQUAL "WebView2")

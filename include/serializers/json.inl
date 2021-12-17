@@ -5,7 +5,8 @@
 namespace saucer::serializers
 {
     json::~json() = default;
-    json_data::~json_data() = default;
+    json_result_data::~json_result_data() = default;
+    json_function_data::~json_function_data() = default;
 
     std::string json::java_script_serializer() const
     {
@@ -24,10 +25,19 @@ namespace saucer::serializers
         {
             if (parsed["id"].is_number_integer() && parsed["params"].is_array() && parsed["name"].is_string())
             {
-                auto rtn = std::make_shared<json_data>();
+                auto rtn = std::make_shared<json_function_data>();
                 rtn->id = parsed["id"];
                 rtn->data = parsed["params"];
                 rtn->function = parsed["name"];
+
+                return rtn;
+            }
+
+            if (parsed["id"].is_number_integer() && !parsed["result"].is_null())
+            {
+                auto rtn = std::make_shared<json_result_data>();
+                rtn->id = parsed["id"];
+                rtn->data = parsed["result"];
 
                 return rtn;
             }
@@ -98,12 +108,42 @@ namespace saucer::serializers
                 }
             }
         }
+        template <std::size_t I = 0, typename... args, typename callback_t> void tuple_visit(const std::tuple<args...> &tuple, const callback_t &callback)
+        {
+            if constexpr (sizeof...(args) > 0)
+            {
+                callback(I, std::get<I>(tuple));
+
+                if constexpr (sizeof...(args) > (I + 1))
+                {
+                    tuple_visit<I + 1>(tuple, callback);
+                }
+            }
+        }
+
+        template <typename> struct is_args : std::false_type
+        {
+        };
+        template <typename... T> struct is_args<arguments<T...>> : std::true_type
+        {
+        };
+        template <typename T> inline constexpr bool is_args_v = is_args<T>::value;
+
+        template <typename T> struct arg_to_tuple
+        {
+            using type = std::tuple<>;
+        };
+        template <typename... T> struct arg_to_tuple<arguments<T...>>
+        {
+            using type = std::tuple<T...>;
+        };
+        template <typename T> using arg_to_tuple_v = typename arg_to_tuple<T>::type;
     } // namespace internal
 
-    template <typename func_t> auto json::encode_function(const func_t &func)
+    template <typename func_t> auto json::serialize_function(const func_t &func)
     {
         return [func](const std::shared_ptr<message_data> &data) -> tl::expected<std::string, error> {
-            if (auto json_message = std::dynamic_pointer_cast<json_data>(data); json_message)
+            if (auto json_message = std::dynamic_pointer_cast<json_function_data>(data); json_message)
             {
                 const auto &params = json_message->data;
 
@@ -140,6 +180,64 @@ namespace saucer::serializers
                     return "JSON.parse(" + nlohmann::json(nlohmann::json(rtn).dump()).dump() + ")"; // ? We dump twice to properly escape
                 }
             }
+            return tl::make_unexpected(error::parser_mismatch);
+        };
+    }
+
+    template <typename... params_t> auto json::serialize_arguments(const params_t &...params)
+    {
+        fmt::dynamic_format_arg_store<fmt::format_context> args;
+
+        auto unpack_args = [&args](const auto &arg) {
+            using arg_t = decltype(arg);
+            std::string rtn;
+
+            if constexpr (internal::is_args_v<std::decay_t<arg_t>>)
+            {
+                using tuple_t = internal::arg_to_tuple_v<std::decay_t<arg_t>>;
+
+                internal::tuple_visit(arg, [&rtn](const std::size_t &I, const auto &item) {
+                    rtn += "JSON.parse(" + nlohmann::json(nlohmann::json(item).dump()).dump() + ")"; // NOLINT
+                    if ((I + 1) < std::tuple_size_v<tuple_t>)
+                    {
+                        rtn += ",";
+                    }
+                });
+            }
+            else
+            {
+                rtn = "JSON.parse(" + nlohmann::json(nlohmann::json(arg).dump()).dump() + ")"; // NOLINT
+            }
+
+            args.push_back(rtn);
+        };
+
+        (unpack_args(params), ...);
+        return args;
+    }
+
+    template <typename T> auto json::resolve_function(const std::shared_ptr<promise<T>> &promise)
+    {
+        return [promise](const std::shared_ptr<result_data> &data) -> tl::expected<void, serializer::error> {
+            if (auto json_data = std::dynamic_pointer_cast<json_result_data>(data); json_data)
+            {
+                if constexpr (std::is_same_v<T, void>)
+                {
+                    promise->resolve();
+                }
+                else
+                {
+                    try
+                    {
+                        promise->resolve(json_data->data);
+                    }
+                    catch (const nlohmann::json::type_error &)
+                    {
+                        return tl::make_unexpected(error::argument_mismatch);
+                    }
+                }
+            }
+
             return tl::make_unexpected(error::parser_mismatch);
         };
     }
