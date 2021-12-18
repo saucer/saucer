@@ -1,6 +1,9 @@
+#include <QApplication>
 #include <QBuffer>
+#include <QEvent>
 #include <QFile>
 #include <QMainWindow>
+#include <QThread>
 #include <QWebChannel>
 #include <QWebEngineProfile>
 #include <QWebEngineScriptCollection>
@@ -29,6 +32,24 @@ namespace saucer
         std::unique_ptr<QWebChannel> web_channel;
         std::shared_ptr<QWebEngineView> web_view;
         std::atomic<bool> is_loaded = false;
+        bool is_thread_safe() const;
+    };
+
+    bool webview::impl::is_thread_safe() const
+    {
+        return web_view->thread() == QThread::currentThread();
+    }
+
+    class safe_call : public QEvent
+    {
+        std::function<void()> m_func;
+
+      public:
+        safe_call(std::function<void()> &&func) : QEvent(QEvent::None), m_func(func) {}
+        ~safe_call() override
+        {
+            m_func();
+        }
     };
 
     class webview::impl::saucer_web_class : public QObject
@@ -137,6 +158,12 @@ namespace saucer
 
     void webview::set_url(const std::string &url)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { set_url(url); }));
+            return;
+        }
+
         m_impl->web_view->load(QString::fromStdString(url));
     }
 
@@ -174,6 +201,12 @@ namespace saucer
 
     void webview::embed_files(const embedded_files &files)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { embed_files(files); }));
+            return;
+        }
+
         m_embedded_files = files;
 
         if (!m_impl->resource_handler)
@@ -185,6 +218,12 @@ namespace saucer
 
     void webview::clear_embedded()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { clear_embedded(); }));
+            return;
+        }
+
         m_embedded_files.clear();
 
         m_impl->web_view->page()->profile()->removeUrlSchemeHandler(m_impl->resource_handler.get());
@@ -198,6 +237,12 @@ namespace saucer
 
     void webview::run_java_script(const std::string &java_script)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { run_java_script(java_script); }));
+            return;
+        }
+
         if (m_impl->is_loaded)
         {
             m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
@@ -229,6 +274,11 @@ namespace saucer
         // ? Due to Qt not executing the scripts in a proper order we should probably queue up everything that gets executed on document-creation, so
         // ? that we can only register one script to be executed on creation and thus achieve an execution in proper order.
         // * In order to achieve in order loading we will register a script and then append to the source of that script.
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { inject(java_script, load_time); }));
+            return;
+        }
 
         QWebEngineScript script;
         bool found = false;
@@ -268,6 +318,12 @@ namespace saucer
 
     void webview::clear_scripts()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { clear_scripts(); }));
+            return;
+        }
+
         m_impl->web_view->page()->scripts().clear();
     }
 

@@ -72,6 +72,10 @@ if (saucer_backend STREQUAL "Qt")
 
     find_package(Qt5 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::WebEngineWidgets Qt5::WebChannel)
+    
+    if (UNIX)
+        target_link_libraries(${PROJECT_NAME} PRIVATE pthread)
+    endif()
 elseif (saucer_backend STREQUAL "Qt6")
     target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt6.cpp" "src/window.qt6.cpp")
 
