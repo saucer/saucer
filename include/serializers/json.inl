@@ -142,7 +142,7 @@ namespace saucer::serializers
 
     template <typename func_t> auto json::serialize_function(const func_t &func)
     {
-        return [func](const std::shared_ptr<message_data> &data) -> tl::expected<std::string, error> {
+        return [func](const std::shared_ptr<message_data> &data) -> tl::expected<std::function<std::string()>, error> {
             if (auto json_message = std::dynamic_pointer_cast<json_function_data>(data); json_message)
             {
                 const auto &params = json_message->data;
@@ -164,20 +164,22 @@ namespace saucer::serializers
                         return tl::make_unexpected(error::argument_mismatch);
                     }
 
-                    nlohmann::json rtn;
-                    auto do_call = [func, &rtn](auto &&...args) {
-                        if constexpr (std::is_same_v<rtn_t, void>)
-                        {
-                            func(std::forward<decltype(args)>(args)...);
-                        }
-                        else
-                        {
-                            rtn = func(std::forward<decltype(args)>(args)...);
-                        }
-                    };
+                    return [func, args]() {
+                        nlohmann::json rtn;
+                        auto do_call = [func, &rtn](auto &&...args) {
+                            if constexpr (std::is_same_v<rtn_t, void>)
+                            {
+                                func(std::forward<decltype(args)>(args)...);
+                            }
+                            else
+                            {
+                                rtn = func(std::forward<decltype(args)>(args)...);
+                            }
+                        };
 
-                    std::apply(do_call, args);
-                    return "JSON.parse(" + nlohmann::json(nlohmann::json(rtn).dump()).dump() + ")"; // ? We dump twice to properly escape
+                        std::apply(do_call, args);
+                        return "JSON.parse(" + nlohmann::json(nlohmann::json(rtn).dump()).dump() + ")"; // ? We dump twice to properly escape
+                    };
                 }
             }
             return tl::make_unexpected(error::parser_mismatch);

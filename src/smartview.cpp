@@ -76,10 +76,20 @@ namespace saucer
                     return;
                 }
 
-                auto result = m_callbacks.at(function_message->function)(function_message);
+                const auto &[callback, async] = m_callbacks.at(function_message->function);
+                auto result = callback(function_message);
+
                 if (result.has_value())
                 {
-                    resolve(function_message->id, *result);
+                    if (async)
+                    {
+                        auto future_ptr = std::make_shared<std::future<void>>();
+                        *future_ptr = std::async(std::launch::async, [future_ptr, this, function_message, result] { resolve(function_message->id, (*result)()); });
+                    }
+                    else
+                    {
+                        resolve(function_message->id, (*result)());
+                    }
                     return;
                 }
 
@@ -119,9 +129,9 @@ namespace saucer
         }
     }
 
-    void smartview::add_callback(const std::shared_ptr<serializer> &serializer, const std::string &name, const callback_t &callback)
+    void smartview::add_callback(const std::shared_ptr<serializer> &serializer, const std::string &name, const callback_t &callback, bool async)
     {
-        m_callbacks.emplace(name, callback);
+        m_callbacks.emplace(name, std::make_pair(callback, async));
         inject("window.saucer._known_functions.set(\"" + name + "\", " + serializer->java_script_serializer() + ");", load_time_t::creation);
     }
 

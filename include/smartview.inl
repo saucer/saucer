@@ -3,7 +3,7 @@
 
 namespace saucer
 {
-    template <typename serializer_t, typename func_t> void smartview::expose(const std::string &name, const func_t &func)
+    template <typename serializer_t, typename func_t> void smartview::expose(const std::string &name, const func_t &func, bool async)
     {
         if (!m_serializers.count(typeid(serializer_t)))
         {
@@ -11,7 +11,7 @@ namespace saucer
             inject(serializer->initialization_script(), load_time_t::creation);
         }
 
-        add_callback(m_serializers.at(typeid(serializer_t)), name, serializer_t::serialize_function(func));
+        add_callback(m_serializers.at(typeid(serializer_t)), name, serializer_t::serialize_function(func), async);
     }
 
     template <typename rtn_t, typename serializer_t, typename... params_t> auto smartview::eval(const std::string &code, params_t &&...params)
@@ -30,9 +30,9 @@ namespace saucer
 
     template <typename default_serializer>
     template <typename serializer_t, typename func_t>
-    void simple_smartview<default_serializer>::expose(const std::string &name, const func_t &func)
+    void simple_smartview<default_serializer>::expose(const std::string &name, const func_t &func, bool async)
     {
-        smartview::expose<serializer_t>(name, func);
+        smartview::expose<serializer_t>(name, func, async);
     };
 
     template <typename default_serializer>
