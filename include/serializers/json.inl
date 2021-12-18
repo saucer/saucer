@@ -33,7 +33,7 @@ namespace saucer::serializers
                 return rtn;
             }
 
-            if (parsed["id"].is_number_integer() && !parsed["result"].is_null())
+            if (parsed["id"].is_number_integer() && !parsed["result"].is_discarded())
             {
                 auto rtn = std::make_shared<json_result_data>();
                 rtn->id = parsed["id"];
