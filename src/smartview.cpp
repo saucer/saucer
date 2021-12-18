@@ -53,7 +53,7 @@ namespace saucer
         {
             await window.saucer.on_message(serializer({
                 id,
-                result: value | null,
+                result: value === undefined ? null : value,
             }));
         }
         )js",
@@ -130,7 +130,6 @@ namespace saucer
         auto id = m_id_counter++;
         m_evals.emplace(id, resolve_callback);
 
-        // TODO(smartview): Inject to run once or just run normally
         auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + fmt::vformat(code, params) + ", " + serializer->java_script_serializer() + "))();";
         run_java_script(resolve_code);
     }
