@@ -1,43 +1,76 @@
 #pragma once
 #include <functional>
+#include <future>
 #include <lock.hpp>
 
 namespace saucer
 {
     class base_promise
     {
+        using fail_callback_t = std::function<void()>;
+
+      protected:
+        bool is_safe() const;
+        std::thread::id m_creation_thread;
+        lockpp::lock<fail_callback_t, std::recursive_mutex> m_fail_callback;
+
       public:
         virtual ~base_promise() = default;
+        base_promise(const std::thread::id &);
+
+      public:
+        virtual void reject();
+        virtual void wait() = 0;
+        virtual bool is_ready() = 0;
+        virtual base_promise &fail(const fail_callback_t &);
     };
 
-    template <typename T> class promise : base_promise
+    template <typename T> class promise;
+    template <typename... T> static auto all(const std::shared_ptr<promise<T>> &...);
+
+    template <typename T> class promise : public base_promise
     {
+        template <typename... O> friend auto all(const std::shared_ptr<promise<O>> &...);
         using callback_t = std::function<void(const T &)>;
 
       protected:
+        std::promise<T> m_promise;
+        std::shared_future<T> m_future;
         lockpp::lock<callback_t> m_callback;
 
       public:
+        T get();
+        void wait() override;
+        void reject() override;
         void resolve(const T &);
-        void then(const callback_t &);
+        bool is_ready() override;
+        promise<T> &then(const callback_t &);
 
       public:
         ~promise() override;
+        promise(const std::thread::id &);
     };
 
-    template <> class promise<void> : base_promise
+    template <> class promise<void> : public base_promise
     {
+        template <typename... O> friend auto all(const std::shared_ptr<promise<O>> &...);
         using callback_t = std::function<void()>;
 
       protected:
+        std::promise<void> m_promise;
+        std::shared_future<void> m_future;
         lockpp::lock<callback_t> m_callback;
 
       public:
-        void resolve();
-        void then(const callback_t &);
+        void wait() override;
+        void resolve() const;
+        void reject() override;
+        bool is_ready() override;
+        promise<void> &then(const callback_t &);
 
       public:
         ~promise() override;
+        promise(const std::thread::id &);
     };
 } // namespace saucer
 

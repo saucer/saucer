@@ -1,6 +1,6 @@
 #pragma once
-#include <atomic>
 #include <fmt/args.h>
+#include <promise/promise.hpp>
 #include <serializers/serializer.hpp>
 #include <tl/expected.hpp>
 #include <typeindex>
@@ -15,10 +15,11 @@ namespace saucer
         using arg_store_t = fmt::dynamic_format_arg_store<fmt::format_context>;
 
       protected:
+        std::map<const std::size_t, std::pair<const resolve_callback_t, const std::shared_ptr<base_promise>>> m_evals;
         std::map<const std::type_index, const std::shared_ptr<serializer>> m_serializers;
-        std::map<const std::size_t, const resolve_callback_t> m_evals;
         std::map<const std::string, const callback_t> m_callbacks;
         std::atomic<std::uint64_t> m_id_counter{};
+        std::thread::id m_creation_thread;
 
       public:
         smartview();
@@ -27,7 +28,7 @@ namespace saucer
       protected:
         void on_message(const std::string &) override;
         void add_callback(const std::shared_ptr<serializer> &, const std::string &, const callback_t &);
-        void add_eval(const std::shared_ptr<serializer> &, const resolve_callback_t &, const std::string &, const arg_store_t &);
+        void add_eval(const std::shared_ptr<serializer> &, const std::shared_ptr<base_promise> &, const resolve_callback_t &, const std::string &, const arg_store_t &);
 
       protected:
         void reject(const std::size_t &, const std::string &);

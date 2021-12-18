@@ -1,6 +1,5 @@
 #pragma once
 #include "smartview.hpp"
-#include <promise/promise.hpp>
 
 namespace saucer
 {
@@ -23,8 +22,8 @@ namespace saucer
             inject(serializer->initialization_script(), load_time_t::creation);
         }
 
-        auto rtn = std::make_shared<promise<rtn_t>>();
-        add_eval(m_serializers.at(typeid(serializer_t)), serializer_t::resolve_function(rtn), code, serializer_t::serialize_arguments(params...));
+        auto rtn = std::make_shared<promise<rtn_t>>(m_creation_thread);
+        add_eval(m_serializers.at(typeid(serializer_t)), rtn, serializer_t::resolve_function(rtn), code, serializer_t::serialize_arguments(params...));
 
         return rtn;
     }

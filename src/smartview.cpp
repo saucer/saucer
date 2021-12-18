@@ -3,7 +3,7 @@
 namespace saucer
 {
     smartview::~smartview() = default;
-    smartview::smartview()
+    smartview::smartview() : m_creation_thread(std::this_thread::get_id())
     {
         inject(R"js(
         window.saucer._idc = 0;
@@ -100,7 +100,7 @@ namespace saucer
                     return;
                 }
 
-                auto result = m_evals.at(result_message->id)(result_message);
+                auto result = m_evals.at(result_message->id).first(result_message);
                 if (result.has_value())
                 {
                     m_evals.erase(result_message->id);
@@ -110,7 +110,7 @@ namespace saucer
                 switch (result.error())
                 {
                 case serializer::error::argument_mismatch:
-                    throw std::runtime_error("Argument mismatch");
+                    m_evals.at(result_message->id).second->reject();
                     return;
                 case serializer::error::parser_mismatch:
                     continue;
@@ -125,10 +125,11 @@ namespace saucer
         inject("window.saucer._known_functions.set(\"" + name + "\", " + serializer->java_script_serializer() + ");", load_time_t::creation);
     }
 
-    void smartview::add_eval(const std::shared_ptr<serializer> &serializer, const resolve_callback_t &resolve_callback, const std::string &code, const arg_store_t &params)
+    void smartview::add_eval(const std::shared_ptr<serializer> &serializer, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback,
+                             const std::string &code, const arg_store_t &params)
     {
         auto id = m_id_counter++;
-        m_evals.emplace(id, resolve_callback);
+        m_evals.emplace(id, std::make_pair(resolve_callback, promise));
 
         auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + fmt::vformat(code, params) + ", " + serializer->java_script_serializer() + "))();";
         run_java_script(resolve_code);
