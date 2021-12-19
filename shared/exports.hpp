@@ -14,7 +14,6 @@ namespace saucer
 
 extern "C"
 {
-
     extern __export bool window_get_resizeable(saucer::window *);
     extern __export bool window_get_decorations(saucer::window *);
     extern __export bool window_get_always_on_top(saucer::window *);
