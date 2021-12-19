@@ -226,12 +226,14 @@ namespace saucer::serializers
                 if constexpr (std::is_same_v<T, void>)
                 {
                     promise->resolve();
+                    return {};
                 }
                 else
                 {
                     try
                     {
                         promise->resolve(json_data->data);
+                        return {};
                     }
                     catch (const nlohmann::json::type_error &)
                     {
