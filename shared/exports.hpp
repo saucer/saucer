@@ -7,70 +7,127 @@
 #define __export __attribute__((visibility("default")))
 #endif
 
-struct embedded_file;
 namespace saucer
 {
     class window;
-    class webview;
-    class bridged_webview;
 } // namespace saucer
 
 extern "C"
 {
-    extern void __export window_run();
-    extern void __export window_show(saucer::window *);
-    extern void __export window_hide(saucer::window *);
 
-    extern void __export window_set_title(saucer::window *, const char *);
-    extern void __export window_get_title(saucer::window *, char *, unsigned int);
+    extern __export bool window_get_resizeable(saucer::window *);
+    extern __export bool window_get_decorations(saucer::window *);
+    extern __export bool window_get_always_on_top(saucer::window *);
+    extern __export void window_get_title(saucer::window *, char *, size_t);
+    extern __export void window_get_size(saucer::window *, size_t *, size_t *);
+    extern __export void window_get_max_size(saucer::window *, size_t *, size_t *);
+    extern __export void window_get_min_size(saucer::window *, size_t *, size_t *);
 
-    extern void __export window_set_resizeable(saucer::window *, bool);
-    extern void __export window_set_decorations(saucer::window *, bool);
-    extern void __export window_set_always_on_top(saucer::window *, bool);
+    extern __export void window_hide(saucer::window *);
+    extern __export void window_show(saucer::window *);
+    extern __export void window_exit(saucer::window *);
 
-    extern bool __export window_get_resizeable(saucer::window *);
-    extern bool __export window_get_decorations(saucer::window *);
-    extern bool __export window_get_always_on_top(saucer::window *);
+    extern __export void window_run(saucer::window *);
 
-    extern void __export window_set_size(saucer::window *, size_t, size_t);
-    extern void __export window_set_max_size(saucer::window *, size_t, size_t);
-    extern void __export window_set_min_size(saucer::window *, size_t, size_t);
+    extern __export void window_on_close(saucer::window *, bool (*)());
+    extern __export void window_on_resize(saucer::window *, void (*)(size_t, size_t));
 
-    extern void __export window_get_size(saucer::window *, size_t *, size_t *);
-    extern void __export window_get_max_size(saucer::window *, size_t *, size_t *);
-    extern void __export window_get_min_size(saucer::window *, size_t *, size_t *);
-
-    extern void __export window_on_close(saucer::window *, bool (*)());
-    extern void __export window_on_resize(saucer::window *, void (*)(size_t, size_t));
+    extern __export void window_set_resizeable(saucer::window *, bool);
+    extern __export void window_set_decorations(saucer::window *, bool);
+    extern __export void window_set_always_on_top(saucer::window *, bool);
+    extern __export void window_set_title(saucer::window *, const char *);
+    extern __export void window_set_size(saucer::window *, std::size_t, std::size_t);
+    extern __export void window_set_max_size(saucer::window *, std::size_t, std::size_t);
+    extern __export void window_set_min_size(saucer::window *, std::size_t, std::size_t);
 }
+
+namespace saucer
+{
+    class webview;
+} // namespace saucer
 
 extern "C"
 {
-    extern void saucer_free_embedded_file(embedded_file *);
-    extern embedded_file *saucer_make_embedded_file(const char *, const char *, size_t, const unsigned char *);
+    struct embedded_file
+    {
+        const char *file_name;
+        const char *mime_type;
+        size_t size;
+        const unsigned char *data;
+    };
 
-    extern __export saucer::webview *webview_new();
-    extern __export saucer::bridged_webview *bridged_webview_new();
+    enum load_time
+    {
+        LOAD_TIME_READY,
+        LOAD_TIME_CREATION
+    };
 
-    extern __export void webview_free(saucer::webview *);
-    extern __export void bridged_webview_free(saucer::bridged_webview *);
+    extern __export bool webview_get_dev_tools(saucer::webview *);
+    extern __export bool webview_get_context_menu(saucer::webview *);
+    extern __export void webview_get_url(saucer::webview *, char *, size_t);
 
-    extern bool __export webview_get_dev_tools(saucer::webview *);
-    extern bool __export webview_get_context_menu(saucer::webview *);
-    extern void __export webview_get_url(saucer::webview *, char *, unsigned int);
+    extern __export void webview_set_dev_tools(saucer::webview *, bool);
+    extern __export void webview_set_url(saucer::webview *, const char *);
+    extern __export void webview_set_context_menu(saucer::webview *, bool);
+    extern __export void webview_serve_embedded(saucer::webview *, const char *);
+    extern __export void webview_embed_files(saucer::webview *, embedded_file **, size_t);
 
-    extern void __export webview_set_dev_tools(saucer::webview *, bool);
-    extern void __export webview_set_url(saucer::webview *, const char *);
-    extern void __export webview_set_context_menu(saucer::webview *, bool);
-    extern void __export webview_serve_embedded(saucer::webview *, const char *);
+    extern __export void webview_run_java_script(saucer::webview *, const char *);
+    extern __export void webview_inject(saucer::webview *, const char *, load_time);
 
-    extern void __export webview_inject(saucer::webview *, const char *, char);
-    extern void __export webview_run_java_script(saucer::webview *, const char *);
-    extern void __export webview_embed_files(saucer::webview *, embedded_file **, size_t);
+    extern __export void webview_clear_scripts(saucer::webview *);
+    extern __export void webview_clear_embedded(saucer::webview *);
 
-    extern void __export webview_clear_scripts(saucer::webview *);
-    extern void __export webview_clear_embedded(saucer::webview *);
+    extern __export void webview_on_url_changed(saucer::webview *, void (*)(const char *));
+}
 
-    extern void __export webview_on_url_changed(saucer::webview *, void (*)(const char *));
-    extern void __export bridged_webview_on_message(saucer::bridged_webview *, void (*)(const char *));
+namespace saucer
+{
+    class result_data;
+    class message_data;
+} // namespace saucer
+
+extern "C"
+{
+    enum serializer_error
+    {
+        SERIALIZER_ERROR_ARGUMENT_MISMATCH,
+        SERIALIZER_ERROR_PARSER_MISMATCH,
+        SERIALIZER_ERROR_NONE,
+    };
+
+    struct ffi_promise;
+    struct ffi_smartview;
+    struct ffi_serializer;
+    struct ffi_result_data;
+    struct ffi_function_data;
+
+    using ffi_resolve_callback_t = bool (*)(ffi_result_data *);
+    using ffi_parse_callback_t = saucer::message_data *(*)(const char *);
+    using ffi_callback_t = bool (*)(ffi_function_data *, void (**)(char *, size_t));
+
+    extern __export ffi_smartview *smartview_new();
+    extern __export void smartview_free(ffi_smartview *);
+
+    extern __export void smartview_add_callback(ffi_smartview *, const char *, ffi_callback_t, bool);
+    extern __export void smartview_add_eval(ffi_smartview *, ffi_promise *, ffi_resolve_callback_t, const char *);
+
+    extern __export void smartview_reject(ffi_smartview *, size_t, const char *);
+    extern __export void smartview_resolve(ffi_smartview *, size_t, const char *);
+
+    extern __export void smartview_serializer_set_initialization_script(ffi_smartview *, const char *);
+    extern __export void smartview_serializer_set_parse_callback(ffi_smartview *, ffi_parse_callback_t);
+    extern __export void smartview_serializer_set_java_script_deserializer(ffi_smartview *, const char *);
+
+    extern __export ffi_result_data *ffi_result_data_new();
+    extern __export void *ffi_result_data_get_data(ffi_result_data *);
+    extern __export void ffi_result_data_set_data(ffi_result_data *, void *);
+
+    extern __export ffi_function_data *ffi_function_data_new();
+    extern __export void *ffi_function_data_get_data(ffi_function_data *);
+    extern __export void ffi_function_data_set_data(ffi_function_data *, void *);
+    //? ffi_message_result/function_data_new_free is not needed because the lifetime management is done by the smartview
+
+    extern __export ffi_promise *ffi_promise_new();
+    extern __export void ffi_promise_set_fail_callback(ffi_promise *, void (*)());
 }

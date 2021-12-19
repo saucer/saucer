@@ -105,6 +105,7 @@ endif()
 
 if (saucer_smartview)
     target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp")
+    set(EXPECTED_BUILD_TESTS OFF)
     set(CMAKE_CXX_STANDARD 17)
     
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
@@ -126,7 +127,7 @@ endif()
 # Examples
 # --------------------------------------------------------------------------------------------------------
 
-if (saucer_examples)
+if (saucer_examples AND NOT saucer_shared)
     if (saucer_smartview)
         message(STATUS "[Saucer] Building JSON-Bridge Example")
         add_subdirectory("examples/json-bridge")
