@@ -126,8 +126,9 @@ extern "C"
     extern __export ffi_function_data *ffi_function_data_new();
     extern __export void *ffi_function_data_get_data(ffi_function_data *);
     extern __export void ffi_function_data_set_data(ffi_function_data *, void *);
-    //? ffi_message_result/function_data_new_free is not needed because the lifetime management is done by the smartview
+    //? ffi_result/function_data_new_free is not needed because the lifetime management is done by the smartview
 
     extern __export ffi_promise *ffi_promise_new();
     extern __export void ffi_promise_set_fail_callback(ffi_promise *, void (*)());
+    //? ffi_promise_free is not needed because the lifetime management is done by the smartview
 }
