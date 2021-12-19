@@ -187,12 +187,12 @@ void webview_on_url_changed(saucer::webview *webview, void (*callback)(const cha
     });
 }
 
-struct ffi_function_data : public saucer::message_data
+struct ffi_function_data : public saucer::function_data
 {
     void *data;
 };
 
-struct ffi_result_data : public saucer::message_data
+struct ffi_result_data : public saucer::result_data
 {
     void *data;
 };
@@ -246,7 +246,7 @@ struct ffi_smartview : public saucer::smartview
     void on_message(const std::string &) override;
 
   public:
-    void (*on_message_callback)(const char *);
+    on_message_callback_t on_message_callback;
     const std::shared_ptr<ffi_serializer> serializer;
 
   public:
@@ -259,7 +259,10 @@ struct ffi_smartview : public saucer::smartview
     void add_eval(ffi_promise *, ffi_resolve_callback_t, const char *);
 };
 
-ffi_smartview::ffi_smartview() : serializer(std::make_shared<ffi_serializer>()) {}
+ffi_smartview::ffi_smartview() : serializer(std::make_shared<ffi_serializer>())
+{
+    m_serializers.emplace(typeid(ffi_serializer), serializer);
+}
 ffi_smartview::~ffi_smartview() = default;
 
 void ffi_smartview::on_message(const std::string &message)
@@ -297,10 +300,10 @@ void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, 
 
             return [result_callback]() {
                 // TODO(ffi): Receive buffer size prior to allocation
-                auto *buffer = new char[2048];
+                auto *buffer = new char[2048]{""};
                 result_callback(buffer, 2048);
 
-                std::string result(buffer, 2048);
+                std::string result(buffer);
                 delete[] buffer;
 
                 return result;
@@ -379,6 +382,11 @@ void smartview_serializer_set_parse_callback(ffi_smartview *smartview, ffi_parse
     smartview->serializer->parse_callback = callback;
 }
 
+void smartview_set_on_message_callback(ffi_smartview *smartview, on_message_callback_t callback)
+{
+    smartview->on_message_callback = callback;
+}
+
 ffi_result_data *ffi_result_data_new()
 {
     return new ffi_result_data;
@@ -393,6 +401,16 @@ void ffi_result_data_set_data(ffi_result_data *result_data, void *data)
     result_data->data = data;
 }
 
+void ffi_result_data_set_id(ffi_result_data *result_data, size_t id)
+{
+    result_data->id = id;
+}
+
+size_t ffi_result_data_get_id(ffi_result_data *result_data)
+{
+    return result_data->id;
+}
+
 ffi_function_data *ffi_function_data_new()
 {
     return new ffi_function_data;
@@ -404,6 +422,26 @@ void *ffi_function_data_get_data(ffi_function_data *function_data)
 void ffi_function_data_set_data(ffi_function_data *function_data, void *data)
 {
     function_data->data = data;
+}
+
+void ffi_function_data_set_function(ffi_function_data *function_data, const char *function)
+{
+    function_data->function = function;
+}
+
+void ffi_function_data_set_id(ffi_function_data *function_data, size_t id)
+{
+    function_data->id = id;
+}
+
+size_t ffi_function_data_get_id(ffi_function_data *function_data)
+{
+    return function_data->id;
+}
+
+void ffi_function_data_get_function(ffi_function_data *function_data, char *output, size_t output_length)
+{
+    strcpy(output, function_data->function.substr(0, output_length).c_str());
 }
 
 ffi_promise *ffi_promise_new()

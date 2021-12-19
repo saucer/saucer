@@ -35,9 +35,9 @@ extern "C"
     extern __export void window_set_decorations(saucer::window *, bool);
     extern __export void window_set_always_on_top(saucer::window *, bool);
     extern __export void window_set_title(saucer::window *, const char *);
-    extern __export void window_set_size(saucer::window *, std::size_t, std::size_t);
-    extern __export void window_set_max_size(saucer::window *, std::size_t, std::size_t);
-    extern __export void window_set_min_size(saucer::window *, std::size_t, std::size_t);
+    extern __export void window_set_size(saucer::window *, size_t, size_t);
+    extern __export void window_set_max_size(saucer::window *, size_t, size_t);
+    extern __export void window_set_min_size(saucer::window *, size_t, size_t);
 }
 
 namespace saucer
@@ -101,6 +101,7 @@ extern "C"
     struct ffi_result_data;
     struct ffi_function_data;
 
+    using on_message_callback_t = void (*)(const char *);
     using ffi_resolve_callback_t = bool (*)(ffi_result_data *);
     using ffi_parse_callback_t = saucer::message_data *(*)(const char *);
     using ffi_callback_t = bool (*)(ffi_function_data *, void (**)(char *, size_t));
@@ -113,18 +114,25 @@ extern "C"
 
     extern __export void smartview_reject(ffi_smartview *, size_t, const char *);
     extern __export void smartview_resolve(ffi_smartview *, size_t, const char *);
+    extern __export void smartview_set_on_message_callback(ffi_smartview *, on_message_callback_t);
 
     extern __export void smartview_serializer_set_initialization_script(ffi_smartview *, const char *);
     extern __export void smartview_serializer_set_parse_callback(ffi_smartview *, ffi_parse_callback_t);
     extern __export void smartview_serializer_set_java_script_deserializer(ffi_smartview *, const char *);
 
     extern __export ffi_result_data *ffi_result_data_new();
+    extern __export size_t ffi_result_data_get_id(ffi_result_data *);
     extern __export void *ffi_result_data_get_data(ffi_result_data *);
+    extern __export void ffi_result_data_set_id(ffi_result_data *, size_t);
     extern __export void ffi_result_data_set_data(ffi_result_data *, void *);
 
     extern __export ffi_function_data *ffi_function_data_new();
+    extern __export size_t ffi_function_data_get_id(ffi_function_data *);
     extern __export void *ffi_function_data_get_data(ffi_function_data *);
+    extern __export void ffi_function_data_set_id(ffi_function_data *, size_t);
     extern __export void ffi_function_data_set_data(ffi_function_data *, void *);
+    extern __export void ffi_function_data_set_function(ffi_function_data *, const char *);
+    extern __export void ffi_function_data_get_function(ffi_function_data *, char *, size_t);
     //? ffi_result/function_data_new_free is not needed because the lifetime management is done by the smartview
 
     extern __export ffi_promise *ffi_promise_new();
