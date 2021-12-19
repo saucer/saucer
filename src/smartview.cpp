@@ -104,23 +104,26 @@ namespace saucer
             }
             else if (auto result_message = std::dynamic_pointer_cast<result_data>(parsed_message); result_message)
             {
-                if (!m_evals.count(result_message->id))
+                auto locked_evals = m_evals.write();
+
+                if (!locked_evals->count(result_message->id))
                 {
                     reject(result_message->id, "\"Invalid ID\"");
                     return;
                 }
 
-                auto result = m_evals.at(result_message->id).first(result_message);
+                auto result = locked_evals->at(result_message->id).first(result_message);
                 if (result.has_value())
                 {
-                    m_evals.erase(result_message->id);
+                    locked_evals->erase(result_message->id);
                     return;
                 }
 
                 switch (result.error())
                 {
                 case serializer::error::argument_mismatch:
-                    m_evals.at(result_message->id).second->reject();
+                    locked_evals->at(result_message->id).second->reject();
+                    locked_evals->erase(result_message->id);
                     return;
                 case serializer::error::parser_mismatch:
                     continue;
@@ -139,7 +142,7 @@ namespace saucer
                              const std::string &code, const arg_store_t &params)
     {
         auto id = m_id_counter++;
-        m_evals.emplace(id, std::make_pair(resolve_callback, promise));
+        m_evals.write()->emplace(id, std::make_pair(resolve_callback, promise));
 
         auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + fmt::vformat(code, params) + ", " + serializer->java_script_serializer() + "))();";
         run_java_script(resolve_code);
