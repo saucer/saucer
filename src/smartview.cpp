@@ -139,12 +139,12 @@ namespace saucer
     }
 
     void smartview::add_eval(const std::shared_ptr<serializer> &serializer, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback,
-                             const std::string &code, const arg_store_t &params)
+                             const std::string &code)
     {
         auto id = m_id_counter++;
         m_evals.write()->emplace(id, std::make_pair(resolve_callback, promise));
 
-        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + fmt::vformat(code, params) + ", " + serializer->java_script_serializer() + "))();";
+        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + serializer->java_script_serializer() + "))();";
         run_java_script(resolve_code);
     }
 

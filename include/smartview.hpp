@@ -13,7 +13,6 @@ namespace saucer
         using callback_t = std::function<tl::expected<std::function<std::string()>, serializer::error>(const std::shared_ptr<message_data> &)>;
         using resolve_callback_t = std::function<tl::expected<void, serializer::error>(const std::shared_ptr<result_data> &)>;
         using eval_pair_t = std::pair<const resolve_callback_t, const std::shared_ptr<base_promise>>;
-        using arg_store_t = fmt::dynamic_format_arg_store<fmt::format_context>;
 
       protected:
         std::map<const std::type_index, const std::shared_ptr<serializer>> m_serializers;
@@ -29,7 +28,7 @@ namespace saucer
       protected:
         void on_message(const std::string &) override;
         void add_callback(const std::shared_ptr<serializer> &, const std::string &, const callback_t &, bool);
-        void add_eval(const std::shared_ptr<serializer> &, const std::shared_ptr<base_promise> &, const resolve_callback_t &, const std::string &, const arg_store_t &);
+        void add_eval(const std::shared_ptr<serializer> &, const std::shared_ptr<base_promise> &, const resolve_callback_t &, const std::string &);
 
       protected:
         void reject(const std::size_t &, const std::string &);

@@ -23,7 +23,7 @@ namespace saucer
         }
 
         auto rtn = std::make_shared<promise<rtn_t>>(m_creation_thread);
-        add_eval(m_serializers.at(typeid(serializer_t)), rtn, serializer_t::resolve_function(rtn), code, serializer_t::serialize_arguments(params...));
+        add_eval(m_serializers.at(typeid(serializer_t)), rtn, serializer_t::resolve_function(rtn), fmt::vformat(code, serializer_t::serialize_arguments(params...)));
 
         return rtn;
     }
