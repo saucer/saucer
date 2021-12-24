@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QMainWindow>
+#include <QThread>
 #include <mutex>
 #include <optional>
 #include <utility>
@@ -56,8 +57,26 @@ namespace saucer
 
       public:
         static std::weak_ptr<QApplication> g_application;
+        bool is_thread_safe() const;
     };
     std::weak_ptr<QApplication> window::impl::g_application;
+
+    bool window::impl::is_thread_safe() const
+    {
+        return window->thread() == QThread::currentThread();
+    }
+
+    class safe_call : public QEvent
+    {
+        std::function<void()> m_func;
+
+      public:
+        safe_call(std::function<void()> &&func) : QEvent(QEvent::None), m_func(func) {}
+        ~safe_call() override
+        {
+            m_func();
+        }
+    };
 
     window::~window() = default;
     window::window() : m_impl(std::make_unique<impl>())
@@ -113,27 +132,57 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { set_decorations(enabled); }));
+            return;
+        }
+
         m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
     }
 
     void window::set_always_on_top(bool enabled)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { set_always_on_top(enabled); }));
+            return;
+        }
+
         m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
     }
 
     void window::set_size(std::size_t width, std::size_t height)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { set_size(width, height); }));
+            return;
+        }
+
         m_impl->window->resize(static_cast<int>(width), static_cast<int>(height));
     }
 
     void window::set_max_size(std::size_t width, std::size_t height)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { set_max_size(width, height); }));
+            return;
+        }
+
         m_impl->max_size = {static_cast<int>(width), static_cast<int>(height)};
         m_impl->window->setMaximumSize(*m_impl->max_size);
     }
 
     void window::set_min_size(std::size_t width, std::size_t height)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { set_min_size(width, height); }));
+            return;
+        }
+
         m_impl->min_size = {static_cast<int>(width), static_cast<int>(height)};
         m_impl->window->setMinimumSize(*m_impl->min_size);
     }
@@ -173,11 +222,23 @@ namespace saucer
 
     void window::hide()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { hide(); }));
+            return;
+        }
+
         m_impl->window->hide();
     }
 
     void window::show()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { show(); }));
+            return;
+        }
+
         m_impl->window->show();
     }
 
@@ -193,6 +254,12 @@ namespace saucer
 
     void window::exit()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->window.get(), new safe_call([=]() { exit(); }));
+            return;
+        }
+
         auto old_callback = m_close_callback;
         m_close_callback = nullptr;
 
