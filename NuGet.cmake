@@ -1,7 +1,7 @@
 function(nuget_add OUTPUT_NAME NAME VERSION)
     find_program(NUGET nuget)
 
-    if (NUGET-NOTFOUND)
+    if (NUGET STREQUAL "NUGET-NOTFOUND")
         if (NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/tools/nuget-cli.exe")
             message(STATUS "[NuGet] NuGet-CLI not found, downloading...")
             file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${CMAKE_CURRENT_BINARY_DIR}/tools/nuget-cli.exe")
