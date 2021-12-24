@@ -82,8 +82,8 @@ extern "C"
 
 namespace saucer
 {
-    class result_data;
-    class message_data;
+    struct result_data;
+    struct message_data;
 } // namespace saucer
 
 extern "C"
