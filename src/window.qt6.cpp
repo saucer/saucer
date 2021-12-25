@@ -252,6 +252,12 @@ namespace saucer
         m_close_callback = callback;
     }
 
+    bool window::get_resizeable() const
+    {
+        auto current_size = m_impl->window->size();
+        return m_impl->window->maximumSize() == current_size && m_impl->window->minimumSize() == current_size;
+    }
+
     void window::exit()
     {
         if (!m_impl->is_thread_safe())
