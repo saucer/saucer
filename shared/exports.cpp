@@ -199,8 +199,8 @@ struct ffi_result_data : public saucer::result_data
 
 struct ffi_serializer : public saucer::serializer
 {
+    std::string serializer;
     std::string init_script;
-    std::string deserializer;
     ffi_parse_callback_t parse_callback;
 
     std::string initialization_script() const override;
@@ -215,7 +215,7 @@ std::string ffi_serializer::initialization_script() const
 
 std::string ffi_serializer::java_script_serializer() const
 {
-    return deserializer;
+    return serializer;
 }
 
 std::shared_ptr<saucer::message_data> ffi_serializer::parse(const std::string &data)
@@ -372,9 +372,9 @@ void smartview_serializer_set_initialization_script(ffi_smartview *smartview, co
     smartview->serializer->init_script = init_script;
 }
 
-void smartview_serializer_set_java_script_deserializer(ffi_smartview *smartview, const char *deserializer)
+void smartview_serializer_set_java_script_serializer(ffi_smartview *smartview, const char *serializer)
 {
-    smartview->serializer->deserializer = deserializer;
+    smartview->serializer->serializer = serializer;
 }
 
 void smartview_serializer_set_parse_callback(ffi_smartview *smartview, ffi_parse_callback_t callback)

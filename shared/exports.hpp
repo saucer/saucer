@@ -118,7 +118,7 @@ extern "C"
 
     extern __export void smartview_serializer_set_initialization_script(ffi_smartview *, const char *);
     extern __export void smartview_serializer_set_parse_callback(ffi_smartview *, ffi_parse_callback_t);
-    extern __export void smartview_serializer_set_java_script_deserializer(ffi_smartview *, const char *);
+    extern __export void smartview_serializer_set_java_script_serializer(ffi_smartview *, const char *);
 
     extern __export ffi_result_data *ffi_result_data_new();
     extern __export size_t ffi_result_data_get_id(ffi_result_data *);
