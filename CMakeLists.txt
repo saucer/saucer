@@ -28,7 +28,7 @@ else()
             set(saucer_backend Qt)
         endif()
         
-        message(STATUS "[Saucer] Deault backend for current platformn is: ${saucer_backend}")
+        message(STATUS "[Saucer] Deault backend for current platform is: ${saucer_backend}")
     endif()    
 endif()
 
