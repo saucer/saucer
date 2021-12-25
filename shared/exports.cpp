@@ -194,7 +194,7 @@ struct ffi_function_data : public saucer::function_data
 
 struct ffi_result_data : public saucer::result_data
 {
-    void *data;
+    void *data{};
 };
 
 struct ffi_serializer : public saucer::serializer
@@ -246,7 +246,7 @@ struct ffi_smartview : public saucer::smartview
     void on_message(const std::string &) override;
 
   public:
-    on_message_callback_t on_message_callback;
+    on_message_callback_t on_message_callback{};
     const std::shared_ptr<ffi_serializer> serializer;
 
   public:
