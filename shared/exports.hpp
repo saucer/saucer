@@ -26,7 +26,7 @@ extern "C"
     extern __export void window_show(saucer::window *);
     extern __export void window_exit(saucer::window *);
 
-    extern __export void window_run(saucer::window *);
+    extern __export void window_run();
 
     extern __export void window_on_close(saucer::window *, bool (*)());
     extern __export void window_on_resize(saucer::window *, void (*)(size_t, size_t));

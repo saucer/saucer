@@ -60,9 +60,9 @@ void window_exit(saucer::window *window)
     window->exit();
 }
 
-void window_run(saucer::window *window)
+void window_run()
 {
-    window->run();
+    saucer::window::run();
 }
 
 void window_on_close(saucer::window *window, bool (*callback)())
