@@ -291,13 +291,13 @@ void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, 
         {
             void (*result_callback)(ffi_function_data *, char *, size_t) = nullptr;
             auto rtn = callback(ffi_data.get(), &result_callback);
-            assert(((void)("result_callback was not set correctly"), result_callback));
 
             if (!rtn)
             {
                 return tl::make_unexpected(saucer::serializer::error::argument_mismatch);
             }
 
+            assert(((void)("result_callback was not set correctly"), result_callback));
             return [ffi_data, result_callback]() {
                 // TODO(ffi): Receive buffer size prior to allocation
                 auto *buffer = new char[2048]{""};
