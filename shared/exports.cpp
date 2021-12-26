@@ -289,7 +289,7 @@ void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, 
     auto cpp_callback = [callback](const std::shared_ptr<saucer::message_data> &data) -> tl::expected<std::function<std::string()>, saucer::serializer::error> {
         if (auto ffi_data = std::dynamic_pointer_cast<ffi_function_data>(data); ffi_data)
         {
-            void (*result_callback)(ffi_function_data *, char *, size_t) = nullptr;
+            ffi_result_callback_t result_callback{};
             auto rtn = callback(ffi_data.get(), &result_callback);
 
             if (!rtn)
@@ -298,15 +298,11 @@ void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, 
             }
 
             assert(((void)("result_callback was not set correctly"), result_callback));
-            return [ffi_data, result_callback]() {
-                // TODO(ffi): Receive buffer size prior to allocation
-                auto *buffer = new char[2048]{""};
+            return [ffi_data, result_callback]() -> std::string {
+                char buffer[2048]{""};
                 result_callback(ffi_data.get(), buffer, 2048);
 
-                std::string result(buffer);
-                delete[] buffer;
-
-                return result;
+                return buffer;
             };
         }
 
@@ -446,7 +442,7 @@ void ffi_function_data_get_function(ffi_function_data *function_data, char *outp
 
 ffi_promise *ffi_promise_new()
 {
-    return new ffi_promise(std::this_thread::get_id());
+    return new ffi_promise(std::this_thread::get_id()); //? The thread id doesn't matter here.
 }
 
 void ffi_promise_set_fail_callback(ffi_promise *promise, void (*callback)())
