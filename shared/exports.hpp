@@ -104,7 +104,7 @@ extern "C"
     using on_message_callback_t = void (*)(const char *);
     using ffi_resolve_callback_t = bool (*)(ffi_result_data *);
     using ffi_parse_callback_t = saucer::message_data *(*)(const char *);
-    using ffi_callback_t = bool (*)(ffi_function_data *, void (**)(char *, size_t));
+    using ffi_callback_t = bool (*)(ffi_function_data *, void (**)(ffi_function_data *, char *, size_t));
 
     extern __export ffi_smartview *smartview_new();
     extern __export void smartview_free(ffi_smartview *);

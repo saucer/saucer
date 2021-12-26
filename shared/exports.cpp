@@ -289,7 +289,7 @@ void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, 
     auto cpp_callback = [callback](const std::shared_ptr<saucer::message_data> &data) -> tl::expected<std::function<std::string()>, saucer::serializer::error> {
         if (auto ffi_data = std::dynamic_pointer_cast<ffi_function_data>(data); ffi_data)
         {
-            void (*result_callback)(char *, size_t) = nullptr;
+            void (*result_callback)(ffi_function_data *, char *, size_t) = nullptr;
             auto rtn = callback(ffi_data.get(), &result_callback);
             assert(((void)("result_callback was not set correctly"), result_callback));
 
@@ -298,10 +298,10 @@ void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, 
                 return tl::make_unexpected(saucer::serializer::error::argument_mismatch);
             }
 
-            return [result_callback]() {
+            return [ffi_data, result_callback]() {
                 // TODO(ffi): Receive buffer size prior to allocation
                 auto *buffer = new char[2048]{""};
-                result_callback(buffer, 2048);
+                result_callback(ffi_data.get(), buffer, 2048);
 
                 std::string result(buffer);
                 delete[] buffer;
