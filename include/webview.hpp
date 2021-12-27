@@ -38,17 +38,17 @@ namespace saucer
       public:
         void set_dev_tools(bool enabled);
         void set_context_menu(bool enabled);
-        void set_url(const std::string &url);
+        void set_url(const std::string &url) SAUCER_THREAD_SAFE;
         void serve_embedded(const std::string &file);
-        void embed_files(const embedded_files &files);
+        void embed_files(const embedded_files &files) SAUCER_THREAD_SAFE;
 
       public:
-        void run_java_script(const std::string &java_script);
-        void inject(const std::string &java_script, const load_time_t &load_time);
+        void run_java_script(const std::string &java_script) SAUCER_THREAD_SAFE;
+        void inject(const std::string &java_script, const load_time_t &load_time) SAUCER_THREAD_SAFE;
 
       public:
-        void clear_scripts();
-        void clear_embedded();
+        void clear_scripts() SAUCER_THREAD_SAFE;
+        void clear_embedded() SAUCER_THREAD_SAFE;
 
       public:
         void on_url_changed(const url_changed_callback_t &callback);

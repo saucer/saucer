@@ -3,6 +3,10 @@
 #include <memory>
 #include <string>
 
+#ifndef SAUCER_THREAD_SAFE
+#define SAUCER_THREAD_SAFE
+#endif
+
 namespace saucer
 {
     class window
@@ -34,9 +38,9 @@ namespace saucer
         std::pair<std::size_t, std::size_t> get_min_size() const;
 
       public:
-        void hide();
-        void show();
-        void exit();
+        void hide() SAUCER_THREAD_SAFE;
+        void show() SAUCER_THREAD_SAFE;
+        void exit() SAUCER_THREAD_SAFE;
 
       public:
         static void run();
@@ -47,11 +51,11 @@ namespace saucer
 
       public:
         void set_resizeable(bool enabled);
-        void set_decorations(bool enabled);
+        void set_decorations(bool enabled) SAUCER_THREAD_SAFE;
         void set_title(const std::string &);
-        void set_always_on_top(bool enabled);
-        void set_size(std::size_t width, std::size_t height);
-        void set_max_size(std::size_t width, std::size_t height);
-        void set_min_size(std::size_t width, std::size_t height);
+        void set_always_on_top(bool enabled) SAUCER_THREAD_SAFE;
+        void set_size(std::size_t width, std::size_t height) SAUCER_THREAD_SAFE;
+        void set_max_size(std::size_t width, std::size_t height) SAUCER_THREAD_SAFE;
+        void set_min_size(std::size_t width, std::size_t height) SAUCER_THREAD_SAFE;
     };
 } // namespace saucer
