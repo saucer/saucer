@@ -23,11 +23,13 @@ namespace saucer
     struct webview::impl
     {
         // NOLINTNEXTLINE
+        class saucer_dev_tools_view;
         class url_scheme_handler;
         class saucer_web_class;
 
       public:
         std::unique_ptr<url_scheme_handler> resource_handler;
+        std::shared_ptr<QWebEngineView> dev_tools_view;
         std::unique_ptr<saucer_web_class> web_class;
         std::unique_ptr<QWebChannel> web_channel;
         std::shared_ptr<QWebEngineView> web_view;
@@ -67,6 +69,20 @@ namespace saucer
         void on_message(const QString &message)
         {
             m_webview.on_message(message.toStdString());
+        }
+    };
+
+    class webview::impl::saucer_dev_tools_view : public QWebEngineView
+    {
+        std::function<void()> on_close;
+
+      public:
+        saucer_dev_tools_view(std::function<void()> &&close_callback) : on_close(std::move(close_callback)) {}
+
+      protected:
+        void closeEvent(QCloseEvent *) override
+        {
+            on_close();
         }
     };
 
@@ -172,14 +188,50 @@ namespace saucer
         return m_impl->web_view->url().toString().toStdString();
     }
 
-    void webview::set_dev_tools([[maybe_unused]] bool enabled)
+    void webview::set_dev_tools(bool enabled)
     {
-        //? The QtWebEngine does not provide Dev-Tools. You can only access them from an external chrome window.
+        if (!m_impl->is_thread_safe())
+        {
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([=]() { set_dev_tools(enabled); }));
+            return;
+        }
+
+        if (enabled)
+        {
+            if (m_impl->dev_tools_view)
+            {
+                m_impl->dev_tools_view->close();
+                m_impl->dev_tools_view.reset();
+                return;
+            }
+
+            m_impl->dev_tools_view = std::make_shared<impl::saucer_dev_tools_view>([this] { m_impl->dev_tools_view.reset(); });
+            m_impl->web_view->page()->setDevToolsPage(m_impl->dev_tools_view->page());
+            m_impl->dev_tools_view->showNormal();
+        }
+        else
+        {
+            m_impl->web_view->page()->setDevToolsPage(nullptr);
+
+            if (m_impl->dev_tools_view)
+            {
+                m_impl->dev_tools_view->close();
+                m_impl->dev_tools_view.reset();
+            }
+        }
     }
 
     bool webview::get_dev_tools() const
     {
-        return false;
+        if (!m_impl->is_thread_safe())
+        {
+            std::promise<bool> result;
+            QApplication::postEvent(m_impl->web_view.get(), new safe_call([&]() { result.set_value(get_dev_tools()); }));
+
+            return result.get_future().get();
+        }
+
+        return m_impl->web_view->page()->devToolsPage() != nullptr;
     }
 
     void webview::set_context_menu(bool enabled)

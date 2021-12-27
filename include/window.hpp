@@ -30,12 +30,12 @@ namespace saucer
 
       public:
         bool get_resizeable() const;
-        bool get_decorations() const;
+        bool get_decorations() const SAUCER_THREAD_SAFE;
         std::string get_title() const;
-        bool get_always_on_top() const;
-        std::pair<std::size_t, std::size_t> get_size() const;
-        std::pair<std::size_t, std::size_t> get_max_size() const;
-        std::pair<std::size_t, std::size_t> get_min_size() const;
+        bool get_always_on_top() const SAUCER_THREAD_SAFE;
+        std::pair<std::size_t, std::size_t> get_size() const SAUCER_THREAD_SAFE;
+        std::pair<std::size_t, std::size_t> get_max_size() const SAUCER_THREAD_SAFE;
+        std::pair<std::size_t, std::size_t> get_min_size() const SAUCER_THREAD_SAFE;
 
       public:
         void hide() SAUCER_THREAD_SAFE;

@@ -48,16 +48,15 @@ namespace saucer
 
     struct window::impl
     {
-        std::shared_ptr<QApplication> application;
         std::unique_ptr<QMainWindow> window;
         std::optional<QSize> max_size;
         std::optional<QSize> min_size;
 
       public:
-        static std::weak_ptr<QApplication> g_application;
+        static QApplication *g_application;
         bool is_thread_safe() const;
     };
-    std::weak_ptr<QApplication> window::impl::g_application;
+    QApplication *window::impl::g_application;
 
     bool window::impl::is_thread_safe() const
     {
@@ -81,16 +80,14 @@ namespace saucer
     {
         qputenv("QT_LOGGING_RULES", "*=false");
 
-        auto application = m_impl->g_application.lock();
-        if (!application)
+        if (!m_impl->g_application)
         {
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
             static int argc = 0;
-            m_impl->g_application = (application = std::make_shared<QApplication>(argc, nullptr));
+            m_impl->g_application = new QApplication(argc, nullptr); //? The QApplication has to exist until the program exits
         }
 
-        m_impl->application = application;
         m_impl->window = std::make_unique<saucer_main_window>(m_close_callback, m_resize_callback);
 
         auto palette = m_impl->window->palette();
@@ -123,10 +120,16 @@ namespace saucer
         else
         {
             if (m_impl->max_size)
+            {
                 m_impl->window->setMaximumSize(*m_impl->max_size);
+                m_impl->max_size = std::nullopt;
+            }
 
             if (m_impl->min_size)
+            {
                 m_impl->window->setMinimumSize(*m_impl->min_size);
+                m_impl->min_size = std::nullopt;
+            }
         }
     }
 
@@ -189,18 +192,42 @@ namespace saucer
 
     std::pair<std::size_t, std::size_t> window::get_size() const
     {
+        if (!m_impl->is_thread_safe())
+        {
+            std::promise<std::pair<std::size_t, std::size_t>> result;
+            QApplication::postEvent(m_impl->window.get(), new safe_call([&]() { result.set_value(get_size()); }));
+
+            return result.get_future().get();
+        }
+
         const auto size = m_impl->window->size();
         return std::make_pair(size.width(), size.height());
     }
 
     std::pair<std::size_t, std::size_t> window::get_min_size() const
     {
+        if (!m_impl->is_thread_safe())
+        {
+            std::promise<std::pair<std::size_t, std::size_t>> result;
+            QApplication::postEvent(m_impl->window.get(), new safe_call([&]() { result.set_value(get_min_size()); }));
+
+            return result.get_future().get();
+        }
+
         const auto size = m_impl->window->minimumSize();
         return std::make_pair(size.width(), size.height());
     }
 
     std::pair<std::size_t, std::size_t> window::get_max_size() const
     {
+        if (!m_impl->is_thread_safe())
+        {
+            std::promise<std::pair<std::size_t, std::size_t>> result;
+            QApplication::postEvent(m_impl->window.get(), new safe_call([&]() { result.set_value(get_max_size()); }));
+
+            return result.get_future().get();
+        }
+
         const auto size = m_impl->window->maximumSize();
         return std::make_pair(size.width(), size.height());
     }
@@ -212,11 +239,27 @@ namespace saucer
 
     bool window::get_always_on_top() const
     {
+        if (!m_impl->is_thread_safe())
+        {
+            std::promise<bool> result;
+            QApplication::postEvent(m_impl->window.get(), new safe_call([&]() { result.set_value(get_always_on_top()); }));
+
+            return result.get_future().get();
+        }
+
         return (m_impl->window->windowFlags() & Qt::WindowStaysOnTopHint);
     }
 
     bool window::get_decorations() const
     {
+        if (!m_impl->is_thread_safe())
+        {
+            std::promise<bool> result;
+            QApplication::postEvent(m_impl->window.get(), new safe_call([&]() { result.set_value(get_decorations()); }));
+
+            return result.get_future().get();
+        }
+
         return !(m_impl->window->windowFlags() & Qt::FramelessWindowHint);
     }
 
@@ -254,8 +297,7 @@ namespace saucer
 
     bool window::get_resizeable() const
     {
-        auto current_size = m_impl->window->size();
-        return m_impl->window->maximumSize() == current_size && m_impl->window->minimumSize() == current_size;
+        return !m_impl->max_size && !m_impl->min_size;
     }
 
     void window::exit()
