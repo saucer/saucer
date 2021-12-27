@@ -26,14 +26,14 @@ namespace saucer
     {
         enum class error
         {
-            argument_mismatch,
-            parser_mismatch,
+            argument_count_mismatch,
+            type_mismatch,
         };
 
         virtual ~serializer() = default;
         virtual std::string initialization_script() const = 0;
         virtual std::string java_script_serializer() const = 0;
-        virtual std::shared_ptr<message_data> parse(const std::string &) = 0;
+        virtual std::shared_ptr<message_data> parse(const std::string &) const = 0;
     };
 
     template <typename... T> class arguments : public std::tuple<T...>

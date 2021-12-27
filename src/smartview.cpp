@@ -60,14 +60,38 @@ namespace saucer
                load_time_t::creation);
     }
 
+    void smartview::resolve_callback(const std::shared_ptr<function_data> &data, const callback_t &callback)
+    {
+        auto result = callback(data);
+        if (result.has_value())
+        {
+            resolve(data->id, *result);
+        }
+        else
+        {
+            switch (result.error())
+            {
+            case serializer::error::argument_count_mismatch:
+                reject(data->id, "\"Argument Count Mismatch\"");
+                break;
+            case serializer::error::type_mismatch:
+                reject(data->id, "\"Type Mismatch\"");
+                break;
+            }
+        }
+    }
+
     void smartview::on_message(const std::string &message)
     {
         webview::on_message(message);
 
-        std::function<void()> on_exit;
         for (const auto &[serializer_type, serializer] : m_serializers)
         {
             auto parsed_message = serializer->parse(message);
+
+            if (!parsed_message)
+                continue;
+
             if (auto function_message = std::dynamic_pointer_cast<function_data>(parsed_message); function_message)
             {
                 if (!m_callbacks.count(function_message->function))
@@ -76,75 +100,62 @@ namespace saucer
                     return;
                 }
 
-                const auto &[callback, async] = m_callbacks.at(function_message->function);
-                auto result = callback(function_message);
-
-                if (result.has_value())
+                const auto &[callback, async, function_serializer_type] = m_callbacks.at(function_message->function);
+                if (serializer_type != function_serializer_type)
                 {
-                    if (async)
-                    {
-                        auto future_ptr = std::make_shared<std::future<void>>();
-                        *future_ptr = std::async(std::launch::async, [future_ptr, this, function_message, result] { resolve(function_message->id, (*result)()); });
-                    }
-                    else
-                    {
-                        resolve(function_message->id, (*result)());
-                    }
-                    return;
-                }
-
-                switch (result.error())
-                {
-                case serializer::error::argument_mismatch:
-                    reject(function_message->id, "\"Invalid arguments\"");
-                    return;
-                case serializer::error::parser_mismatch:
                     continue;
                 }
+
+                if (async)
+                {
+                    auto fut_ptr = std::make_shared<std::future<void>>();
+                    *fut_ptr = std::async(std::launch::async, [fut_ptr, callback = callback, function_message, this] { resolve_callback(function_message, callback); });
+                    return;
+                }
+
+                resolve_callback(function_message, callback);
+                return;
             }
-            else if (auto result_message = std::dynamic_pointer_cast<result_data>(parsed_message); result_message)
+            if (auto result_message = std::dynamic_pointer_cast<result_data>(parsed_message); result_message)
             {
                 auto locked_evals = m_evals.write();
 
                 if (!locked_evals->count(result_message->id))
                 {
-                    reject(result_message->id, "\"Invalid ID\"");
                     return;
                 }
 
-                auto result = locked_evals->at(result_message->id).first(result_message);
-                if (result.has_value())
+                const auto &[callback, promise, promise_serializer_type] = locked_evals->at(result_message->id);
+                if (serializer_type != promise_serializer_type)
                 {
-                    locked_evals->erase(result_message->id);
-                    return;
-                }
-
-                switch (result.error())
-                {
-                case serializer::error::argument_mismatch:
-                    locked_evals->at(result_message->id).second->reject();
-                    locked_evals->erase(result_message->id);
-                    return;
-                case serializer::error::parser_mismatch:
                     continue;
                 }
+
+                auto result = callback(result_message);
+                locked_evals->erase(result_message->id);
+
+                if (!result.has_value())
+                {
+                    promise->reject(result.error());
+                }
+
+                return;
             }
         }
     }
 
-    void smartview::add_callback(const std::shared_ptr<serializer> &serializer, const std::string &name, const callback_t &callback, bool async)
+    void smartview::add_callback(const std::type_index &serializer_t, const std::string &name, const callback_t &callback, bool async)
     {
-        m_callbacks.emplace(name, std::make_pair(callback, async));
-        inject("window.saucer._known_functions.set(\"" + name + "\", " + serializer->java_script_serializer() + ");", load_time_t::creation);
+        m_callbacks.emplace(name, std::make_tuple(callback, async, serializer_t));
+        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer_t)->java_script_serializer() + ");", load_time_t::creation);
     }
 
-    void smartview::add_eval(const std::shared_ptr<serializer> &serializer, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback,
-                             const std::string &code)
+    void smartview::add_eval(const std::type_index &serializer_t, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback, const std::string &code)
     {
         auto id = m_id_counter++;
-        m_evals.write()->emplace(id, std::make_pair(resolve_callback, promise));
+        m_evals.write()->emplace(id, std::make_tuple(resolve_callback, promise, serializer_t));
 
-        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + serializer->java_script_serializer() + "))();";
+        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.at(serializer_t)->java_script_serializer() + "))();";
         run_java_script(resolve_code);
     }
 

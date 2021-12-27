@@ -25,11 +25,11 @@ namespace saucer
             ~json() override;
             std::string initialization_script() const override;
             std::string java_script_serializer() const override;
-            std::shared_ptr<message_data> parse(const std::string &data) override;
+            std::shared_ptr<message_data> parse(const std::string &data) const override;
 
             template <typename func_t> static auto serialize_function(const func_t &func);
             template <typename... params_t> static auto serialize_arguments(const params_t &...params);
-            template <typename T> static auto resolve_function(const std::shared_ptr<promise<T>> &promise);
+            template <typename T> static auto resolve_promise(const std::shared_ptr<promise<T>> &promise);
         };
     } // namespace serializers
 } // namespace saucer

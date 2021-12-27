@@ -2,12 +2,13 @@
 #include <functional>
 #include <future>
 #include <lock.hpp>
+#include <serializers/serializer.hpp>
 
 namespace saucer
 {
     class base_promise
     {
-        using fail_callback_t = std::function<void()>;
+        using fail_callback_t = std::function<void(const serializer::error &)>;
 
       protected:
         bool is_safe() const;
@@ -19,9 +20,9 @@ namespace saucer
         base_promise(const std::thread::id &);
 
       public:
-        virtual void reject();
         virtual void wait() = 0;
         virtual bool is_ready() = 0;
+        virtual void reject(const serializer::error &);
         virtual base_promise &fail(const fail_callback_t &);
     };
 
@@ -41,10 +42,10 @@ namespace saucer
       public:
         T get();
         void wait() override;
-        void reject() override;
         void resolve(const T &);
         bool is_ready() override;
         promise<T> &then(const callback_t &);
+        void reject(const serializer::error &) override;
 
       public:
         ~promise() override;
@@ -64,9 +65,9 @@ namespace saucer
       public:
         void wait() override;
         void resolve() const;
-        void reject() override;
         bool is_ready() override;
         promise<void> &then(const callback_t &);
+        void reject(const serializer::error &) override;
 
       public:
         ~promise() override;

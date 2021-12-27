@@ -11,7 +11,7 @@ namespace saucer
             inject(serializer->initialization_script(), load_time_t::creation);
         }
 
-        add_callback(m_serializers.at(typeid(serializer_t)), name, serializer_t::serialize_function(func), async);
+        add_callback(typeid(serializer_t), name, serializer_t::serialize_function(func), async);
     }
 
     template <typename rtn_t, typename serializer_t, typename... params_t> auto smartview::eval(const std::string &code, params_t &&...params)
@@ -23,7 +23,7 @@ namespace saucer
         }
 
         auto rtn = std::make_shared<promise<rtn_t>>(m_creation_thread);
-        add_eval(m_serializers.at(typeid(serializer_t)), rtn, serializer_t::resolve_function(rtn), fmt::vformat(code, serializer_t::serialize_arguments(params...)));
+        add_eval(typeid(serializer_t), rtn, serializer_t::resolve_promise(rtn), fmt::vformat(code, serializer_t::serialize_arguments(params...)));
 
         return rtn;
     }

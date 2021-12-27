@@ -4,21 +4,21 @@
 
 namespace saucer::serializers
 {
-    json::~json() = default;
-    json_result_data::~json_result_data() = default;
-    json_function_data::~json_function_data() = default;
+    inline json::~json() = default;
+    inline json_result_data::~json_result_data() = default;
+    inline json_function_data::~json_function_data() = default;
 
-    std::string json::java_script_serializer() const
+    inline std::string json::java_script_serializer() const
     {
         return "JSON.stringify";
     }
 
-    std::string json::initialization_script() const
+    inline std::string json::initialization_script() const
     {
         return "";
     }
 
-    std::shared_ptr<message_data> json::parse(const std::string &data)
+    inline std::shared_ptr<message_data> json::parse(const std::string &data) const
     {
         auto parsed = nlohmann::json::parse(data, nullptr, false);
         if (!parsed.is_discarded())
@@ -142,47 +142,43 @@ namespace saucer::serializers
 
     template <typename func_t> auto json::serialize_function(const func_t &func)
     {
-        return [func](const std::shared_ptr<message_data> &data) -> tl::expected<std::function<std::string()>, error> {
-            if (auto json_message = std::dynamic_pointer_cast<json_function_data>(data); json_message)
+        return [func](const std::shared_ptr<function_data> &data) -> tl::expected<std::string, error> {
+            auto json_message = std::dynamic_pointer_cast<json_function_data>(data);
+            using traits = internal::function_traits<func_t>;
+            using args_t = typename traits::args_t;
+            using rtn_t = typename traits::rtn_t;
+            static_assert(traits::serializable);
+
+            const auto &params = json_message->data;
+            if (params.size() == std::tuple_size_v<args_t>)
             {
-                const auto &params = json_message->data;
-
-                using traits = internal::function_traits<func_t>;
-                using args_t = typename traits::args_t;
-                using rtn_t = typename traits::rtn_t;
-                static_assert(traits::serializable);
-
-                if (params.size() == std::tuple_size_v<args_t>)
+                args_t args;
+                try
                 {
-                    args_t args;
-                    try
-                    {
-                        internal::tuple_visit(args, [&params](const std::size_t &I, auto &arg) { arg = params.at(I); });
-                    }
-                    catch (const nlohmann::json::type_error &)
-                    {
-                        return tl::make_unexpected(error::argument_mismatch);
-                    }
-
-                    return [func, args]() {
-                        nlohmann::json rtn;
-                        auto do_call = [func, &rtn](auto &&...args) {
-                            if constexpr (std::is_same_v<rtn_t, void>)
-                            {
-                                func(std::forward<decltype(args)>(args)...);
-                            }
-                            else
-                            {
-                                rtn = func(std::forward<decltype(args)>(args)...);
-                            }
-                        };
-
-                        std::apply(do_call, args);
-                        return "JSON.parse(" + nlohmann::json(nlohmann::json(rtn).dump()).dump() + ")"; // ? We dump twice to properly escape
-                    };
+                    internal::tuple_visit(args, [&params](const std::size_t &I, auto &arg) { arg = params.at(I); });
                 }
+                catch (const nlohmann::json::type_error &)
+                {
+                    return tl::make_unexpected(error::type_mismatch);
+                }
+
+                nlohmann::json rtn;
+                auto do_call = [func, &rtn](auto &&...args) {
+                    if constexpr (std::is_same_v<rtn_t, void>)
+                    {
+                        func(std::forward<decltype(args)>(args)...);
+                    }
+                    else
+                    {
+                        rtn = func(std::forward<decltype(args)>(args)...);
+                    }
+                };
+
+                std::apply(do_call, args);
+                return "JSON.parse(" + nlohmann::json(nlohmann::json(rtn).dump()).dump() + ")"; // ? We dump twice to properly escape
             }
-            return tl::make_unexpected(error::parser_mismatch);
+
+            return tl::make_unexpected(error::argument_count_mismatch);
         };
     }
 
@@ -218,31 +214,27 @@ namespace saucer::serializers
         return args;
     }
 
-    template <typename T> auto json::resolve_function(const std::shared_ptr<promise<T>> &promise)
+    template <typename T> auto json::resolve_promise(const std::shared_ptr<promise<T>> &promise)
     {
         return [promise](const std::shared_ptr<result_data> &data) -> tl::expected<void, serializer::error> {
-            if (auto json_data = std::dynamic_pointer_cast<json_result_data>(data); json_data)
+            auto json_data = std::dynamic_pointer_cast<json_result_data>(data);
+            if constexpr (std::is_same_v<T, void>)
             {
-                if constexpr (std::is_same_v<T, void>)
+                promise->resolve();
+                return {};
+            }
+            else
+            {
+                try
                 {
-                    promise->resolve();
+                    promise->resolve(json_data->data);
                     return {};
                 }
-                else
+                catch (const nlohmann::json::type_error &)
                 {
-                    try
-                    {
-                        promise->resolve(json_data->data);
-                        return {};
-                    }
-                    catch (const nlohmann::json::type_error &)
-                    {
-                        return tl::make_unexpected(error::argument_mismatch);
-                    }
+                    return tl::make_unexpected(error::type_mismatch);
                 }
             }
-
-            return tl::make_unexpected(error::parser_mismatch);
         };
     }
 } // namespace saucer::serializers

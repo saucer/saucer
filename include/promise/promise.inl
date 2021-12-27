@@ -17,11 +17,11 @@ namespace saucer
         return *this;
     }
 
-    inline void base_promise::reject()
+    inline void base_promise::reject(const serializer::error &error)
     {
         if (*m_fail_callback.read())
         {
-            (*m_fail_callback.read())();
+            (*m_fail_callback.read())(error);
         }
     }
 
@@ -61,10 +61,10 @@ namespace saucer
         return *this;
     }
 
-    template <typename T> void promise<T>::reject()
+    template <typename T> void promise<T>::reject(const serializer::error &error)
     {
         m_promise.set_exception(std::make_exception_ptr(std::future_error(std::future_errc::broken_promise)));
-        base_promise::reject();
+        base_promise::reject(error);
     }
 
     inline promise<void>::~promise() = default;
@@ -95,10 +95,10 @@ namespace saucer
         return *this;
     }
 
-    inline void promise<void>::reject()
+    inline void promise<void>::reject(const serializer::error &error)
     {
         m_promise.set_exception(std::make_exception_ptr(std::future_error(std::future_errc::broken_promise)));
-        base_promise::reject();
+        base_promise::reject(error);
     }
 
     template <typename... T> auto all(const std::shared_ptr<promise<T>> &...promises)
