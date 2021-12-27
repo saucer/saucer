@@ -1,0 +1,25 @@
+on: workflow_dispatch
+
+name: Test Qt5
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["cpp"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: "sudo apt-get update && sudo apt-get install git build-essential cmake qtwebengine5-dev"
+
+      - name: Compile
+        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt && cmake --build . --config Debug"
+
+      - name: Run Tests
+        run: "./build/saucer_tests"
