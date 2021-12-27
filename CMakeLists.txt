@@ -5,6 +5,7 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
+option(saucer_tests     "Build tests" OFF)
 option(saucer_examples  "Build examples" ON)
 option(saucer_smartview "Enable the smartview" ON)
 option(saucer_shared    "Build a shared library" OFF)
@@ -35,6 +36,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 # Create library
 # --------------------------------------------------------------------------------------------------------
+
 if (saucer_shared)
     add_library(${PROJECT_NAME} SHARED)
     set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
@@ -138,4 +140,26 @@ if (saucer_examples AND NOT saucer_shared)
     endif()
         
     add_subdirectory("examples/manual-embedding")
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Tests
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_tests)
+    message(STATUS "[Saucer] Building Tests")
+
+    if (NOT TARGET Catch2::Catch2WithMain)
+        FetchContent_Declare(Catch2 GIT_REPOSITORY "https://github.com/catchorg/Catch2" GIT_TAG v2.13.7)
+        option(CATCH_BUILD_STATIC_LIBRARY "" ON)
+        FetchContent_MakeAvailable(Catch2)
+    endif()
+
+    file(GLOB test_src "tests/*.cpp")
+    add_executable(${PROJECT_NAME}_tests ${test_src})
+    target_link_libraries(${PROJECT_NAME}_tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain ${PROJECT_NAME})
+
+
+    target_compile_features(${PROJECT_NAME}_tests PRIVATE cxx_std_17)
+    set_target_properties(${PROJECT_NAME}_tests PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 endif()
