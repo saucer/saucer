@@ -1,0 +1,24 @@
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.yml"
+  pull_request:
+    branches: [master]
+
+name: Test Qt5
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["cpp"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
