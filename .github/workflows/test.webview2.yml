@@ -1,0 +1,28 @@
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.yml"
+  pull_request:
+    branches: ["**"]
+
+name: Test WebView2
+jobs:
+  test-webview2:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["cpp"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Compile
+        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=WebView2 && cmake --build . --config Debug"
+
+      - name: Run Tests
+        run: '.\build\saucer_tests.exe'
