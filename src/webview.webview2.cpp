@@ -24,10 +24,9 @@ namespace saucer
         wil::com_ptr<ICoreWebView2Controller> webview_controller;
 
         bool js_ready = false;
-        lockpp::lock<std::vector<LPCWSTR>> scripts_once;
         lockpp::lock<std::vector<LPCWSTR>> injected_scripts;
+        lockpp::lock<std::vector<std::string>> scripts_once;
         lockpp::lock<std::vector<std::string>> scripts_on_done;
-        lockpp::lock<std::vector<std::function<void()>>> call_on_initialize;
 
         EventRegistrationToken source_changed_token;
         EventRegistrationToken message_received_token;
@@ -64,8 +63,7 @@ namespace saucer
     webview::~webview() = default;
     webview::webview() : m_impl(std::make_unique<impl>())
     {
-        impl::original_wnd_proc =
-            reinterpret_cast<WNDPROC>(SetWindowLongPtrW(window::m_impl->hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(impl::wnd_proc)));
+        impl::original_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(window::m_impl->hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(impl::wnd_proc)));
 
         if (auto res = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED); res != RPC_E_CHANGED_MODE)
         {
@@ -73,7 +71,6 @@ namespace saucer
             wil::GetEnvironmentVariableW(L"LOCALAPPDATA", appdata);
             appdata += L"\\MicrosoftEdge";
 
-            //! Whoever chose to make the class names this fucking long should rot in hell.
             using create_webview = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
             using create_environment = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
 
@@ -85,6 +82,7 @@ namespace saucer
                         Callback<create_webview>([this](HRESULT, ICoreWebView2Controller *controller) {
                             m_impl->webview_controller = controller;
                             controller->get_CoreWebView2(&m_impl->webview_window);
+                            m_impl->webview_controller->put_IsVisible(true); //? This call is explicitly needed, seems to be a bug, #1077, still not fixed as of 1.0.1083-prerelease
 
                             RECT bounds;
                             GetClientRect(window::m_impl->hwnd, &bounds);
@@ -112,8 +110,7 @@ namespace saucer
                                 &m_impl->source_changed_token);
 
                             m_impl->webview_window->add_WebMessageReceived(
-                                Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2 *,
-                                                                                             ICoreWebView2WebMessageReceivedEventArgs *args) {
+                                Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2 *, ICoreWebView2WebMessageReceivedEventArgs *args) {
                                     LPWSTR message{};
                                     args->TryGetWebMessageAsString(&message);
 
@@ -123,8 +120,7 @@ namespace saucer
                                 &m_impl->message_received_token);
 
                             m_impl->webview_window->add_NavigationCompleted(
-                                Callback<ICoreWebView2NavigationCompletedEventHandler>([this](ICoreWebView2 *,
-                                                                                              ICoreWebView2NavigationCompletedEventArgs *) {
+                                Callback<ICoreWebView2NavigationCompletedEventHandler>([this](ICoreWebView2 *, ICoreWebView2NavigationCompletedEventArgs *) {
                                     auto scripts = m_impl->scripts_on_done.write();
                                     for (const auto &script : *scripts)
                                     {
@@ -132,12 +128,14 @@ namespace saucer
                                     }
 
                                     m_impl->js_ready = true;
+
                                     auto scripts_once = m_impl->scripts_once.write();
-                                    for (const auto &id : *scripts_once)
+                                    for (const auto &script : *scripts_once)
                                     {
-                                        m_impl->webview_window->RemoveScriptToExecuteOnDocumentCreated(id);
+                                        run_java_script(script);
                                     }
                                     scripts_once->clear();
+
                                     return S_OK;
                                 }).Get(),
                                 &m_impl->navigation_completed_token);
@@ -152,16 +150,19 @@ namespace saucer
                             )",
                                    load_time_t::creation);
 
-                            auto funcs = m_impl->call_on_initialize.write();
-                            for (const auto &func : *funcs)
-                            {
-                                func();
-                            }
-                            funcs->clear();
-
                             return S_OK;
                         }).Get());
                 }).Get());
+
+            MSG msg; //? Ensure the WebView is created synchronously
+            while (GetMessage(&msg, nullptr, 0, 0))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+
+                if (m_impl->webview_controller)
+                    break;
+            }
 
             CoUninitialize();
         }
@@ -173,22 +174,11 @@ namespace saucer
 
     void webview::set_url(const std::string &url)
     {
-        if (!m_impl->webview_controller)
-        {
-            m_impl->call_on_initialize.write()->push_back([=]() { set_url(url); });
-            return;
-        }
-
         m_impl->webview_window->Navigate(utils::widen(url).c_str());
     }
 
     std::string webview::get_url() const
     {
-        if (m_impl->webview_window)
-        {
-            return {};
-        }
-
         wil::unique_cotaskmem_string url;
         m_impl->webview_window->get_Source(&url);
 
@@ -197,12 +187,6 @@ namespace saucer
 
     void webview::set_dev_tools(bool enabled)
     {
-        if (!m_impl->webview_controller)
-        {
-            m_impl->call_on_initialize.write()->push_back([=]() { set_dev_tools(enabled); });
-            return;
-        }
-
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
         settings->put_AreDevToolsEnabled(enabled);
@@ -210,11 +194,6 @@ namespace saucer
 
     bool webview::get_dev_tools() const
     {
-        if (m_impl->webview_window)
-        {
-            return false;
-        }
-
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
 
@@ -226,12 +205,6 @@ namespace saucer
 
     void webview::set_context_menu(bool enabled)
     {
-        if (!m_impl->webview_controller)
-        {
-            m_impl->call_on_initialize.write()->push_back([=]() { set_context_menu(enabled); });
-            return;
-        }
-
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
         settings->put_AreDefaultContextMenusEnabled(enabled);
@@ -239,11 +212,6 @@ namespace saucer
 
     bool webview::get_context_menu() const
     {
-        if (m_impl->webview_window)
-        {
-            return false;
-        }
-
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
 
@@ -255,12 +223,6 @@ namespace saucer
 
     void webview::embed_files(const embedded_files &files)
     {
-        if (!m_impl->webview_window)
-        {
-            m_impl->call_on_initialize.write()->emplace_back([this, files]() { embed_files(files); });
-            return;
-        }
-
         m_embedded_files = files;
         if (!m_impl->resource_requested_token)
         {
@@ -321,12 +283,6 @@ namespace saucer
 
     void webview::clear_embedded()
     {
-        if (!m_impl->webview_window)
-        {
-            m_impl->call_on_initialize.write()->emplace_back([this]() { clear_embedded(); });
-            return;
-        }
-
         m_embedded_files.clear();
 
         if (m_impl->resource_requested_token)
@@ -345,20 +301,9 @@ namespace saucer
 
     void webview::run_java_script(const std::string &java_script)
     {
-        if (!m_impl->webview_controller)
-        {
-            m_impl->call_on_initialize.write()->push_back([=]() { run_java_script(java_script); });
-            return;
-        }
-
         if (!m_impl->js_ready)
         {
-            m_impl->webview_window->AddScriptToExecuteOnDocumentCreated(
-                utils::widen(java_script).c_str(),
-                Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
-                    m_impl->scripts_once.write()->push_back(id);
-                    return S_OK;
-                }).Get());
+            m_impl->scripts_once.write()->emplace_back(java_script);
         }
         else
         {
@@ -370,22 +315,15 @@ namespace saucer
     {
         if (load_time == load_time_t::creation)
         {
-            if (!m_impl->webview_window)
-            {
-                m_impl->call_on_initialize.write()->push_back([=]() { inject(java_script, load_time); });
-                return;
-            }
-
             m_impl->webview_window->AddScriptToExecuteOnDocumentCreated(
-                utils::widen(java_script).c_str(),
-                Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
-                    m_impl->injected_scripts.write()->push_back(id);
-                    return S_OK;
-                }).Get());
+                utils::widen(java_script).c_str(), Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
+                                                       m_impl->injected_scripts.write()->emplace_back(id);
+                                                       return S_OK;
+                                                   }).Get());
         }
         else
         {
-            m_impl->scripts_on_done.write()->push_back(java_script);
+            m_impl->scripts_on_done.write()->emplace_back(java_script);
         }
     }
 
