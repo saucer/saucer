@@ -1,7 +1,14 @@
 #pragma once
 #include "promise.hpp"
-#include <cassert>
 #include <exception>
+
+#ifdef THROW_ASSERT
+#define assert(expr)                                                                                                                                                               \
+    if (!expr)                                                                                                                                                                     \
+        throw std::runtime_error(#expr);
+#else
+#include <cassert>
+#endif
 
 namespace saucer
 {

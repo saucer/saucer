@@ -3,11 +3,6 @@
 #include <smartview.hpp>
 #include <thread>
 
-void __assert_fail(const char *expr, const char *, unsigned int, const char *)
-{
-    throw std::runtime_error(expr); // NOLINT
-}
-
 TEST_CASE("Smartview functionality is tested", "[smartview]")
 {
     auto smartview = saucer::simple_smartview<saucer::serializers::json>();
