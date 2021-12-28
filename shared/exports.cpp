@@ -205,7 +205,7 @@ struct ffi_serializer : public saucer::serializer
 
     std::string initialization_script() const override;
     std::string java_script_serializer() const override;
-    std::shared_ptr<saucer::message_data> parse(const std::string &) override;
+    std::shared_ptr<saucer::message_data> parse(const std::string &) const override;
 };
 
 std::string ffi_serializer::initialization_script() const
@@ -218,7 +218,7 @@ std::string ffi_serializer::java_script_serializer() const
     return serializer;
 }
 
-std::shared_ptr<saucer::message_data> ffi_serializer::parse(const std::string &data)
+std::shared_ptr<saucer::message_data> ffi_serializer::parse(const std::string &data) const
 {
     if (parse_callback)
     {
@@ -286,51 +286,38 @@ void ffi_smartview::resolve(const std::size_t &id, const char *result)
 
 void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, bool async)
 {
-    auto cpp_callback = [callback](const std::shared_ptr<saucer::message_data> &data) -> tl::expected<std::function<std::string()>, saucer::serializer::error> {
-        if (auto ffi_data = std::dynamic_pointer_cast<ffi_function_data>(data); ffi_data)
+    auto cpp_callback = [callback](const std::shared_ptr<saucer::function_data> &data) -> tl::expected<std::string, saucer::serializer::error> {
+        auto ffi_data = std::dynamic_pointer_cast<ffi_function_data>(data);
+
+        char buffer[2048]{""};
+        auto rtn = callback(ffi_data.get(), buffer, 2048);
+
+        if (rtn != SERIALIZER_ERROR_NONE)
         {
-            ffi_result_callback_t result_callback{};
-            auto rtn = callback(ffi_data.get(), &result_callback);
-
-            if (!rtn)
-            {
-                return tl::make_unexpected(saucer::serializer::error::argument_mismatch);
-            }
-
-            assert(((void)("result_callback was not set correctly"), result_callback));
-            return [ffi_data, result_callback]() -> std::string {
-                char buffer[2048]{""};
-                result_callback(ffi_data.get(), buffer, 2048);
-
-                return buffer;
-            };
+            return tl::make_unexpected(static_cast<saucer::serializer::error>(rtn));
         }
 
-        return tl::make_unexpected(saucer::serializer::error::parser_mismatch);
+        return buffer;
     };
 
-    smartview::add_callback(serializer, function, cpp_callback, async);
+    smartview::add_callback(typeid(ffi_serializer), function, cpp_callback, async);
 }
 
 void ffi_smartview::add_eval(ffi_promise *promise, ffi_resolve_callback_t callback, const char *code)
 {
     auto cpp_callback = [callback](const std::shared_ptr<saucer::result_data> &data) -> tl::expected<void, saucer::serializer::error> {
-        if (auto ffi_data = std::dynamic_pointer_cast<ffi_result_data>(data); ffi_data)
+        auto ffi_data = std::dynamic_pointer_cast<ffi_result_data>(data);
+        auto result = callback(ffi_data.get());
+
+        if (result != SERIALIZER_ERROR_NONE)
         {
-            auto result = callback(ffi_data.get());
-
-            if (!result)
-            {
-                return tl::make_unexpected(saucer::serializer::error::argument_mismatch);
-            }
-
-            return {};
+            return tl::make_unexpected(static_cast<saucer::serializer::error>(result));
         }
 
-        return tl::make_unexpected(saucer::serializer::error::parser_mismatch);
+        return {};
     };
 
-    smartview::add_eval(serializer, std::shared_ptr<saucer::base_promise>(promise), cpp_callback, code);
+    smartview::add_eval(typeid(ffi_serializer), std::shared_ptr<saucer::base_promise>(promise), cpp_callback, code);
 }
 
 ffi_smartview *smartview_new()
@@ -366,6 +353,7 @@ void smartview_resolve(ffi_smartview *smartview, size_t id, const char *result)
 void smartview_serializer_set_initialization_script(ffi_smartview *smartview, const char *init_script)
 {
     smartview->serializer->init_script = init_script;
+    smartview->inject(init_script, saucer::load_time_t::creation); //? We already add the serializer to the smartview on creation, at that point the init script is not yet set.
 }
 
 void smartview_serializer_set_java_script_serializer(ffi_smartview *smartview, const char *serializer)
@@ -445,7 +433,7 @@ ffi_promise *ffi_promise_new()
     return new ffi_promise(std::this_thread::get_id()); //? The thread id doesn't matter here.
 }
 
-void ffi_promise_set_fail_callback(ffi_promise *promise, void (*callback)())
+void ffi_promise_set_fail_callback(ffi_promise *promise, void (*callback)(serializer_error))
 {
-    promise->fail(callback);
+    promise->fail([callback](const saucer::serializer::error &error) { callback(static_cast<serializer_error>(error)); });
 }

@@ -90,8 +90,8 @@ extern "C"
 {
     enum serializer_error
     {
-        SERIALIZER_ERROR_ARGUMENT_MISMATCH,
-        SERIALIZER_ERROR_PARSER_MISMATCH,
+        SERIALIZER_ERROR_ARGUMENT_COUNT_MISMATCH,
+        SERIALIZER_ERROR_TYPE_MISMATCH,
         SERIALIZER_ERROR_NONE,
     };
 
@@ -102,10 +102,9 @@ extern "C"
     struct ffi_function_data;
 
     using on_message_callback_t = void (*)(const char *);
-    using ffi_resolve_callback_t = bool (*)(ffi_result_data *);
+    using ffi_resolve_callback_t = serializer_error (*)(ffi_result_data *);
     using ffi_parse_callback_t = saucer::message_data *(*)(const char *);
-    using ffi_result_callback_t = void (*)(ffi_function_data *, char *, size_t);
-    using ffi_callback_t = bool (*)(ffi_function_data *, ffi_result_callback_t *);
+    using ffi_callback_t = serializer_error (*)(ffi_function_data *, char *, size_t);
 
     extern __export ffi_smartview *smartview_new();
     extern __export void smartview_free(ffi_smartview *);
@@ -137,6 +136,6 @@ extern "C"
     //? ffi_result/function_data_new_free is not needed because the lifetime management is done by the smartview
 
     extern __export ffi_promise *ffi_promise_new();
-    extern __export void ffi_promise_set_fail_callback(ffi_promise *, void (*)());
+    extern __export void ffi_promise_set_fail_callback(ffi_promise *, void (*)(serializer_error));
     //? ffi_promise_free is not needed because the lifetime management is done by the smartview
 }
