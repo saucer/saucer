@@ -32,12 +32,12 @@ namespace saucer
 
       public:
         bool get_dev_tools() const SAUCER_THREAD_SAFE;
-        std::string get_url() const;
-        bool get_context_menu() const;
+        std::string get_url() const SAUCER_THREAD_SAFE;
+        bool get_context_menu() const SAUCER_THREAD_SAFE;
 
       public:
         void set_dev_tools(bool enabled) SAUCER_THREAD_SAFE;
-        void set_context_menu(bool enabled);
+        void set_context_menu(bool enabled) SAUCER_THREAD_SAFE;
         void set_url(const std::string &url) SAUCER_THREAD_SAFE;
         void serve_embedded(const std::string &file);
         void embed_files(const embedded_files &files) SAUCER_THREAD_SAFE;
