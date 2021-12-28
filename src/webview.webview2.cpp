@@ -1,6 +1,7 @@
 #include "utils.win32.hpp"
 #include <Shlwapi.h>
 #include <WebView2.h>
+#include <future>
 #include <lock.hpp>
 #include <system_error>
 #include <webview.hpp>
@@ -13,9 +14,13 @@ using Microsoft::WRL::Callback;
 
 namespace saucer
 {
+    using safe_call = std::function<void()>;
+
     struct window::impl
     {
         HWND hwnd;
+        static UINT WM_SAFE_CALL;
+        bool is_thread_safe() const;
     };
 
     struct webview::impl
@@ -54,6 +59,9 @@ namespace saucer
                     thiz->m_impl->webview_controller->put_Bounds(RECT{0, 0, width, height});
                 }
                 break;
+            case WM_SHOWWINDOW:
+                thiz->m_impl->webview_controller->put_IsVisible(static_cast<BOOL>(w_param));
+                break;
             }
         }
 
@@ -82,7 +90,6 @@ namespace saucer
                         Callback<create_webview>([this](HRESULT, ICoreWebView2Controller *controller) {
                             m_impl->webview_controller = controller;
                             controller->get_CoreWebView2(&m_impl->webview_window);
-                            m_impl->webview_controller->put_IsVisible(true); //? This call is explicitly needed, seems to be a bug, #1077, still not fixed as of 1.0.1083-prerelease
 
                             RECT bounds;
                             GetClientRect(window::m_impl->hwnd, &bounds);
@@ -174,11 +181,24 @@ namespace saucer
 
     void webview::set_url(const std::string &url)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { set_url(url); })));
+            return;
+        }
+
         m_impl->webview_window->Navigate(utils::widen(url).c_str());
     }
 
     std::string webview::get_url() const
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            std::promise<std::string> result;
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([&result, this] { result.set_value(get_url()); })));
+            return result.get_future().get();
+        }
+
         wil::unique_cotaskmem_string url;
         m_impl->webview_window->get_Source(&url);
 
@@ -187,6 +207,12 @@ namespace saucer
 
     void webview::set_dev_tools(bool enabled)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { set_dev_tools(enabled); })));
+            return;
+        }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
         settings->put_AreDevToolsEnabled(enabled);
@@ -194,6 +220,13 @@ namespace saucer
 
     bool webview::get_dev_tools() const
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            std::promise<bool> result;
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([&result, this] { result.set_value(get_dev_tools()); })));
+            return result.get_future().get();
+        }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
 
@@ -205,6 +238,12 @@ namespace saucer
 
     void webview::set_context_menu(bool enabled)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { set_context_menu(enabled); })));
+            return;
+        }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
         settings->put_AreDefaultContextMenusEnabled(enabled);
@@ -212,6 +251,13 @@ namespace saucer
 
     bool webview::get_context_menu() const
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            std::promise<bool> result;
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([&result, this] { result.set_value(get_context_menu()); })));
+            return result.get_future().get();
+        }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview_window->get_Settings(&settings);
 
@@ -223,6 +269,12 @@ namespace saucer
 
     void webview::embed_files(const embedded_files &files)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { embed_files(files); })));
+            return;
+        }
+
         m_embedded_files = files;
         if (!m_impl->resource_requested_token)
         {
@@ -283,6 +335,12 @@ namespace saucer
 
     void webview::clear_embedded()
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { clear_embedded(); })));
+            return;
+        }
+
         m_embedded_files.clear();
 
         if (m_impl->resource_requested_token)
@@ -301,6 +359,12 @@ namespace saucer
 
     void webview::run_java_script(const std::string &java_script)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { run_java_script(java_script); })));
+            return;
+        }
+
         if (!m_impl->js_ready)
         {
             m_impl->scripts_once.write()->emplace_back(java_script);
@@ -313,6 +377,12 @@ namespace saucer
 
     void webview::inject(const std::string &java_script, [[maybe_unused]] const load_time_t &load_time)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { inject(java_script, load_time); })));
+            return;
+        }
+
         if (load_time == load_time_t::creation)
         {
             m_impl->webview_window->AddScriptToExecuteOnDocumentCreated(
@@ -329,6 +399,12 @@ namespace saucer
 
     void webview::clear_scripts()
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            PostMessageW(window::m_impl->hwnd, window::m_impl->WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(new safe_call([=] { clear_scripts(); })));
+            return;
+        }
+
         auto scripts = m_impl->injected_scripts.write();
 
         for (const auto &script : *scripts)
