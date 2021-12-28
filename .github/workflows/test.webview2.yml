@@ -25,4 +25,4 @@ jobs:
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=WebView2 && cmake --build . --config Debug"
 
       - name: Run Tests
-        run: '.\build\saucer_tests.exe'
+        run: 'D:\\a\\saucer\\saucer\\build\\Debug\\saucer_tests.exe'
