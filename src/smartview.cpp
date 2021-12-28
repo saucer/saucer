@@ -132,13 +132,12 @@ namespace saucer
                 }
 
                 auto result = callback(result_message);
-                locked_evals->erase(result_message->id);
-
                 if (!result.has_value())
                 {
                     promise->reject(result.error());
                 }
 
+                locked_evals->erase(result_message->id);
                 return;
             }
         }
