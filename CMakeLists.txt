@@ -96,7 +96,7 @@ elseif (saucer_backend STREQUAL "WebView2")
     FetchContent_MakeAvailable(wil)
 
     include("NuGet.cmake")
-    nuget_add(WebView2 "Microsoft.Web.WebView2" 1.0.1020.30)
+    nuget_add(WebView2 "Microsoft.Web.WebView2" 1.0.1083-prerelease)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
     target_include_directories(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/include)
 
@@ -157,6 +157,7 @@ if (saucer_tests)
 
     file(GLOB test_src "tests/*.cpp")
     add_executable(${PROJECT_NAME}_tests ${test_src})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC THROW_ASSERT=1)
     target_link_libraries(${PROJECT_NAME}_tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain ${PROJECT_NAME})
 
 
