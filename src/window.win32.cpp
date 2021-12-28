@@ -25,7 +25,7 @@ namespace saucer
         static LRESULT wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
-    auto window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call");
+    UINT window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call");
 
     bool window::impl::is_thread_safe() const
     {
