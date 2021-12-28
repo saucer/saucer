@@ -17,7 +17,7 @@ namespace saucer
         lockpp::lock<std::map<const std::size_t, std::tuple<const resolve_callback_t, const std::shared_ptr<base_promise>, const std::type_index>>> m_evals;
         std::map<const std::string, std::tuple<const callback_t, const bool, const std::type_index>> m_callbacks;
         std::map<const std::type_index, const std::shared_ptr<serializer>> m_serializers;
-        std::atomic<std::uint64_t> m_id_counter{};
+        std::atomic<std::size_t> m_id_counter{};
         std::thread::id m_creation_thread;
 
       public:

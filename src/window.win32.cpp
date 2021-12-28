@@ -22,7 +22,7 @@ namespace saucer
         static HINSTANCE instance;
         static WNDCLASSW wnd_class;
         static std::atomic<int> open_windows;
-        static LRESULT wnd_proc(HWND, UINT, WPARAM, LPARAM);
+        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
     UINT window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call");
@@ -36,7 +36,7 @@ namespace saucer
     HINSTANCE window::impl::instance;
     std::atomic<int> window::impl::open_windows;
 
-    LRESULT window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         const auto *thiz = reinterpret_cast<window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
         if (thiz)
@@ -122,7 +122,7 @@ namespace saucer
         }
 
         auto *shcore = LoadLibraryW(L"Shcore.dll");
-        auto set_process_dpi_awareness = reinterpret_cast<HRESULT (*)(DWORD)>(GetProcAddress(shcore, "SetProcessDpiAwareness"));
+        auto set_process_dpi_awareness = reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(GetProcAddress(shcore, "SetProcessDpiAwareness"));
 
         if (set_process_dpi_awareness)
         {
@@ -131,7 +131,7 @@ namespace saucer
         else
         {
             auto *user32 = GetModuleHandleW(L"user32.dll");
-            auto set_process_dpi_aware = reinterpret_cast<bool (*)()>(GetProcAddress(user32, "SetProcessDPIAware"));
+            auto set_process_dpi_aware = reinterpret_cast<bool(CALLBACK *)()>(GetProcAddress(user32, "SetProcessDPIAware"));
             if (set_process_dpi_aware)
             {
                 set_process_dpi_aware();

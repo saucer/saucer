@@ -39,11 +39,11 @@ namespace saucer
         std::unique_ptr<EventRegistrationToken> resource_requested_token;
 
         static WNDPROC original_wnd_proc;
-        static LRESULT wnd_proc(HWND, UINT, WPARAM, LPARAM);
+        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
     WNDPROC webview::impl::original_wnd_proc;
-    LRESULT webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         const auto *thiz = reinterpret_cast<webview *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
