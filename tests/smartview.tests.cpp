@@ -36,4 +36,5 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
 
     smartview.set_url("https://ddg.gg");
     smartview.show();
+    smartview.run();
 }
