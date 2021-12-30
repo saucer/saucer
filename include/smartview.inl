@@ -3,6 +3,23 @@
 
 namespace saucer
 {
+    template <typename module_t> void smartview::add_module()
+    {
+        if (!m_modules.count(typeid(module_t)))
+        {
+            m_modules.emplace(typeid(module_t), std::make_shared<module_t>(*this));
+        }
+    }
+
+    template <typename module_t> std::shared_ptr<module_t> smartview::get_module()
+    {
+        if (m_modules.count(typeid(module_t)))
+        {
+            return std::dynamic_pointer_cast<module_t>(m_modules.at(typeid(module_t)));
+        }
+        return nullptr;
+    }
+
     template <typename serializer_t, typename func_t> void smartview::expose(const std::string &name, const func_t &func, bool async)
     {
         if (!m_serializers.count(typeid(serializer_t)))

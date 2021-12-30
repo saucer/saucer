@@ -81,9 +81,22 @@ namespace saucer
         }
     }
 
+    void smartview::url_changed(const std::string &url)
+    {
+        for (const auto &[module_type, module] : m_modules)
+        {
+            module->on_url_changed(url);
+        }
+    }
+
     void smartview::on_message(const std::string &message)
     {
         webview::on_message(message);
+
+        for (const auto &[module_type, module] : m_modules)
+        {
+            module->on_message(message);
+        }
 
         for (const auto &[serializer_type, serializer] : m_serializers)
         {
@@ -172,5 +185,25 @@ namespace saucer
         run_java_script("window.saucer._rpc[" + std::to_string(id) + "].reject(" + result + ");\n"
                         "delete window.saucer._rpc[" + std::to_string(id) + "];");
         // clang-format on
+    }
+
+    std::vector<std::shared_ptr<module>> smartview::get_modules()
+    {
+        std::vector<std::shared_ptr<module>> rtn;
+        std::transform(m_modules.begin(), m_modules.end(), std::back_inserter(rtn), [](const auto &item) { return item.second; });
+
+        return rtn;
+    }
+
+    std::shared_ptr<module> smartview::get_module(const std::string &name)
+    {
+        for (const auto &[module_type, module] : m_modules)
+        {
+            if (module->get_name() == name)
+            {
+                return module;
+            }
+        }
+        return nullptr;
     }
 } // namespace saucer

@@ -159,13 +159,7 @@ namespace saucer
         }
         web_channel_api.close();
 
-        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::urlChanged, [this](const QUrl &url) {
-            if (m_url_changed_callback)
-            {
-                m_url_changed_callback(url.toString().toStdString());
-            }
-        });
-
+        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::urlChanged, [this](const QUrl &url) { url_changed(url.toString().toStdString()); });
         m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::loadStarted, [this]() { m_impl->is_loaded = false; });
 
         m_impl->web_view->show();
@@ -395,6 +389,14 @@ namespace saucer
     void webview::on_url_changed(const url_changed_callback_t &callback)
     {
         m_url_changed_callback = callback;
+    }
+
+    void webview::url_changed(const std::string &url)
+    {
+        if (m_url_changed_callback)
+        {
+            m_url_changed_callback(url);
+        }
     }
 
     void webview::on_message(const std::string &message)

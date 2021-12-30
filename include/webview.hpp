@@ -25,6 +25,7 @@ namespace saucer
 
       protected:
         virtual void on_message(const std::string &);
+        virtual void url_changed(const std::string &);
 
       public:
         webview();

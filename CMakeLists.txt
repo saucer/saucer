@@ -110,7 +110,7 @@ elseif (saucer_backend STREQUAL "WebView2")
 endif()
 
 if (saucer_smartview)
-    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/module.cpp" "src/core.module.cpp")
     set(EXPECTED_BUILD_TESTS OFF)
     set(CMAKE_CXX_STANDARD 17)
     
