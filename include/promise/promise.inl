@@ -3,11 +3,12 @@
 #include <exception>
 
 #ifdef THROW_ASSERT
-#define assert(expr)                                                                                                                                                               \
+#define saucer_assert(expr)                                                                                                                                                        \
     if (!expr)                                                                                                                                                                     \
         throw std::runtime_error(#expr);
 #else
 #include <cassert>
+#define saucer_assert assert
 #endif
 
 namespace saucer
@@ -52,13 +53,13 @@ namespace saucer
 
     template <typename T> void promise<T>::wait()
     {
-        assert((void("Can't wait on promise in main thread"), is_safe()));
+        saucer_assert((void("Can't wait on promise in main thread"), is_safe()));
         m_future.wait();
     }
 
     template <typename T> T promise<T>::get()
     {
-        assert((void("get() should not be called by the main thread when the result is not ready"), is_safe() ? true : is_ready()));
+        saucer_assert((void("get() should not be called by the main thread when the result is not ready"), is_safe() ? true : is_ready()));
         return m_future.get();
     }
 
@@ -92,7 +93,7 @@ namespace saucer
 
     inline void promise<void>::wait()
     {
-        assert((void("Can't wait on promise in main thread"), is_safe()));
+        saucer_assert((void("Can't wait on promise in main thread"), is_safe()));
         m_future.wait();
     }
 
