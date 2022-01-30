@@ -1,6 +1,7 @@
 #include <iostream>
-#include <serializers/json.hpp>
-#include <smartview.hpp>
+#include "smartview.hpp"
+#include "serializers/json.hpp"
+#include "modules/core.module.hpp"
 
 int main()
 {
@@ -8,12 +9,13 @@ int main()
 
     webview.set_title("Hello World!");
     webview.set_size(500, 600);
+    webview.add_module<saucer::core_module>();
 
     webview.set_min_size(400, 500);
     webview.set_max_size(1000, 1200);
 
-    webview.on_resize([&](std::size_t width, std::size_t height) { std::cout << width << ":" << height << std::endl; });
-    webview.on_url_changed([](const std::string &url) { std::cout << "New url:" << url << std::endl; });
+    webview.on<saucer::web_event::url_changed>([](const std::string &url) { std::cout << "New url:" << url << std::endl; });
+    webview.on<saucer::window_event::resize>([](std::size_t width, std::size_t height) { std::cout << width << ":" << height << std::endl; });
 
     webview.eval<float>("Math.random()")->then([](float result) { std::cout << "Random: " << result << std::endl; });
     webview.eval<int>("Math.pow({},{})", 5, 2)->then([](int result) { std::cout << "Pow(5,2): " << result << std::endl; });
@@ -37,6 +39,7 @@ int main()
         true);
 
     webview.set_url("file://test.html");
+    webview.set_dev_tools(true);
     webview.show();
     webview.run();
 
