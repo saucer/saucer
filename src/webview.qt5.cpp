@@ -158,7 +158,6 @@ namespace saucer
         }
         web_channel_api.close();
 
-        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::urlChanged, [this](const QUrl &url) { url_changed(url.toString().toStdString()); });
         m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::loadStarted, [this]() { m_impl->is_loaded = false; });
         m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::urlChanged, [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
 
