@@ -22,27 +22,23 @@ namespace saucer
       protected:
         void resizeEvent(QResizeEvent *event) override
         {
-            if (m_resize_callback)
-            {
-                m_resize_callback(width(), height());
-            }
-
+            m_parent.m_events.at<window_event::resize>().fire(width(), height());
             QMainWindow::resizeEvent(event);
         }
 
         void closeEvent(QCloseEvent *event) override
         {
-            if (m_close_callback)
+            for (const auto &rtn : m_parent.m_events.at<window_event::close>().fire())
             {
-                if (m_close_callback())
+                if (rtn)
                 {
                     event->ignore();
-                }
-                else
-                {
-                    QMainWindow::closeEvent(event);
+                    return;
                 }
             }
+
+            m_parent.m_impl->close_callback();
+            QMainWindow::closeEvent(event);
         }
     };
 
@@ -285,16 +281,6 @@ namespace saucer
         m_impl->window->show();
     }
 
-    void window::on_resize(const resize_callback_t &callback)
-    {
-        m_resize_callback = callback;
-    }
-
-    void window::on_close(const close_callback_t &callback)
-    {
-        m_close_callback = callback;
-    }
-
     bool window::get_resizeable() const
     {
         return !m_impl->max_size && !m_impl->min_size;
@@ -308,10 +294,28 @@ namespace saucer
             return;
         }
 
-        auto old_callback = m_close_callback;
-        m_close_callback = nullptr;
-
+        // TODO(events): Should we set the callbacks back to their old value after calling close?
+        m_events.at<window_event::close>().clear_callbacks();
         m_impl->window->close();
-        m_close_callback = old_callback;
+    }
+
+    void window::clear(window_event event)
+    {
+        m_events.clear(event);
+    }
+
+    void window::unregister(window_event event, std::size_t id)
+    {
+        m_events.unregister(event, id);
+    }
+
+    template <> std::size_t window::on<window_event::resize>(events::get_t<window_event::resize> &&callback)
+    {
+        return m_events.at<window_event::resize>().add_callback(std::move(callback));
+    }
+
+    template <> std::size_t window::on<window_event::close>(events::get_t<window_event::close> &&callback)
+    {
+        return m_events.at<window_event::close>().add_callback(std::move(callback));
     }
 } // namespace saucer

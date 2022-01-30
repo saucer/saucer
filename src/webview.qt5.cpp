@@ -373,17 +373,9 @@ namespace saucer
         m_impl->web_view->page()->scripts().clear();
     }
 
-    void webview::on_url_changed(const url_changed_callback_t &callback)
+    void webview::on_url_changed(const std::string &url)
     {
-        m_url_changed_callback = callback;
-    }
-
-    void webview::url_changed(const std::string &url)
-    {
-        if (m_url_changed_callback)
-        {
-            m_url_changed_callback(url);
-        }
+        m_events.at<web_event::url_changed>().fire(url);
     }
 
     void webview::on_message(const std::string &message)
@@ -401,6 +393,21 @@ namespace saucer
         {
             m_impl->is_loaded = true;
         }
+    }
+
+    void webview::clear(web_event event)
+    {
+        m_events.clear(event);
+    }
+
+    void webview::unregister(web_event event, std::size_t id)
+    {
+        m_events.unregister(event, id);
+    }
+
+    template <> std::size_t webview::on<web_event::url_changed>(events::get_t<web_event::url_changed> &&callback)
+    {
+        return m_events.at<web_event::url_changed>().add_callback(std::move(callback));
     }
 } // namespace saucer
 
