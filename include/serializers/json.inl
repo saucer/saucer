@@ -1,6 +1,6 @@
 #pragma once
 #include "json.hpp"
-#include <smartview.hpp>
+#include "smartview.hpp"
 
 namespace saucer::serializers
 {
@@ -48,14 +48,14 @@ namespace saucer::serializers
 
     namespace internal
     {
-        template <typename type_t> class is_serializable
+        template <typename Type> class is_serializable
         {
             static auto test(...) -> std::uint8_t;
             static auto test(void *) -> std::uint16_t;
-            template <typename O> static auto test(type_t *) -> decltype(std::is_constructible_v<nlohmann::json>(std::declval<O>()), std::uint16_t{});
+            template <typename O> static auto test(Type *) -> decltype(std::is_constructible_v<nlohmann::json>(std::declval<O>()), std::uint16_t{});
 
           public:
-            static const bool value = sizeof(test(reinterpret_cast<type_t *>(0))) == sizeof(std::uint16_t);
+            static const bool value = sizeof(test(reinterpret_cast<Type *>(0))) == sizeof(std::uint16_t);
         };
 
         template <typename T> struct remove_const_ref
@@ -71,50 +71,50 @@ namespace saucer::serializers
         template <typename T> struct function_traits : public function_traits<decltype(&T::operator())>
         {
         };
-        template <typename _rtn_t, typename... _args> struct function_traits<_rtn_t(_args...)>
+        template <typename Return, typename... Args> struct function_traits<Return(Args...)>
         {
-            using rtn_t = _rtn_t;
-            using args_t = std::tuple<remove_const_ref_t<_args>...>;
-            static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            using rtn_t = Return;
+            using args_t = std::tuple<remove_const_ref_t<Args>...>;
+            static const bool serializable = is_serializable<Return>::value && std::conjunction_v<is_serializable<remove_const_ref_t<Args>>...>;
         };
-        template <typename _rtn_t, typename... _args> struct function_traits<_rtn_t(_args...) const>
+        template <typename Return, typename... Args> struct function_traits<Return(Args...) const>
         {
-            using rtn_t = _rtn_t;
-            using args_t = std::tuple<remove_const_ref_t<_args>...>;
-            static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            using rtn_t = Return;
+            using args_t = std::tuple<remove_const_ref_t<Args>...>;
+            static const bool serializable = is_serializable<Return>::value && std::conjunction_v<is_serializable<remove_const_ref_t<Args>>...>;
         };
-        template <typename _rtn_t, typename... _args> struct function_traits<_rtn_t(_args...) noexcept>
+        template <typename Return, typename... Args> struct function_traits<Return(Args...) noexcept>
         {
-            using rtn_t = _rtn_t;
-            using args_t = std::tuple<remove_const_ref_t<_args>...>;
-            static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            using rtn_t = Return;
+            using args_t = std::tuple<remove_const_ref_t<Args>...>;
+            static const bool serializable = is_serializable<Return>::value && std::conjunction_v<is_serializable<remove_const_ref_t<Args>>...>;
         };
-        template <typename _class, typename _rtn_t, typename... _args> struct function_traits<_rtn_t (_class::*)(_args...) const>
+        template <typename _class, typename Return, typename... Args> struct function_traits<Return (_class::*)(Args...) const>
         {
-            using rtn_t = _rtn_t;
-            using args_t = std::tuple<remove_const_ref_t<_args>...>;
-            static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<_args>>...>;
+            using rtn_t = Return;
+            using args_t = std::tuple<remove_const_ref_t<Args>...>;
+            static const bool serializable = is_serializable<rtn_t>::value && std::conjunction_v<is_serializable<remove_const_ref_t<Args>>...>;
         };
 
-        template <std::size_t I = 0, typename... args, typename callback_t> void tuple_visit(std::tuple<args...> &tuple, const callback_t &callback)
+        template <std::size_t I = 0, typename... Args, typename Callback> void tuple_visit(std::tuple<Args...> &tuple, const Callback &callback)
         {
-            if constexpr (sizeof...(args) > 0)
+            if constexpr (sizeof...(Args) > 0)
             {
                 callback(I, std::get<I>(tuple));
 
-                if constexpr (sizeof...(args) > (I + 1))
+                if constexpr (sizeof...(Args) > (I + 1))
                 {
                     tuple_visit<I + 1>(tuple, callback);
                 }
             }
         }
-        template <std::size_t I = 0, typename... args, typename callback_t> void tuple_visit(const std::tuple<args...> &tuple, const callback_t &callback)
+        template <std::size_t I = 0, typename... Args, typename Callback> void tuple_visit(const std::tuple<Args...> &tuple, const Callback &callback)
         {
-            if constexpr (sizeof...(args) > 0)
+            if constexpr (sizeof...(Args) > 0)
             {
                 callback(I, std::get<I>(tuple));
 
-                if constexpr (sizeof...(args) > (I + 1))
+                if constexpr (sizeof...(Args) > (I + 1))
                 {
                     tuple_visit<I + 1>(tuple, callback);
                 }
@@ -140,11 +140,11 @@ namespace saucer::serializers
         template <typename T> using arg_to_tuple_v = typename arg_to_tuple<T>::type;
     } // namespace internal
 
-    template <typename func_t> auto json::serialize_function(const func_t &func)
+    template <typename Function> auto json::serialize_function(const Function &func)
     {
         return [func](const std::shared_ptr<function_data> &data) -> tl::expected<std::string, error> {
             auto json_message = std::dynamic_pointer_cast<json_function_data>(data);
-            using traits = internal::function_traits<func_t>;
+            using traits = internal::function_traits<Function>;
             using args_t = typename traits::args_t;
             using rtn_t = typename traits::rtn_t;
             static_assert(traits::serializable);
@@ -182,7 +182,7 @@ namespace saucer::serializers
         };
     }
 
-    template <typename... params_t> auto json::serialize_arguments(const params_t &...params)
+    template <typename... Params> auto json::serialize_arguments(const Params &...params)
     {
         fmt::dynamic_format_arg_store<fmt::format_context> args;
 

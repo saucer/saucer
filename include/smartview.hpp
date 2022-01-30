@@ -1,11 +1,12 @@
 #pragma once
-#include <fmt/args.h>
-#include <modules/module.hpp>
-#include <promise/promise.hpp>
-#include <serializers/serializer.hpp>
-#include <tl/expected.hpp>
 #include <typeindex>
-#include <webview.hpp>
+#include <fmt/args.h>
+#include <tl/expected.hpp>
+
+#include "webview.hpp"
+#include "modules/module.hpp"
+#include "promise/promise.hpp"
+#include "serializers/serializer.hpp"
 
 namespace saucer
 {
@@ -28,7 +29,9 @@ namespace saucer
 
       protected:
         void on_message(const std::string &) override;
-        void url_changed(const std::string &) override;
+        void on_url_changed(const std::string &) override;
+
+      protected:
         void resolve_callback(const std::shared_ptr<function_data> &, const callback_t &);
         void add_callback(const std::type_index &, const std::string &, const callback_t &, bool);
         void add_eval(const std::type_index &, const std::shared_ptr<base_promise> &, const resolve_callback_t &, const std::string &);
@@ -42,17 +45,17 @@ namespace saucer
         std::shared_ptr<module> get_module(const std::string &name);
 
       public:
-        template <typename module_t> void add_module();
-        template <typename module_t> std::shared_ptr<module_t> get_module();
-        template <typename serializer_t, typename func_t> void expose(const std::string &name, const func_t &func, bool async = false);
-        template <typename rtn_t, typename serializer_t, typename... params_t> auto eval(const std::string &code, params_t &&...params);
+        template <typename Module> void add_module();
+        template <typename Module> std::shared_ptr<Module> get_module();
+        template <typename Return, typename Serializer, typename... Params> auto eval(const std::string &code, Params &&...params);
+        template <typename Serializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
     };
 
-    template <typename default_serializer> class simple_smartview : public smartview
+    template <typename DefaultSerializer> class simple_smartview : public smartview
     {
       public:
-        template <typename serializer_t = default_serializer, typename func_t> void expose(const std::string &name, const func_t &func, bool async = false);
-        template <typename rtn_t, typename serializer_t = default_serializer, typename... params_t> auto eval(const std::string &code, params_t &&...params);
+        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> auto eval(const std::string &code, Params &&...params);
+        template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
     };
 } // namespace saucer
 

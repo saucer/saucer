@@ -1,6 +1,6 @@
 #pragma once
-#include "promise.hpp"
 #include <exception>
+#include "promise.hpp"
 
 #ifdef THROW_ASSERT
 #define saucer_assert(expr)                                                                                                                                                        \

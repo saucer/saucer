@@ -1,7 +1,7 @@
 #pragma once
 #include <nlohmann/json.hpp>
-#include <promise/promise.hpp>
-#include <serializers/serializer.hpp>
+#include "promise/promise.hpp"
+#include "serializers/serializer.hpp"
 
 namespace saucer
 {
@@ -27,8 +27,8 @@ namespace saucer
             std::string java_script_serializer() const override;
             std::shared_ptr<message_data> parse(const std::string &data) const override;
 
-            template <typename func_t> static auto serialize_function(const func_t &func);
-            template <typename... params_t> static auto serialize_arguments(const params_t &...params);
+            template <typename Function> static auto serialize_function(const Function &func);
+            template <typename... Params> static auto serialize_arguments(const Params &...params);
             template <typename T> static auto resolve_promise(const std::shared_ptr<promise<T>> &promise);
         };
     } // namespace serializers
