@@ -1,25 +1,28 @@
 #pragma once
-#include <functional>
 #include <memory>
 #include <string>
-
-#ifndef SAUCER_THREAD_SAFE
-#define SAUCER_THREAD_SAFE
-#endif
+#include <functional>
+#include "events/events.hpp"
 
 namespace saucer
 {
+    enum class window_event
+    {
+        resize,
+        close
+    };
+
+#include "annotations.hpp"
     class window
     {
         struct impl;
-        using close_callback_t = std::function<bool()>;
-        using resize_callback_t = std::function<void(std::size_t, std::size_t)>;
-
-      private:
-        close_callback_t m_close_callback;
-        resize_callback_t m_resize_callback;
+        using events = event_handler<                                    //
+            event<window_event::resize, void(std::size_t, std::size_t)>, //
+            event<window_event::close, bool()>                           //
+            >;
 
       protected:
+        events m_events;
         std::unique_ptr<impl> m_impl;
 
       protected:
@@ -30,32 +33,39 @@ namespace saucer
 
       public:
         bool get_resizeable() const;
-        bool get_decorations() const SAUCER_THREAD_SAFE;
         std::string get_title() const;
-        bool get_always_on_top() const SAUCER_THREAD_SAFE;
-        std::pair<std::size_t, std::size_t> get_size() const SAUCER_THREAD_SAFE;
-        std::pair<std::size_t, std::size_t> get_max_size() const SAUCER_THREAD_SAFE;
-        std::pair<std::size_t, std::size_t> get_min_size() const SAUCER_THREAD_SAFE;
+        [[thread_safe]] bool get_decorations() const;
+        [[thread_safe]] bool get_always_on_top() const;
+        [[thread_safe]] std::pair<std::size_t, std::size_t> get_size() const;
+        [[thread_safe]] std::pair<std::size_t, std::size_t> get_max_size() const;
+        [[thread_safe]] std::pair<std::size_t, std::size_t> get_min_size() const;
 
       public:
-        void hide() SAUCER_THREAD_SAFE;
-        void show() SAUCER_THREAD_SAFE;
-        void exit() SAUCER_THREAD_SAFE;
-
-      public:
-        static void run();
-
-      public:
-        void on_close(const close_callback_t &callback);
-        void on_resize(const resize_callback_t &callback);
+        [[thread_safe]] void hide();
+        [[thread_safe]] void show();
+        [[thread_safe]] void exit();
 
       public:
         void set_resizeable(bool enabled);
-        void set_decorations(bool enabled) SAUCER_THREAD_SAFE;
         void set_title(const std::string &);
-        void set_always_on_top(bool enabled) SAUCER_THREAD_SAFE;
-        void set_size(std::size_t width, std::size_t height) SAUCER_THREAD_SAFE;
-        void set_max_size(std::size_t width, std::size_t height) SAUCER_THREAD_SAFE;
-        void set_min_size(std::size_t width, std::size_t height) SAUCER_THREAD_SAFE;
+        [[thread_safe]] void set_decorations(bool enabled);
+        [[thread_safe]] void set_always_on_top(bool enabled);
+        [[thread_safe]] void set_size(std::size_t width, std::size_t height);
+        [[thread_safe]] void set_max_size(std::size_t width, std::size_t height);
+        [[thread_safe]] void set_min_size(std::size_t width, std::size_t height);
+
+      public:
+        [[thread_safe]] void clear(window_event event);
+        [[thread_safe]] void unregister(window_event event, std::size_t id);
+
+        template <window_event Event> //
+        [[thread_safe]] std::size_t on(events::get_t<Event> &&) = delete;
+
+      public:
+        static void run();
     };
+#include "annotations.hpp" //NOLINT
+
+    template <> std::size_t window::on<window_event::close>(events::get_t<window_event::close> &&);
+    template <> std::size_t window::on<window_event::resize>(events::get_t<window_event::resize> &&);
 } // namespace saucer
