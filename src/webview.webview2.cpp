@@ -155,7 +155,7 @@ namespace saucer
                                     }
                                 };
                             )",
-                                   load_time_t::creation);
+                                   load_time::creation);
 
                             return S_OK;
                         }).Get());
@@ -375,7 +375,7 @@ namespace saucer
         }
     }
 
-    void webview::inject(const std::string &java_script, [[maybe_unused]] const load_time_t &load_time)
+    void webview::inject(const std::string &java_script, [[maybe_unused]] const load_time &load_time)
     {
         if (!window::m_impl->is_thread_safe())
         {
@@ -383,7 +383,7 @@ namespace saucer
             return;
         }
 
-        if (load_time == load_time_t::creation)
+        if (load_time == load_time::creation)
         {
             m_impl->webview_window->AddScriptToExecuteOnDocumentCreated(
                 utils::widen(java_script).c_str(), Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {

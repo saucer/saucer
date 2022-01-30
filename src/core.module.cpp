@@ -44,7 +44,8 @@ namespace saucer
         smartview.expose<json>("core.set_max_size", [this](std::size_t width, std::size_t height) { m_smartview.set_max_size(width, height); });
 
         smartview.expose<json>("core.is_module_loaded", [this](const std::string &module) { return static_cast<bool>(m_smartview.get_module(module)); });
-        smartview.expose<json>("core.inject", [this](const std::string &java_script, size_t load_time) { m_smartview.inject(java_script, static_cast<load_time_t>(load_time)); });
+        smartview.expose<json>("core.inject",
+                               [this](const std::string &java_script, size_t load_time) { m_smartview.inject(java_script, static_cast<enum load_time>(load_time)); });
     }
 
     void core_module::on_message(const std::string &) {}

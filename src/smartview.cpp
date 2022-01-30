@@ -57,7 +57,7 @@ namespace saucer
             }));
         }
         )js",
-               load_time_t::creation);
+               load_time::creation);
     }
 
     void smartview::resolve_callback(const std::shared_ptr<function_data> &data, const callback_t &callback)
@@ -81,12 +81,14 @@ namespace saucer
         }
     }
 
-    void smartview::url_changed(const std::string &url)
+    void smartview::on_url_changed(const std::string &url)
     {
         for (const auto &[module_type, module] : m_modules)
         {
             module->on_url_changed(url);
         }
+
+        webview::on_url_changed(url);
     }
 
     void smartview::on_message(const std::string &message)
@@ -159,7 +161,7 @@ namespace saucer
     void smartview::add_callback(const std::type_index &serializer_t, const std::string &name, const callback_t &callback, bool async)
     {
         m_callbacks.emplace(name, std::make_tuple(callback, async, serializer_t));
-        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer_t)->java_script_serializer() + ");", load_time_t::creation);
+        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer_t)->java_script_serializer() + ");", load_time::creation);
     }
 
     void smartview::add_eval(const std::type_index &serializer_t, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback, const std::string &code)

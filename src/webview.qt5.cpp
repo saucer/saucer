@@ -139,7 +139,7 @@ namespace saucer
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
         if (web_channel_api.open(QIODevice::ReadOnly))
         {
-            inject(web_channel_api.readAll().toStdString(), load_time_t::creation);
+            inject(web_channel_api.readAll().toStdString(), load_time::creation);
             inject(R"js(
                     window.saucer = {
                         async on_message(message)
@@ -154,7 +154,7 @@ namespace saucer
 
                     window.saucer.on_message("js_ready");
                     )js",
-                   load_time_t::creation);
+                   load_time::creation);
         }
         web_channel_api.close();
 
@@ -314,7 +314,7 @@ namespace saucer
         }
     }
 
-    void webview::inject(const std::string &java_script, const load_time_t &load_time)
+    void webview::inject(const std::string &java_script, const load_time &load_time)
     {
         // ? Due to Qt not executing the scripts in a proper order we should probably queue up everything that gets executed on document-creation, so
         // ? that we can only register one script to be executed on creation and thus achieve an execution in proper order.
@@ -331,14 +331,14 @@ namespace saucer
 
         switch (load_time)
         {
-        case load_time_t::creation:
+        case load_time::creation:
             script = m_impl->web_view->page()->scripts().findScript("_creation");
             found = !script.isNull();
 
             script.setName("_creation");
             script.setInjectionPoint(QWebEngineScript::DocumentCreation);
             break;
-        case load_time_t::ready:
+        case load_time::ready:
             script = m_impl->web_view->page()->scripts().findScript("_ready");
             found = !script.isNull();
 

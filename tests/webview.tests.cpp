@@ -74,7 +74,7 @@ TEST_CASE("Webview functionality is tested", "[webview]")
                 webview.set_context_menu(false);
                 REQUIRE_FALSE(webview.get_context_menu());
 
-                webview.inject("if(window.location.href == 'https://duckduckgo.com/') { window.location.href = 'https://github.com'; }", saucer::load_time_t::creation);
+                webview.inject("if(window.location.href == 'https://duckduckgo.com/') { window.location.href = 'https://github.com'; }", saucer::load_time::creation);
                 webview.set_url("https://google.com");
 
                 std::this_thread::sleep_for(std::chrono::seconds(2));
