@@ -3,6 +3,41 @@
 
 namespace saucer
 {
+    template <typename Result, typename Iterator, typename... Params>
+    callback_iterator<Result, Iterator, Params...>::callback_iterator(Iterator &&iterator, std::tuple<Params...> &params) : m_iterator(iterator), m_params(params)
+    {
+    }
+
+    template <typename Result, typename Iterator, typename... Params> Result callback_iterator<Result, Iterator, Params...>::operator*()
+    {
+        return std::apply([this](auto &&...params) { return (m_iterator->second(params...)); }, m_params);
+    }
+
+    template <typename Result, typename Iterator, typename... Params> callback_iterator<Result, Iterator, Params...> callback_iterator<Result, Iterator, Params...>::operator++()
+    {
+        return callback_iterator<Result, Iterator, Params...>(std::move(++m_iterator), m_params);
+    }
+
+    template <typename Result, typename Iterator, typename... Params> bool callback_iterator<Result, Iterator, Params...>::operator!=(const callback_iterator &other)
+    {
+        return other.m_iterator != m_iterator;
+    }
+
+    template <typename Type, typename... Params>
+    callback_invoker<Type, Params...>::callback_invoker(callbacks_t &&callbacks, std::tuple<Params...> &&params) : m_callbacks(std::move(callbacks)), m_params(params)
+    {
+    }
+
+    template <typename Type, typename... Params> auto callback_invoker<Type, Params...>::begin()
+    {
+        return callback_iterator<callback_result_t, raw_iterator_t, Params...>(m_callbacks.begin(), m_params);
+    }
+
+    template <typename Type, typename... Params> auto callback_invoker<Type, Params...>::end()
+    {
+        return callback_iterator<callback_result_t, raw_iterator_t, Params...>(m_callbacks.end(), m_params);
+    }
+
     template <auto Val, typename Type> void event<Val, Type>::clear_callbacks()
     {
         m_callbacks.write()->clear();
@@ -10,10 +45,9 @@ namespace saucer
 
     template <auto Val, typename Type> template <typename... Params> typename event<Val, Type>::fire_result_t event<Val, Type>::fire(Params &&...params)
     {
-        const auto locked_callbacks = m_callbacks.read();
-
         if constexpr (std::is_same_v<fire_result_t, void>)
         {
+            const auto locked_callbacks = m_callbacks.read();
             for (const auto &[id, callback] : *locked_callbacks)
             {
                 callback(std::forward<Params>(params)...);
@@ -21,12 +55,7 @@ namespace saucer
         }
         else
         {
-            fire_result_t rtn;
-            for (const auto &[id, callback] : *locked_callbacks)
-            {
-                rtn.emplace_back(callback(std::forward<Params>(params)...));
-            }
-            return rtn;
+            return fire_result_t(std::move(m_callbacks.copy()), std::tuple<Params...>(std::forward<Params>(params)...));
         }
     }
 

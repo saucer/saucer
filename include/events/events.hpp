@@ -9,14 +9,48 @@
 
 namespace saucer
 {
-    template <auto Val, typename Function> struct event
+    template <typename Result, typename Iterator, typename... Params> class callback_iterator
+    {
+      private:
+        Iterator m_iterator;
+        std::tuple<Params...> &m_params;
+
+      public:
+        callback_iterator(Iterator &&, std::tuple<Params...> &);
+
+      public:
+        Result operator*();
+        callback_iterator operator++();
+        bool operator!=(const callback_iterator &);
+    };
+
+    template <typename Type, typename... Params> class callback_invoker
+    {
+        using callback_t = std::function<Type>;
+        using callbacks_t = std::map<std::size_t, callback_t>;
+        using raw_iterator_t = typename callbacks_t::iterator;
+        using callback_result_t = typename callback_t::result_type;
+
+      private:
+        callbacks_t m_callbacks;
+        std::tuple<Params...> m_params;
+
+      public:
+        callback_invoker(callbacks_t &&, std::tuple<Params...> &&);
+
+      public:
+        auto begin();
+        auto end();
+    };
+
+    template <auto Val, typename Type> struct event
     {
         static const auto value = Val;
-        using callback_t = std::function<Function>;
+        using callback_t = std::function<Type>;
 
       private:
         using callback_result_t = typename callback_t::result_type;
-        using fire_result_t = std::conditional_t<std::is_same_v<callback_result_t, void>, void, std::vector<callback_result_t>>;
+        using fire_result_t = std::conditional_t<std::is_same_v<callback_result_t, void>, void, callback_invoker<Type>>;
 
       private:
         std::atomic<std::size_t> m_counter{0};
