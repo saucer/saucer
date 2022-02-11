@@ -43,7 +43,7 @@ namespace saucer
       public:
         [[thread_safe]] void hide();
         [[thread_safe]] void show();
-        [[thread_safe]] void exit();
+        [[thread_safe]] void close();
 
       public:
         void set_resizeable(bool enabled);
