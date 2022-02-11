@@ -63,8 +63,9 @@ namespace saucer
         lockpp::lock<callback_t> m_callback;
 
       public:
+        void get();
+        void resolve();
         void wait() override;
-        void resolve() const;
         bool is_ready() override;
         promise<void> &then(const callback_t &);
         void reject(const serializer::error &) override;

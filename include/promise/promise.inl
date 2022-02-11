@@ -78,8 +78,10 @@ namespace saucer
     inline promise<void>::~promise() = default;
     inline promise<void>::promise(const std::thread::id &creation_thread) : base_promise(creation_thread), m_future(m_promise.get_future()) {}
 
-    inline void promise<void>::resolve() const
+    inline void promise<void>::resolve()
     {
+        m_promise.set_value();
+
         if (*m_callback.read())
         {
             (*m_callback.read())();
@@ -95,6 +97,12 @@ namespace saucer
     {
         saucer_assert((void("Can't wait on promise in main thread"), is_safe()));
         m_future.wait();
+    }
+
+    inline void promise<void>::get()
+    {
+        saucer_assert((void("get() should not be called by the main thread when the result is not ready"), is_safe() ? true : is_ready()));
+        m_future.get();
     }
 
     inline promise<void> &promise<void>::then(const callback_t &callback)
