@@ -7,7 +7,10 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
 {
     auto smartview = saucer::simple_smartview<saucer::serializers::json>();
 
-    smartview.expose("test", [](int a, const std::string &b) {
+    bool test_called = false;
+    smartview.expose("test", [&]() { test_called = true; });
+
+    smartview.expose("test2", [](int a, const std::string &b) {
         REQUIRE(a == 10);
         REQUIRE(b == "Hello World!");
     });
@@ -21,7 +24,10 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
             REQUIRE(b == "Hello World!");
             REQUIRE(smartview.eval<int>("Math.pow({}, {})", 2, 2)->get() == 4);
 
-            smartview.exit();
+            smartview.eval<void>("window.saucer.call({}, [])", "test")->wait();
+            REQUIRE(test_called);
+
+            smartview.close();
         },
         true);
 
@@ -31,7 +37,7 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
     REQUIRE_THROWS(smartview.eval<int>("Math.pow({}, {})", 2, 2)->wait());
     REQUIRE_THROWS(smartview.eval<int>("Math.pow({}, {})", 2, 2)->get() == 4);
 
-    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test", 10, "Hello World!");
+    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test2", 10, "Hello World!");
     smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test_async", 10, "Hello World!");
 
     smartview.set_url("https://ddg.gg");

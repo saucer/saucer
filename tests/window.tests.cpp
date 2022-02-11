@@ -37,17 +37,12 @@ TEST_CASE("Window functionality is tested", "[window]")
     //! Hide & Show require platform specifc code.
     //! On Close requires user input
 
-    window.on_resize([&](auto width, auto height) {
+    window.on<saucer::window_event::resize>([&](auto width, auto height) {
         static std::once_flag flag;
 
         std::call_once(flag, [&] {
             REQUIRE(width == 70);
             REQUIRE(height == 70);
-
-            window.set_always_on_top(true);
-            REQUIRE(window.get_always_on_top());
-            window.set_always_on_top(false);
-            REQUIRE_FALSE(window.get_always_on_top());
 
             auto fut_ptr = std::make_shared<std::future<void>>();
             *fut_ptr = std::async(std::launch::async, [fut_ptr, &window] {
@@ -73,9 +68,17 @@ TEST_CASE("Window functionality is tested", "[window]")
                 window.set_always_on_top(false);
                 REQUIRE_FALSE(window.get_always_on_top());
 
-                window.exit();
+                window.close();
             });
         });
+
+        if (width == 60 && height == 60)
+        {
+            window.set_always_on_top(true);
+            REQUIRE(window.get_always_on_top());
+            window.set_always_on_top(false);
+            REQUIRE_FALSE(window.get_always_on_top());
+        }
     });
 
     window.show();
