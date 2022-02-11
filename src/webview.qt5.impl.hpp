@@ -28,7 +28,11 @@ namespace saucer
 
     inline std::string webview::impl::inject_script = []() {
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
-        assert((void("Failed to open required qwebchannel.js"), web_channel_api.open(QIODevice::ReadOnly)));
+
+        if (!web_channel_api.open(QIODevice::ReadOnly))
+        {
+            assert((void("Failed to open required qwebchannel.js"), false));
+        }
 
         auto content = web_channel_api.readAll().toStdString();
         web_channel_api.close();
