@@ -9,9 +9,9 @@ namespace saucer
     {
         using serializers::json;
 
-        smartview.expose<json>("core.exit", [this] { m_smartview.exit(); });
         smartview.expose<json>("core.hide", [this] { m_smartview.hide(); });
         smartview.expose<json>("core.show", [this] { m_smartview.show(); });
+        smartview.expose<json>("core.close", [this] { m_smartview.close(); });
 
         smartview.expose<json>("core.get_url", [this] { return m_smartview.get_url(); });
         smartview.expose<json>("core.set_url", [this](const std::string &url) { m_smartview.set_url(url); });
