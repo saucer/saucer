@@ -1,7 +1,7 @@
 #include <thread>
 #include <optional>
 #include "window.hpp"
-#include "window.qt5.impl.inl"
+#include "window.qt5.impl.hpp"
 
 #include <QApplication>
 #include <utility>

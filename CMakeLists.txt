@@ -15,7 +15,7 @@ set(saucer_backend Default CACHE STRING "The backend to use")
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
 
 if (NOT saucer_smartview)
-    message("[Saucer] Not using smartview, native interoperability will be disabled")
+    message(STATUS "[Saucer] Not using smartview, native interoperability will be disabled")
 endif()
 
 if (NOT saucer_backend IN_LIST saucer_backend_types)
@@ -33,6 +33,10 @@ else()
     endif()    
 endif()
 
+if (saucer_backend MATCHES "^Qt6?$")
+    message(STATUS "[Saucer] Enabling AUTOMOC for Qt backend")
+    set(CMAKE_AUTOMOC ON)
+endif()
 # --------------------------------------------------------------------------------------------------------
 # Create library
 # --------------------------------------------------------------------------------------------------------
@@ -75,6 +79,7 @@ endif()
 
 if (saucer_backend STREQUAL "Qt")
     target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt5.cpp" "src/window.qt5.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt5.impl.hpp" "src/window.qt5.impl.hpp")
 
     find_package(Qt5 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::WebEngineWidgets Qt5::WebChannel)
@@ -84,6 +89,7 @@ if (saucer_backend STREQUAL "Qt")
     endif()
 elseif (saucer_backend STREQUAL "Qt6")
     target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt6.cpp" "src/window.qt6.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt6.impl.hpp" "src/window.qt6.impl.hpp")
 
     find_package(Qt6 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::WebEngineWidgets Qt6::WebChannel)

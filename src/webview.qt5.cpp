@@ -1,6 +1,6 @@
 #include "webview.hpp"
-#include "window.qt5.impl.inl"
-#include "webview.qt5.impl.inl"
+#include "window.qt5.impl.hpp"
+#include "webview.qt5.impl.hpp"
 
 #include <QWebEngineScript>
 #include <QWebEngineProfile>
