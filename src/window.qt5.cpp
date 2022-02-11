@@ -15,6 +15,7 @@ namespace saucer
 
         if (!m_impl->application)
         {
+            qputenv("QT_LOGGING_RULES", "*=false");
             m_impl->application = new QApplication(argc, &argv);
         }
 
