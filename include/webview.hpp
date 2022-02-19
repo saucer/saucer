@@ -44,11 +44,13 @@ namespace saucer
       public:
         [[thread_safe]] bool get_dev_tools() const;
         [[thread_safe]] std::string get_url() const;
+        [[thread_safe]] bool get_transparent() const;
         [[thread_safe]] bool get_context_menu() const;
 
       public:
         void serve_embedded(const std::string &file);
         [[thread_safe]] void set_dev_tools(bool enabled);
+        [[thread_safe]] void set_transparent(bool enabled);
         [[thread_safe]] void set_context_menu(bool enabled);
         [[thread_safe]] void set_url(const std::string &url);
         [[thread_safe]] void embed_files(embedded_files &&files);

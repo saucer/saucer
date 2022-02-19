@@ -75,6 +75,15 @@ namespace saucer
         return m_impl->web_view->url().toString().toStdString();
     }
 
+    bool webview::get_transparent() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this] { return get_transparent(); });
+        }
+        return m_impl->web_view->testAttribute(Qt::WA_TranslucentBackground);
+    }
+
     bool webview::get_context_menu() const
     {
         if (!window::m_impl->is_thread_safe())
@@ -112,6 +121,18 @@ namespace saucer
         {
             m_impl->dev_view.reset();
         }
+    }
+
+    void webview::set_transparent(bool enabled)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([=] { return set_transparent(enabled); });
+        }
+
+        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, enabled);
+        window::m_impl->window->setAttribute(Qt::WA_TranslucentBackground, enabled);
+        m_impl->web_view->page()->setBackgroundColor(enabled ? Qt::transparent : Qt::white);
     }
 
     void webview::set_context_menu(bool enabled)
