@@ -91,6 +91,12 @@ namespace saucer
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
     }
 
+    std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> window::get_background_color() const
+    {
+        const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
+        return {color.red(), color.green(), color.blue(), color.alpha()};
+    }
+
     void window::hide()
     {
         if (!m_impl->is_thread_safe())
@@ -194,6 +200,14 @@ namespace saucer
         }
         m_impl->window->setMinimumSize(static_cast<int>(width), static_cast<int>(height));
         m_impl->min_size = m_impl->window->minimumSize();
+    }
+
+    void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
+    {
+        auto palette = m_impl->window->palette();
+        palette.setColor(QPalette::ColorRole::Window, QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a)));
+
+        m_impl->window->setPalette(palette);
     }
 
     void window::clear(window_event event)

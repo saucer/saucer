@@ -39,6 +39,7 @@ namespace saucer
         [[thread_safe]] std::pair<std::size_t, std::size_t> get_size() const;
         [[thread_safe]] std::pair<std::size_t, std::size_t> get_max_size() const;
         [[thread_safe]] std::pair<std::size_t, std::size_t> get_min_size() const;
+        [[thread_safe]] std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> get_background_color() const;
 
       public:
         [[thread_safe]] void hide();
@@ -53,6 +54,7 @@ namespace saucer
         [[thread_safe]] void set_size(std::size_t width, std::size_t height);
         [[thread_safe]] void set_max_size(std::size_t width, std::size_t height);
         [[thread_safe]] void set_min_size(std::size_t width, std::size_t height);
+        [[thread_safe]] void set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a);
 
       public:
         [[thread_safe]] void clear(window_event event);
