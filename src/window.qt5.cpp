@@ -52,7 +52,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_decorations(); });
         }
-        return !(m_impl->window->windowFlags() & Qt::FramelessWindowHint);
+        return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
     }
 
     bool window::get_always_on_top() const
@@ -61,7 +61,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_always_on_top(); });
         }
-        return m_impl->window->windowFlags() & Qt::WindowStaysOnTopHint;
+        return m_impl->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
     }
 
     std::pair<std::size_t, std::size_t> window::get_size() const
