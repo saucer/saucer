@@ -23,21 +23,33 @@ namespace saucer::serializers
         auto parsed = nlohmann::json::parse(data, nullptr, false);
         if (!parsed.is_discarded())
         {
-            if (parsed["id"].is_number_integer() && parsed["params"].is_array() && parsed["name"].is_string())
+            if (parsed["id"].is_number_integer())
             {
-                auto rtn = std::make_shared<json_function_data>();
-                rtn->id = parsed["id"];
-                rtn->data = parsed["params"];
-                rtn->function = parsed["name"];
+                if (parsed["params"].is_array() && parsed["name"].is_string())
+                {
+                    auto rtn = std::make_shared<json_function_data>();
+                    rtn->id = parsed["id"];
+                    rtn->data = parsed["params"];
+                    rtn->function = parsed["name"];
 
-                return rtn;
+                    return rtn;
+                }
+
+                if (!parsed["result"].is_discarded())
+                {
+                    auto rtn = std::make_shared<json_result_data>();
+                    rtn->id = parsed["id"];
+                    rtn->data = parsed["result"];
+
+                    return rtn;
+                }
             }
 
-            if (parsed["id"].is_number_integer() && !parsed["result"].is_discarded())
+            if (parsed["variable"].is_string() && !parsed["updated"].is_discarded())
             {
-                auto rtn = std::make_shared<json_result_data>();
-                rtn->id = parsed["id"];
-                rtn->data = parsed["result"];
+                auto rtn = std::make_shared<json_variable_data>();
+                rtn->data = parsed["updated"];
+                rtn->variable = parsed["variable"];
 
                 return rtn;
             }
@@ -139,6 +151,17 @@ namespace saucer::serializers
         };
         template <typename T> using arg_to_tuple_v = typename arg_to_tuple<T>::type;
     } // namespace internal
+
+    template <typename T> auto json::serialize_variable(variable<T> &variable)
+    {
+        return std::make_pair(
+            [&variable]() -> std::string {
+                return "JSON.parse(" + nlohmann::json(nlohmann::json(variable.read()).dump()).dump() + ")"; // NOLINT
+            },
+            [&variable](const std::shared_ptr<variable_data> &data) {
+                variable.assign(static_cast<T>(std::dynamic_pointer_cast<json_variable_data>(data)->data)); //
+            });
+    }
 
     template <typename Function> auto json::serialize_function(const Function &func)
     {
