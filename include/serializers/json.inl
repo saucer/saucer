@@ -155,7 +155,7 @@ namespace saucer::serializers
                 args_t args;
                 try
                 {
-                    internal::tuple_visit(args, [&params](const std::size_t &I, auto &arg) { arg = params.at(I); });
+                    internal::tuple_visit(args, [&params](const std::size_t &I, auto &arg) { arg = static_cast<std::decay_t<decltype(arg)>>(params.at(I)); });
                 }
                 catch (const nlohmann::json::type_error &)
                 {
