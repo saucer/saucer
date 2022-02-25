@@ -1,4 +1,5 @@
 #include "smartview.hpp"
+#include "serializers/serializer.hpp"
 
 namespace saucer
 {
@@ -8,6 +9,7 @@ namespace saucer
         inject(R"js(
         window.saucer._idc = 0;
         window.saucer._rpc = [];
+        window.saucer._vars = new Map();
         window.saucer._known_functions = new Map();
         
         window.saucer.call = async (name, params, serializer = null) =>
@@ -56,6 +58,30 @@ namespace saucer
                 result: value === undefined ? null : value,
             }));
         }
+
+        window.saucer._handler = {
+            get(obj, prop, receiver)
+            {
+                const holder = obj.value;
+                const value = holder[prop];
+                return typeof value === "function" ? value.bind(holder) : value;
+            },
+            set(obj, prop, value, receiver)
+            {
+                if (prop !== "value")
+                {
+                    throw "Modification is only allowed on `value`";
+                }
+                else
+                {
+                    obj[prop] = value;
+                    window.saucer.on_message(obj.serializer({
+                        variable: obj.name,
+                        updated: obj.value,
+                    }));
+                }
+            }
+        };
         )js",
                load_time::creation);
     }
@@ -89,6 +115,19 @@ namespace saucer
         }
 
         webview::on_url_changed(url);
+    }
+
+    void smartview::on_variable_updated(const std::string &name)
+    {
+        if (m_variables.count(name))
+        {
+            const auto &[getter, setter, async, variable_serializer_type] = m_variables.at(name);
+            run_java_script("window.saucer._vars.get(\"" + name + "\").value = " + getter() + ";");
+        }
+        else
+        {
+            assert((void("This should never happen"), false)); // NOLINT
+        }
     }
 
     void smartview::on_message(const std::string &message)
@@ -155,6 +194,30 @@ namespace saucer
                 locked_evals->erase(result_message->id);
                 return;
             }
+            if (auto variable_request = std::dynamic_pointer_cast<variable_data>(parsed_message); variable_request)
+            {
+                if (!m_variables.count(variable_request->variable))
+                {
+                    assert((void("This should never happen"), false)); // NOLINT
+                    return;
+                }
+
+                const auto &[getter, setter, async, variable_serializer_type] = m_variables.at(variable_request->variable);
+                if (serializer_type != variable_serializer_type)
+                {
+                    continue;
+                }
+
+                if (async)
+                {
+                    auto fut_ptr = std::make_shared<std::future<void>>();
+                    *fut_ptr = std::async(std::launch::async, [fut_ptr, setter = setter, variable_request] { setter(variable_request); });
+                    return;
+                }
+
+                setter(variable_request);
+                return;
+            }
         }
     }
 
@@ -162,6 +225,18 @@ namespace saucer
     {
         m_callbacks.emplace(name, std::make_tuple(callback, async, serializer_t));
         inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer_t)->java_script_serializer() + ");", load_time::creation);
+    }
+
+    void smartview::add_variable(const std::type_index &serializer_t, const std::string &name, const variable_getter_t &getter, const variable_setter_t &setter, bool async)
+    {
+        m_variables.emplace(name, std::make_tuple(getter, setter, async, serializer_t));
+
+        // clang-format off
+        inject("window.saucer._vars.set(\"" + name + "\", {value: " + getter() + ", serializer: " + m_serializers.at(serializer_t)->java_script_serializer() + ", name: \"" + name + "\" });",
+               load_time::creation);
+        // clang-format on
+        inject("Object.defineProperty(window, \"" + name + "\", {value: new Proxy(window.saucer._vars.get(\"" + name + "\"), window.saucer._handler), writable: false});",
+               load_time::creation);
     }
 
     void smartview::add_eval(const std::type_index &serializer_t, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback, const std::string &code)

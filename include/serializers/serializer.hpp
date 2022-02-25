@@ -22,6 +22,12 @@ namespace saucer
         ~result_data() override = default;
     };
 
+    struct variable_data : public message_data
+    {
+        std::string variable;
+        ~variable_data() override = default;
+    };
+
     struct serializer
     {
         enum class error

@@ -20,17 +20,6 @@ namespace saucer
         return nullptr;
     }
 
-    template <typename Serializer, typename Function> void smartview::expose(const std::string &name, const Function &func, bool async)
-    {
-        if (!m_serializers.count(typeid(Serializer)))
-        {
-            const auto &serializer = m_serializers.emplace(typeid(Serializer), std::make_shared<Serializer>()).first->second;
-            inject(serializer->initialization_script(), load_time::creation);
-        }
-
-        add_callback(typeid(Serializer), name, Serializer::serialize_function(func), async);
-    }
-
     template <typename Return, typename Serializer, typename... Params> auto smartview::eval(const std::string &code, Params &&...params)
     {
         if (!m_serializers.count(typeid(Serializer)))
@@ -44,6 +33,38 @@ namespace saucer
 
         return rtn;
     }
+
+    template <typename Serializer, typename T> void smartview::expose(const std::string &name, variable<T> &variable, bool async)
+    {
+        if (!m_serializers.count(typeid(Serializer)))
+        {
+            const auto &serializer = m_serializers.emplace(typeid(Serializer), std::make_shared<Serializer>()).first->second;
+            inject(serializer->initialization_script(), load_time::creation);
+        }
+
+        auto [getter, setter] = Serializer::serialize_variable(variable);
+
+        add_variable(typeid(Serializer), name, getter, setter, async);
+        variable.template on<variable_event::updated>([name, this]() { on_variable_updated(name); });
+    }
+
+    template <typename Serializer, typename Function> void smartview::expose(const std::string &name, const Function &func, bool async)
+    {
+        if (!m_serializers.count(typeid(Serializer)))
+        {
+            const auto &serializer = m_serializers.emplace(typeid(Serializer), std::make_shared<Serializer>()).first->second;
+            inject(serializer->initialization_script(), load_time::creation);
+        }
+
+        add_callback(typeid(Serializer), name, Serializer::serialize_function(func), async);
+    }
+
+    template <typename DefaultSerializer>
+    template <typename Serializer, typename T>
+    void simple_smartview<DefaultSerializer>::expose(const std::string &name, variable<T> &variable, bool async)
+    {
+        smartview::expose<Serializer>(name, variable, async);
+    };
 
     template <typename DefaultSerializer>
     template <typename Serializer, typename Function>

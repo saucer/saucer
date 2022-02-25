@@ -6,17 +6,21 @@
 #include "webview.hpp"
 #include "modules/module.hpp"
 #include "promise/promise.hpp"
+#include "variable/variable.hpp"
 #include "serializers/serializer.hpp"
 
 namespace saucer
 {
     class smartview : public webview
     {
-        using callback_t = std::function<tl::expected<std::string, serializer::error>(const std::shared_ptr<function_data> &)>;
+        using variable_getter_t = std::function<std::string()>;
+        using variable_setter_t = std::function<void(const std::shared_ptr<variable_data> &)>;
         using resolve_callback_t = std::function<tl::expected<void, serializer::error>(const std::shared_ptr<result_data> &)>;
+        using callback_t = std::function<tl::expected<std::string, serializer::error>(const std::shared_ptr<function_data> &)>;
 
       protected:
         lockpp::lock<std::map<const std::size_t, std::tuple<const resolve_callback_t, const std::shared_ptr<base_promise>, const std::type_index>>> m_evals;
+        std::map<const std::string, std::tuple<const variable_getter_t, const variable_setter_t, const bool, const std::type_index>> m_variables;
         std::map<const std::string, std::tuple<const callback_t, const bool, const std::type_index>> m_callbacks;
         std::map<const std::type_index, const std::shared_ptr<serializer>> m_serializers;
         std::map<const std::type_index, const std::shared_ptr<module>> m_modules;
@@ -32,8 +36,12 @@ namespace saucer
         void on_url_changed(const std::string &) override;
 
       protected:
+        void on_variable_updated(const std::string &);
+
+      protected:
         void resolve_callback(const std::shared_ptr<function_data> &, const callback_t &);
         void add_callback(const std::type_index &, const std::string &, const callback_t &, bool);
+        void add_variable(const std::type_index &, const std::string &, const variable_getter_t &, const variable_setter_t &, bool);
         void add_eval(const std::type_index &, const std::shared_ptr<base_promise> &, const resolve_callback_t &, const std::string &);
 
       protected:
@@ -47,7 +55,10 @@ namespace saucer
       public:
         template <typename Module> void add_module();
         template <typename Module> std::shared_ptr<Module> get_module();
+
         template <typename Return, typename Serializer, typename... Params> auto eval(const std::string &code, Params &&...params);
+
+        template <typename Serializer, typename T> void expose(const std::string &name, variable<T> &variable, bool async = true);
         template <typename Serializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
     };
 
@@ -55,6 +66,8 @@ namespace saucer
     {
       public:
         template <typename Return, typename Serializer = DefaultSerializer, typename... Params> auto eval(const std::string &code, Params &&...params);
+
+        template <typename Serializer = DefaultSerializer, typename T> void expose(const std::string &name, variable<T> &variable, bool async = true);
         template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
     };
 } // namespace saucer
