@@ -117,9 +117,10 @@ endif()
 
 if (saucer_smartview)
     target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/module.cpp" "src/core.module.cpp")
-    set(EXPECTED_BUILD_TESTS OFF)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    set(EXPECTED_ENABLE_TESTS OFF)
     set(CMAKE_CXX_STANDARD 17)
-    
+
     FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
     FetchContent_Declare(expected GIT_REPOSITORY "https://github.com/TartanLlama/expected" GIT_TAG v1.0.0)
     FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt" GIT_TAG 8.0.1)
