@@ -76,7 +76,7 @@ namespace saucer
         if constexpr (I < size)
         {
             using item_t = std::tuple_element_t<I, tuple_t>;
-            if constexpr (Val == item_t::value)
+            if constexpr (static_cast<int>(Val) == static_cast<int>(item_t::value))
             {
                 return type_identity<typename item_t::callback_t>();
             }
