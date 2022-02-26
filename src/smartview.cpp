@@ -22,7 +22,7 @@ namespace saucer
                 {
                     if (window.saucer._known_functions.has(name))
                     {
-                        serializer =  window.saucer._known_functions.get(name);
+                        serializer = window.saucer._known_functions.get(name);
                     }
                     else
                     {
