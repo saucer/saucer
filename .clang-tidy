@@ -56,4 +56,5 @@ Checks: "*,\
   -performance-no-int-to-ptr,\
   -readability-named-parameter,\
   -bugprone-easily-swappable-parameters,\
-  -readability-identifier-length"
+  -readability-identifier-length,\
+  -llvm-include-order"

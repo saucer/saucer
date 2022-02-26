@@ -1,154 +1,42 @@
-#include <QApplication>
-#include <QCloseEvent>
-#include <QMainWindow>
-#include <mutex>
+#include <thread>
 #include <optional>
+#include "window.hpp"
+#include "window.qt6.impl.hpp"
+
+#include <QApplication>
 #include <utility>
-#include <window.hpp>
 
 namespace saucer
 {
-    class saucer_main_window : public QMainWindow
-    {
-      private:
-        std::function<bool()> &m_close_callback;
-        std::function<void(std::size_t, std::size_t)> &m_resize_callback;
-
-      public:
-        saucer_main_window(std::function<bool()> &close_callback, std::function<void(std::size_t, std::size_t)> &resize_callback)
-            : m_close_callback(close_callback), m_resize_callback(resize_callback)
-        {
-        }
-
-      protected:
-        void resizeEvent(QResizeEvent *event) override
-        {
-            if (m_resize_callback)
-            {
-                m_resize_callback(width(), height());
-            }
-
-            QMainWindow::resizeEvent(event);
-        }
-
-        void closeEvent(QCloseEvent *event) override
-        {
-            if (m_close_callback)
-            {
-                if (m_close_callback())
-                {
-                    event->ignore();
-                }
-                else
-                {
-                    QMainWindow::closeEvent(event);
-                }
-            }
-        }
-    };
-
-    struct window::impl
-    {
-        std::shared_ptr<QApplication> application;
-        std::unique_ptr<QMainWindow> window;
-        std::optional<QSize> max_size;
-        std::optional<QSize> min_size;
-
-      public:
-        static std::weak_ptr<QApplication> g_application;
-    };
-    std::weak_ptr<QApplication> window::impl::g_application;
-
-    window::~window() = default;
     window::window() : m_impl(std::make_unique<impl>())
     {
-        qputenv("QT_LOGGING_RULES", "*=false");
+        static int argc{0};
+        static char *argv{};
 
-        auto application = m_impl->g_application.lock();
-        if (!application)
+        if (!m_impl->application)
         {
-            static int argc = 0;
-            m_impl->g_application = (application = std::make_shared<QApplication>(argc, nullptr));
+            qputenv("QT_LOGGING_RULES", "*=false");
+            m_impl->application = new QApplication(argc, &argv);
         }
 
-        m_impl->application = application;
-        m_impl->window = std::make_unique<saucer_main_window>(m_close_callback, m_resize_callback);
+        m_impl->window = new impl::saucer_main_window();
+        dynamic_cast<impl::saucer_main_window *>(m_impl->window)->set_parent(this);
+
+        //? Fixes QT-Bug where Web-View will not render when background color is transparent.
+        auto palette = m_impl->window->palette();
+        palette.setColor(QPalette::ColorRole::Window, QColor(255, 255, 255));
+
+        m_impl->window->setPalette(palette);
     }
 
-    void window::run()
+    window::~window()
     {
-        QApplication::exec();
+        m_impl->window->deleteLater();
     }
 
-    void window::set_title(const std::string &title)
+    bool window::get_resizeable() const
     {
-        m_impl->window->setWindowTitle(QString::fromStdString(title));
-    }
-
-    void window::set_resizeable(bool enabled)
-    {
-        if (!enabled)
-        {
-            auto current_size = m_impl->window->size();
-            m_impl->max_size = m_impl->window->maximumSize();
-            m_impl->min_size = m_impl->window->maximumSize();
-
-            m_impl->window->setMaximumSize(current_size);
-            m_impl->window->setMinimumSize(current_size);
-        }
-        else
-        {
-            if (m_impl->max_size)
-                m_impl->window->setMaximumSize(*m_impl->max_size);
-
-            if (m_impl->min_size)
-                m_impl->window->setMinimumSize(*m_impl->min_size);
-        }
-    }
-
-    void window::set_decorations(bool enabled)
-    {
-        m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
-    }
-
-    void window::set_always_on_top(bool enabled)
-    {
-        m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
-    }
-
-    void window::set_size(std::size_t width, std::size_t height)
-    {
-        m_impl->window->resize(static_cast<int>(width), static_cast<int>(height));
-    }
-
-    void window::set_max_size(std::size_t width, std::size_t height)
-    {
-        m_impl->max_size = {static_cast<int>(width), static_cast<int>(height)};
-        m_impl->window->setMaximumSize(*m_impl->max_size);
-    }
-
-    void window::set_min_size(std::size_t width, std::size_t height)
-    {
-        m_impl->min_size = {static_cast<int>(width), static_cast<int>(height)};
-        m_impl->window->setMinimumSize(*m_impl->min_size);
-    }
-
-    std::pair<std::size_t, std::size_t> window::get_size() const
-    {
-        const auto size = m_impl->window->size();
-        return std::make_pair(size.width(), size.height());
-    }
-
-    std::pair<std::size_t, std::size_t> window::get_min_size() const
-    {
-        const auto size = m_impl->window->minimumSize();
-        return std::make_pair(size.width(), size.height());
-    }
-
-    std::pair<std::size_t, std::size_t> window::get_max_size() const
-    {
-        const auto size = m_impl->window->maximumSize();
-        return std::make_pair(size.width(), size.height());
+        return m_impl->window->maximumSize() != m_impl->window->minimumSize();
     }
 
     std::string window::get_title() const
@@ -156,42 +44,191 @@ namespace saucer
         return m_impl->window->windowTitle().toStdString();
     }
 
-    bool window::get_always_on_top() const
-    {
-        return (m_impl->window->windowFlags() & Qt::WindowStaysOnTopHint);
-    }
-
     bool window::get_decorations() const
     {
-        return !(m_impl->window->windowFlags() & Qt::FramelessWindowHint);
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_decorations(); });
+        }
+        return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
+    }
+
+    bool window::get_always_on_top() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_always_on_top(); });
+        }
+        return m_impl->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
+    }
+
+    std::pair<std::size_t, std::size_t> window::get_size() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_size(); });
+        }
+        return {m_impl->window->width(), m_impl->window->height()};
+    }
+
+    std::pair<std::size_t, std::size_t> window::get_max_size() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_max_size(); });
+        }
+        return {m_impl->window->maximumWidth(), m_impl->window->maximumHeight()};
+    }
+
+    std::pair<std::size_t, std::size_t> window::get_min_size() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_min_size(); });
+        }
+        return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
+    }
+
+    std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> window::get_background_color() const
+    {
+        const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
+        return {color.red(), color.green(), color.blue(), color.alpha()};
     }
 
     void window::hide()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return hide(); });
+        }
         m_impl->window->hide();
     }
 
     void window::show()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return show(); });
+        }
         m_impl->window->show();
     }
 
-    void window::on_resize(const resize_callback_t &callback)
+    void window::close()
     {
-        m_resize_callback = callback;
-    }
-
-    void window::on_close(const close_callback_t &callback)
-    {
-        m_close_callback = callback;
-    }
-
-    void window::exit()
-    {
-        auto old_callback = m_close_callback;
-        m_close_callback = nullptr;
-
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return close(); });
+        }
         m_impl->window->close();
-        m_close_callback = old_callback;
+    }
+
+    void window::set_resizeable(bool enabled)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_resizeable(enabled); });
+        }
+
+        if (!enabled)
+        {
+            m_impl->window->setFixedSize(m_impl->window->size());
+        }
+        else
+        {
+            m_impl->window->setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+
+            if (m_impl->max_size)
+            {
+                m_impl->window->setMaximumSize(*m_impl->max_size);
+            }
+            if (m_impl->min_size)
+            {
+                m_impl->window->setMinimumSize(*m_impl->min_size);
+            }
+        }
+    }
+
+    void window::set_title(const std::string &title)
+    {
+        m_impl->window->setWindowTitle(QString::fromStdString(title));
+    }
+
+    void window::set_decorations(bool enabled)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_decorations(enabled); });
+        }
+        m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
+    }
+
+    void window::set_always_on_top(bool enabled)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_always_on_top(enabled); });
+        }
+        m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
+    }
+
+    void window::set_size(std::size_t width, std::size_t height)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_size(width, height); });
+        }
+        m_impl->window->resize(static_cast<int>(width), static_cast<int>(height));
+    }
+
+    void window::set_max_size(std::size_t width, std::size_t height)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_max_size(width, height); });
+        }
+        m_impl->window->setMaximumSize(static_cast<int>(width), static_cast<int>(height));
+        m_impl->max_size = m_impl->window->maximumSize();
+    }
+
+    void window::set_min_size(std::size_t width, std::size_t height)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_min_size(width, height); });
+        }
+        m_impl->window->setMinimumSize(static_cast<int>(width), static_cast<int>(height));
+        m_impl->min_size = m_impl->window->minimumSize();
+    }
+
+    void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
+    {
+        auto palette = m_impl->window->palette();
+        palette.setColor(QPalette::ColorRole::Window, QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a)));
+        m_impl->window->setPalette(palette);
+    }
+
+    void window::clear(window_event event)
+    {
+        m_events.clear(event);
+    }
+
+    void window::unregister(window_event event, std::size_t id)
+    {
+        m_events.unregister(event, id);
+    }
+
+    template <> std::size_t window::on<window_event::close>(events::get_t<window_event::close> &&callback)
+    {
+        return m_events.at<window_event::close>().add_callback(std::move(callback));
+    }
+
+    template <> std::size_t window::on<window_event::resize>(events::get_t<window_event::resize> &&callback)
+    {
+        return m_events.at<window_event::resize>().add_callback(std::move(callback));
+    }
+
+    void window::run()
+    {
+        QApplication::exec();
     }
 } // namespace saucer
