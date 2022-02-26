@@ -27,6 +27,11 @@ TEST_CASE("Webview functionality is tested", "[webview]")
     webview.set_context_menu(false);
     REQUIRE_FALSE(webview.get_context_menu());
 
+    webview.set_transparent(true);
+    REQUIRE(webview.get_transparent());
+    webview.set_transparent(false);
+    REQUIRE(!webview.get_transparent());
+
     webview.on<saucer::web_event::url_changed>([&](const std::string &new_url) {
         static auto call_count = 0u;
 

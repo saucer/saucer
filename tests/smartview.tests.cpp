@@ -15,6 +15,9 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
         REQUIRE(b == "Hello World!");
     });
 
+    saucer::variable<int> synced_int(10);
+    smartview.expose("synced_int", synced_int);
+
     smartview.expose(
         "test_async",
         [&](int a, const std::string &b) {
@@ -23,6 +26,12 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
             REQUIRE(a == 10);
             REQUIRE(b == "Hello World!");
             REQUIRE(smartview.eval<int>("Math.pow({}, {})", 2, 2)->get() == 4);
+
+            REQUIRE(synced_int.read() == 10);
+            smartview.eval<void>("window.synced_int.value = 20")->wait();
+            REQUIRE(synced_int.read() == 20);
+            synced_int.assign(30);
+            REQUIRE(smartview.eval<int>("window.synced_int.valueOf()")->get() == 30);
 
             smartview.eval<void>("window.saucer.call({}, [])", "test")->wait();
             REQUIRE(test_called);
