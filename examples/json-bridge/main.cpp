@@ -19,8 +19,11 @@ int main()
 
     webview.eval<float>("Math.random()")->then([](float result) { std::cout << "Random: " << result << std::endl; });
     webview.eval<int>("Math.pow({},{})", 5, 2)->then([](int result) { std::cout << "Pow(5,2): " << result << std::endl; });
-    webview.eval<int>("await window.saucer.call({}, {})", "test", std::make_tuple(10, "Test", 5.f))->then([](int result) { std::cout << "Test result: " << result << std::endl; });
-    webview.eval<int>("await window.saucer.call({}, {})", "test_async", std::make_tuple(100))->then([](int result) { std::cout << "Test result: " << result << std::endl; });
+
+    saucer::variable<int> test(10);
+    webview.expose("test", test);
+    webview.eval<int>("window.test.valueOf()")->then([](int value) { std::cout << "The JS-Variable holds the value: " << value << std::endl; });
+    webview.eval<void>("window.test.value = 40")->then([&] { std::cout << "The C++ Variable now holds the value: " << test.read() << std::endl; });
 
     webview.expose("test", [](int _int, const std::string &_string, float _float) {
         std::cout << "Int: " << _int << ", "
@@ -28,6 +31,7 @@ int main()
 
         return 1337;
     });
+    webview.eval<int>("await window.saucer.call({}, {})", "test", std::make_tuple(10, "Test", 5.f))->then([](int result) { std::cout << "Test result: " << result << std::endl; });
 
     webview.expose(
         "test_async",
@@ -37,6 +41,7 @@ int main()
             return rtn;
         },
         true);
+    webview.eval<int>("await window.saucer.call({}, {})", "test_async", std::make_tuple(100))->then([](int result) { std::cout << "Test result: " << result << std::endl; });
 
     webview.set_url("file://test.html");
     webview.set_dev_tools(true);
