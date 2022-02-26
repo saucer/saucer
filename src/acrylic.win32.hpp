@@ -13,6 +13,7 @@ namespace saucer
         disabled = 0,
         blur_behind = 3,
         acrylic_blur_behind = 4,
+        transparent_gradient = 2,
     };
 
     struct accent_policy

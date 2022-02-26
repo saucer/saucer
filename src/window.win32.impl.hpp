@@ -26,10 +26,11 @@ namespace saucer
         static std::wstring widen(const std::string &);
         static std::string narrow(const std::wstring &);
 
-        void enable_blur(bool, bool = false);
-        void set_blur_color(const std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> &);
+        void enable_transparency(bool, bool = false, bool = false);
+        void set_background_color(const std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> &);
 
         bool blur_enabled{false};
+        bool transparency_enabled{false};
         std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> background_color;
     };
 
@@ -138,10 +139,10 @@ namespace saucer
                 }
                 break;
             case WM_MOVING:
-                window->m_impl->enable_blur(window->m_impl->blur_enabled, true);
+                window->m_impl->enable_transparency(window->m_impl->transparency_enabled, window->m_impl->blur_enabled, true);
                 break;
             case WM_EXITSIZEMOVE:
-                window->m_impl->enable_blur(window->m_impl->blur_enabled, false);
+                window->m_impl->enable_transparency(window->m_impl->transparency_enabled, window->m_impl->blur_enabled, false);
                 break;
             }
 
@@ -181,16 +182,29 @@ namespace saucer
         return out;
     }
 
-    inline void window::impl::enable_blur(bool enabled, bool normal_blur)
+    inline void window::impl::enable_transparency(bool enabled, bool blur, bool normal_blur)
     {
         const auto &[r, g, b, a] = background_color;
-        blur_enabled = enabled;
+        transparency_enabled = enabled;
+        blur_enabled = blur;
 
         accent_policy policy;
         policy.flags = 2;
         policy.animation_id = 0;
         policy.gradient_color = RGB(r, g, b) | static_cast<BYTE>(a) << 24;
-        policy.state = enabled ? normal_blur ? accent_state::blur_behind : accent_state::acrylic_blur_behind : accent_state::disabled;
+
+        if (enabled)
+        {
+            policy.state = accent_state::transparent_gradient;
+        }
+        if (blur)
+        {
+            policy.state = normal_blur ? accent_state::blur_behind : accent_state::acrylic_blur_behind;
+        }
+        if (!enabled)
+        {
+            policy.state = accent_state::disabled;
+        }
 
         composition_data data;
         data.policy = &policy;
@@ -200,9 +214,9 @@ namespace saucer
         SetWindowCompositionAttribute(hwnd, &data);
     }
 
-    inline void window::impl::set_blur_color(const std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> &color)
+    inline void window::impl::set_background_color(const std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> &color)
     {
         background_color = color;
-        enable_blur(blur_enabled);
+        enable_transparency(transparency_enabled, blur_enabled);
     }
 } // namespace saucer

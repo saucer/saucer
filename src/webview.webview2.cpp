@@ -140,16 +140,6 @@ namespace saucer
         m_impl->webview->OpenDevToolsWindow();
     }
 
-    void webview::set_transparent(bool enabled)
-    {
-        auto webview_controller2 = m_impl->webview_controller.try_query<ICoreWebView2Controller2>();
-        if (webview_controller2)
-        {
-            webview_controller2->put_DefaultBackgroundColor(enabled ? COREWEBVIEW2_COLOR{0, 0, 0, 0} : COREWEBVIEW2_COLOR{255, 255, 255, 255});
-        }
-        window::m_impl->enable_blur(enabled);
-    }
-
     void webview::set_context_menu(bool enabled)
     {
         if (!window::m_impl->is_thread_safe())
@@ -233,6 +223,16 @@ namespace saucer
                                                       }).Get(),
                                                       &*m_impl->resource_requested_token);
         }
+    }
+
+    void webview::set_transparent(bool enabled, bool blur)
+    {
+        auto webview_controller2 = m_impl->webview_controller.try_query<ICoreWebView2Controller2>();
+        if (webview_controller2)
+        {
+            webview_controller2->put_DefaultBackgroundColor(enabled ? COREWEBVIEW2_COLOR{0, 0, 0, 0} : COREWEBVIEW2_COLOR{255, 255, 255, 255});
+        }
+        window::m_impl->enable_transparency(enabled, blur);
     }
 
     void webview::clear_scripts()

@@ -20,8 +20,8 @@ namespace saucer
             }
         }
 
-        m_impl->hwnd = CreateWindowExW(0, L"Saucer", L"Saucer Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr,
-                                       m_impl->instance, nullptr);
+        m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP, L"Saucer", L"Saucer Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                       nullptr, nullptr, m_impl->instance, nullptr);
 
         if (!m_impl->hwnd)
         {
@@ -203,7 +203,7 @@ namespace saucer
 
     void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
     {
-        m_impl->set_blur_color({r, g, b, a});
+        m_impl->set_background_color({r, g, b, a});
     }
 
     void window::clear(window_event event)

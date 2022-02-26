@@ -50,10 +50,10 @@ namespace saucer
       public:
         void serve_embedded(const std::string &file);
         [[thread_safe]] void set_dev_tools(bool enabled);
-        [[thread_safe]] void set_transparent(bool enabled);
         [[thread_safe]] void set_context_menu(bool enabled);
         [[thread_safe]] void set_url(const std::string &url);
         [[thread_safe]] void embed_files(embedded_files &&files);
+        [[thread_safe]] void set_transparent(bool enabled, bool blur = false);
 
       public:
         [[thread_safe]] void clear_scripts();
