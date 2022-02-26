@@ -22,6 +22,9 @@ TEST_CASE("Window functionality is tested", "[window]")
     window.set_decorations(false);
     REQUIRE(!window.get_decorations());
 
+    window.set_background_color(255, 0, 0, 255);
+    REQUIRE(window.get_background_color() == std::make_tuple(255, 0, 0, 255));
+
     window.set_title("Hello World!");
     REQUIRE(window.get_title() == "Hello World!");
 
