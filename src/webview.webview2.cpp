@@ -104,8 +104,7 @@ namespace saucer
 
     bool webview::get_transparent() const
     {
-        // TODO(Implement)
-        return false;
+        return window::m_impl->blur_enabled;
     }
 
     bool webview::get_context_menu() const
@@ -143,8 +142,12 @@ namespace saucer
 
     void webview::set_transparent(bool enabled)
     {
-        // TODO(Implement)
-        (void)enabled;
+        auto webview_controller2 = m_impl->webview_controller.try_query<ICoreWebView2Controller2>();
+        if (webview_controller2)
+        {
+            webview_controller2->put_DefaultBackgroundColor(enabled ? COREWEBVIEW2_COLOR{0, 0, 0, 0} : COREWEBVIEW2_COLOR{255, 255, 255, 255});
+        }
+        window::m_impl->enable_blur(enabled);
     }
 
     void webview::set_context_menu(bool enabled)

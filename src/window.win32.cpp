@@ -1,5 +1,6 @@
 #include "window.hpp"
 #include "window.win32.impl.hpp"
+#include <winuser.h>
 
 namespace saucer
 {
@@ -104,8 +105,7 @@ namespace saucer
 
     std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> window::get_background_color() const
     {
-        // TODO(Implement)
-        return {};
+        return m_impl->background_color;
     }
 
     void window::hide()
@@ -203,8 +203,7 @@ namespace saucer
 
     void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
     {
-        // TODO(Implement)
-        (void)r, (void)g, (void)b, (void)a;
+        m_impl->set_blur_color({r, g, b, a});
     }
 
     void window::clear(window_event event)
