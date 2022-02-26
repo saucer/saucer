@@ -11,5 +11,17 @@
 ---
 
 <div align="center"> 
-    <img src="assets/under-construction.svg" />
-</div>
+    
+### Documentation
+Our documentation can be found [here](https://saucer.github.io/).
+
+### Examples
+Examples can be found [here](https://github.com/saucer/saucer/tree/dev/examples).
+
+### Getting started
+Learn how to create your first _saucer_ app [here](https://saucer.github.io/getting-started/your-first-app/).
+
+### Projects using _Saucer_
+<img src="https://avatars.githubusercontent.com/u/74979035?s=200&v=4" width=15/> <b>[Soundux](https://github.com/Soundux)</b>
+
+</div> 
