@@ -6,7 +6,7 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_tests     "Build tests" OFF)
-option(saucer_examples  "Build examples" ON)
+option(saucer_examples  "Build examples" OFF)
 option(saucer_smartview "Enable the smartview" ON)
 option(saucer_shared    "Build a shared library" OFF)
 
