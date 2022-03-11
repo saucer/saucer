@@ -94,9 +94,9 @@ namespace saucer
         void requestStarted(QWebEngineUrlRequestJob *request) override
         {
             auto url = request->requestUrl().toString().toStdString();
-            if (url.size() > 9)
+            if (url.size() > 7)
             {
-                url = url.substr(9);
+                url = url.substr(7);
             }
             else
             {

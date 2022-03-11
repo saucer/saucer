@@ -12,7 +12,14 @@ namespace saucer
     webview::webview() : m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-        std::call_once(flag, [] { QWebEngineUrlScheme::registerScheme(QWebEngineUrlScheme("saucer")); });
+
+        std::call_once(flag, [] {
+            using Flags = QWebEngineUrlScheme::Flag;
+            auto scheme = QWebEngineUrlScheme("saucer");
+            scheme.setFlags(Flags::LocalScheme | Flags::LocalAccessAllowed | Flags::SecureScheme);
+            scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
+            QWebEngineUrlScheme::registerScheme(scheme);
+        });
 
         m_impl->web_view = new QWebEngineView(window::m_impl->window);
         window::m_impl->window->setCentralWidget(m_impl->web_view);
@@ -95,7 +102,7 @@ namespace saucer
 
     void webview::serve_embedded(const std::string &file)
     {
-        set_url("saucer://" + file);
+        set_url("saucer:" + file);
     }
 
     void webview::set_dev_tools(bool enabled)
