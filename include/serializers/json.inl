@@ -186,18 +186,16 @@ namespace saucer::serializers
                 }
 
                 nlohmann::json rtn;
-                auto do_call = [func, &rtn](auto &&...args) {
-                    if constexpr (std::is_same_v<rtn_t, void>)
-                    {
-                        func(std::forward<decltype(args)>(args)...);
-                    }
-                    else
-                    {
-                        rtn = func(std::forward<decltype(args)>(args)...);
-                    }
-                };
 
-                std::apply(do_call, args);
+                if constexpr (std::is_void_v<rtn_t>)
+                {
+                    std::apply(func, args);
+                }
+                else
+                {
+                    rtn = std::apply(func, args);
+                }
+
                 return "JSON.parse(" + nlohmann::json(nlohmann::json(rtn).dump()).dump() + ")"; // ? We dump twice to properly escape
             }
 
