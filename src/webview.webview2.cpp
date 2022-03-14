@@ -14,6 +14,7 @@ namespace saucer
 
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
+        settings->put_AreDevToolsEnabled(false);
 
         if (auto new_settings = settings.try_query<ICoreWebView2Settings3>(); new_settings)
         {
@@ -134,10 +135,15 @@ namespace saucer
         {
             return window::m_impl->post_safe([=] { return set_dev_tools(enabled); });
         }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
         settings->put_AreDevToolsEnabled(enabled);
-        m_impl->webview->OpenDevToolsWindow();
+
+        if (enabled)
+        {
+            m_impl->webview->OpenDevToolsWindow();
+        }
     }
 
     void webview::set_context_menu(bool enabled)
