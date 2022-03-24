@@ -120,6 +120,7 @@ namespace saucer
                     info->ptMinTrackSize.y = static_cast<int>(window->m_impl->min_size.second);
                 }
             }
+            break;
             case WM_SIZE:
                 window->m_events.at<window_event::resize>().fire(LOWORD(l_param), HIWORD(l_param));
                 break;
