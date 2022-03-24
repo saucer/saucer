@@ -24,11 +24,10 @@ namespace saucer
         m_impl->web_view = new QWebEngineView(window::m_impl->window);
         window::m_impl->window->setCentralWidget(m_impl->web_view);
 
-        m_impl->web_class = new impl::saucer_web_class(m_impl->web_view);
-        dynamic_cast<impl::saucer_web_class *>(m_impl->web_class)->set_parent(this);
-
         m_impl->web_channel = new QWebChannel(m_impl->web_view);
         m_impl->web_view->page()->setWebChannel(m_impl->web_channel);
+
+        m_impl->web_class = new impl::saucer_web_class(m_impl->web_view, this);
         m_impl->web_channel->registerObject("saucer", m_impl->web_class);
 
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted, [this]() { m_impl->is_ready = false; });
@@ -53,7 +52,6 @@ namespace saucer
             auto script = m_impl->web_view->page()->scripts().find("_run_js");
             if (!script.empty())
             {
-                auto code = script.first().sourceCode().toStdString();
                 m_impl->web_view->page()->scripts().remove(script.first());
             }
         }
@@ -159,8 +157,7 @@ namespace saucer
 
         if (!m_impl->url_scheme_handler)
         {
-            m_impl->url_scheme_handler = new impl::saucer_url_scheme_handler(m_impl->web_view);
-            dynamic_cast<impl::saucer_url_scheme_handler *>(m_impl->url_scheme_handler)->set_parent(this);
+            m_impl->url_scheme_handler = new impl::saucer_url_scheme_handler(m_impl->web_view, this);
             m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->url_scheme_handler);
         }
     }

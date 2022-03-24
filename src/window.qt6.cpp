@@ -19,8 +19,7 @@ namespace saucer
             m_impl->application = new QApplication(argc, &argv);
         }
 
-        m_impl->window = new impl::saucer_main_window();
-        dynamic_cast<impl::saucer_main_window *>(m_impl->window)->set_parent(this);
+        m_impl->window = new impl::saucer_main_window(this);
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
         auto palette = m_impl->window->palette();

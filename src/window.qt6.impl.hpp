@@ -27,14 +27,9 @@ namespace saucer
         class window *m_parent;
 
       public:
-        using QMainWindow::QMainWindow;
+        saucer_main_window(class window *parent) : m_parent(parent) {}
 
       public:
-        void set_parent(class window *parent)
-        {
-            m_parent = parent;
-        }
-
         void resizeEvent(QResizeEvent *event) override
         {
             m_parent->m_events.at<window_event::resize>().fire(width(), height());

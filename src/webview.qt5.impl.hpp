@@ -23,15 +23,15 @@ namespace saucer
 
         class saucer_web_class;
         class saucer_url_scheme_handler;
-        static std::string inject_script;
+        static const std::string inject_script;
     };
 
-    inline std::string webview::impl::inject_script = []() {
+    inline const std::string webview::impl::inject_script = []() {
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
 
         if (!web_channel_api.open(QIODevice::ReadOnly))
         {
-            assert((void("Failed to open required qwebchannel.js"), false));
+            assert((void("Failed to open required qwebchannel.js"), false)); // NOLINT
         }
 
         auto content = web_channel_api.readAll().toStdString();
@@ -51,7 +51,7 @@ namespace saucer
                     });
 
                     window.saucer.on_message("js_ready");
-                    )js";
+        )js";
     }();
 
     class webview::impl::saucer_web_class : public QObject
@@ -62,13 +62,7 @@ namespace saucer
         webview *m_parent;
 
       public:
-        using QObject::QObject;
-
-      public:
-        void set_parent(webview *parent)
-        {
-            m_parent = parent;
-        }
+        saucer_web_class(QObject *parent_obj, webview *parent) : QObject(parent_obj), m_parent(parent) {}
 
       public slots:
         void on_message(const QString &message)
@@ -83,14 +77,9 @@ namespace saucer
         webview *m_parent;
 
       public:
-        using QWebEngineUrlSchemeHandler::QWebEngineUrlSchemeHandler;
+        saucer_url_scheme_handler(QObject *parent_obj, webview *parent) : QWebEngineUrlSchemeHandler(parent_obj), m_parent(parent) {}
 
       public:
-        void set_parent(webview *parent)
-        {
-            m_parent = parent;
-        }
-
         void requestStarted(QWebEngineUrlRequestJob *request) override
         {
             auto url = request->requestUrl().toString().toStdString();
@@ -123,5 +112,3 @@ namespace saucer
         }
     };
 } // namespace saucer
-
-// #include "webview.qt5.impl.inl.moc"
