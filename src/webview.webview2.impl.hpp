@@ -18,9 +18,9 @@ namespace saucer
         wil::com_ptr<ICoreWebView2Controller> webview_controller;
 
         bool is_ready{false};
-        std::vector<LPCWSTR> injected_scripts;
         std::vector<std::string> scripts_once;
         std::vector<std::string> scripts_on_done;
+        std::vector<LPCWSTR> injected_scripts;
         std::optional<EventRegistrationToken> resource_requested_token;
 
         static inline WNDPROC original_wnd_proc;
@@ -32,11 +32,10 @@ namespace saucer
         using Microsoft::WRL::Callback;
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-        std::wstring appdata;
-        wil::GetEnvironmentVariableW(L"LOCALAPPDATA", appdata);
-        appdata += L"\\MicrosoftEdge";
+        std::wstring temp;
+        wil::GetEnvironmentVariableW(L"TEMP", temp);
 
-        CreateCoreWebView2EnvironmentWithOptions(nullptr, appdata.c_str(), nullptr,
+        CreateCoreWebView2EnvironmentWithOptions(nullptr, temp.c_str(), nullptr,
                                                  Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>([=](auto, auto *env) {
                                                      return env->CreateCoreWebView2Controller(
                                                          hwnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>([this](auto, auto *controller) {
