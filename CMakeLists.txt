@@ -37,23 +37,25 @@ if (saucer_backend MATCHES "^Qt6?$")
     message(STATUS "[Saucer] Enabling AUTOMOC for Qt backend")
     set(CMAKE_AUTOMOC ON)
 endif()
+
 # --------------------------------------------------------------------------------------------------------
 # Create library
 # --------------------------------------------------------------------------------------------------------
 
-if (saucer_shared)
-    add_library(${PROJECT_NAME} SHARED)
-    set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
-	
-	if (WIN32)
-		target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS=1)
-	endif()
-else()
-    add_library(${PROJECT_NAME})
-endif()
-
+add_library(${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+
+if (saucer_shared)
+    add_library(${PROJECT_NAME}_shared SHARED "shared/exports.cpp")
+    target_compile_features(${PROJECT_NAME}_shared PRIVATE cxx_std_17)
+    target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${PROJECT_NAME})
+    set_target_properties(${PROJECT_NAME}_shared PROPERTIES CXX_VISIBILITY_PRESET hidden CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+    
+    if (WIN32)
+        target_compile_definitions(${PROJECT_NAME}_shared PRIVATE _CRT_SECURE_NO_WARNINGS=1)
+    endif()
+endif()
 
 if (MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
@@ -72,10 +74,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC "include")
 # --------------------------------------------------------------------------------------------------------
 
 include(FetchContent)
-
-if (saucer_shared)
-    target_sources(${PROJECT_NAME} PRIVATE "shared/exports.cpp")
-endif()
 
 if (saucer_backend STREQUAL "Qt")
     target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt5.cpp" "src/window.qt5.cpp")
@@ -140,7 +138,7 @@ endif()
 # Examples
 # --------------------------------------------------------------------------------------------------------
 
-if (saucer_examples AND NOT saucer_shared)
+if (saucer_examples)
     if (saucer_smartview)
         message(STATUS "[Saucer] Building JSON-Bridge Example")
         add_subdirectory("examples/json-bridge")
