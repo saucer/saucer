@@ -13,6 +13,7 @@ option(saucer_shared    "Build a shared library" OFF)
 set(saucer_backend_types Default Qt Qt6 WebView2)
 set(saucer_backend Default CACHE STRING "The backend to use")
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
+set(saucer_webview2_version "1.0.1189-prerelease" CACHE STRING "The WebView2 version to use")
 
 if (NOT saucer_smartview)
     message(STATUS "[Saucer] Not using smartview, native interoperability will be disabled")
@@ -100,7 +101,7 @@ elseif (saucer_backend STREQUAL "WebView2")
     FetchContent_MakeAvailable(wil)
 
     include("NuGet.cmake")
-    nuget_add(WebView2 "Microsoft.Web.WebView2" 1.0.1083-prerelease)
+    nuget_add(WebView2 "Microsoft.Web.WebView2" ${saucer_webview2_version})
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
     target_include_directories(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/include)
 
