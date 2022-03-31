@@ -1,6 +1,8 @@
 #include "window.hpp"
 #include "window.win32.impl.hpp"
+
 #include <winuser.h>
+#include <VersionHelpers.h>
 
 namespace saucer
 {
@@ -20,8 +22,8 @@ namespace saucer
             }
         }
 
-        m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP, L"Saucer", L"Saucer Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                       nullptr, nullptr, m_impl->instance, nullptr);
+        m_impl->hwnd = CreateWindowExW(IsWindows8OrGreater() ? WS_EX_NOREDIRECTIONBITMAP : 0, L"Saucer", L"Saucer Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+                                       CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, m_impl->instance, nullptr);
 
         if (!m_impl->hwnd)
         {
