@@ -16,19 +16,24 @@ namespace saucer
         url_changed
     };
 
+    struct embedded_file
+    {
+        const std::string mime;
+        const std::size_t size;
+        const std::uint8_t *data;
+    };
+
 #include "annotations.hpp"
     class webview : public window
     {
         struct impl;
-        using embedded_files = std::map<const std::string, std::tuple<std::string, std::size_t, const std::uint8_t *>>;
-
         using events = event_handler<                                //
             event<web_event::url_changed, void(const std::string &)> //
             >;
 
       private:
         events m_events;
-        embedded_files m_embedded_files;
+        std::map<const std::string, const embedded_file> m_embedded_files;
 
       protected:
         std::unique_ptr<impl> m_impl;
@@ -52,8 +57,8 @@ namespace saucer
         [[thread_safe]] void set_dev_tools(bool enabled);
         [[thread_safe]] void set_context_menu(bool enabled);
         [[thread_safe]] void set_url(const std::string &url);
-        [[thread_safe]] void embed_files(embedded_files &&files);
         [[thread_safe]] void set_transparent(bool enabled, bool blur = false);
+        [[thread_safe]] void embed_files(std::map<const std::string, const embedded_file> &&files);
 
       public:
         [[thread_safe]] void clear_scripts();

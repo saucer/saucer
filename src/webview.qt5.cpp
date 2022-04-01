@@ -146,22 +146,6 @@ namespace saucer
         m_impl->web_view->setUrl(QString::fromStdString(url));
     }
 
-    void webview::embed_files(embedded_files &&files)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([=]() mutable { return embed_files(std::forward<embedded_files>(files)); });
-        }
-
-        m_embedded_files.merge(files);
-
-        if (!m_impl->url_scheme_handler)
-        {
-            m_impl->url_scheme_handler = new impl::saucer_url_scheme_handler(m_impl->web_view, this);
-            m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->url_scheme_handler);
-        }
-    }
-
     void webview::set_transparent(bool enabled, bool blur)
     {
         if (!window::m_impl->is_thread_safe())
@@ -173,6 +157,22 @@ namespace saucer
         m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, enabled);
         window::m_impl->window->setAttribute(Qt::WA_TranslucentBackground, enabled);
         m_impl->web_view->page()->setBackgroundColor(enabled ? Qt::transparent : Qt::white);
+    }
+
+    void webview::embed_files(std::map<const std::string, const embedded_file> &&files)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, files = std::move(files)]() mutable { return embed_files(std::move(files)); });
+        }
+
+        m_embedded_files.merge(files);
+
+        if (!m_impl->url_scheme_handler)
+        {
+            m_impl->url_scheme_handler = new impl::saucer_url_scheme_handler(m_impl->web_view, this);
+            m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->url_scheme_handler);
+        }
     }
 
     void webview::clear_scripts()

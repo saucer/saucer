@@ -44,15 +44,6 @@ namespace saucer::serializers
                     return rtn;
                 }
             }
-
-            if (parsed["variable"].is_string() && !parsed["updated"].is_discarded())
-            {
-                auto rtn = std::make_shared<json_variable_data>();
-                rtn->data = parsed["updated"];
-                rtn->variable = parsed["variable"];
-
-                return rtn;
-            }
         }
 
         return nullptr;
@@ -151,17 +142,6 @@ namespace saucer::serializers
         };
         template <typename T> using arg_to_tuple_v = typename arg_to_tuple<T>::type;
     } // namespace internal
-
-    template <typename T> auto json::serialize_variable(variable<T> &variable)
-    {
-        return std::make_pair(
-            [&variable]() -> std::string {
-                return "JSON.parse(" + nlohmann::json(nlohmann::json(variable.read()).dump()).dump() + ")"; // NOLINT
-            },
-            [&variable](const std::shared_ptr<variable_data> &data) {
-                variable.assign(static_cast<T>(std::dynamic_pointer_cast<json_variable_data>(data)->data)); //
-            });
-    }
 
     template <typename Function> auto json::serialize_function(const Function &func)
     {

@@ -11,7 +11,6 @@ namespace saucer
         inject(R"js(
         window.saucer._idc = 0;
         window.saucer._rpc = [];
-        window.saucer._vars = new Map();
         window.saucer._known_functions = new Map();
         
         window.saucer.call = async (name, params, serializer = null) =>
@@ -60,35 +59,11 @@ namespace saucer
                 result: value === undefined ? null : value,
             }));
         }
-
-        window.saucer._handler = {
-            get(obj, prop, receiver)
-            {
-                const holder = obj.value;
-                const value = holder[prop];
-                return typeof value === "function" ? value.bind(holder) : value;
-            },
-            set(obj, prop, value, receiver)
-            {
-                if (prop !== "value")
-                {
-                    throw "Modification is only allowed on `value`";
-                }
-                else
-                {
-                    obj[prop] = value;
-                    window.saucer.on_message(obj.serializer({
-                        variable: obj.name,
-                        updated: obj.value,
-                    }));
-                }
-            }
-        };
         )js",
                load_time::creation);
     }
 
-    void smartview::resolve_callback(const std::shared_ptr<function_data> &data, const callback_t &callback)
+    void smartview::resolve(const std::shared_ptr<function_data> &data, const callback_resolver &callback)
     {
         auto result = callback(data);
         if (result.has_value())
@@ -111,7 +86,7 @@ namespace saucer
 
     void smartview::on_url_changed(const std::string &url)
     {
-        for (const auto &[module_type, module] : m_modules)
+        for (const auto &module : m_modules)
         {
             module->on_url_changed(url);
         }
@@ -119,24 +94,11 @@ namespace saucer
         webview::on_url_changed(url);
     }
 
-    void smartview::on_variable_updated(const std::string &name)
-    {
-        if (m_variables.count(name))
-        {
-            const auto &[getter, setter, async, variable_serializer_type] = m_variables.at(name);
-            run_java_script("window.saucer._vars.get(\"" + name + "\").value = " + getter() + ";");
-        }
-        else
-        {
-            assert((void("This should never happen"), false)); // NOLINT
-        }
-    }
-
     void smartview::on_message(const std::string &message)
     {
         webview::on_message(message);
 
-        for (const auto &[module_type, module] : m_modules)
+        for (const auto &module : m_modules)
         {
             module->on_message(message);
         }
@@ -156,7 +118,8 @@ namespace saucer
                     return;
                 }
 
-                const auto &[callback, async, function_serializer_type] = m_callbacks.at(function_message->function);
+                const auto &[async, callback, function_serializer_type] = m_callbacks.at(function_message->function);
+
                 if (serializer_type != function_serializer_type)
                 {
                     continue;
@@ -165,11 +128,11 @@ namespace saucer
                 if (async)
                 {
                     auto fut_ptr = std::make_shared<std::future<void>>();
-                    *fut_ptr = std::async(std::launch::async, [fut_ptr, callback = callback, function_message, this] { resolve_callback(function_message, callback); });
+                    *fut_ptr = std::async(std::launch::async, [fut_ptr, callback = callback, function_message, this] { resolve(function_message, callback); });
                     return;
                 }
 
-                resolve_callback(function_message, callback);
+                resolve(function_message, callback);
                 return;
             }
             if (auto result_message = std::dynamic_pointer_cast<result_data>(parsed_message); result_message)
@@ -181,13 +144,14 @@ namespace saucer
                     return;
                 }
 
-                const auto &[callback, promise, promise_serializer_type] = locked_evals->at(result_message->id);
-                if (serializer_type != promise_serializer_type)
+                const auto &[resolver, eval_serialier_type, promise] = locked_evals->at(result_message->id);
+                auto result = resolver(result_message);
+
+                if (serializer_type != eval_serialier_type)
                 {
                     continue;
                 }
 
-                auto result = callback(result_message);
                 if (!result.has_value())
                 {
                     promise->reject(result.error());
@@ -196,57 +160,21 @@ namespace saucer
                 locked_evals->erase(result_message->id);
                 return;
             }
-            if (auto variable_request = std::dynamic_pointer_cast<variable_data>(parsed_message); variable_request)
-            {
-                if (!m_variables.count(variable_request->variable))
-                {
-                    assert((void("This should never happen"), false)); // NOLINT
-                    return;
-                }
-
-                const auto &[getter, setter, async, variable_serializer_type] = m_variables.at(variable_request->variable);
-                if (serializer_type != variable_serializer_type)
-                {
-                    continue;
-                }
-
-                if (async)
-                {
-                    auto fut_ptr = std::make_shared<std::future<void>>();
-                    *fut_ptr = std::async(std::launch::async, [fut_ptr, setter = setter, variable_request] { setter(variable_request); });
-                    return;
-                }
-
-                setter(variable_request);
-                return;
-            }
         }
     }
 
-    void smartview::add_callback(const std::type_index &serializer_t, const std::string &name, const callback_t &callback, bool async)
+    void smartview::add_callback(const std::type_index &serializer, const std::string &name, const callback_resolver &resolver, bool async)
     {
-        m_callbacks.emplace(name, std::make_tuple(callback, async, serializer_t));
-        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer_t)->java_script_serializer() + ");", load_time::creation);
+        m_callbacks.emplace(name, callback_t{async, resolver, serializer});
+        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer)->java_script_serializer() + ");", load_time::creation);
     }
 
-    void smartview::add_variable(const std::type_index &serializer_t, const std::string &name, const variable_getter_t &getter, const variable_setter_t &setter, bool async)
-    {
-        m_variables.emplace(name, std::make_tuple(getter, setter, async, serializer_t));
-
-        // clang-format off
-        inject("window.saucer._vars.set(\"" + name + "\", {value: " + getter() + ", serializer: " + m_serializers.at(serializer_t)->java_script_serializer() + ", name: \"" + name + "\" });",
-               load_time::creation);
-        // clang-format on
-        inject("Object.defineProperty(window, \"" + name + "\", {value: new Proxy(window.saucer._vars.get(\"" + name + "\"), window.saucer._handler), writable: false});",
-               load_time::creation);
-    }
-
-    void smartview::add_eval(const std::type_index &serializer_t, const std::shared_ptr<base_promise> &promise, const resolve_callback_t &resolve_callback, const std::string &code)
+    void smartview::add_eval(const std::type_index &serializer, const std::shared_ptr<promise_base> &promise, const eval_resolver &resolver, const std::string &code)
     {
         auto id = m_id_counter++;
-        m_evals.write()->emplace(id, std::make_tuple(resolve_callback, promise, serializer_t));
+        m_evals.write()->emplace(id, eval_t{resolver, serializer, promise});
 
-        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.at(serializer_t)->java_script_serializer() + "))();";
+        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.at(serializer)->java_script_serializer() + "))();";
         run_java_script(resolve_code);
     }
 
@@ -266,21 +194,21 @@ namespace saucer
         // clang-format on
     }
 
-    std::vector<std::shared_ptr<module>> smartview::get_modules()
+    std::vector<module *> smartview::get_modules()
     {
-        std::vector<std::shared_ptr<module>> rtn;
-        std::transform(m_modules.begin(), m_modules.end(), std::back_inserter(rtn), [](const auto &item) { return item.second; });
+        std::vector<module *> rtn;
+        std::transform(m_modules.begin(), m_modules.end(), std::back_inserter(rtn), [](const auto &item) { return item.get(); });
 
         return rtn;
     }
 
-    std::shared_ptr<module> smartview::get_module(const std::string &name)
+    module *smartview::get_module(const std::string &name)
     {
-        for (const auto &[module_type, module] : m_modules)
+        for (const auto &module : m_modules)
         {
             if (module->get_name() == name)
             {
-                return module;
+                return module.get();
             }
         }
         return nullptr;

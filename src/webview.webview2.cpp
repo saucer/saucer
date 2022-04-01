@@ -166,14 +166,25 @@ namespace saucer
         m_impl->webview->Navigate(window::m_impl->widen(url).c_str());
     }
 
-    void webview::embed_files(embedded_files &&files)
+    void webview::set_transparent(bool enabled, bool blur)
+    {
+        auto webview_controller2 = m_impl->webview_controller.try_query<ICoreWebView2Controller2>();
+        if (webview_controller2)
+        {
+            webview_controller2->put_DefaultBackgroundColor(enabled ? COREWEBVIEW2_COLOR{0, 0, 0, 0} : COREWEBVIEW2_COLOR{255, 255, 255, 255});
+        }
+        window::m_impl->enable_transparency(enabled, blur);
+    }
+
+    void webview::embed_files(std::map<const std::string, const embedded_file> &&files)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=]() mutable { return embed_files(std::forward<embedded_files>(files)); });
+            return window::m_impl->post_safe([this, files = std::move(files)]() mutable { return embed_files(std::move(files)); });
         }
 
-        m_embedded_files = files;
+        m_embedded_files.merge(files);
+
         if (!m_impl->resource_requested_token)
         {
             m_impl->resource_requested_token = EventRegistrationToken{};
@@ -202,9 +213,9 @@ namespace saucer
                                                                       const auto &file = m_embedded_files.at(url);
 
                                                                       wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                                                                      wil::com_ptr<IStream> data = SHCreateMemStream(std::get<2>(file), static_cast<UINT>(std::get<1>(file)));
-                                                                      env->CreateWebResourceResponse(
-                                                                          data.get(), 200, L"OK", window::m_impl->widen("Content-Type: " + std::get<0>(file)).c_str(), &response);
+                                                                      wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
+                                                                      env->CreateWebResourceResponse(data.get(), 200, L"OK",
+                                                                                                     window::m_impl->widen("Content-Type: " + file.mime).c_str(), &response);
 
                                                                       args->put_Response(response.get());
                                                                   }
@@ -229,16 +240,6 @@ namespace saucer
                                                       }).Get(),
                                                       &*m_impl->resource_requested_token);
         }
-    }
-
-    void webview::set_transparent(bool enabled, bool blur)
-    {
-        auto webview_controller2 = m_impl->webview_controller.try_query<ICoreWebView2Controller2>();
-        if (webview_controller2)
-        {
-            webview_controller2->put_DefaultBackgroundColor(enabled ? COREWEBVIEW2_COLOR{0, 0, 0, 0} : COREWEBVIEW2_COLOR{255, 255, 255, 255});
-        }
-        window::m_impl->enable_transparency(enabled, blur);
     }
 
     void webview::clear_scripts()

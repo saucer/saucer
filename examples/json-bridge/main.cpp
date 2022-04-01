@@ -20,11 +20,6 @@ int main()
     webview.eval<float>("Math.random()")->then([](float result) { std::cout << "Random: " << result << std::endl; });
     webview.eval<int>("Math.pow({},{})", 5, 2)->then([](int result) { std::cout << "Pow(5,2): " << result << std::endl; });
 
-    saucer::variable<int> test(10);
-    webview.expose("test", test);
-    webview.eval<int>("window.test.valueOf()")->then([](int value) { std::cout << "The JS-Variable holds the value: " << value << std::endl; });
-    webview.eval<void>("window.test.value = 40")->then([&] { std::cout << "The C++ Variable now holds the value: " << test.read() << std::endl; });
-
     webview.expose("test", [](int _int, const std::string &_string, float _float) {
         std::cout << "Int: " << _int << ", "
                   << "String: " << _string << ", Float: " << _float << std::endl;
