@@ -13,19 +13,19 @@
 
 namespace saucer
 {
-    inline base_promise::base_promise(const std::thread::id &creation_thread) : m_creation_thread(creation_thread) {}
-    inline bool base_promise::is_safe() const
+    inline promise_base::promise_base(const std::thread::id &creation_thread) : m_creation_thread(creation_thread) {}
+    inline bool promise_base::is_safe() const
     {
         return !(m_creation_thread == std::this_thread::get_id());
     }
 
-    inline base_promise &base_promise::fail(const fail_callback_t &callback)
+    inline promise_base &promise_base::fail(const fail_callback_t &callback)
     {
         m_fail_callback.assign(callback);
         return *this;
     }
 
-    inline void base_promise::reject(const serializer::error &error)
+    inline void promise_base::reject(const serializer::error &error)
     {
         if (*m_fail_callback.read())
         {
@@ -34,7 +34,7 @@ namespace saucer
     }
 
     template <typename T> promise<T>::~promise() = default;
-    template <typename T> promise<T>::promise(const std::thread::id &creation_thread) : base_promise(creation_thread), m_future(m_promise.get_future()) {}
+    template <typename T> promise<T>::promise(const std::thread::id &creation_thread) : promise_base(creation_thread), m_future(m_promise.get_future()) {}
 
     template <typename T> void promise<T>::resolve(const T &value)
     {
@@ -72,11 +72,11 @@ namespace saucer
     template <typename T> void promise<T>::reject(const serializer::error &error)
     {
         m_promise.set_exception(std::make_exception_ptr(std::future_error(std::future_errc::broken_promise)));
-        base_promise::reject(error);
+        promise_base::reject(error);
     }
 
     inline promise<void>::~promise() = default;
-    inline promise<void>::promise(const std::thread::id &creation_thread) : base_promise(creation_thread), m_future(m_promise.get_future()) {}
+    inline promise<void>::promise(const std::thread::id &creation_thread) : promise_base(creation_thread), m_future(m_promise.get_future()) {}
 
     inline void promise<void>::resolve()
     {
@@ -114,7 +114,7 @@ namespace saucer
     inline void promise<void>::reject(const serializer::error &error)
     {
         m_promise.set_exception(std::make_exception_ptr(std::future_error(std::future_errc::broken_promise)));
-        base_promise::reject(error);
+        promise_base::reject(error);
     }
 
     template <typename... T> auto all(const std::shared_ptr<promise<T>> &...promises)

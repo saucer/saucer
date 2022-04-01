@@ -6,7 +6,7 @@
 
 namespace saucer
 {
-    class base_promise
+    class promise_base
     {
         using fail_callback_t = std::function<void(const serializer::error &)>;
 
@@ -16,20 +16,20 @@ namespace saucer
         lockpp::lock<fail_callback_t, std::recursive_mutex> m_fail_callback;
 
       public:
-        virtual ~base_promise() = default;
-        base_promise(const std::thread::id &);
+        virtual ~promise_base() = default;
+        promise_base(const std::thread::id &);
 
       public:
         virtual void wait() = 0;
         virtual bool is_ready() = 0;
         virtual void reject(const serializer::error &);
-        virtual base_promise &fail(const fail_callback_t &);
+        virtual promise_base &fail(const fail_callback_t &);
     };
 
     template <typename T> class promise;
     template <typename... T> static auto all(const std::shared_ptr<promise<T>> &...);
 
-    template <typename T> class promise : public base_promise
+    template <typename T> class promise : public promise_base
     {
         template <typename... O> friend auto all(const std::shared_ptr<promise<O>> &...);
         using callback_t = std::function<void(const T &)>;
@@ -52,7 +52,7 @@ namespace saucer
         promise(const std::thread::id &);
     };
 
-    template <> class promise<void> : public base_promise
+    template <> class promise<void> : public promise_base
     {
         template <typename... O> friend auto all(const std::shared_ptr<promise<O>> &...);
         using callback_t = std::function<void()>;
