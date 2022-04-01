@@ -1,4 +1,5 @@
 Checks: "*,\
+  -google-readability-todo,\
   -google-runtime-int,\
   -google-explicit-constructor,\
   -llvm-header-guard,\
