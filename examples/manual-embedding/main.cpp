@@ -22,9 +22,9 @@ int main()
     saucer::webview webview;
     webview.set_title("Embedding Examples");
 
-    std::map<const std::string, std::tuple<std::string, std::size_t, const std::uint8_t *>> embedded_files;
-    embedded_files.emplace("index.html", std::make_tuple("text/html", 208, index_html));
-    embedded_files.emplace("index.js", std::make_tuple("text/javascript", 132, index_js));
+    std::map<const std::string, const saucer::embedded_file> embedded_files;
+    embedded_files.emplace("index.html", saucer::embedded_file{"text/html", 208, index_html});
+    embedded_files.emplace("index.js", saucer::embedded_file{"text/javascript", 132, index_js});
     webview.embed_files(std::move(embedded_files));
 
     webview.serve_embedded("index.html");
