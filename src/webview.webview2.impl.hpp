@@ -45,7 +45,7 @@ namespace saucer
                                                                }).Get());
                                                  }).Get());
 
-        //? Ensure the WebView is created synchronously
+        //? Ensure the WebView is created synchronously, may be easier in the future: https://github.com/MicrosoftEdge/WebView2Feedback/issues/740
         MSG msg;
         while (GetMessage(&msg, nullptr, 0, 0))
         {

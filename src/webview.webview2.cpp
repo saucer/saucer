@@ -105,7 +105,7 @@ namespace saucer
 
     bool webview::get_transparent() const
     {
-        return window::m_impl->blur_enabled;
+        return window::m_impl->transparency_enabled;
     }
 
     bool webview::get_context_menu() const
