@@ -38,12 +38,12 @@ namespace saucer
     void simple_smartview<DefaultSerializer>::expose(const std::string &name, const Function &func, bool async)
     {
         smartview::expose<Serializer>(name, func, async);
-    };
+    }
 
     template <typename DefaultSerializer>
     template <typename Return, typename Serializer, typename... Params>
     auto simple_smartview<DefaultSerializer>::eval(const std::string &code, Params &&...params)
     {
         return smartview::eval<Return, Serializer>(code, std::forward<Params>(params)...);
-    };
+    }
 } // namespace saucer
