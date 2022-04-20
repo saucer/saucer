@@ -107,7 +107,8 @@ namespace saucer
             }
         }
     }
-    template <typename... Events> template <typename EventType, std::size_t I> constexpr void event_handler<Events...>::clear(EventType event_type)
+
+    template <typename... Events> template <typename EventType, std::size_t I> constexpr void event_handler<Events...>::clear([[maybe_unused]] EventType event_type)
     {
         constexpr auto size = std::tuple_size_v<tuple_t>;
         if constexpr (I < size)
@@ -124,7 +125,10 @@ namespace saucer
             }
         }
     }
-    template <typename... Events> template <typename EventType, std::size_t I> constexpr void event_handler<Events...>::unregister(EventType event_type, std::size_t id)
+
+    template <typename... Events>
+    template <typename EventType, std::size_t I>
+    constexpr void event_handler<Events...>::unregister([[maybe_unused]] EventType event_type, [[maybe_unused]] std::size_t id)
     {
         constexpr auto size = std::tuple_size_v<tuple_t>;
         if constexpr (I < size)
