@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QBuffer>
 #include <QObject>
+#include <cassert>
 #include <QWebChannel>
 #include <QWebEngineView>
 #include <QWebEngineUrlRequestJob>
