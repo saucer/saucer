@@ -1,8 +1,6 @@
 #include "smartview.hpp"
 #include "serializers/serializer.hpp"
 
-#include <cassert>
-
 namespace saucer
 {
     smartview::~smartview() = default;

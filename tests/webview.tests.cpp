@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
+#include <webview.hpp>
 #include <future>
 #include <thread>
-#include <webview.hpp>
 
 class test_webview : public saucer::webview
 {

@@ -1,5 +1,5 @@
-#include <catch2/catch.hpp>
 #include <serializers/json.hpp>
+#include <catch2/catch.hpp>
 #include <smartview.hpp>
 #include <thread>
 

@@ -1,8 +1,8 @@
 #define CONFIG_CATCH_MAIN
 #include <catch2/catch.hpp>
+#include <window.hpp>
 #include <future>
 #include <thread>
-#include <window.hpp>
 
 class test_window : public saucer::window
 {
