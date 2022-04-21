@@ -146,7 +146,7 @@ namespace saucer
         m_impl->web_view->setUrl(QString::fromStdString(url));
     }
 
-    void webview::set_transparent(bool enabled, bool blur)
+    void webview::set_transparent(bool enabled, [[maybe_unused]] bool blur)
     {
         if (!window::m_impl->is_thread_safe())
         {
