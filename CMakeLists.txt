@@ -146,6 +146,7 @@ if (saucer_examples)
     endif()
         
     add_subdirectory("examples/manual-embedding")
+    add_subdirectory("examples/cli-embedding")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
