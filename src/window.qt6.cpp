@@ -1,17 +1,12 @@
-#include <thread>
-#include <optional>
 #include "window.hpp"
 #include "window.qt6.impl.hpp"
-
-#include <QApplication>
-#include <utility>
 
 namespace saucer
 {
     window::window() : m_impl(std::make_unique<impl>())
     {
-        static int argc{0};
-        static char *argv{};
+        static int argc{1};
+        static char *argv{strdup("")};
 
         if (!m_impl->application)
         {
