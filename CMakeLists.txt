@@ -128,7 +128,7 @@ if (saucer_smartview)
     target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json expected fmt)
 endif()
 
-if (saucer_smartview OR saucer_backend STREQUAL "WebView2")
+if (saucer_smartview)
     FetchContent_Declare(lockpp GIT_REPOSITORY "https://github.com/Soundux/lockpp" GIT_TAG v1.0.0)
     FetchContent_MakeAvailable(lockpp)
 
