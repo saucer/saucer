@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v2.4.0
 
       - name: Downgrade Packages
-        run: 'echo "Server=https://archive.archlinux.org/repos/2022/01/28/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist && rm -rf "/usr/share/hwdata" && pacman --noconfirm -Syyuu'
+        run: 'echo "Server=https://archive.archlinux.org/repos/2022/03/18/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist && rm -rf "/usr/share/hwdata" && pacman --noconfirm -Syyuu'
 
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative xorg-server-xvfb qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
