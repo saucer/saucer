@@ -101,7 +101,10 @@ namespace saucer
             module->on_message(message);
         }
 
-        for (const auto &[serializer_type, serializer] : m_serializers)
+        auto callbacks = m_callbacks.read();
+        auto serializers = m_serializers.read();
+
+        for (const auto &[serializer_type, serializer] : *serializers)
         {
             auto parsed_message = serializer->parse(message);
 
@@ -110,13 +113,13 @@ namespace saucer
 
             if (auto function_message = std::dynamic_pointer_cast<function_data>(parsed_message); function_message)
             {
-                if (!m_callbacks.count(function_message->function))
+                if (!callbacks->count(function_message->function))
                 {
                     reject(function_message->id, "\"Invalid function\"");
                     return;
                 }
 
-                const auto &[async, callback, function_serializer_type] = m_callbacks.at(function_message->function);
+                const auto &[async, callback, function_serializer_type] = callbacks->at(function_message->function);
 
                 if (serializer_type != function_serializer_type)
                 {
@@ -163,8 +166,8 @@ namespace saucer
 
     void smartview::add_callback(const std::type_index &serializer, const std::string &name, const callback_resolver &resolver, bool async)
     {
-        m_callbacks.emplace(name, callback_t{async, resolver, serializer});
-        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.at(serializer)->java_script_serializer() + ");", load_time::creation);
+        m_callbacks.write()->emplace(name, callback_t{async, resolver, serializer});
+        inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.read()->at(serializer)->java_script_serializer() + ");", load_time::creation);
     }
 
     void smartview::add_eval(const std::type_index &serializer, const std::shared_ptr<promise_base> &promise, const eval_resolver &resolver, const std::string &code)
@@ -172,7 +175,7 @@ namespace saucer
         auto id = m_id_counter++;
         m_evals.write()->emplace(id, eval_t{resolver, serializer, promise});
 
-        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.at(serializer)->java_script_serializer() + "))();";
+        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.read()->at(serializer)->java_script_serializer() + "))();";
         run_java_script(resolve_code);
     }
 
@@ -192,7 +195,7 @@ namespace saucer
         // clang-format on
     }
 
-    std::vector<module *> smartview::get_modules()
+    std::vector<module *> smartview::get_modules() const
     {
         std::vector<module *> rtn;
         std::transform(m_modules.begin(), m_modules.end(), std::back_inserter(rtn), [](const auto &item) { return item.get(); });
@@ -200,7 +203,7 @@ namespace saucer
         return rtn;
     }
 
-    module *smartview::get_module(const std::string &name)
+    module *smartview::get_module(const std::string &name) const
     {
         for (const auto &module : m_modules)
         {
