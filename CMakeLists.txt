@@ -146,13 +146,14 @@ endif()
 
 if (saucer_smartview)
     if (NOT saucer_prefer_remote)
-        find_package(lockpp CONFIG REQUIRED)
+        find_path(LOCKPP_INCLUDE_DIRS "lock.hpp")
+        target_include_directories(${PROJECT_NAME} PUBLIC ${LOCKPP_INCLUDE_DIRS})
     else()
         FetchContent_Declare(lockpp GIT_REPOSITORY "https://github.com/Soundux/lockpp" GIT_TAG v1.0.1)
         FetchContent_MakeAvailable(lockpp)
-    endif()
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC lockpp::lockpp)
+        target_link_libraries(${PROJECT_NAME} PUBLIC lockpp::lockpp)
+    endif()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
