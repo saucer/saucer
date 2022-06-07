@@ -98,7 +98,6 @@ elseif (saucer_backend STREQUAL "Qt6")
 elseif (saucer_backend STREQUAL "WebView2")
     target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.cpp" "src/webview.webview2.cpp")
 
-    
     if (NOT saucer_prefer_remote)
         find_package(wil CONFIG REQUIRED)
     else()
@@ -189,3 +188,9 @@ if (saucer_tests)
     target_compile_features(${PROJECT_NAME}_tests PRIVATE cxx_std_17)
     set_target_properties(${PROJECT_NAME}_tests PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Install Targets
+# --------------------------------------------------------------------------------------------------------
+
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
