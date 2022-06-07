@@ -193,4 +193,5 @@ endif()
 # Install Targets
 # --------------------------------------------------------------------------------------------------------
 
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+install(DIRECTORY "include/" TYPE INCLUDE)
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib INCLUDES DESTINATION include)
