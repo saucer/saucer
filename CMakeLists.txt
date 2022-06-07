@@ -132,7 +132,7 @@ if (saucer_smartview)
     if (NOT saucer_prefer_remote)
         find_package(fmt CONFIG REQUIRED)
         find_package(tl-expected CONFIG REQUIRED)
-        find_package(nlohmann-json CONFIG REQUIRED)
+        find_package(nlohmann_json CONFIG REQUIRED)
     else()
         option(EXPECTED_BUILD_TESTS OFF)
 
