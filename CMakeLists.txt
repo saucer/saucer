@@ -5,10 +5,11 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_tests     "Build tests" OFF)
-option(saucer_examples  "Build examples" OFF)
-option(saucer_smartview "Enable the smartview" ON)
-option(saucer_shared    "Build a shared library" OFF)
+option(saucer_tests         "Build tests" OFF)
+option(saucer_examples      "Build examples" OFF)
+option(saucer_smartview     "Enable the smartview" ON)
+option(saucer_shared        "Build a shared library" OFF)
+option(saucer_prefer_remote "Prefer remote packages over local packages" ON)
 
 set(saucer_backend_types Default Qt Qt6 WebView2)
 set(saucer_backend Default CACHE STRING "The backend to use")
@@ -44,6 +45,8 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
@@ -95,10 +98,16 @@ elseif (saucer_backend STREQUAL "Qt6")
 elseif (saucer_backend STREQUAL "WebView2")
     target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.cpp" "src/webview.webview2.cpp")
 
-    option(WIL_BUILD_PACKAGING "" OFF)
-    option(WIL_BUILD_TESTS  "" OFF)
-    FetchContent_Declare(wil GIT_REPOSITORY "https://github.com/microsoft/wil")
-    FetchContent_MakeAvailable(wil)
+    
+    if (NOT saucer_prefer_remote)
+        find_package(wil CONFIG REQUIRED)
+    else()
+        option(WIL_BUILD_PACKAGING "" OFF)
+        option(WIL_BUILD_TESTS  "" OFF)
+    
+        FetchContent_Declare(wil GIT_REPOSITORY "https://github.com/microsoft/wil")
+        FetchContent_MakeAvailable(wil)
+    endif()
 
     include("NuGet.cmake")
     nuget_add(WebView2 "Microsoft.Web.WebView2" ${saucer_webview2_version})
@@ -120,12 +129,20 @@ if (saucer_smartview)
     set(EXPECTED_ENABLE_TESTS OFF)
     set(CMAKE_CXX_STANDARD 17)
 
-    FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
-    FetchContent_Declare(expected GIT_REPOSITORY "https://github.com/TartanLlama/expected" GIT_TAG v1.0.0)
-    FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt" GIT_TAG 8.0.1)
-    FetchContent_MakeAvailable(json expected fmt)
+    if (NOT saucer_prefer_remote)
+        find_package(fmt CONFIG REQUIRED)
+        find_package(tl-expected CONFIG REQUIRED)
+        find_package(nlohmann-json CONFIG REQUIRED)
+    else()
+        option(EXPECTED_BUILD_TESTS OFF)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json expected fmt)
+        FetchContent_Declare(expected GIT_REPOSITORY "https://github.com/TartanLlama/expected" GIT_TAG 96d547c03d2feab8db64c53c3744a9b4a7c8f2c5)
+        FetchContent_Declare(json GIT_REPOSITORY "https://github.com/nlohmann/json/" GIT_TAG v3.10.4 GIT_SHALLOW TRUE)
+        FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt" GIT_TAG 8.0.1)
+        FetchContent_MakeAvailable(json expected fmt)
+    endif()
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt)
 endif()
 
 if (saucer_smartview)
@@ -156,7 +173,9 @@ endif()
 if (saucer_tests)
     message(STATUS "[Saucer] Building Tests")
 
-    if (NOT TARGET Catch2::Catch2WithMain)
+    if (NOT saucer_prefer_remote)
+        find_package(catch2 CONFIG REQUIRED)
+    else()
         FetchContent_Declare(Catch2 GIT_REPOSITORY "https://github.com/catchorg/Catch2" GIT_TAG v2.13.7)
         option(CATCH_BUILD_STATIC_LIBRARY "" ON)
         FetchContent_MakeAvailable(Catch2)
@@ -166,7 +185,6 @@ if (saucer_tests)
     add_executable(${PROJECT_NAME}_tests ${test_src})
     target_compile_definitions(${PROJECT_NAME} PUBLIC THROW_ASSERT=1)
     target_link_libraries(${PROJECT_NAME}_tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain ${PROJECT_NAME})
-
 
     target_compile_features(${PROJECT_NAME}_tests PRIVATE cxx_std_17)
     set_target_properties(${PROJECT_NAME}_tests PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
