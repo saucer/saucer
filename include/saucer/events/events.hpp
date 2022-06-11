@@ -1,11 +1,10 @@
 #pragma once
 #include <map>
 #include <tuple>
-#include <vector>
 #include <atomic>
-#include <lock.hpp>
 #include <functional>
 #include <type_traits>
+#include <lockpp/lock.hpp>
 
 namespace saucer
 {

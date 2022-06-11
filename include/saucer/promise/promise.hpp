@@ -2,8 +2,8 @@
 #include "../serializers/serializer.hpp"
 
 #include <future>
-#include <lock.hpp>
 #include <functional>
+#include <lockpp/lock.hpp>
 
 namespace saucer
 {
