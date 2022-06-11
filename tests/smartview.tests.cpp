@@ -1,6 +1,6 @@
-#include <serializers/json.hpp>
+#include <saucer/serializers/json.hpp>
+#include <saucer/smartview.hpp>
 #include <catch2/catch.hpp>
-#include <smartview.hpp>
 #include <thread>
 
 TEST_CASE("Smartview functionality is tested", "[smartview]")

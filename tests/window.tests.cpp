@@ -1,6 +1,6 @@
 #define CONFIG_CATCH_MAIN
+#include <saucer/window.hpp>
 #include <catch2/catch.hpp>
-#include <window.hpp>
 #include <future>
 #include <thread>
 

@@ -1,7 +1,7 @@
 #include <iostream>
-#include "smartview.hpp"
-#include "serializers/json.hpp"
-#include "modules/core.module.hpp"
+#include <saucer/smartview.hpp>
+#include <saucer/serializers/json.hpp>
+#include <saucer/modules/core.module.hpp>
 
 int main()
 {
@@ -39,6 +39,7 @@ int main()
     webview.eval<int>("await window.saucer.call({}, {})", "test_async", std::make_tuple(100))->then([](int result) { std::cout << "Test result: " << result << std::endl; });
 
     webview.set_url("file://test.html");
+    webview.set_context_menu(false);
     webview.set_dev_tools(true);
     webview.show();
     webview.run();

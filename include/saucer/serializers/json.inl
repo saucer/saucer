@@ -1,6 +1,6 @@
 #pragma once
 #include "json.hpp"
-#include "smartview.hpp"
+#include "../smartview.hpp"
 
 namespace saucer::serializers
 {

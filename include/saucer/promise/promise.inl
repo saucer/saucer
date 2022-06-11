@@ -1,10 +1,10 @@
 #pragma once
-#include <exception>
 #include "promise.hpp"
+#include <exception>
 
 #ifdef THROW_ASSERT
-#define saucer_assert(expr)                                                                                                                                                        \
-    if (!expr)                                                                                                                                                                     \
+#define saucer_assert(expr)                                                                                                                                                                  \
+    if (!expr)                                                                                                                                                                               \
         throw std::runtime_error(#expr);
 #else
 #include <cassert>

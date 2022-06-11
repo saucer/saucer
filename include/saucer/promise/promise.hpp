@@ -1,8 +1,9 @@
 #pragma once
+#include "../serializers/serializer.hpp"
+
 #include <future>
 #include <lock.hpp>
 #include <functional>
-#include "serializers/serializer.hpp"
 
 namespace saucer
 {
