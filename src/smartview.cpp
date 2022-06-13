@@ -94,13 +94,6 @@ namespace saucer
 
     void smartview::on_message(const std::string &message)
     {
-        webview::on_message(message);
-
-        for (const auto &module : m_modules)
-        {
-            module->on_message(message);
-        }
-
         auto callbacks = m_callbacks.read();
         auto serializers = m_serializers.read();
 
@@ -161,6 +154,13 @@ namespace saucer
                 locked_evals->erase(result_message->id);
                 return;
             }
+        }
+
+        webview::on_message(message);
+
+        for (const auto &module : m_modules)
+        {
+            module->on_message(message);
         }
     }
 
