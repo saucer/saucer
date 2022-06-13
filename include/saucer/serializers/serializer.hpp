@@ -22,12 +22,6 @@ namespace saucer
         ~result_data() override = default;
     };
 
-    struct variable_data : public message_data
-    {
-        std::string variable;
-        ~variable_data() override = default;
-    };
-
     struct serializer
     {
         enum class error
@@ -36,7 +30,10 @@ namespace saucer
             type_mismatch,
         };
 
+      public:
         virtual ~serializer() = default;
+
+      public:
         virtual std::string initialization_script() const = 0;
         virtual std::string java_script_serializer() const = 0;
         virtual std::shared_ptr<message_data> parse(const std::string &) const = 0;

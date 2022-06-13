@@ -8,7 +8,7 @@ namespace saucer
         m_modules.emplace_back(std::make_unique<Module>(*this, std::forward<Args>(args)...));
     }
 
-    template <typename Return, typename Serializer, typename... Params> auto smartview::eval(const std::string &code, Params &&...params)
+    template <typename Return, typename Serializer, typename... Params> std::shared_ptr<promise<Return>> smartview::eval(const std::string &code, Params &&...params)
     {
         if (!m_serializers.read()->count(typeid(Serializer)))
         {
@@ -42,7 +42,7 @@ namespace saucer
 
     template <typename DefaultSerializer>
     template <typename Return, typename Serializer, typename... Params>
-    auto simple_smartview<DefaultSerializer>::eval(const std::string &code, Params &&...params)
+    std::shared_ptr<promise<Return>> simple_smartview<DefaultSerializer>::eval(const std::string &code, Params &&...params)
     {
         return smartview::eval<Return, Serializer>(code, std::forward<Params>(params)...);
     }

@@ -24,10 +24,13 @@ namespace saucer
         {
           public:
             ~json() override;
+
+          public:
             std::string initialization_script() const override;
             std::string java_script_serializer() const override;
             std::shared_ptr<message_data> parse(const std::string &data) const override;
 
+          public:
             template <typename Function> static auto serialize_function(const Function &func);
             template <typename... Params> static auto serialize_arguments(const Params &...params);
             template <typename T> static auto resolve_promise(const std::shared_ptr<promise<T>> &promise);

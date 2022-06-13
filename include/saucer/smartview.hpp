@@ -62,15 +62,15 @@ namespace saucer
 
       public:
         template <typename Module, typename... Args> void add_module(Args &&...);
-        template <typename Return, typename Serializer, typename... Params> [[thread_safe]] auto eval(const std::string &code, Params &&...params);
         template <typename Serializer, typename Function> [[thread_safe]] void expose(const std::string &name, const Function &func, bool async = false);
+        template <typename Return, typename Serializer, typename... Params> [[thread_safe]] std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
     };
 
     template <typename DefaultSerializer> class simple_smartview : public smartview
     {
       public:
-        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> auto eval(const std::string &code, Params &&...params);
         template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
+        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
     };
 #include "annotations.hpp" //NOLINT
 } // namespace saucer
