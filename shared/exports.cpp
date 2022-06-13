@@ -1,439 +1,352 @@
-#include "exports.hpp"
-#include <smartview.hpp>
+#include "serializers/ffi.hpp"
 
-bool window_get_resizeable(saucer::window *window)
+#include <utility>
+#include <saucer/webview.hpp>
+#include <saucer/smartview.hpp>
+
+#if defined(_WIN32)
+#define extern __export __declspec(dllexport)
+#else
+#define __export extern __attribute__((visibility("default")))
+#endif
+
+#define requires_free
+
+extern "C"
 {
-    return window->get_resizeable();
-}
-
-bool window_get_decorations(saucer::window *window)
-{
-    return window->get_decorations();
-}
-
-bool window_get_always_on_top(saucer::window *window)
-{
-    return window->get_always_on_top();
-}
-
-void window_get_title(saucer::window *window, char *output, size_t output_size)
-{
-    strcpy(output, window->get_title().substr(0, output_size).c_str());
-}
-
-void window_get_size(saucer::window *window, size_t *width, size_t *height)
-{
-    const auto [_width, _height] = window->get_size();
-
-    *width = _width;
-    *height = _height;
-}
-
-void window_get_max_size(saucer::window *window, size_t *width, size_t *height)
-{
-    const auto [_width, _height] = window->get_max_size();
-
-    *width = _width;
-    *height = _height;
-}
-
-void window_get_min_size(saucer::window *window, size_t *width, size_t *height)
-{
-    const auto [_width, _height] = window->get_min_size();
-
-    *width = _width;
-    *height = _height;
-}
-
-void window_hide(saucer::window *window)
-{
-    window->hide();
-}
-
-void window_show(saucer::window *window)
-{
-    window->show();
-}
-
-void window_exit(saucer::window *window)
-{
-    window->exit();
-}
-
-void window_run()
-{
-    saucer::window::run();
-}
-
-void window_on_close(saucer::window *window, bool (*callback)())
-{
-    window->on_close(callback);
-}
-
-void window_on_resize(saucer::window *window, void (*callback)(size_t, size_t))
-{
-    window->on_resize(callback);
-}
-
-void window_set_resizeable(saucer::window *window, bool enabled)
-{
-    window->set_resizeable(enabled);
-}
-
-void window_set_decorations(saucer::window *window, bool enabled)
-{
-    window->set_decorations(enabled);
-}
-
-void window_set_always_on_top(saucer::window *window, bool enabled)
-{
-    window->set_always_on_top(enabled);
-}
-
-void window_set_title(saucer::window *window, const char *title)
-{
-    window->set_title(title);
-}
-
-void window_set_size(saucer::window *window, std::size_t width, std::size_t height)
-{
-    window->set_size(width, height);
-}
-
-void window_set_max_size(saucer::window *window, std::size_t width, std::size_t height)
-{
-    window->set_max_size(width, height);
-}
-
-void window_set_min_size(saucer::window *window, std::size_t width, std::size_t height)
-{
-    window->set_min_size(width, height);
-}
-
-bool webview_get_dev_tools(saucer::webview *webview)
-{
-    return webview->get_dev_tools();
-}
-
-bool webview_get_context_menu(saucer::webview *webview)
-{
-    return webview->get_context_menu();
-}
-
-void webview_get_url(saucer::webview *webview, char *output, size_t output_size)
-{
-    strcpy(output, webview->get_url().substr(0, output_size).c_str());
-}
-
-void webview_set_dev_tools(saucer::webview *webview, bool enabled)
-{
-    webview->set_dev_tools(enabled);
-}
-
-void webview_set_url(saucer::webview *webview, const char *url)
-{
-    webview->set_url(url);
-}
-
-void webview_set_context_menu(saucer::webview *webview, bool enabled)
-{
-    webview->set_context_menu(enabled);
-}
-
-void webview_serve_embedded(saucer::webview *webview, const char *file)
-{
-    webview->serve_embedded(file);
-}
-
-void webview_embed_files(saucer::webview *webview, embedded_file **files, size_t file_size)
-{
-    std::map<const std::string, std::tuple<std::string, std::size_t, const std::uint8_t *>> embedded_files;
-    for (auto i = 0u; file_size > i; i++)
+    __export bool window_get_resizeable(const saucer::window *window)
     {
-        const auto &file = files[i];
-        embedded_files.emplace(file->file_name, std::make_tuple(file->mime_type, file->size, file->data));
+        return window->get_resizeable();
     }
 
-    webview->embed_files(embedded_files);
-}
-
-void webview_run_java_script(saucer::webview *webview, const char *java_script)
-{
-    webview->run_java_script(java_script);
-}
-
-void webview_inject(saucer::webview *webview, const char *java_script, load_time load_time)
-{
-    webview->inject(java_script, static_cast<saucer::load_time_t>(load_time));
-}
-
-void webview_clear_scripts(saucer::webview *webview)
-{
-    webview->clear_scripts();
-}
-
-void webview_clear_embedded(saucer::webview *webview)
-{
-    webview->clear_embedded();
-}
-
-void webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))
-{
-    webview->on_url_changed([callback](const std::string &url) {
-        if (callback)
-        {
-            callback(url.c_str());
-        }
-    });
-}
-
-struct ffi_function_data : public saucer::function_data
-{
-    void *data;
-};
-
-struct ffi_result_data : public saucer::result_data
-{
-    void *data{};
-};
-
-struct ffi_serializer : public saucer::serializer
-{
-    std::string serializer;
-    std::string init_script;
-    ffi_parse_callback_t parse_callback;
-
-    std::string initialization_script() const override;
-    std::string java_script_serializer() const override;
-    std::shared_ptr<saucer::message_data> parse(const std::string &) const override;
-};
-
-std::string ffi_serializer::initialization_script() const
-{
-    return init_script;
-}
-
-std::string ffi_serializer::java_script_serializer() const
-{
-    return serializer;
-}
-
-std::shared_ptr<saucer::message_data> ffi_serializer::parse(const std::string &data) const
-{
-    if (parse_callback)
+    __export void window_get_title(const saucer::window *window, char *output, size_t output_size)
     {
-        return std::shared_ptr<saucer::message_data>(parse_callback(data.c_str()));
+        strcpy(output, window->get_title().substr(0, output_size).c_str());
     }
-    return nullptr;
-}
 
-struct ffi_promise : public saucer::base_promise
-{
-    using saucer::base_promise::base_promise;
-
-    //? As the following functions are only meant to be used by the user we more or less "discard" them here.
-    //? The FFI-Wrapper should only keep an ffi_promise object to receive the rejected callback.
-    void wait() override{};
-    bool is_ready() override
+    __export bool window_get_decorations(const saucer::window *window)
     {
-        return false;
+        return window->get_decorations();
+    }
+
+    __export bool window_get_always_on_top(const saucer::window *window)
+    {
+        return window->get_always_on_top();
+    }
+
+    __export void window_get_size(const saucer::window *window, size_t *width, size_t *height)
+    {
+        auto [w, h] = window->get_size();
+        *width = w;
+        *height = h;
+    }
+
+    __export void window_get_max_size(const saucer::window *window, size_t *width, size_t *height)
+    {
+        auto [w, h] = window->get_max_size();
+        *width = w;
+        *height = h;
+    }
+
+    __export void window_get_min_size(const saucer::window *window, size_t *width, size_t *height)
+    {
+        auto [w, h] = window->get_min_size();
+        *width = w;
+        *height = h;
+    }
+
+    __export void window_get_background_color(const saucer::window *window, size_t *r, size_t *g, size_t *b, size_t *a)
+    {
+        auto [_r, _g, _b, _a] = window->get_background_color();
+        *r = _r;
+        *g = _g;
+        *b = _b;
+        *a = _a;
+    }
+
+    __export void window_hide(saucer::window *window)
+    {
+        window->hide();
+    }
+
+    __export void window_show(saucer::window *window)
+    {
+        window->show();
+    }
+
+    __export void window_close(saucer::window *window)
+    {
+        window->close();
+    }
+
+    __export void window_set_resizeable(saucer::window *window, bool enabled)
+    {
+        window->set_resizeable(enabled);
+    }
+
+    __export void window_set_title(saucer::window *window, const char *title)
+    {
+        window->set_title(title);
+    }
+
+    __export void window_set_decorations(saucer::window *window, bool enabled)
+    {
+        window->set_decorations(enabled);
+    }
+
+    __export void window_set_always_on_top(saucer::window *window, bool enabled)
+    {
+        window->set_always_on_top(enabled);
+    }
+
+    __export void window_set_size(saucer::window *window, size_t width, size_t height)
+    {
+        window->set_size(width, height);
+    }
+
+    __export void window_set_max_size(saucer::window *window, size_t width, size_t height)
+    {
+        window->set_max_size(width, height);
+    }
+
+    __export void window_set_min_size(saucer::window *window, size_t width, size_t height)
+    {
+        window->set_min_size(width, height);
+    }
+
+    __export void window_set_background_color(saucer::window *window, size_t r, size_t g, size_t b, size_t a)
+    {
+        window->set_background_color(r, g, b, a);
+    }
+
+    enum window_event
+    {
+        resize,
+        close
     };
-};
 
-struct ffi_smartview : public saucer::smartview
-{
-  protected:
-    void on_message(const std::string &) override;
-
-  public:
-    on_message_callback_t on_message_callback{};
-    const std::shared_ptr<ffi_serializer> serializer;
-
-  public:
-    ffi_smartview();
-    ~ffi_smartview() override;
-    void reject(const std::size_t &, const char *);
-    void resolve(const std::size_t &, const char *);
-
-    void add_callback(const char *, ffi_callback_t, bool);
-    void add_eval(ffi_promise *, ffi_resolve_callback_t, const char *);
-};
-
-ffi_smartview::ffi_smartview() : serializer(std::make_shared<ffi_serializer>())
-{
-    m_serializers.emplace(typeid(ffi_serializer), serializer);
-}
-ffi_smartview::~ffi_smartview() = default;
-
-void ffi_smartview::on_message(const std::string &message)
-{
-    smartview::on_message(message);
-    if (on_message_callback)
+    __export void window_clear(saucer::window *window, window_event event)
     {
-        on_message_callback(message.c_str());
+        window->clear(static_cast<saucer::window_event>(event));
+    }
+
+    __export void window_unregister(saucer::window *window, window_event event, size_t id)
+    {
+        window->unregister(static_cast<saucer::window_event>(event), id);
+    }
+
+    __export size_t window_on_resize(saucer::window *window, void (*callback)(size_t, size_t))
+    {
+        return window->on<saucer::window_event::resize>(callback);
+    }
+
+    __export size_t window_on_close(saucer::window *window, bool (*callback)())
+    {
+        return window->on<saucer::window_event::close>(callback);
     }
 }
 
-void ffi_smartview::reject(const std::size_t &id, const char *message)
+extern "C"
 {
-    smartview::reject(id, message);
-}
+    __export bool webview_get_dev_tools(const saucer::webview *webview)
+    {
+        return webview->get_dev_tools();
+    }
 
-void ffi_smartview::resolve(const std::size_t &id, const char *result)
-{
-    smartview::reject(id, result);
-}
+    __export void webview_get_url(const saucer::webview *webview, char *output, size_t output_size)
+    {
+        strcpy(output, webview->get_url().substr(0, output_size).c_str());
+    }
 
-void ffi_smartview::add_callback(const char *function, ffi_callback_t callback, bool async)
-{
-    auto cpp_callback = [callback](const std::shared_ptr<saucer::function_data> &data) -> tl::expected<std::string, saucer::serializer::error> {
-        auto ffi_data = std::dynamic_pointer_cast<ffi_function_data>(data);
+    __export bool webview_get_transparent(const saucer::webview *webview)
+    {
+        return webview->get_transparent();
+    }
 
-        char buffer[2048]{""};
-        auto rtn = callback(ffi_data.get(), buffer, 2048);
+    __export bool webview_get_context_menu(const saucer::webview *webview)
+    {
+        return webview->get_context_menu();
+    }
 
-        if (rtn != SERIALIZER_ERROR_NONE)
+    __export void webview_serve_embedded(saucer::webview *webview, const char *file)
+    {
+        webview->serve_embedded(file);
+    }
+
+    __export void webview_set_dev_tools(saucer::webview *webview, bool enabled)
+    {
+        webview->set_dev_tools(enabled);
+    }
+
+    __export void webview_set_context_menu(saucer::webview *webview, bool enabled)
+    {
+        webview->set_context_menu(enabled);
+    }
+
+    __export void webview_set_url(saucer::webview *webview, const char *url)
+    {
+        webview->set_url(url);
+    }
+
+    [[requires_free]] __export std::pair<std::string, saucer::embedded_file> *embedded_file_new(const std::string &name, const std::string &mime, std::size_t size, const std::uint8_t *data)
+    {
+        return new std::pair<std::string, saucer::embedded_file>(name, {mime, size, data});
+    }
+
+    __export void embedded_file_free(saucer::embedded_file *file)
+    {
+        delete file;
+    }
+
+    __export void webview_embed_files(saucer::webview *webview, std::pair<std::string, saucer::embedded_file> **files, std::size_t file_count)
+    {
+        std::map<const std::string, const saucer::embedded_file> embedded_files;
+
+        for (auto i = 0u; file_count > i; i++)
         {
-            return tl::make_unexpected(static_cast<saucer::serializer::error>(rtn));
+            auto &file = files[i];
+            embedded_files.emplace(file->first, file->second);
         }
 
-        return buffer;
+        webview->embed_files(std::move(embedded_files));
+    }
+
+    __export void webview_set_transparent(saucer::webview *webview, bool enabled, bool blur = false)
+    {
+        webview->set_transparent(enabled, blur);
+    }
+
+    __export void webview_clear_scripts(saucer::webview *webview)
+    {
+        webview->clear_scripts();
+    }
+
+    __export void webview_clear_embedded(saucer::webview *webview)
+    {
+        webview->clear_embedded();
+    }
+
+    __export void webview_run_java_script(saucer::webview *webview, const char *java_script)
+    {
+        webview->run_java_script(java_script);
+    }
+
+    enum load_time
+    {
+        ready,
+        creation,
     };
 
-    smartview::add_callback(typeid(ffi_serializer), function, cpp_callback, async);
-}
+    __export void webview_inject(saucer::webview *webview, const char *java_script, load_time load_time)
+    {
+        webview->inject(java_script, static_cast<saucer::load_time>(load_time));
+    }
 
-void ffi_smartview::add_eval(ffi_promise *promise, ffi_resolve_callback_t callback, const char *code)
-{
-    auto cpp_callback = [callback](const std::shared_ptr<saucer::result_data> &data) -> tl::expected<void, saucer::serializer::error> {
-        auto ffi_data = std::dynamic_pointer_cast<ffi_result_data>(data);
-        auto result = callback(ffi_data.get());
-
-        if (result != SERIALIZER_ERROR_NONE)
-        {
-            return tl::make_unexpected(static_cast<saucer::serializer::error>(result));
-        }
-
-        return {};
+    enum web_event
+    {
+        url_changed
     };
 
-    smartview::add_eval(typeid(ffi_serializer), std::shared_ptr<saucer::base_promise>(promise), cpp_callback, code);
+    __export void webview_clear(saucer::webview *webview, web_event event)
+    {
+        webview->clear(static_cast<saucer::web_event>(event));
+    }
+
+    __export void webview_unregister(saucer::webview *webview, web_event event, size_t id)
+    {
+        webview->unregister(static_cast<saucer::web_event>(event), id);
+    }
+
+    __export size_t webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))
+    {
+        return webview->on<saucer::web_event::url_changed>([callback](const std::string &url) { callback(url.c_str()); });
+    }
 }
 
-ffi_smartview *smartview_new()
+extern "C"
 {
-    return new ffi_smartview;
+    __export saucer::ffi_function_data *ffi_function_data_new(std::size_t id, const char *function, void *data)
+    {
+        auto *rtn = new saucer::ffi_function_data;
+        rtn->function = function;
+        rtn->data = data;
+        rtn->id = id;
+
+        return rtn;
+    }
+
+    __export void ffi_function_data_get_function(saucer::ffi_function_data *data, char *output, std::size_t output_size)
+    {
+        strcpy(output, data->function.substr(0, output_size).c_str());
+    }
+
+    __export void *ffi_function_data_get_data(saucer::ffi_function_data *data)
+    {
+        return data->data;
+    }
+
+    __export std::size_t ffi_function_data_get_id(saucer::ffi_function_data *data)
+    {
+        return data->id;
+    }
+
+    __export saucer::ffi_result_data *ffi_result_data_new(std::size_t id, void *data)
+    {
+        auto *rtn = new saucer::ffi_result_data;
+        rtn->data = data;
+        rtn->id = id;
+
+        return rtn;
+    }
+
+    __export void *ffi_result_data_get_data(saucer::ffi_result_data *data)
+    {
+        return data->data;
+    }
+
+    __export std::size_t ffi_result_data_get_id(saucer::ffi_result_data *data)
+    {
+        return data->id;
+    }
+
+    __export void ffi_serializer_set_buffer_size(std::size_t size)
+    {
+        saucer::ffi_serializer::buffer_size = size;
+    }
+
+    __export void ffi_serializer_set_init_script(const char *script)
+    {
+        saucer::ffi_serializer::init_script = script;
+    }
+
+    __export void ffi_serializer_set_js_serializer(const char *serializer)
+    {
+        saucer::ffi_serializer::js_serializer = serializer;
+    }
+
+    __export void ffi_serializer_set_parse_callback(saucer::ffi_serializer::parse_callback_t callback)
+    {
+        saucer::ffi_serializer::parse_callback = callback;
+    }
 }
 
-void smartview_free(ffi_smartview *smartview)
+extern "C"
 {
-    delete smartview;
-}
+    [[requires_free]] __export saucer::smartview *smartview_new()
+    {
+        return new saucer::smartview;
+    }
 
-void smartview_add_callback(ffi_smartview *smartview, const char *function, ffi_callback_t callback, bool async)
-{
-    smartview->add_callback(function, callback, async);
-}
+    __export void smartview_free(saucer::smartview *smartview)
+    {
+        delete smartview;
+    }
 
-void smartview_add_eval(ffi_smartview *smartview, ffi_promise *promise, ffi_resolve_callback_t callback, const char *code)
-{
-    smartview->add_eval(promise, callback, code);
-}
+    __export void smartview_expose(saucer::smartview *smartview, const std::string &name, bool async)
+    {
+        smartview->expose<saucer::ffi_serializer>(name, nullptr, async);
+    }
 
-void smartview_reject(ffi_smartview *smartview, size_t id, const char *message)
-{
-    smartview->reject(id, message);
-}
-
-void smartview_resolve(ffi_smartview *smartview, size_t id, const char *result)
-{
-    smartview->resolve(id, result);
-}
-
-void smartview_serializer_set_initialization_script(ffi_smartview *smartview, const char *init_script)
-{
-    smartview->serializer->init_script = init_script;
-    smartview->inject(init_script, saucer::load_time_t::creation); //? We already add the serializer to the smartview on creation, at that point the init script is not yet set.
-}
-
-void smartview_serializer_set_java_script_serializer(ffi_smartview *smartview, const char *serializer)
-{
-    smartview->serializer->serializer = serializer;
-}
-
-void smartview_serializer_set_parse_callback(ffi_smartview *smartview, ffi_parse_callback_t callback)
-{
-    smartview->serializer->parse_callback = callback;
-}
-
-void smartview_set_on_message_callback(ffi_smartview *smartview, on_message_callback_t callback)
-{
-    smartview->on_message_callback = callback;
-}
-
-ffi_result_data *ffi_result_data_new()
-{
-    return new ffi_result_data;
-}
-void *ffi_result_data_get_data(ffi_result_data *result_data)
-{
-    return result_data->data;
-}
-
-void ffi_result_data_set_data(ffi_result_data *result_data, void *data)
-{
-    result_data->data = data;
-}
-
-void ffi_result_data_set_id(ffi_result_data *result_data, size_t id)
-{
-    result_data->id = id;
-}
-
-size_t ffi_result_data_get_id(ffi_result_data *result_data)
-{
-    return result_data->id;
-}
-
-ffi_function_data *ffi_function_data_new()
-{
-    return new ffi_function_data;
-}
-void *ffi_function_data_get_data(ffi_function_data *function_data)
-{
-    return function_data->data;
-}
-void ffi_function_data_set_data(ffi_function_data *function_data, void *data)
-{
-    function_data->data = data;
-}
-
-void ffi_function_data_set_function(ffi_function_data *function_data, const char *function)
-{
-    function_data->function = function;
-}
-
-void ffi_function_data_set_id(ffi_function_data *function_data, size_t id)
-{
-    function_data->id = id;
-}
-
-size_t ffi_function_data_get_id(ffi_function_data *function_data)
-{
-    return function_data->id;
-}
-
-void ffi_function_data_get_function(ffi_function_data *function_data, char *output, size_t output_length)
-{
-    strcpy(output, function_data->function.substr(0, output_length).c_str());
-}
-
-ffi_promise *ffi_promise_new()
-{
-    return new ffi_promise(std::this_thread::get_id()); //? The thread id doesn't matter here.
-}
-
-void ffi_promise_set_fail_callback(ffi_promise *promise, void (*callback)(serializer_error))
-{
-    promise->fail([callback](const saucer::serializer::error &error) { callback(static_cast<serializer_error>(error)); });
+    // TODO: evals
+    // TODO: modules
 }
