@@ -32,7 +32,7 @@ namespace saucer
         virtual ~window();
 
       public:
-        bool get_resizeable() const;
+        bool get_resizable() const;
         std::string get_title() const;
         [[thread_safe]] bool get_decorations() const;
         [[thread_safe]] bool get_always_on_top() const;
@@ -47,7 +47,7 @@ namespace saucer
         [[thread_safe]] void close();
 
       public:
-        void set_resizeable(bool enabled);
+        void set_resizable(bool enabled);
         void set_title(const std::string &);
         [[thread_safe]] void set_decorations(bool enabled);
         [[thread_safe]] void set_always_on_top(bool enabled);

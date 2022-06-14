@@ -22,8 +22,8 @@ namespace saucer
         smartview.expose<json>("core.get_title", [this] { return m_smartview.get_title(); });
         smartview.expose<json>("core.set_title", [this](const std::string &title) { m_smartview.set_title(title); });
 
-        smartview.expose<json>("core.get_resizeable", [this] { return m_smartview.get_resizeable(); });
-        smartview.expose<json>("core.set_resizeable", [this](bool enabled) { m_smartview.set_resizeable(enabled); });
+        smartview.expose<json>("core.get_resizable", [this] { return m_smartview.get_resizable(); });
+        smartview.expose<json>("core.set_resizable", [this](bool enabled) { m_smartview.set_resizable(enabled); });
 
         smartview.expose<json>("core.get_decorations", [this] { return m_smartview.get_decorations(); });
         smartview.expose<json>("core.set_decorations", [this](bool enabled) { m_smartview.set_decorations(enabled); });
@@ -44,8 +44,7 @@ namespace saucer
         smartview.expose<json>("core.set_max_size", [this](std::size_t width, std::size_t height) { m_smartview.set_max_size(width, height); });
 
         smartview.expose<json>("core.is_module_loaded", [this](const std::string &module) { return static_cast<bool>(m_smartview.get_module(module)); });
-        smartview.expose<json>("core.inject",
-                               [this](const std::string &java_script, size_t load_time) { m_smartview.inject(java_script, static_cast<enum load_time>(load_time)); });
+        smartview.expose<json>("core.inject", [this](const std::string &java_script, size_t load_time) { m_smartview.inject(java_script, static_cast<enum load_time>(load_time)); });
     }
 
     void core_module::on_message(const std::string &) {}

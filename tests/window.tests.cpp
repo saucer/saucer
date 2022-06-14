@@ -12,10 +12,10 @@ TEST_CASE("Window functionality is tested", "[window]")
 {
     auto window = test_window();
 
-    window.set_resizeable(false);
-    REQUIRE_FALSE(window.get_resizeable());
-    window.set_resizeable(true);
-    REQUIRE(window.get_resizeable());
+    window.set_resizable(false);
+    REQUIRE_FALSE(window.get_resizable());
+    window.set_resizable(true);
+    REQUIRE(window.get_resizable());
 
     window.set_decorations(true);
     REQUIRE(window.get_decorations());

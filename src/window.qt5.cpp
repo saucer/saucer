@@ -30,7 +30,7 @@ namespace saucer
         m_impl->window->deleteLater();
     }
 
-    bool window::get_resizeable() const
+    bool window::get_resizable() const
     {
         return m_impl->window->maximumSize() != m_impl->window->minimumSize();
     }
@@ -118,11 +118,11 @@ namespace saucer
         m_impl->window->close();
     }
 
-    void window::set_resizeable(bool enabled)
+    void window::set_resizable(bool enabled)
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_resizeable(enabled); });
+            return m_impl->post_safe([=] { return set_resizable(enabled); });
         }
 
         if (!enabled)

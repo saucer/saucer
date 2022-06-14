@@ -53,7 +53,7 @@ namespace saucer
 
     window::~window() = default;
 
-    bool window::get_resizeable() const
+    bool window::get_resizable() const
     {
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
     }
@@ -137,7 +137,7 @@ namespace saucer
         DestroyWindow(m_impl->hwnd);
     }
 
-    void window::set_resizeable(bool enabled)
+    void window::set_resizable(bool enabled)
     {
         auto current_style = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
         if (enabled)

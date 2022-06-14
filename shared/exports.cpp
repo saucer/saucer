@@ -14,9 +14,9 @@
 
 extern "C"
 {
-    __export bool window_get_resizeable(const saucer::window *window)
+    __export bool window_get_resizable(const saucer::window *window)
     {
-        return window->get_resizeable();
+        return window->get_resizable();
     }
 
     __export void window_get_title(const saucer::window *window, char *output, size_t output_size)
@@ -79,9 +79,9 @@ extern "C"
         window->close();
     }
 
-    __export void window_set_resizeable(saucer::window *window, bool enabled)
+    __export void window_set_resizable(saucer::window *window, bool enabled)
     {
-        window->set_resizeable(enabled);
+        window->set_resizable(enabled);
     }
 
     __export void window_set_title(saucer::window *window, const char *title)
