@@ -44,7 +44,7 @@ endif()
 # Create library
 # --------------------------------------------------------------------------------------------------------
 
-add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME} STATIC)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
