@@ -144,6 +144,11 @@ extern "C"
     {
         return window->on<saucer::window_event::close>(callback);
     }
+
+    __export void window_run()
+    {
+        saucer::window::run();
+    }
 }
 
 extern "C"
