@@ -193,7 +193,7 @@ extern "C"
         webview->set_url(url);
     }
 
-    [[requires_free]] __export std::pair<std::string, saucer::embedded_file> *embedded_file_new(const std::string &name, const std::string &mime, std::size_t size, const std::uint8_t *data)
+    [[requires_free]] __export std::pair<std::string, saucer::embedded_file> *embedded_file_new(const char *name, const char *mime, std::size_t size, const std::uint8_t *data)
     {
         return new std::pair<std::string, saucer::embedded_file>(name, {mime, size, data});
     }
@@ -347,7 +347,7 @@ extern "C"
         delete smartview;
     }
 
-    __export void smartview_expose(saucer::smartview *smartview, const std::string &name, bool async)
+    __export void smartview_expose(saucer::smartview *smartview, const char *name, bool async)
     {
         smartview->expose<saucer::ffi_serializer>(name, nullptr, async);
     }
