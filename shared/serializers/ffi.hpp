@@ -1,4 +1,5 @@
 #pragma once
+#include <saucer/smartview.hpp>
 #include <saucer/serializers/serializer.hpp>
 
 namespace saucer
@@ -18,7 +19,7 @@ namespace saucer
     struct ffi_serializer : public serializer
     {
         using parse_callback_t = message_data *(*)(const char *);
-        using serialize_callback_t = bool (*)(function_data *, char *, std::size_t, error *);
+        using serialize_callback_t = bool (*)(smartview *, function_data *, char *, std::size_t, std::size_t *, error *);
 
       public:
         ~ffi_serializer() override;

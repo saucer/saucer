@@ -25,15 +25,17 @@ namespace saucer
         return std::shared_ptr<saucer::message_data>(parse_callback(data.c_str()));
     }
 
-    template <typename Function> auto ffi_serializer::serialize_function([[maybe_unused]] const Function &func)
+    template <typename Function> auto ffi_serializer::serialize_function(const Function &func)
     {
-        return [](const std::shared_ptr<function_data> &data) -> tl::expected<std::string, error> {
+        //? Func is equal to the smartview used, so that the ffi-bindings can properly correlate which smartview instance to pass the call onto.
+        return [func](const std::shared_ptr<function_data> &data) -> tl::expected<std::string, error> {
             error error{};
+            std::size_t num_written{};
             auto buffer = std::make_unique<char[]>(buffer_size);
 
-            if (serialize_callback(data.get(), buffer.get(), buffer_size, &error))
+            if (serialize_callback(func, data.get(), buffer.get(), buffer_size, &num_written, &error))
             {
-                return std::string(buffer.get(), buffer_size);
+                return std::string(buffer.get(), num_written);
             }
 
             return tl::make_unexpected(error);
