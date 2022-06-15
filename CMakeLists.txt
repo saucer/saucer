@@ -15,7 +15,7 @@ option(saucer_prefer_remote     "Prefer remote packages over local packages" ON)
 set(saucer_backend_types Default Qt Qt6 WebView2)
 set(saucer_backend Default CACHE STRING "The backend to use")
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
-set(saucer_webview2_version "1.0.1189-prerelease" CACHE STRING "The WebView2 version to use")
+set(saucer_webview2_version "1.0.1245.22" CACHE STRING "The WebView2 version to use")
 
 if (NOT saucer_smartview)
     message(STATUS "[Saucer] Not using smartview, native interoperability will be disabled")
