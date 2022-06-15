@@ -12,7 +12,7 @@ name: Test Qt6 (Release)
 jobs:
   test-qt6-release:
     runs-on: ubuntu-latest
-    container: archlinux
+    container: archlinux:base-20220403.0.51871
     strategy:
       fail-fast: false
       matrix:
