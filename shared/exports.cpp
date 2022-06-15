@@ -333,6 +333,11 @@ extern "C"
     {
         saucer::ffi_serializer::parse_callback = callback;
     }
+
+    __export void ffi_serializer_set_serialize_callback(saucer::ffi_serializer::serialize_callback_t callback)
+    {
+        saucer::ffi_serializer::serialize_callback = callback;
+    }
 }
 
 extern "C"
@@ -349,9 +354,9 @@ extern "C"
 
     __export void smartview_expose(saucer::smartview *smartview, const char *name, bool async)
     {
-        smartview->expose<saucer::ffi_serializer>(name, nullptr, async);
+        smartview->expose<saucer::ffi_serializer>(name, smartview, async);
     }
 
-    // TODO: evals
+    // TODO: evals / promises
     // TODO: modules
 }
