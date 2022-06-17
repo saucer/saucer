@@ -3,6 +3,7 @@
 
 #include <QThread>
 #include <optional>
+#include <QCloseEvent>
 #include <QMainWindow>
 #include <QApplication>
 
@@ -42,6 +43,7 @@ namespace saucer
             {
                 if (result)
                 {
+                    event->ignore();
                     return;
                 }
             }
