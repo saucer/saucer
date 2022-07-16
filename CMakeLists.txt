@@ -76,6 +76,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC "include")
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 
 # --------------------------------------------------------------------------------------------------------
+# Generate "constants" file
+# --------------------------------------------------------------------------------------------------------
+
+string(TOLOWER ${saucer_backend} saucer_backed_lower)
+configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/constants.hpp")
+
+# --------------------------------------------------------------------------------------------------------
 # Configure Library depending on options
 # --------------------------------------------------------------------------------------------------------
 

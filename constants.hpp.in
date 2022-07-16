@@ -1,0 +1,14 @@
+#pragma once
+#define SAUCER_CURRENT_BACKEND ${saucer_backed_lower}
+
+namespace saucer
+{
+    enum class backend_type
+    {
+        qt,
+        qt6,
+        webview2,
+    };
+
+    constexpr backend_type backend = backend_type::SAUCER_CURRENT_BACKEND;
+} // namespace saucer
