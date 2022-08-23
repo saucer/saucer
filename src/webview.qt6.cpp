@@ -100,7 +100,7 @@ namespace saucer
 
     void webview::serve_embedded(const std::string &file)
     {
-        set_url("saucer:" + file);
+        set_url("saucer:/embedded/" + file);
     }
 
     void webview::set_dev_tools(bool enabled)
