@@ -6,6 +6,7 @@
 #include <wil/com.h>
 #include <wil/stl.h>
 #include <WebView2.h>
+#include <string_view>
 #include <wil/win32_helpers.h>
 
 namespace saucer
@@ -25,6 +26,8 @@ namespace saucer
 
         static inline WNDPROC original_wnd_proc;
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+        static inline constexpr std::string_view scheme_prefix = "https://saucer/embedded/";
+        static inline constexpr std::wstring_view scheme_prefix_w = L"https://saucer/embedded/";
     };
 
     inline void webview::impl::init_webview(HWND hwnd)
@@ -35,15 +38,15 @@ namespace saucer
         std::wstring temp;
         wil::GetEnvironmentVariableW(L"TEMP", temp);
 
-        CreateCoreWebView2EnvironmentWithOptions(nullptr, temp.c_str(), nullptr,
-                                                 Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>([=](auto, auto *env) {
-                                                     return env->CreateCoreWebView2Controller(
-                                                         hwnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>([this](auto, auto *controller) {
-                                                                   webview_controller = controller;
-                                                                   webview_controller->get_CoreWebView2(&this->webview);
-                                                                   return S_OK;
-                                                               }).Get());
-                                                 }).Get());
+        CreateCoreWebView2EnvironmentWithOptions(nullptr, temp.c_str(), nullptr, Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>([=](auto, auto *env) {
+                                                                                     return env->CreateCoreWebView2Controller(
+                                                                                         hwnd,
+                                                                                         Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>([this](auto, auto *controller) {
+                                                                                             webview_controller = controller;
+                                                                                             webview_controller->get_CoreWebView2(&this->webview);
+                                                                                             return S_OK;
+                                                                                         }).Get());
+                                                                                 }).Get());
 
         //? Ensure the WebView is created synchronously, may be easier in the future: https://github.com/MicrosoftEdge/WebView2Feedback/issues/740
         MSG msg;

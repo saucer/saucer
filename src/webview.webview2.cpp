@@ -126,7 +126,7 @@ namespace saucer
 
     void webview::serve_embedded(const std::string &file)
     {
-        set_url("https://saucer/embedding/" + file);
+        set_url(std::string{impl::scheme_prefix} + file);
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -188,7 +188,7 @@ namespace saucer
         if (!m_impl->resource_requested_token)
         {
             m_impl->resource_requested_token = EventRegistrationToken{};
-            m_impl->webview->AddWebResourceRequestedFilter(L"https://saucer/embedding/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+            m_impl->webview->AddWebResourceRequestedFilter(std::wstring{std::wstring{impl::scheme_prefix_w} + L"*"}.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
             m_impl->webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([this](auto, auto *args) {
                                                           wil::com_ptr<ICoreWebView2WebResourceRequest> request;
@@ -204,9 +204,9 @@ namespace saucer
                                                               request->get_Uri(&raw_url);
                                                               auto url = window::m_impl->narrow(raw_url);
 
-                                                              if (url.size() > 25)
+                                                              if (url.size() > impl::scheme_prefix.size())
                                                               {
-                                                                  url = url.substr(25);
+                                                                  url = url.substr(impl::scheme_prefix.size());
 
                                                                   if (m_embedded_files.count(url))
                                                                   {
