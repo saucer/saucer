@@ -126,7 +126,7 @@ namespace saucer
 
     void webview::serve_embedded(const std::string &file)
     {
-        set_url("https://saucer/" + file);
+        set_url("https://saucer/embedding/" + file);
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -188,7 +188,7 @@ namespace saucer
         if (!m_impl->resource_requested_token)
         {
             m_impl->resource_requested_token = EventRegistrationToken{};
-            m_impl->webview->AddWebResourceRequestedFilter(L"https://saucer/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+            m_impl->webview->AddWebResourceRequestedFilter(L"https://saucer/embedding/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
             m_impl->webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([this](auto, auto *args) {
                                                           wil::com_ptr<ICoreWebView2WebResourceRequest> request;
@@ -204,9 +204,9 @@ namespace saucer
                                                               request->get_Uri(&raw_url);
                                                               auto url = window::m_impl->narrow(raw_url);
 
-                                                              if (url.size() > 15)
+                                                              if (url.size() > 25)
                                                               {
-                                                                  url = url.substr(15);
+                                                                  url = url.substr(25);
 
                                                                   if (m_embedded_files.count(url))
                                                                   {
@@ -214,8 +214,8 @@ namespace saucer
 
                                                                       wil::com_ptr<ICoreWebView2WebResourceResponse> response;
                                                                       wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
-                                                                      env->CreateWebResourceResponse(data.get(), 200, L"OK",
-                                                                                                     window::m_impl->widen("Content-Type: " + file.mime).c_str(), &response);
+                                                                      env->CreateWebResourceResponse(data.get(), 200, L"OK", window::m_impl->widen("Content-Type: " + file.mime).c_str(),
+                                                                                                     &response);
 
                                                                       args->put_Response(response.get());
                                                                   }
@@ -301,11 +301,11 @@ namespace saucer
 
         if (load_time == load_time::creation)
         {
-            m_impl->webview->AddScriptToExecuteOnDocumentCreated(
-                window::m_impl->widen(java_script).c_str(), Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
-                                                                m_impl->injected_scripts.emplace_back(id);
-                                                                return S_OK;
-                                                            }).Get());
+            m_impl->webview->AddScriptToExecuteOnDocumentCreated(window::m_impl->widen(java_script).c_str(),
+                                                                 Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
+                                                                     m_impl->injected_scripts.emplace_back(id);
+                                                                     return S_OK;
+                                                                 }).Get());
         }
         else
         {
