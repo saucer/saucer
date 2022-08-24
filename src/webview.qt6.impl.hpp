@@ -5,6 +5,7 @@
 #include <QBuffer>
 #include <QObject>
 #include <cassert>
+#include <string_view>
 #include <QWebChannel>
 #include <QWebEngineView>
 #include <QWebEngineUrlRequestJob>
@@ -25,6 +26,7 @@ namespace saucer
         class saucer_web_class;
         class saucer_url_scheme_handler;
         static const std::string inject_script;
+        static inline constexpr std::string_view scheme_prefix = "saucer:/embedded/";
     };
 
     inline const std::string webview::impl::inject_script = []() {
@@ -84,9 +86,9 @@ namespace saucer
         void requestStarted(QWebEngineUrlRequestJob *request) override
         {
             auto url = request->requestUrl().toString().toStdString();
-            if (url.size() > 17)
+            if (url.size() > scheme_prefix.size())
             {
-                url = url.substr(17);
+                url = url.substr(scheme_prefix.size());
             }
             else
             {
