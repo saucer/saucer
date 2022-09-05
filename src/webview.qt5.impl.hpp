@@ -85,7 +85,8 @@ namespace saucer
       public:
         void requestStarted(QWebEngineUrlRequestJob *request) override
         {
-            auto url = request->requestUrl().toString().toStdString();
+            auto url = request->requestUrl().toString(QUrl::RemoveQuery).toStdString();
+
             if (url.size() > scheme_prefix.size())
             {
                 url = url.substr(scheme_prefix.size());
