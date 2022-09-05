@@ -130,17 +130,17 @@ extern "C"
         window->clear(static_cast<saucer::window_event>(event));
     }
 
-    __export void window_remove(saucer::window *window, window_event event, size_t id)
+    __export void window_remove(saucer::window *window, window_event event, uint64_t id)
     {
         window->remove(static_cast<saucer::window_event>(event), id);
     }
 
-    __export size_t window_on_resize(saucer::window *window, void (*callback)(size_t, size_t))
+    __export uint64_t window_on_resize(saucer::window *window, void (*callback)(size_t, size_t))
     {
         return window->on<saucer::window_event::resize>(callback);
     }
 
-    __export size_t window_on_close(saucer::window *window, bool (*callback)())
+    __export uint64_t window_on_close(saucer::window *window, bool (*callback)())
     {
         return window->on<saucer::window_event::close>(callback);
     }
@@ -257,12 +257,12 @@ extern "C"
         webview->clear(static_cast<saucer::web_event>(event));
     }
 
-    __export void webview_remove(saucer::webview *webview, web_event event, size_t id)
+    __export void webview_remove(saucer::webview *webview, web_event event, uint64_t id)
     {
         webview->remove(static_cast<saucer::web_event>(event), id);
     }
 
-    __export size_t webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))
+    __export uint64_t webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))
     {
         return webview->on<saucer::web_event::url_changed>([callback](const std::string &url) { callback(url.c_str()); });
     }

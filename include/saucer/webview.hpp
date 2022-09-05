@@ -72,13 +72,13 @@ namespace saucer
         [[thread_safe]] void clear(web_event event);
 
         using window::remove;
-        [[thread_safe]] void remove(web_event event, std::size_t id);
+        [[thread_safe]] void remove(web_event event, std::uint64_t id);
 
         using window::on;
         template <web_event Event> //
-        [[thread_safe]] std::size_t on(events::callback_t<Event> &&callback) = delete;
+        [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&callback) = delete;
     };
 #include "annotations.hpp" //NOLINT
 
-    template <> std::size_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);
+    template <> std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);
 } // namespace saucer

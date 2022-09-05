@@ -206,17 +206,17 @@ namespace saucer
         m_events.clear(event);
     }
 
-    void window::remove(window_event event, std::size_t id)
+    void window::remove(window_event event, std::uint64_t id)
     {
         m_events.remove(event, id);
     }
 
-    template <> std::size_t window::on<window_event::close>(events::callback_t<window_event::close> &&callback)
+    template <> std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&callback)
     {
         return m_events.at<window_event::close>().add(std::move(callback));
     }
 
-    template <> std::size_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&callback)
+    template <> std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&callback)
     {
         return m_events.at<window_event::resize>().add(std::move(callback));
     }

@@ -283,12 +283,12 @@ namespace saucer
         m_events.clear(event);
     }
 
-    void webview::remove(web_event event, std::size_t id)
+    void webview::remove(web_event event, std::uint64_t id)
     {
         m_events.remove(event, id);
     }
 
-    template <> std::size_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback)
+    template <> std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback)
     {
         return m_events.at<web_event::url_changed>().add(std::move(callback));
     }
