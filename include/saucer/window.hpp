@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <functional>
-#include "events/events.hpp"
+#include <ereignis/manager.hpp>
 
 namespace saucer
 {
@@ -16,9 +16,9 @@ namespace saucer
     class window
     {
         struct impl;
-        using events = event_handler<                                    //
-            event<window_event::resize, void(std::size_t, std::size_t)>, //
-            event<window_event::close, bool()>                           //
+        using events = ereignis::event_manager<                                    //
+            ereignis::event<window_event::resize, void(std::size_t, std::size_t)>, //
+            ereignis::event<window_event::close, bool()>                           //
             >;
 
       protected:
@@ -58,16 +58,16 @@ namespace saucer
 
       public:
         [[thread_safe]] void clear(window_event event);
-        [[thread_safe]] void unregister(window_event event, std::size_t id);
+        [[thread_safe]] void remove(window_event event, std::size_t id);
 
         template <window_event Event> //
-        [[thread_safe]] std::size_t on(events::get_t<Event> &&) = delete;
+        [[thread_safe]] std::size_t on(events::callback_t<Event> &&) = delete;
 
       public:
         static void run();
     };
 #include "annotations.hpp" //NOLINT
 
-    template <> std::size_t window::on<window_event::close>(events::get_t<window_event::close> &&);
-    template <> std::size_t window::on<window_event::resize>(events::get_t<window_event::resize> &&);
+    template <> std::size_t window::on<window_event::close>(events::callback_t<window_event::close> &&);
+    template <> std::size_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&);
 } // namespace saucer

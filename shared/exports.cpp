@@ -130,9 +130,9 @@ extern "C"
         window->clear(static_cast<saucer::window_event>(event));
     }
 
-    __export void window_unregister(saucer::window *window, window_event event, size_t id)
+    __export void window_remove(saucer::window *window, window_event event, size_t id)
     {
-        window->unregister(static_cast<saucer::window_event>(event), id);
+        window->remove(static_cast<saucer::window_event>(event), id);
     }
 
     __export size_t window_on_resize(saucer::window *window, void (*callback)(size_t, size_t))
@@ -257,9 +257,9 @@ extern "C"
         webview->clear(static_cast<saucer::web_event>(event));
     }
 
-    __export void webview_unregister(saucer::webview *webview, web_event event, size_t id)
+    __export void webview_remove(saucer::webview *webview, web_event event, size_t id)
     {
-        webview->unregister(static_cast<saucer::web_event>(event), id);
+        webview->remove(static_cast<saucer::web_event>(event), id);
     }
 
     __export size_t webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))

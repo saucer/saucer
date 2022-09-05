@@ -170,6 +170,16 @@ if (saucer_smartview)
     endif()
 endif()
 
+if (NOT saucer_prefer_remote)
+    find_path(EREIGNIS_INCLUDE_DIRS "ereignis/event.hpp")
+    target_include_directories(${PROJECT_NAME} PUBLIC ${EREIGNIS_INCLUDE_DIRS})
+else()
+    FetchContent_Declare(ereignis GIT_REPOSITORY "https://github.com/Soundux/ereignis" GIT_TAG v1.1)
+    FetchContent_MakeAvailable(ereignis)
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis)
+endif()
+
 # --------------------------------------------------------------------------------------------------------
 # Examples
 # --------------------------------------------------------------------------------------------------------

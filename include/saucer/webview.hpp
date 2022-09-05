@@ -1,7 +1,8 @@
 #pragma once
 #include <map>
+#include <ereignis/manager.hpp>
+
 #include "window.hpp"
-#include "events/events.hpp"
 
 namespace saucer
 {
@@ -27,8 +28,8 @@ namespace saucer
     class webview : public window
     {
         struct impl;
-        using events = event_handler<                                //
-            event<web_event::url_changed, void(const std::string &)> //
+        using events = ereignis::event_manager<                                //
+            ereignis::event<web_event::url_changed, void(const std::string &)> //
             >;
 
       private:
@@ -70,14 +71,14 @@ namespace saucer
         using window::clear;
         [[thread_safe]] void clear(web_event event);
 
-        using window::unregister;
-        [[thread_safe]] void unregister(web_event event, std::size_t id);
+        using window::remove;
+        [[thread_safe]] void remove(web_event event, std::size_t id);
 
         using window::on;
         template <web_event Event> //
-        [[thread_safe]] std::size_t on(events::get_t<Event> &&callback) = delete;
+        [[thread_safe]] std::size_t on(events::callback_t<Event> &&callback) = delete;
     };
 #include "annotations.hpp" //NOLINT
 
-    template <> std::size_t webview::on<web_event::url_changed>(events::get_t<web_event::url_changed> &&callback);
+    template <> std::size_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);
 } // namespace saucer
