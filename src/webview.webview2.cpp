@@ -2,6 +2,7 @@
 #include "window.win32.impl.hpp"
 #include "webview.webview2.impl.hpp"
 
+#include <regex>
 #include <shlwapi.h>
 
 namespace saucer
@@ -203,6 +204,12 @@ namespace saucer
                                                               LPWSTR raw_url{};
                                                               request->get_Uri(&raw_url);
                                                               auto url = window::m_impl->narrow(raw_url);
+
+                                                              // TODO(webview2): Windows does not seem to offer any methods that are *as easy* as QUri
+                                                              std::smatch match;
+                                                              std::regex_search(url, match, std::regex{R"(^(https:\/?\/?[^:\/\s]+(\/\w+)*\/[\w\-\.]+[^#?\s]+))"});
+
+                                                              url = match[1];
 
                                                               if (url.size() > impl::scheme_prefix.size())
                                                               {
