@@ -10,7 +10,7 @@ on:
 
 name: Test WebView2
 jobs:
-  test-webview2:
+  test-webview2-debug:
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -27,3 +27,27 @@ jobs:
       # TODO: The Windows workflow currently doesn't work on GitHub. Not sure why but it works locally.
       # - name: Run Tests
       # run: 'D:\\a\\saucer\\saucer\\build\\Debug\\saucer_tests.exe'
+
+      - name: Compile Shared
+        run: "rmdir build /s /q && cd build && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=WebView2 && cmake --build . --config Debug"
+
+  test-webview2-release:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["cpp"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Compile
+        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=WebView2 && cmake --build . --config Release"
+
+      # TODO: The Windows workflow currently doesn't work on GitHub. Not sure why but it works locally.
+      # - name: Run Tests
+      # run: 'D:\\a\\saucer\\saucer\\build\\Debug\\saucer_tests.exe'
+
+      - name: Compile Shared
+        run: "rmdir build /s /q && cd build && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=WebView2 && cmake --build . --config Release"
