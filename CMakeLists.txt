@@ -55,10 +55,11 @@ if (saucer_shared)
     add_library(${PROJECT_NAME}_shared SHARED "shared/exports.cpp")
     target_compile_features(${PROJECT_NAME}_shared PRIVATE cxx_std_17)
     target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${PROJECT_NAME})
-    set_target_properties(${PROJECT_NAME}_shared PROPERTIES CXX_VISIBILITY_PRESET hidden CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+    set_target_properties(${PROJECT_NAME}_shared PROPERTIES CXX_VISIBILITY_PRESET default CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
     
     if (WIN32)
         target_compile_definitions(${PROJECT_NAME}_shared PRIVATE _CRT_SECURE_NO_WARNINGS=1)
+        set_target_properties(${PROJECT_NAME}_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     endif()
 endif()
 
