@@ -29,7 +29,7 @@ jobs:
       # run: 'D:\\a\\saucer\\saucer\\build\\Debug\\saucer_tests.exe'
 
       - name: Compile Shared
-        run: "rmdir build /s /q && cd build && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=WebView2 && cmake --build . --config Debug"
+        run: "mkdir build_shared && cd build_shared && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=WebView2 && cmake --build . --config Debug"
 
   test-webview2-release:
     runs-on: windows-2022
@@ -50,4 +50,4 @@ jobs:
       # run: 'D:\\a\\saucer\\saucer\\build\\Debug\\saucer_tests.exe'
 
       - name: Compile Shared
-        run: "rd -r build && cd build && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=WebView2 && cmake --build . --config Release"
+        run: "mkdir build_shared && cd build_shared && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=WebView2 && cmake --build . --config Release"
