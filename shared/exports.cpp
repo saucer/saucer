@@ -1,4 +1,5 @@
-#include "serializers/ffi.hpp"
+#include "exports.hpp"
+#include "serializers/ffi.inl"
 
 #include <utility>
 #include <saucer/webview.hpp>
@@ -113,12 +114,6 @@ extern "C"
         window->set_background_color(r, g, b, a);
     }
 
-    enum window_event
-    {
-        resize,
-        close
-    };
-
     void window_clear(saucer::window *window, window_event event)
     {
         window->clear(static_cast<saucer::window_event>(event));
@@ -187,30 +182,36 @@ extern "C"
         webview->set_url(url);
     }
 
-    [[requires_free]] std::pair<std::string, saucer::embedded_file> *embedded_file_new(const char *name, const char *mime, std::size_t size, const std::uint8_t *data)
+    struct ffi_embedded_file
     {
-        return new std::pair<std::string, saucer::embedded_file>(name, {mime, size, data});
+        std::string name;
+        saucer::embedded_file file;
+    };
+
+    [[requires_free]] ffi_embedded_file *embedded_file_new(const char *name, const char *mime, std::size_t size, const std::uint8_t *data)
+    {
+        return new ffi_embedded_file{name, {mime, size, data}};
     }
 
-    void embedded_file_free(saucer::embedded_file *file)
+    void embedded_file_free(ffi_embedded_file *file)
     {
         delete file;
     }
 
-    void webview_embed_files(saucer::webview *webview, std::pair<std::string, saucer::embedded_file> **files, std::size_t file_count)
+    void webview_embed_files(saucer::webview *webview, ffi_embedded_file **files, std::size_t file_count)
     {
         std::map<const std::string, const saucer::embedded_file> embedded_files;
 
         for (auto i = 0u; file_count > i; i++)
         {
             auto &file = files[i];
-            embedded_files.emplace(file->first, file->second);
+            embedded_files.emplace(file->name, file->file);
         }
 
         webview->embed_files(std::move(embedded_files));
     }
 
-    void webview_set_transparent(saucer::webview *webview, bool enabled, bool blur = false)
+    void webview_set_transparent(saucer::webview *webview, bool enabled, bool blur)
     {
         webview->set_transparent(enabled, blur);
     }
@@ -230,21 +231,10 @@ extern "C"
         webview->run_java_script(java_script);
     }
 
-    enum load_time
-    {
-        ready,
-        creation,
-    };
-
     void webview_inject(saucer::webview *webview, const char *java_script, load_time load_time)
     {
         webview->inject(java_script, static_cast<saucer::load_time>(load_time));
     }
-
-    enum web_event
-    {
-        url_changed
-    };
 
     void webview_clear(saucer::webview *webview, web_event event)
     {
@@ -323,12 +313,12 @@ extern "C"
         saucer::ffi_serializer::js_serializer = serializer;
     }
 
-    void ffi_serializer_set_parse_callback(saucer::ffi_serializer::parse_callback_t callback)
+    void ffi_serializer_set_parse_callback(saucer::parse_callback_t callback)
     {
         saucer::ffi_serializer::parse_callback = callback;
     }
 
-    void ffi_serializer_set_serialize_callback(saucer::ffi_serializer::serialize_callback_t callback)
+    void ffi_serializer_set_serialize_callback(saucer::serialize_callback_t callback)
     {
         saucer::ffi_serializer::serialize_callback = callback;
     }
