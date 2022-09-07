@@ -53,8 +53,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS 
 
 if (saucer_shared)
     message(STATUS "[Saucer] Building shared library")
-
-    add_library(${PROJECT_NAME}_shared SHARED "shared/exports.cpp")
+    add_library(${PROJECT_NAME}_shared SHARED "shared/exports.cpp" "shared/serializer.cpp")
+    
     target_compile_features(${PROJECT_NAME}_shared PRIVATE cxx_std_17)
     target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${PROJECT_NAME})
     set_target_properties(${PROJECT_NAME}_shared PROPERTIES CXX_VISIBILITY_PRESET default CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)

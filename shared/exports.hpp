@@ -1,132 +1,161 @@
 #pragma once
+#ifdef __cplusplus
+#include <cstddef>
 #include <cstdint>
-#include "serializers/ffi.hpp"
 
-#define requires_free
+struct embedded_file;
 
 namespace saucer
 {
-    class window;
-    class webview;
     class smartview;
-    class embedded_file;
+    struct result_data;
+    struct message_data;
+    struct function_data;
 } // namespace saucer
+#else
+#include <stddef.h>
+#include <stdint.h>
+#define bool int
 
+#define declare(name)                                                                                                                                                                        \
+    struct _##name;                                                                                                                                                                          \
+    typedef struct _##name name;
+
+declare(embedded_file);
+
+declare(smartview);
+declare(result_data);
+declare(message_data);
+declare(function_data);
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
+    using saucer::function_data;
+    using saucer::message_data;
+    using saucer::result_data;
+    using saucer::smartview;
     using std::size_t;
-    using std::uint64_t;
+    using std::uint8_t;
+#endif
+    smartview *smartview_new();
+    void smartview_free(smartview *);
 
-    bool window_get_resizable(const saucer::window *window);
-    void window_get_title(const saucer::window *window, char *output, size_t output_size);
-    bool window_get_decorations(const saucer::window *window);
-    bool window_get_always_on_top(const saucer::window *window);
-    void window_get_size(const saucer::window *window, size_t *width, size_t *height);
-    void window_get_max_size(const saucer::window *window, size_t *width, size_t *height);
-    void window_get_min_size(const saucer::window *window, size_t *width, size_t *height);
-    void window_get_background_color(const saucer::window *window, size_t *r, size_t *g, size_t *b, size_t *a);
+    //? Window
 
-    void window_hide(saucer::window *window);
-    void window_show(saucer::window *window);
-    void window_close(saucer::window *window);
+    bool smartview_get_resizable(smartview *);
+    void smartview_get_title(smartview *, char *, size_t);
+    bool smartview_get_decorations(smartview *);
+    bool smartview_get_always_on_top(smartview *);
 
-    void window_set_resizable(saucer::window *window, bool enabled);
-    void window_set_title(saucer::window *window, const char *title);
-    void window_set_decorations(saucer::window *window, bool enabled);
-    void window_set_always_on_top(saucer::window *window, bool enabled);
-    void window_set_size(saucer::window *window, size_t width, size_t height);
-    void window_set_max_size(saucer::window *window, size_t width, size_t height);
-    void window_set_min_size(saucer::window *window, size_t width, size_t height);
-    void window_set_background_color(saucer::window *window, size_t r, size_t g, size_t b, size_t a);
+    void smartview_get_size(smartview *, size_t *, size_t *);
+    void smartview_get_max_size(smartview *, size_t *, size_t *);
+    void smartview_get_min_size(smartview *, size_t *, size_t *);
+    void smartview_get_background_color(smartview *, size_t *, size_t *, size_t *, size_t *);
 
-    enum window_event
-    {
-        resize,
-        close
-    };
+    void smartview_hide(smartview *);
+    void smartview_show(smartview *);
+    void smartview_close(smartview *);
 
-    void window_clear(saucer::window *window, window_event event);
-    void window_remove(saucer::window *window, window_event event, uint64_t id);
+    void smartview_set_resizable(smartview *, bool);
+    void smartview_set_title(smartview *, const char *);
+    void smartview_set_decorations(smartview *, bool);
+    void smartview_set_always_on_top(smartview *, bool);
 
-    uint64_t window_on_resize(saucer::window *window, void (*callback)(size_t, size_t));
-    uint64_t window_on_close(saucer::window *window, bool (*callback)());
+    void smartview_set_size(smartview *, size_t, size_t);
+    void smartview_set_max_size(smartview *, size_t, size_t);
+    void smartview_set_min_size(smartview *, size_t, size_t);
+    void smartview_set_background_color(smartview *, size_t, size_t, size_t, size_t);
 
-    void window_run();
-}
-
-extern "C"
-{
-    bool webview_get_dev_tools(const saucer::webview *webview);
-    void webview_get_url(const saucer::webview *webview, char *output, size_t output_size);
-    bool webview_get_transparent(const saucer::webview *webview);
-    bool webview_get_context_menu(const saucer::webview *webview);
-
-    void webview_serve_embedded(saucer::webview *webview, const char *file);
-
-    void webview_set_dev_tools(saucer::webview *webview, bool enabled);
-    void webview_set_context_menu(saucer::webview *webview, bool enabled);
-    void webview_set_url(saucer::webview *webview, const char *url);
-
-    struct ffi_embedded_file;
-
-    [[requires_free]] ffi_embedded_file *embedded_file_new(const char *name, const char *mime, std::size_t size, const std::uint8_t *data);
-    void embedded_file_free(ffi_embedded_file *file);
-
-    void webview_embed_files(saucer::webview *webview, ffi_embedded_file **files, std::size_t file_count);
-
-    void webview_set_transparent(saucer::webview *webview, bool enabled, bool blur = false);
-
-    void webview_clear_scripts(saucer::webview *webview);
-
-    void webview_clear_embedded(saucer::webview *webview);
-
-    void webview_run_java_script(saucer::webview *webview, const char *java_script);
+    //? Webview
 
     enum load_time
     {
-        ready,
-        creation,
+        LOAD_TIME_CREATION,
+        LOAD_TIME_READY,
     };
 
-    void webview_inject(saucer::webview *webview, const char *java_script, load_time load_time);
+#ifndef __cplusplus
+#define load_time enum load_time
+#endif
 
-    enum web_event
+    bool smartview_get_dev_tools(smartview *);
+    void smartview_get_url(smartview *, char *, size_t);
+    bool smartview_get_transparent(smartview *);
+    bool smartview_get_context_menu(smartview *);
+
+    void smartview_clear_scripts(smartview *);
+    void smartview_clear_embedded(smartview *);
+    void smartview_run_java_script(smartview *, const char *);
+    void smartview_inject(smartview *, const char *, load_time);
+
+    void smartview_set_dev_tools(smartview *, bool);
+    void smartview_set_context_menu(smartview *, bool);
+    void smartview_set_url(smartview *, const char *);
+    void smartview_set_transparent(smartview *, bool, bool);
+
+#ifndef __cplusplus
+#undef load_time
+#endif
+
+    // ? Embedding
+
+    embedded_file *embedded_file_new(const char *, const char *, size_t, const uint8_t *);
+    void embedded_file_free(embedded_file *);
+
+    void smartview_serve_embedded(smartview *, const char *);
+    void smartview_embed_files(smartview *, embedded_file **, size_t);
+
+    // ? Events
+
+    enum event
     {
-        url_changed
+        EVENT_RESIZE,
+        EVENT_CLOSE,
+
+        EVENT_URL_CHANGED,
     };
 
-    void webview_clear(saucer::webview *webview, web_event event);
-    void webview_remove(saucer::webview *webview, web_event event, uint64_t id);
+#ifndef __cplusplus
+#define event enum event
+#endif
 
-    uint64_t webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *));
+    void smartview_clear(smartview *, event);
+    void smartview_remove(smartview *, event, uint64_t);
+
+#ifndef __cplusplus
+#undef event
+#endif
+
+    uint64_t smartview_on_close(smartview *, bool (*)());
+    uint64_t smartview_on_resize(smartview *, void (*)(size_t, size_t));
+    uint64_t smartview_on_url_changed(smartview *, void (*)(const char *));
+
+    // ? Serializers
+
+    void serializer_set_buffer_size(size_t);
+    void serializer_set_init_script(const char *);
+    void serializer_set_js_serializer(const char *);
+
+    void serializer_set_parse_callback(message_data *(*)(const char *));
+    void serializer_set_serializer_callback(bool (*)(smartview *, function_data *, char *, size_t, size_t *, int *));
+
+    function_data *function_data_new(size_t, const char *, void *);
+    void function_data_get_function(function_data *, char *, size_t);
+    void *function_data_get_data(function_data *);
+    size_t function_data_get_id(function_data *);
+    void function_data_free(function_data *);
+
+    result_data *result_data_new(size_t, void *);
+    void *result_data_get_data(result_data *);
+    size_t result_data_get_id(result_data *);
+    void result_data_free(result_data *);
+
+    // ? Smartview
+
+    void smartview_expose(smartview *, const char *, bool);
+
+#ifdef __cplusplus
 }
-
-extern "C"
-{
-    saucer::ffi_function_data *ffi_function_data_new(std::size_t id, const char *function, void *data);
-
-    void ffi_function_data_get_function(saucer::ffi_function_data *data, char *output, std::size_t output_size);
-    void *ffi_function_data_get_data(saucer::ffi_function_data *data);
-    std::size_t ffi_function_data_get_id(saucer::ffi_function_data *data);
-    saucer::ffi_result_data *ffi_result_data_new(std::size_t id, void *data);
-
-    void *ffi_result_data_get_data(saucer::ffi_result_data *data);
-    std::size_t ffi_result_data_get_id(saucer::ffi_result_data *data);
-
-    void ffi_serializer_set_buffer_size(std::size_t size);
-    void ffi_serializer_set_init_script(const char *script);
-    void ffi_serializer_set_js_serializer(const char *serializer);
-    void ffi_serializer_set_parse_callback(saucer::parse_callback_t);
-    void ffi_serializer_set_serialize_callback(saucer::serialize_callback_t);
-}
-
-extern "C"
-{
-    [[requires_free]] saucer::smartview *smartview_new();
-    void smartview_free(saucer::smartview *smartview);
-
-    void smartview_expose(saucer::smartview *smartview, const char *name, bool async);
-
-    // TODO: evals / promises
-    // TODO: modules
-}
+#endif

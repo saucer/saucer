@@ -1,346 +1,315 @@
 #include "exports.hpp"
-#include "serializers/ffi.inl"
-
-#include <utility>
-#include <saucer/webview.hpp>
+#include "serializer.hpp"
 #include <saucer/smartview.hpp>
 
-#define requires_free
+struct embedded_file
+{
+    std::string name;
+    saucer::embedded_file file;
+};
 
 extern "C"
 {
-    bool window_get_resizable(const saucer::window *window)
+    smartview *smartview_new()
     {
-        return window->get_resizable();
+        return new smartview;
     }
 
-    void window_get_title(const saucer::window *window, char *output, size_t output_size)
-    {
-        strcpy(output, window->get_title().substr(0, output_size).c_str());
-    }
-
-    bool window_get_decorations(const saucer::window *window)
-    {
-        return window->get_decorations();
-    }
-
-    bool window_get_always_on_top(const saucer::window *window)
-    {
-        return window->get_always_on_top();
-    }
-
-    void window_get_size(const saucer::window *window, size_t *width, size_t *height)
-    {
-        auto [w, h] = window->get_size();
-        *width = w;
-        *height = h;
-    }
-
-    void window_get_max_size(const saucer::window *window, size_t *width, size_t *height)
-    {
-        auto [w, h] = window->get_max_size();
-        *width = w;
-        *height = h;
-    }
-
-    void window_get_min_size(const saucer::window *window, size_t *width, size_t *height)
-    {
-        auto [w, h] = window->get_min_size();
-        *width = w;
-        *height = h;
-    }
-
-    void window_get_background_color(const saucer::window *window, size_t *r, size_t *g, size_t *b, size_t *a)
-    {
-        auto [_r, _g, _b, _a] = window->get_background_color();
-        *r = _r;
-        *g = _g;
-        *b = _b;
-        *a = _a;
-    }
-
-    void window_hide(saucer::window *window)
-    {
-        window->hide();
-    }
-
-    void window_show(saucer::window *window)
-    {
-        window->show();
-    }
-
-    void window_close(saucer::window *window)
-    {
-        window->close();
-    }
-
-    void window_set_resizable(saucer::window *window, bool enabled)
-    {
-        window->set_resizable(enabled);
-    }
-
-    void window_set_title(saucer::window *window, const char *title)
-    {
-        window->set_title(title);
-    }
-
-    void window_set_decorations(saucer::window *window, bool enabled)
-    {
-        window->set_decorations(enabled);
-    }
-
-    void window_set_always_on_top(saucer::window *window, bool enabled)
-    {
-        window->set_always_on_top(enabled);
-    }
-
-    void window_set_size(saucer::window *window, size_t width, size_t height)
-    {
-        window->set_size(width, height);
-    }
-
-    void window_set_max_size(saucer::window *window, size_t width, size_t height)
-    {
-        window->set_max_size(width, height);
-    }
-
-    void window_set_min_size(saucer::window *window, size_t width, size_t height)
-    {
-        window->set_min_size(width, height);
-    }
-
-    void window_set_background_color(saucer::window *window, size_t r, size_t g, size_t b, size_t a)
-    {
-        window->set_background_color(r, g, b, a);
-    }
-
-    void window_clear(saucer::window *window, window_event event)
-    {
-        window->clear(static_cast<saucer::window_event>(event));
-    }
-
-    void window_remove(saucer::window *window, window_event event, uint64_t id)
-    {
-        window->remove(static_cast<saucer::window_event>(event), id);
-    }
-
-    uint64_t window_on_resize(saucer::window *window, void (*callback)(size_t, size_t))
-    {
-        return window->on<saucer::window_event::resize>(callback);
-    }
-
-    uint64_t window_on_close(saucer::window *window, bool (*callback)())
-    {
-        return window->on<saucer::window_event::close>(callback);
-    }
-
-    void window_run()
-    {
-        saucer::window::run();
-    }
-}
-
-extern "C"
-{
-    bool webview_get_dev_tools(const saucer::webview *webview)
-    {
-        return webview->get_dev_tools();
-    }
-
-    void webview_get_url(const saucer::webview *webview, char *output, size_t output_size)
-    {
-        strcpy(output, webview->get_url().substr(0, output_size).c_str());
-    }
-
-    bool webview_get_transparent(const saucer::webview *webview)
-    {
-        return webview->get_transparent();
-    }
-
-    bool webview_get_context_menu(const saucer::webview *webview)
-    {
-        return webview->get_context_menu();
-    }
-
-    void webview_serve_embedded(saucer::webview *webview, const char *file)
-    {
-        webview->serve_embedded(file);
-    }
-
-    void webview_set_dev_tools(saucer::webview *webview, bool enabled)
-    {
-        webview->set_dev_tools(enabled);
-    }
-
-    void webview_set_context_menu(saucer::webview *webview, bool enabled)
-    {
-        webview->set_context_menu(enabled);
-    }
-
-    void webview_set_url(saucer::webview *webview, const char *url)
-    {
-        webview->set_url(url);
-    }
-
-    struct ffi_embedded_file
-    {
-        std::string name;
-        saucer::embedded_file file;
-    };
-
-    [[requires_free]] ffi_embedded_file *embedded_file_new(const char *name, const char *mime, std::size_t size, const std::uint8_t *data)
-    {
-        return new ffi_embedded_file{name, {mime, size, data}};
-    }
-
-    void embedded_file_free(ffi_embedded_file *file)
-    {
-        delete file;
-    }
-
-    void webview_embed_files(saucer::webview *webview, ffi_embedded_file **files, std::size_t file_count)
-    {
-        std::map<const std::string, const saucer::embedded_file> embedded_files;
-
-        for (auto i = 0u; file_count > i; i++)
-        {
-            auto &file = files[i];
-            embedded_files.emplace(file->name, file->file);
-        }
-
-        webview->embed_files(std::move(embedded_files));
-    }
-
-    void webview_set_transparent(saucer::webview *webview, bool enabled, bool blur)
-    {
-        webview->set_transparent(enabled, blur);
-    }
-
-    void webview_clear_scripts(saucer::webview *webview)
-    {
-        webview->clear_scripts();
-    }
-
-    void webview_clear_embedded(saucer::webview *webview)
-    {
-        webview->clear_embedded();
-    }
-
-    void webview_run_java_script(saucer::webview *webview, const char *java_script)
-    {
-        webview->run_java_script(java_script);
-    }
-
-    void webview_inject(saucer::webview *webview, const char *java_script, load_time load_time)
-    {
-        webview->inject(java_script, static_cast<saucer::load_time>(load_time));
-    }
-
-    void webview_clear(saucer::webview *webview, web_event event)
-    {
-        webview->clear(static_cast<saucer::web_event>(event));
-    }
-
-    void webview_remove(saucer::webview *webview, web_event event, uint64_t id)
-    {
-        webview->remove(static_cast<saucer::web_event>(event), id);
-    }
-
-    uint64_t webview_on_url_changed(saucer::webview *webview, void (*callback)(const char *))
-    {
-        return webview->on<saucer::web_event::url_changed>([callback](const std::string &url) { callback(url.c_str()); });
-    }
-}
-
-extern "C"
-{
-    saucer::ffi_function_data *ffi_function_data_new(std::size_t id, const char *function, void *data)
-    {
-        auto *rtn = new saucer::ffi_function_data;
-        rtn->function = function;
-        rtn->data = data;
-        rtn->id = id;
-
-        return rtn;
-    }
-
-    void ffi_function_data_get_function(saucer::ffi_function_data *data, char *output, std::size_t output_size)
-    {
-        strcpy(output, data->function.substr(0, output_size).c_str());
-    }
-
-    void *ffi_function_data_get_data(saucer::ffi_function_data *data)
-    {
-        return data->data;
-    }
-
-    std::size_t ffi_function_data_get_id(saucer::ffi_function_data *data)
-    {
-        return data->id;
-    }
-
-    saucer::ffi_result_data *ffi_result_data_new(std::size_t id, void *data)
-    {
-        auto *rtn = new saucer::ffi_result_data;
-        rtn->data = data;
-        rtn->id = id;
-
-        return rtn;
-    }
-
-    void *ffi_result_data_get_data(saucer::ffi_result_data *data)
-    {
-        return data->data;
-    }
-
-    std::size_t ffi_result_data_get_id(saucer::ffi_result_data *data)
-    {
-        return data->id;
-    }
-
-    void ffi_serializer_set_buffer_size(std::size_t size)
-    {
-        saucer::ffi_serializer::buffer_size = size;
-    }
-
-    void ffi_serializer_set_init_script(const char *script)
-    {
-        saucer::ffi_serializer::init_script = script;
-    }
-
-    void ffi_serializer_set_js_serializer(const char *serializer)
-    {
-        saucer::ffi_serializer::js_serializer = serializer;
-    }
-
-    void ffi_serializer_set_parse_callback(saucer::parse_callback_t callback)
-    {
-        saucer::ffi_serializer::parse_callback = callback;
-    }
-
-    void ffi_serializer_set_serialize_callback(saucer::serialize_callback_t callback)
-    {
-        saucer::ffi_serializer::serialize_callback = callback;
-    }
-}
-
-extern "C"
-{
-    [[requires_free]] saucer::smartview *smartview_new()
-    {
-        return new saucer::smartview;
-    }
-
-    void smartview_free(saucer::smartview *smartview)
+    void smartview_free(smartview *smartview)
     {
         delete smartview;
     }
 
-    void smartview_expose(saucer::smartview *smartview, const char *name, bool async)
+    bool smartview_get_resizable(smartview *smartview)
     {
-        smartview->expose<saucer::ffi_serializer>(name, smartview, async);
+        return smartview->get_resizable();
+    }
+    void smartview_get_title(smartview *smartview, char *output, size_t size)
+    {
+        strncpy(output, smartview->get_title().c_str(), size);
+    }
+    bool smartview_get_decorations(smartview *smartview)
+    {
+        return smartview->get_decorations();
+    }
+    bool smartview_get_always_on_top(smartview *smartview)
+    {
+        return smartview->get_always_on_top();
     }
 
-    // TODO: evals / promises
-    // TODO: modules
+    void smartview_get_size(smartview *smartview, size_t *width_o, size_t *height_o)
+    {
+        auto [width, height] = smartview->get_size();
+
+        *width_o = width;
+        *height_o = height;
+    }
+    void smartview_get_max_size(smartview *smartview, size_t *width_o, size_t *height_o)
+    {
+        auto [width, height] = smartview->get_max_size();
+
+        *width_o = width;
+        *height_o = height;
+    }
+    void smartview_get_min_size(smartview *smartview, size_t *width_o, size_t *height_o)
+    {
+        auto [width, height] = smartview->get_min_size();
+
+        *width_o = width;
+        *height_o = height;
+    }
+    void smartview_get_background_color(smartview *smartview, size_t *r_o, size_t *g_o, size_t *b_o, size_t *a_o)
+    {
+        auto [r, g, b, a] = smartview->get_background_color();
+
+        *r_o = r;
+        *g_o = g;
+        *b_o = b;
+        *a_o = a;
+    }
+
+    void smartview_hide(smartview *smartview)
+    {
+        smartview->hide();
+    }
+    void smartview_show(smartview *smartview)
+    {
+        smartview->show();
+    }
+    void smartview_close(smartview *smartview)
+    {
+        smartview->close();
+    }
+
+    void smartview_set_resizable(smartview *smartview, bool enabled)
+    {
+        smartview->set_resizable(enabled);
+    }
+    void smartview_set_title(smartview *smartview, const char *title)
+    {
+        smartview->set_title(title);
+    }
+    void smartview_set_decorations(smartview *smartview, bool enabled)
+    {
+        smartview->set_decorations(enabled);
+    }
+    void smartview_set_always_on_top(smartview *smartview, bool enabled)
+    {
+        smartview->set_always_on_top(enabled);
+    }
+
+    void smartview_set_size(smartview *smartview, size_t width, size_t height)
+    {
+        smartview->set_size(width, height);
+    }
+    void smartview_set_max_size(smartview *smartview, size_t width, size_t height)
+    {
+        smartview->set_max_size(width, height);
+    }
+    void smartview_set_min_size(smartview *smartview, size_t width, size_t height)
+    {
+        smartview->set_min_size(width, height);
+    }
+    void smartview_set_background_color(smartview *smartview, size_t r, size_t g, size_t b, size_t a)
+    {
+        smartview->set_background_color(r, g, b, a);
+    }
+
+    bool smartview_get_dev_tools(smartview *smartview)
+    {
+        return smartview->get_dev_tools();
+    }
+    void smartview_get_url(smartview *smartview, char *output, size_t size)
+    {
+        strncpy(output, smartview->get_url().c_str(), size);
+    }
+    bool smartview_get_transparent(smartview *smartview)
+    {
+        return smartview->get_transparent();
+    }
+    bool smartview_get_context_menu(smartview *smartview)
+    {
+        return smartview->get_context_menu();
+    }
+
+    void smartview_clear_scripts(smartview *smartview)
+    {
+        smartview->clear_scripts();
+    }
+    void smartview_clear_embedded(smartview *smartview)
+    {
+        smartview->clear_embedded();
+    }
+    void smartview_run_java_script(smartview *smartview, const char *java_script)
+    {
+        smartview->run_java_script(java_script);
+    }
+    void smartview_inject(smartview *smartview, const char *java_script, load_time load_time)
+    {
+        smartview->inject(java_script, static_cast<saucer::load_time>(load_time));
+    }
+
+    void smartview_set_dev_tools(smartview *smartview, bool enabled)
+    {
+        smartview->set_dev_tools(enabled);
+    }
+    void smartview_set_context_menu(smartview *smartview, bool enabled)
+    {
+        smartview->set_context_menu(enabled);
+    }
+    void smartview_set_url(smartview *smartview, const char *url)
+    {
+        smartview->set_url(url);
+    }
+    void smartview_set_transparent(smartview *smartview, bool enabled, bool blur)
+    {
+        smartview->set_transparent(enabled, blur);
+    }
+
+    embedded_file *embedded_file_new(const char *name, const char *mime, size_t size, const uint8_t *data)
+    {
+        return new embedded_file{name, {mime, size, data}};
+    }
+    void embedded_file_free(embedded_file *file)
+    {
+        delete file;
+    }
+
+    void smartview_serve_embedded(smartview *smartview, const char *file)
+    {
+        smartview->serve_embedded(file);
+    }
+    void smartview_embed_files(smartview *smartview, embedded_file **files, size_t size)
+    {
+        std::map<const std::string, const saucer::embedded_file> embedded_files;
+
+        for (auto i = 0u; size > i; i++)
+        {
+            embedded_files.emplace(files[i]->name, files[i]->file);
+        }
+
+        smartview->embed_files(std::move(embedded_files));
+    }
+
+    void smartview_clear(smartview *smartview, event event)
+    {
+        if (event > 2)
+        {
+            smartview->clear(static_cast<saucer::window_event>(event));
+        }
+        else
+        {
+            smartview->clear(static_cast<saucer::web_event>(event - 2));
+        }
+    }
+    void smartview_remove(smartview *smartview, event event, uint64_t id)
+    {
+        if (event > 2)
+        {
+            smartview->remove(static_cast<saucer::window_event>(event), id);
+        }
+        else
+        {
+            smartview->remove(static_cast<saucer::web_event>(event - 2), id);
+        }
+    }
+
+    uint64_t smartview_on_close(smartview *smartview, bool (*callback)())
+    {
+        return smartview->on<saucer::window_event::close>(callback);
+    }
+    uint64_t smartview_on_resize(smartview *smartview, void (*callback)(size_t, size_t))
+    {
+        return smartview->on<saucer::window_event::resize>(callback);
+    }
+    uint64_t smartview_on_url_changed(smartview *smartview, void (*callback)(const char *))
+    {
+        return smartview->on<saucer::web_event::url_changed>([callback](const std::string &url) { callback(url.c_str()); });
+    }
+
+    void serializer_set_buffer_size(size_t size)
+    {
+        serializer::buffer_size = size;
+    }
+
+    void serializer_set_init_script(const char *script)
+    {
+        serializer::init_script = script;
+    }
+
+    void serializer_set_js_serializer(const char *js_serializer)
+    {
+        serializer::js_serializer = js_serializer;
+    }
+
+    void serializer_set_parse_callback(message_data *(*callback)(const char *))
+    {
+        serializer::parse_callback = callback;
+    }
+
+    void serializer_set_serializer_callback(bool (*callback)(smartview *, function_data *, char *, size_t, size_t *, int *))
+    {
+        serializer::serialize_callback = callback;
+    }
+
+    function_data *function_data_new(size_t id, const char *function, void *data)
+    {
+        auto *rtn = new ffi_function_data;
+
+        rtn->id = id;
+        rtn->data = data;
+        rtn->function = function;
+
+        return rtn;
+    }
+
+    void function_data_get_function(function_data *data, char *output, size_t size)
+    {
+        strncpy(output, data->function.c_str(), size);
+    }
+
+    void *function_data_get_data(function_data *data)
+    {
+        return reinterpret_cast<ffi_function_data *>(data)->data;
+    }
+
+    size_t function_data_get_id(function_data *data)
+    {
+        return data->id;
+    }
+
+    void function_data_free(function_data *data)
+    {
+        delete data;
+    }
+
+    result_data *result_data_new(size_t id, void *data)
+    {
+        auto *rtn = new ffi_result_data;
+
+        rtn->id = id;
+        rtn->data = data;
+
+        return rtn;
+    }
+
+    void *result_data_get_data(result_data *data)
+    {
+        return reinterpret_cast<ffi_result_data *>(data)->data;
+    }
+
+    size_t result_data_get_id(result_data *data)
+    {
+        return data->id;
+    }
+
+    void result_data_free(result_data *data)
+    {
+        delete data;
+    }
+
+    void smartview_expose(smartview *smartview, const char *name, bool async)
+    {
+        smartview->expose<serializer>(name, smartview, async);
+    }
 }
