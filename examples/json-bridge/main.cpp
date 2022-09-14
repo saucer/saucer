@@ -1,7 +1,6 @@
 #include <iostream>
 #include <saucer/smartview.hpp>
 #include <saucer/serializers/json.hpp>
-#include <saucer/modules/core.module.hpp>
 
 int main()
 {
@@ -9,7 +8,6 @@ int main()
 
     webview.set_title("Hello World!");
     webview.set_size(500, 600);
-    webview.add_module<saucer::core_module>();
 
     webview.set_min_size(400, 500);
     webview.set_max_size(1000, 1200);
