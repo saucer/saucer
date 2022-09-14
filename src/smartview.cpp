@@ -84,11 +84,6 @@ namespace saucer
 
     void smartview::on_url_changed(const std::string &url)
     {
-        for (const auto &module : m_modules)
-        {
-            module->on_url_changed(url);
-        }
-
         webview::on_url_changed(url);
     }
 
@@ -157,11 +152,6 @@ namespace saucer
         }
 
         webview::on_message(message);
-
-        for (const auto &module : m_modules)
-        {
-            module->on_message(message);
-        }
     }
 
     void smartview::add_callback(const std::type_index &serializer, const std::string &name, const callback_resolver &resolver, bool async)
@@ -193,25 +183,5 @@ namespace saucer
         run_java_script("window.saucer._rpc[" + std::to_string(id) + "].reject(" + result + ");\n"
                         "delete window.saucer._rpc[" + std::to_string(id) + "];");
         // clang-format on
-    }
-
-    std::vector<module *> smartview::get_modules() const
-    {
-        std::vector<module *> rtn;
-        std::transform(m_modules.begin(), m_modules.end(), std::back_inserter(rtn), [](const auto &item) { return item.get(); });
-
-        return rtn;
-    }
-
-    module *smartview::get_module(const std::string &name) const
-    {
-        for (const auto &module : m_modules)
-        {
-            if (module->get_name() == name)
-            {
-                return module.get();
-            }
-        }
-        return nullptr;
     }
 } // namespace saucer

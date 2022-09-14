@@ -9,6 +9,7 @@ option(saucer_tests             "Build tests" OFF)
 option(saucer_examples          "Build examples" OFF)
 option(saucer_smartview         "Enable the smartview" ON)
 option(saucer_shared            "Build a shared library" OFF)
+option(saucer_impl_modules      "Enable implementation modules" OFF)
 option(saucer_remote_webview2   "Download NuGet to link webview2" ON)
 option(saucer_prefer_remote     "Prefer remote packages over local packages" ON)
 
@@ -53,12 +54,16 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS 
 
 if (saucer_shared)
     message(STATUS "[Saucer] Building shared library")
-    add_library(${PROJECT_NAME}_shared SHARED "shared/exports.cpp" "shared/serializer.cpp")
+    
+    add_library(${PROJECT_NAME}_shared SHARED)
+    add_library(${PROJECT_NAME}::shared ALIAS ${PROJECT_NAME}_shared)
+
+    target_sources(${PROJECT_NAME}_shared PRIVATE "shared/exports.cpp" "shared/serializer.cpp")    
     
     target_compile_features(${PROJECT_NAME}_shared PRIVATE cxx_std_17)
     target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${PROJECT_NAME})
     set_target_properties(${PROJECT_NAME}_shared PROPERTIES CXX_VISIBILITY_PRESET default CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-    
+
     if (WIN32)
         target_compile_definitions(${PROJECT_NAME}_shared PRIVATE _CRT_SECURE_NO_WARNINGS=1)
         set_target_properties(${PROJECT_NAME}_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -140,7 +145,8 @@ elseif (saucer_backend STREQUAL "WebView2")
 endif()
 
 if (saucer_smartview)
-    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/module.cpp" "src/core.module.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/module.cpp")
+
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     set(EXPECTED_ENABLE_TESTS OFF)
     set(CMAKE_CXX_STANDARD 17)
@@ -159,6 +165,25 @@ if (saucer_smartview)
     endif()
 
     target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt)
+endif()
+
+if (saucer_impl_modules)
+    message(STATUS "[Saucer] Enabling Implementation Module support")
+
+    target_include_directories(${PROJECT_NAME} PUBLIC "modules")
+
+    if (saucer_backend STREQUAL "Qt")
+        target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Widgets Qt5::WebEngineWidgets)
+    endif()
+
+    if (saucer_backend STREQUAL "Qt6")
+        target_link_libraries(${PROJECT_NAME} PUBLIC Qt6::Widgets Qt6::WebEngineWidgets)
+    endif()
+
+    if (saucer_backend STREQUAL "WebView2")
+        target_link_libraries(${PROJECT_NAME} PUBLIC WIL::WIL)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${WebView2_PATH}/build/native/include)
+    endif()
 endif()
 
 if (saucer_smartview)

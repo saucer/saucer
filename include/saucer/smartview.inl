@@ -1,11 +1,17 @@
 #pragma once
 #include "smartview.hpp"
+#include "constants.hpp"
 
 namespace saucer
 {
-    template <typename Module, typename... Args> void smartview::add_module(Args &&...args)
+    template <typename Module> void smartview::add_module()
     {
-        m_modules.emplace_back(std::make_unique<Module>(*this, std::forward<Args>(args)...));
+        auto module = std::make_unique<Module>(*this);
+
+        module->load();
+        module->template load<backend>(reinterpret_cast<module::webview_impl<backend> *>(m_impl.get()), reinterpret_cast<module::window_impl<backend> *>(window::m_impl.get()));
+
+        m_modules.emplace_back(std::move(module));
     }
 
     template <typename Return, typename Serializer, typename... Params> std::shared_ptr<promise<Return>> smartview::eval(const std::string &code, Params &&...params)

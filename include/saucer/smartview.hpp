@@ -4,7 +4,7 @@
 #include <tl/expected.hpp>
 
 #include "webview.hpp"
-#include "modules/module.hpp"
+#include "module/module.hpp"
 #include "promise/promise.hpp"
 #include "serializers/serializer.hpp"
 
@@ -57,11 +57,9 @@ namespace saucer
         [[thread_safe]] void resolve(const std::size_t &, const std::string &);
 
       public:
-        std::vector<module *> get_modules() const;
-        module *get_module(const std::string &name) const;
+        template <typename Module> void add_module();
 
       public:
-        template <typename Module, typename... Args> void add_module(Args &&...);
         template <typename Serializer, typename Function> [[thread_safe]] void expose(const std::string &name, const Function &func, bool async = false);
         template <typename Return, typename Serializer, typename... Params> [[thread_safe]] std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
     };
