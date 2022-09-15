@@ -1,11 +1,11 @@
 #pragma once
+#include "module.hpp"
 #include <QMainWindow>
 #include <QWebEngineView>
-#include <saucer/module/module.hpp>
 
 namespace saucer
 {
-    template <> struct module::webview_impl<backend_type::qt6>
+    template <> struct module<backend_type::qt6>::webview_impl
     {
       private:
         [[maybe_unused]] char _pad[sizeof(void *) + sizeof(std::unique_ptr<void>)];
@@ -14,7 +14,7 @@ namespace saucer
         QWebEngineView *web_view;
     };
 
-    template <> struct module::window_impl<backend_type::qt6>
+    template <> struct module<backend_type::qt6>::window_impl
     {
         QMainWindow *window;
     };

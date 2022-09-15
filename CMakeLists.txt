@@ -7,9 +7,9 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 
 option(saucer_tests             "Build tests" OFF)
 option(saucer_examples          "Build examples" OFF)
+option(saucer_modules           "Enable modules" OFF)
 option(saucer_smartview         "Enable the smartview" ON)
 option(saucer_shared            "Build a shared library" OFF)
-option(saucer_impl_modules      "Enable implementation modules" OFF)
 option(saucer_remote_webview2   "Download NuGet to link webview2" ON)
 option(saucer_prefer_remote     "Prefer remote packages over local packages" ON)
 
@@ -145,7 +145,7 @@ elseif (saucer_backend STREQUAL "WebView2")
 endif()
 
 if (saucer_smartview)
-    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/module.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp")
 
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     set(EXPECTED_ENABLE_TESTS OFF)
@@ -167,10 +167,8 @@ if (saucer_smartview)
     target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt)
 endif()
 
-if (saucer_impl_modules)
-    message(STATUS "[Saucer] Enabling Implementation Module support")
-
-    target_include_directories(${PROJECT_NAME} PUBLIC "modules")
+if (saucer_modules)
+    message(STATUS "[Saucer] Enabling Module support")
 
     if (saucer_backend STREQUAL "Qt")
         target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Widgets Qt5::WebEngineWidgets)

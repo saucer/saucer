@@ -4,6 +4,7 @@
 #include <tl/expected.hpp>
 
 #include "webview.hpp"
+#include "plugin/plugin.hpp"
 #include "module/module.hpp"
 #include "promise/promise.hpp"
 #include "serializers/serializer.hpp"
@@ -35,7 +36,7 @@ namespace saucer
         lockpp::lock<std::map<const std::type_index, const std::unique_ptr<serializer>>> m_serializers;
         lockpp::lock<std::map<const std::string, const callback_t>> m_callbacks;
         lockpp::lock<std::map<std::size_t, eval_t>> m_evals;
-        std::vector<std::unique_ptr<module>> m_modules;
+        std::vector<std::unique_ptr<plugin>> m_plugins;
         std::atomic<std::size_t> m_id_counter{0};
         std::thread::id m_creation_thread;
 
@@ -57,7 +58,7 @@ namespace saucer
         [[thread_safe]] void resolve(const std::size_t &, const std::string &);
 
       public:
-        template <typename Module> void add_module();
+        template <typename Plugin> void add_plugin();
 
       public:
         template <typename Serializer, typename Function> [[thread_safe]] void expose(const std::string &name, const Function &func, bool async = false);
@@ -66,6 +67,22 @@ namespace saucer
 
     template <typename DefaultSerializer> class simple_smartview : public smartview
     {
+      public:
+        template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
+        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
+    };
+
+    template <template <backend_type> class... Modules> class modularized_smartview : public smartview, public Modules<backend>...
+    {
+      public:
+        modularized_smartview();
+    };
+
+    template <typename DefaultSerializer, template <backend_type> class... Modules> class modularized_simple_smartview : public smartview, public Modules<backend>...
+    {
+      public:
+        modularized_simple_smartview();
+
       public:
         template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
         template <typename Return, typename Serializer = DefaultSerializer, typename... Params> std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);

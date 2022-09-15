@@ -4,14 +4,12 @@
 
 namespace saucer
 {
-    template <typename Module> void smartview::add_module()
+    template <typename Plugin> void smartview::add_plugin()
     {
-        auto module = std::make_unique<Module>(*this);
+        auto plugin = std::make_unique<Plugin>();
 
-        module->load();
-        module->template load<backend>(reinterpret_cast<module::webview_impl<backend> *>(m_impl.get()), reinterpret_cast<module::window_impl<backend> *>(window::m_impl.get()));
-
-        m_modules.emplace_back(std::move(module));
+        plugin->load(*this);
+        m_plugins.emplace_back(std::move(plugin));
     }
 
     template <typename Return, typename Serializer, typename... Params> std::shared_ptr<promise<Return>> smartview::eval(const std::string &code, Params &&...params)
@@ -49,6 +47,34 @@ namespace saucer
     template <typename DefaultSerializer>
     template <typename Return, typename Serializer, typename... Params>
     std::shared_ptr<promise<Return>> simple_smartview<DefaultSerializer>::eval(const std::string &code, Params &&...params)
+    {
+        return smartview::eval<Return, Serializer>(code, std::forward<Params>(params)...);
+    }
+
+    template <template <backend_type> class... Modules> modularized_smartview<Modules...>::modularized_smartview()
+    {
+        (Modules<backend>::load(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
+                                reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get())),
+         ...);
+    }
+
+    template <typename DefaultSerializer, template <backend_type> class... Modules> modularized_simple_smartview<DefaultSerializer, Modules...>::modularized_simple_smartview()
+    {
+        (Modules<backend>::load(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
+                                reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get())),
+         ...);
+    }
+
+    template <typename DefaultSerializer, template <backend_type> class... Modules>
+    template <typename Serializer, typename Function>
+    void modularized_simple_smartview<DefaultSerializer, Modules...>::expose(const std::string &name, const Function &func, bool async)
+    {
+        smartview::expose<Serializer>(name, func, async);
+    }
+
+    template <typename DefaultSerializer, template <backend_type> class... Modules>
+    template <typename Return, typename Serializer, typename... Params>
+    std::shared_ptr<promise<Return>> modularized_simple_smartview<DefaultSerializer, Modules...>::eval(const std::string &code, Params &&...params)
     {
         return smartview::eval<Return, Serializer>(code, std::forward<Params>(params)...);
     }
