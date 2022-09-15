@@ -51,18 +51,18 @@ namespace saucer
         return smartview::eval<Return, Serializer>(code, std::forward<Params>(params)...);
     }
 
-    template <template <backend_type> class... Modules> modularized_smartview<Modules...>::modularized_smartview()
+    template <template <backend_type> class... Modules>
+    modularized_smartview<Modules...>::modularized_smartview()
+        : Modules<backend>(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
+                           reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get()))...
     {
-        (Modules<backend>::load(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
-                                reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get())),
-         ...);
     }
 
-    template <typename DefaultSerializer, template <backend_type> class... Modules> modularized_simple_smartview<DefaultSerializer, Modules...>::modularized_simple_smartview()
+    template <typename DefaultSerializer, template <backend_type> class... Modules>
+    modularized_simple_smartview<DefaultSerializer, Modules...>::modularized_simple_smartview()
+        : Modules<backend>(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
+                           reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get()))...
     {
-        (Modules<backend>::load(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
-                                reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get())),
-         ...);
     }
 
     template <typename DefaultSerializer, template <backend_type> class... Modules>
