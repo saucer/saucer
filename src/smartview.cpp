@@ -4,7 +4,7 @@
 namespace saucer
 {
     smartview::~smartview() = default;
-    smartview::smartview() : m_creation_thread(std::this_thread::get_id())
+    smartview::smartview()
     {
         inject(R"js(
         window.saucer._idc = 0;

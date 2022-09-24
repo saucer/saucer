@@ -37,7 +37,6 @@ namespace saucer
         lockpp::lock<std::map<std::size_t, eval_t>> m_evals;
         std::vector<std::unique_ptr<plugin>> m_plugins;
         std::atomic<std::size_t> m_id_counter{0};
-        std::thread::id m_creation_thread;
 
       public:
         smartview();
