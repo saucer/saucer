@@ -1,4 +1,5 @@
 #include <saucer/serializers/json.hpp>
+#include <saucer/utils/utils.hpp>
 #include <saucer/smartview.hpp>
 #include <catch2/catch.hpp>
 #include <thread>
@@ -22,23 +23,20 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
 
             REQUIRE(a == 10);
             REQUIRE(b == "Hello World!");
-            REQUIRE(smartview.eval<int>("Math.pow({}, {})", 2, 2)->get() == 4);
+            REQUIRE(smartview.eval<int>("Math.pow({}, {})", 2, 2).get() == 4);
 
-            smartview.eval<void>("window.saucer.call({}, [])", "test")->wait();
+            smartview.eval<void>("window.saucer.call({}, [])", "test").wait();
             REQUIRE(test_called);
 
             smartview.close();
         },
         true);
 
-    smartview.eval<int>("Math.pow({}, {})", 2, 2)->then([](int result) { REQUIRE(result == 4); });
-    smartview.eval<int>("Math.pow({})", saucer::make_arguments(2, 2))->then([](int result) { REQUIRE(result == 4); });
+    smartview.eval<int>("Math.pow({}, {})", 2, 2) | saucer::then([](int result) { REQUIRE(result == 4); });
+    smartview.eval<int>("Math.pow({})", saucer::make_arguments(2, 2)) | saucer::then([](int result) { REQUIRE(result == 4); });
 
-    REQUIRE_THROWS(smartview.eval<int>("Math.pow({}, {})", 2, 2)->wait());
-    REQUIRE_THROWS(smartview.eval<int>("Math.pow({}, {})", 2, 2)->get() == 4);
-
-    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test2", 10, "Hello World!");
-    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test_async", 10, "Hello World!");
+    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test2", 10, "Hello World!") | saucer::forget();
+    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test_async", 10, "Hello World!") | saucer::forget();
 
     smartview.set_url("https://ddg.gg");
     smartview.show();
