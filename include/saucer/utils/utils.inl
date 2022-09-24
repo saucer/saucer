@@ -23,11 +23,6 @@ namespace saucer
         *fut = std::async(std::launch::async, [future = std::move(future), fut, callback]() mutable { callback(future.get()); });
     }
 
-    template <typename Callback> then_pipe<Callback> then(Callback &&callback)
-    {
-        return then_pipe{std::forward<Callback>(callback)};
-    }
-
     template <typename Callback> struct then_pipe
     {
       private:
@@ -42,4 +37,29 @@ namespace saucer
             then(std::move(future), pipe.m_callback);
         }
     };
+
+    template <typename Callback> then_pipe<Callback> then(Callback &&callback)
+    {
+        return then_pipe{std::forward<Callback>(callback)};
+    }
+
+    template <typename T> void forget(std::future<T> &&future)
+    {
+        auto fut = std::make_shared<std::future<void>>();
+        *fut = std::async(std::launch::async, [future = std::move(future), fut]() mutable { future.get(); });
+    }
+
+    struct forget_pipe
+    {
+      public:
+        template <typename T> friend void operator|(std::future<T> &&future, [[maybe_unused]] forget_pipe)
+        {
+            forget(std::move(future));
+        }
+    };
+
+    forget_pipe forget()
+    {
+        return forget_pipe{};
+    }
 } // namespace saucer
