@@ -215,25 +215,23 @@ namespace saucer::serializers
         return args;
     }
 
-    template <typename T> auto json::resolve_promise(const std::shared_ptr<promise<T>> &promise)
+    template <typename T> auto json::resolve_promise(std::shared_ptr<std::promise<T>> promise)
     {
-        return [promise](const std::shared_ptr<result_data> &data) -> tl::expected<void, serializer::error> {
+        return [promise = std::move(promise)](const std::shared_ptr<result_data> &data) mutable {
             auto json_data = std::dynamic_pointer_cast<json_result_data>(data);
             if constexpr (std::is_same_v<T, void>)
             {
-                promise->resolve();
-                return {};
+                promise->set_value();
             }
             else
             {
                 try
                 {
-                    promise->resolve(json_data->data);
-                    return {};
+                    promise->set_value(json_data->data);
                 }
-                catch (const nlohmann::json::type_error &)
+                catch (...)
                 {
-                    return tl::make_unexpected(error::type_mismatch);
+                    promise->set_exception(std::current_exception());
                 }
             }
         };

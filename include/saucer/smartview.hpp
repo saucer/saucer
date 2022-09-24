@@ -1,12 +1,13 @@
 #pragma once
+#include <future>
 #include <typeindex>
 #include <fmt/args.h>
+#include <lockpp/lock.hpp>
 #include <tl/expected.hpp>
 
 #include "webview.hpp"
 #include "plugin/plugin.hpp"
 #include "module/module.hpp"
-#include "promise/promise.hpp"
 #include "serializers/serializer.hpp"
 
 namespace saucer
@@ -14,9 +15,8 @@ namespace saucer
 #include "annotations.hpp"
     class smartview : public webview
     {
-        template <typename Result, typename Data> using resolver_t = std::function<tl::expected<Result, serializer::error>(const std::shared_ptr<Data> &)>;
-        using callback_resolver = resolver_t<std::string, function_data>;
-        using eval_resolver = resolver_t<void, result_data>;
+        using callback_resolver = std::function<tl::expected<std::string, serializer::error>(const std::shared_ptr<function_data> &)>;
+        using eval_resolver = std::function<void(const std::shared_ptr<result_data> &)>;
 
         struct callback_t
         {
@@ -29,7 +29,6 @@ namespace saucer
         {
             const eval_resolver resolver;
             const std::type_index serializer_type;
-            const std::shared_ptr<promise_base> promise;
         };
 
       protected:
@@ -50,8 +49,8 @@ namespace saucer
 
       protected:
         [[thread_safe]] void resolve(const std::shared_ptr<function_data> &, const callback_resolver &);
+        [[thread_safe]] void add_eval(const std::type_index &, const eval_resolver &, const std::string &);
         [[thread_safe]] void add_callback(const std::type_index &, const std::string &, const callback_resolver &, bool);
-        [[thread_safe]] void add_eval(const std::type_index &, const std::shared_ptr<promise_base> &, const eval_resolver &, const std::string &);
 
       protected:
         [[thread_safe]] void reject(const std::size_t &, const std::string &);
@@ -62,14 +61,14 @@ namespace saucer
 
       public:
         template <typename Serializer, typename Function> [[thread_safe]] void expose(const std::string &name, const Function &func, bool async = false);
-        template <typename Return, typename Serializer, typename... Params> [[thread_safe]] std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
+        template <typename Return, typename Serializer, typename... Params> [[thread_safe]] [[nodiscard]] std::future<Return> eval(const std::string &code, Params &&...params);
     };
 
     template <typename DefaultSerializer> class simple_smartview : public smartview
     {
       public:
         template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
-        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
+        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> [[nodiscard]] std::future<Return> eval(const std::string &code, Params &&...params);
     };
 
     template <template <backend_type> class... Modules> class modularized_smartview : public smartview, public Modules<backend>...
@@ -85,7 +84,7 @@ namespace saucer
 
       public:
         template <typename Serializer = DefaultSerializer, typename Function> void expose(const std::string &name, const Function &func, bool async = false);
-        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> std::shared_ptr<promise<Return>> eval(const std::string &code, Params &&...params);
+        template <typename Return, typename Serializer = DefaultSerializer, typename... Params> [[nodiscard]] std::future<Return> eval(const std::string &code, Params &&...params);
     };
 #include "annotations.hpp" //NOLINT
 } // namespace saucer

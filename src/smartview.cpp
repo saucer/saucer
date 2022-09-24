@@ -133,18 +133,14 @@ namespace saucer
                     return;
                 }
 
-                const auto &[resolver, eval_serialier_type, promise] = locked_evals->at(result_message->id);
-                auto result = resolver(result_message);
+                const auto &[resolve, eval_serialier_type] = locked_evals->at(result_message->id);
 
                 if (serializer_type != eval_serialier_type)
                 {
                     continue;
                 }
 
-                if (!result.has_value())
-                {
-                    promise->reject(result.error());
-                }
+                resolve(result_message);
 
                 locked_evals->erase(result_message->id);
                 return;
@@ -154,19 +150,19 @@ namespace saucer
         webview::on_message(message);
     }
 
+    void smartview::add_eval(const std::type_index &serializer, const eval_resolver &resolver, const std::string &code)
+    {
+        auto id = m_id_counter++;
+        m_evals.write()->emplace(id, eval_t{resolver, serializer});
+
+        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.read()->at(serializer)->java_script_serializer() + "))();";
+        run_java_script(resolve_code);
+    }
+
     void smartview::add_callback(const std::type_index &serializer, const std::string &name, const callback_resolver &resolver, bool async)
     {
         m_callbacks.write()->emplace(name, callback_t{async, resolver, serializer});
         inject("window.saucer._known_functions.set(\"" + name + "\", " + m_serializers.read()->at(serializer)->java_script_serializer() + ");", load_time::creation);
-    }
-
-    void smartview::add_eval(const std::type_index &serializer, const std::shared_ptr<promise_base> &promise, const eval_resolver &resolver, const std::string &code)
-    {
-        auto id = m_id_counter++;
-        m_evals.write()->emplace(id, eval_t{resolver, serializer, promise});
-
-        auto resolve_code = "(async () => window.saucer._resolve(" + std::to_string(id) + "," + code + ", " + m_serializers.read()->at(serializer)->java_script_serializer() + "))();";
-        run_java_script(resolve_code);
     }
 
     void smartview::resolve(const std::size_t &id, const std::string &result)

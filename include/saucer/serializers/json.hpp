@@ -1,7 +1,7 @@
 #pragma once
 #include "serializer.hpp"
-#include "../promise/promise.hpp"
 
+#include <future>
 #include <nlohmann/json.hpp>
 
 namespace saucer
@@ -33,7 +33,7 @@ namespace saucer
           public:
             template <typename Function> static auto serialize_function(const Function &func);
             template <typename... Params> static auto serialize_arguments(const Params &...params);
-            template <typename T> static auto resolve_promise(const std::shared_ptr<promise<T>> &promise);
+            template <typename T> static auto resolve_promise(std::shared_ptr<std::promise<T>> promise);
         };
     } // namespace serializers
 } // namespace saucer
