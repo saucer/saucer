@@ -3,6 +3,7 @@
 
 namespace saucer
 {
+    template <typename... T> auto all(std::future<T> &...);
     template <typename... T> auto all(std::future<T> &&...);
 
     template <typename Callback> struct then_pipe;

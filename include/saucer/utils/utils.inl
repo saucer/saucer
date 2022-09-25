@@ -3,6 +3,11 @@
 
 namespace saucer
 {
+    template <typename... T> auto all(std::future<T> &...futures)
+    {
+        return all(std::move(futures)...);
+    }
+
     template <typename... T> auto all(std::future<T> &&...futures)
     {
         return std::tuple_cat([](auto &&future) {
