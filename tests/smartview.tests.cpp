@@ -1,5 +1,5 @@
 #include <saucer/serializers/json.hpp>
-#include <saucer/utils/utils.hpp>
+#include <saucer/utils/future.hpp>
 #include <saucer/smartview.hpp>
 #include <catch2/catch.hpp>
 #include <thread>

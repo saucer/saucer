@@ -15,4 +15,4 @@ namespace saucer
     template <typename T> void forget(std::future<T> &&);
 } // namespace saucer
 
-#include "utils.inl"
+#include "future.inl"
