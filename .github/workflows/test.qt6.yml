@@ -24,7 +24,7 @@ jobs:
 
       # We need to downgrade because qt6 has a critical bug that breaks CI Testing: https://bugreports.qt.io/browse/QTBUG-104423
       - name: Disable Signature Signing
-        run: "sed -i -E 's/SigLevel\s+=\s+.+/SigLevel = Never/g' /etc/pacman.conf"
+        run: "sed -i -E 's/SigLevel\\s+=\\s+.+/SigLevel = Never/g' /etc/pacman.conf"
       
       - name: Downgrade Packages
         run: 'echo "Server=https://archive.archlinux.org/repos/2022/04/08/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist && rm -rf "/usr/share/hwdata" && pacman --noconfirm -Syyuu'
