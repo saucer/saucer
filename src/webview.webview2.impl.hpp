@@ -26,8 +26,8 @@ namespace saucer
 
         static inline WNDPROC original_wnd_proc;
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
-        static inline constexpr std::string_view scheme_prefix = "https://saucer/embedded/";
-        static inline constexpr std::wstring_view scheme_prefix_w = L"https://saucer/embedded/";
+        static inline constexpr std::string_view scheme_prefix = "https://saucer/";
+        static inline constexpr std::wstring_view scheme_prefix_w = L"https://saucer/";
     };
 
     inline void webview::impl::init_webview(HWND hwnd)
