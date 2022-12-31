@@ -1,7 +1,7 @@
 <hr>
 
 <div align="center"> 
-    <img src="assets/logo.png" height=312/>
+    <img src="https://raw.githubusercontent.com/saucer/saucer.github.io/master/assets/logo.png" height=312/>
 </div>
 
 <p align="center"> 
