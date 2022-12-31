@@ -12,26 +12,33 @@ namespace saucer
         m_plugins.emplace_back(std::move(plugin));
     }
 
-    template <typename Return, typename Serializer, typename... Params> std::future<Return> smartview::eval(const std::string &code, Params &&...params)
+    template <typename Return, typename Serializer, typename... Params>
+    std::future<Return> smartview::eval(const std::string &code, Params &&...params)
     {
         if (!m_serializers.read()->count(typeid(Serializer)))
         {
-            const auto &serializer = m_serializers.write()->emplace(typeid(Serializer), std::make_unique<Serializer>()).first->second;
+            const auto &serializer =
+                m_serializers.write()->emplace(typeid(Serializer), std::make_unique<Serializer>()).first->second;
+
             inject(serializer->initialization_script(), load_time::creation);
         }
 
         auto promise = std::make_shared<std::promise<Return>>();
         auto fut = promise->get_future();
 
-        add_eval(typeid(Serializer), Serializer::resolve_promise(std::move(promise)), fmt::vformat(code, Serializer::serialize_arguments(params...)));
+        add_eval(typeid(Serializer), Serializer::resolve_promise(std::move(promise)),
+                 fmt::vformat(code, Serializer::serialize_arguments(params...)));
+
         return fut;
     }
 
-    template <typename Serializer, typename Function> void smartview::expose(const std::string &name, const Function &func, bool async)
+    template <typename Serializer, typename Function>
+    void smartview::expose(const std::string &name, const Function &func, bool async)
     {
         if (!m_serializers.read()->count(typeid(Serializer)))
         {
-            const auto &serializer = m_serializers.write()->emplace(typeid(Serializer), std::make_unique<Serializer>()).first->second;
+            const auto &serializer =
+                m_serializers.write()->emplace(typeid(Serializer), std::make_unique<Serializer>()).first->second;
             inject(serializer->initialization_script(), load_time::creation);
         }
 
@@ -68,14 +75,16 @@ namespace saucer
 
     template <typename DefaultSerializer, template <backend_type> class... Modules>
     template <typename Serializer, typename Function>
-    void modularized_simple_smartview<DefaultSerializer, Modules...>::expose(const std::string &name, const Function &func, bool async)
+    void modularized_simple_smartview<DefaultSerializer, Modules...>::expose(const std::string &name,
+                                                                             const Function &func, bool async)
     {
         smartview::expose<Serializer>(name, func, async);
     }
 
     template <typename DefaultSerializer, template <backend_type> class... Modules>
     template <typename Return, typename Serializer, typename... Params>
-    std::future<Return> modularized_simple_smartview<DefaultSerializer, Modules...>::eval(const std::string &code, Params &&...params)
+    std::future<Return> modularized_simple_smartview<DefaultSerializer, Modules...>::eval(const std::string &code,
+                                                                                          Params &&...params)
     {
         return smartview::eval<Return, Serializer>(code, std::forward<Params>(params)...);
     }

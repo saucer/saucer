@@ -16,6 +16,8 @@ namespace saucer
     class window
     {
         struct impl;
+
+      private:
         using events = ereignis::event_manager<                                    //
             ereignis::event<window_event::resize, void(std::size_t, std::size_t)>, //
             ereignis::event<window_event::close, bool()>                           //
