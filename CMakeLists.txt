@@ -203,10 +203,12 @@ if (NOT saucer_prefer_remote)
     find_path(EREIGNIS_INCLUDE_DIRS "ereignis/event.hpp")
     target_include_directories(${PROJECT_NAME} PUBLIC ${EREIGNIS_INCLUDE_DIRS})
 else()
-    FetchContent_Declare(ereignis GIT_REPOSITORY "https://github.com/Soundux/ereignis" GIT_TAG v1.1)
-    FetchContent_MakeAvailable(ereignis)
+    FetchContent_Declare(ereignis GIT_REPOSITORY "https://github.com/Soundux/ereignis" GIT_TAG  v1.1)
+    FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt"       GIT_TAG 9.1.0)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis)
+    FetchContent_MakeAvailable(ereignis fmt)
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis fmt::fmt)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
