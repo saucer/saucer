@@ -28,6 +28,8 @@ namespace saucer
     class webview : public window
     {
         struct impl;
+
+      private:
         using events = ereignis::event_manager<                                //
             ereignis::event<web_event::url_changed, void(const std::string &)> //
             >;
@@ -50,7 +52,6 @@ namespace saucer
       public:
         [[thread_safe]] bool get_dev_tools() const;
         [[thread_safe]] std::string get_url() const;
-        [[thread_safe]] bool get_transparent() const;
         [[thread_safe]] bool get_context_menu() const;
 
       public:
@@ -58,7 +59,6 @@ namespace saucer
         [[thread_safe]] void set_dev_tools(bool enabled);
         [[thread_safe]] void set_context_menu(bool enabled);
         [[thread_safe]] void set_url(const std::string &url);
-        [[thread_safe]] void set_transparent(bool enabled, bool blur = false);
         [[thread_safe]] void embed_files(std::map<const std::string, const embedded_file> &&files);
 
       public:
@@ -80,5 +80,6 @@ namespace saucer
     };
 #include "annotations.hpp" //NOLINT
 
-    template <> std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);
+    template <>
+    std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);
 } // namespace saucer
