@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include "constants.hpp"
 #include "window.qt.impl.hpp"
 
 namespace saucer
@@ -11,12 +12,18 @@ namespace saucer
         if (!m_impl->application)
         {
             qputenv("QT_LOGGING_RULES", "*=false");
+
+#if SAUCER_CURRENT_BACKEND != qt6
+            QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+
             m_impl->application = new QApplication(argc, &argv);
         }
 
-        m_impl->window = new impl::saucer_main_window(this);
+        m_impl->window = new impl::main_window(this);
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
+
         auto palette = m_impl->window->palette();
         palette.setColor(QPalette::ColorRole::Window, QColor(255, 255, 255));
 
@@ -44,6 +51,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_decorations(); });
         }
+
         return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
     }
 
@@ -53,6 +61,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_always_on_top(); });
         }
+
         return m_impl->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
     }
 
@@ -62,6 +71,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_size(); });
         }
+
         return {m_impl->window->width(), m_impl->window->height()};
     }
 
@@ -71,6 +81,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_max_size(); });
         }
+
         return {m_impl->window->maximumWidth(), m_impl->window->maximumHeight()};
     }
 
@@ -80,6 +91,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return get_min_size(); });
         }
+
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
     }
 
@@ -95,6 +107,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return hide(); });
         }
+
         m_impl->window->hide();
     }
 
@@ -104,6 +117,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return show(); });
         }
+
         m_impl->window->show();
     }
 
@@ -113,6 +127,7 @@ namespace saucer
         {
             return m_impl->post_safe([this] { return close(); });
         }
+
         m_impl->window->close();
     }
 
@@ -126,19 +141,19 @@ namespace saucer
         if (!enabled)
         {
             m_impl->window->setFixedSize(m_impl->window->size());
+            return;
         }
-        else
-        {
-            m_impl->window->setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 
-            if (m_impl->max_size)
-            {
-                m_impl->window->setMaximumSize(*m_impl->max_size);
-            }
-            if (m_impl->min_size)
-            {
-                m_impl->window->setMinimumSize(*m_impl->min_size);
-            }
+        m_impl->window->setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+
+        if (m_impl->max_size)
+        {
+            m_impl->window->setMaximumSize(*m_impl->max_size);
+        }
+
+        if (m_impl->min_size)
+        {
+            m_impl->window->setMinimumSize(*m_impl->min_size);
         }
     }
 
@@ -153,6 +168,7 @@ namespace saucer
         {
             return m_impl->post_safe([=] { return set_decorations(enabled); });
         }
+
         m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
     }
 
@@ -162,6 +178,7 @@ namespace saucer
         {
             return m_impl->post_safe([=] { return set_always_on_top(enabled); });
         }
+
         m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
     }
 
@@ -171,6 +188,7 @@ namespace saucer
         {
             return m_impl->post_safe([=] { return set_size(width, height); });
         }
+
         m_impl->window->resize(static_cast<int>(width), static_cast<int>(height));
     }
 
@@ -180,6 +198,7 @@ namespace saucer
         {
             return m_impl->post_safe([=] { return set_max_size(width, height); });
         }
+
         m_impl->window->setMaximumSize(static_cast<int>(width), static_cast<int>(height));
         m_impl->max_size = m_impl->window->maximumSize();
     }
@@ -190,6 +209,7 @@ namespace saucer
         {
             return m_impl->post_safe([=] { return set_min_size(width, height); });
         }
+
         m_impl->window->setMinimumSize(static_cast<int>(width), static_cast<int>(height));
         m_impl->min_size = m_impl->window->minimumSize();
     }
@@ -197,7 +217,9 @@ namespace saucer
     void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
     {
         auto palette = m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window, QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a)));
+        palette.setColor(QPalette::ColorRole::Window,
+                         QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a)));
+
         m_impl->window->setPalette(palette);
     }
 
