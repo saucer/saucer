@@ -1,6 +1,6 @@
 #include "webview.hpp"
-#include "window.qt6.impl.hpp"
-#include "webview.qt6.impl.hpp"
+#include "window.qt.impl.hpp"
+#include "webview.qt.impl.hpp"
 
 #include <QWebEngineScript>
 #include <QWebEngineProfile>

@@ -1,5 +1,5 @@
 #include "window.hpp"
-#include "window.qt6.impl.hpp"
+#include "window.qt.impl.hpp"
 
 namespace saucer
 {
