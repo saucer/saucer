@@ -5,12 +5,13 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_tests             "Build tests" OFF)
-option(saucer_examples          "Build examples" OFF)
-option(saucer_modules           "Enable modules" OFF)
-option(saucer_smartview         "Enable the smartview" ON)
-option(saucer_shared            "Build a shared library" OFF)
-option(saucer_remote_webview2   "Download NuGet to link webview2" ON)
+option(saucer_tests             "Build tests"                               OFF)
+option(saucer_assert            "Enable asserts"                             ON)
+option(saucer_examples          "Build examples"                            OFF)
+option(saucer_modules           "Enable modules"                            OFF)
+option(saucer_smartview         "Enable the smartview"                       ON)
+option(saucer_shared            "Build a shared library"                    OFF)
+option(saucer_remote_webview2   "Download NuGet to link webview2"            ON)
 option(saucer_prefer_remote     "Prefer remote packages over local packages" ON)
 
 set(saucer_backend_types Default Qt Qt6 WebView2)
@@ -81,6 +82,9 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PUBLIC "include")
+
+target_include_directories(${PROJECT_NAME} PRIVATE "utils")
+target_include_directories(${PROJECT_NAME} PRIVATE "private")
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 
 # --------------------------------------------------------------------------------------------------------
