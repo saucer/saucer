@@ -27,7 +27,7 @@ namespace saucer
         QWebEngineUrlSchemeHandler *scheme_handler;
 
       public:
-        std::unique_ptr<webview> dev_view;
+        QWebEngineView *dev_view;
 
       public:
         bool is_ready{false};

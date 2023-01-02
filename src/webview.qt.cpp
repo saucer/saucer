@@ -41,11 +41,14 @@ namespace saucer
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged,
                                   [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
 
+        on<window_event::closed>([this] { set_dev_tools(false); });
+
         inject(impl::inject_script, load_time::creation);
 
         m_impl->web_view->show();
     }
 
+    // ? The window destructor will delete the web_view
     webview::~webview() = default;
 
     void webview::on_url_changed(const std::string &url)
@@ -92,17 +95,24 @@ namespace saucer
 
         if (!enabled)
         {
-            m_impl->dev_view.reset();
+            if (!m_impl->dev_view)
+            {
+                return;
+            }
+
+            m_impl->dev_view->deleteLater();
+            m_impl->dev_view = nullptr;
             return;
         }
 
-        m_impl->dev_view = std::make_unique<webview>();
-        m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->m_impl->web_view->page());
+        if (m_impl->dev_view)
+        {
+            m_impl->dev_view->show();
+            return;
+        }
 
-        m_impl->dev_view->on<window_event::close>([&] {
-            m_impl->dev_view.reset();
-            return false;
-        });
+        m_impl->dev_view = new QWebEngineView;
+        m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
 
         m_impl->dev_view->show();
     }
