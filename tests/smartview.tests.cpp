@@ -32,15 +32,18 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
         },
         true);
 
-    smartview.eval<int>("Math.pow({}, {})", 2, 2) | saucer::then([](int result) { REQUIRE(result == 4); });
+    smartview.eval<int>("Math.pow({}, {})", 2, 2) | saucer::then([](int result) { //
+        REQUIRE(result == 4);
+    });
 
-    smartview.eval<int>("Math.pow({})", saucer::make_arguments(2, 2)) |
-        saucer::then([](int result) { REQUIRE(result == 4); });
+    smartview.eval<int>("Math.pow({})", saucer::make_arguments(2, 2)) | saucer::then([](int result) { //
+        REQUIRE(result == 4);
+    });
 
     smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test2", 10, "Hello World!") | saucer::forget();
     smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test_async", 10, "Hello World!") | saucer::forget();
 
-    smartview.set_url("https://ddg.gg");
+    smartview.set_url("https://google.com");
     smartview.show();
     smartview.run();
 }
