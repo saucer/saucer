@@ -13,7 +13,7 @@ namespace saucer
         {
             qputenv("QT_LOGGING_RULES", "*=false");
 
-#if SAUCER_CURRENT_BACKEND != qt6
+#if SAUCER_BACKEND_VERSION == 5
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 

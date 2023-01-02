@@ -92,7 +92,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 # Generate "constants" file
 # --------------------------------------------------------------------------------------------------------
 
-string(TOLOWER ${saucer_backend} saucer_backed_lower)
+string(TOLOWER ${saucer_backend} saucer_backend_lower)
+string(REGEX REPLACE "[a-zA-Z]+" "" saucer_backend_version "${saucer_backend}")
 configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/constants.hpp")
 
 # --------------------------------------------------------------------------------------------------------

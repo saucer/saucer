@@ -1,12 +1,13 @@
 #pragma once
 #define SAUCER_ENABLE_ASSERTS ${saucer_assert}
-#define SAUCER_CURRENT_BACKEND ${saucer_backed_lower}
+#define SAUCER_CURRENT_BACKEND ${saucer_backend_lower}
+#define SAUCER_BACKEND_VERSION ${saucer_backend_version}
 
 namespace saucer
 {
     enum class backend_type
     {
-        qt,
+        qt5,
         qt6,
         webview2,
     };
