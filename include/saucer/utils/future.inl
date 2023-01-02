@@ -25,7 +25,10 @@ namespace saucer
     template <typename T, typename Callback> void then(std::future<T> &&future, Callback &&callback)
     {
         auto fut = std::make_shared<std::future<void>>();
-        *fut = std::async(std::launch::async, [future = std::move(future), fut, callback]() mutable { callback(future.get()); });
+
+        *fut = std::async(std::launch::async, [future = std::move(future), fut, callback]() mutable {
+            callback(future.get()); //
+        });
     }
 
     template <typename Callback> struct then_pipe
@@ -56,7 +59,6 @@ namespace saucer
 
     struct forget_pipe
     {
-      public:
         template <typename T> friend void operator|(std::future<T> &&future, [[maybe_unused]] forget_pipe)
         {
             forget(std::move(future));
