@@ -6,8 +6,6 @@
 
 namespace saucer
 {
-    smartview::~smartview() = default;
-
     smartview::smartview()
     {
         inject(R"js(
@@ -65,6 +63,17 @@ namespace saucer
                load_time::creation);
     }
 
+    smartview::~smartview()
+    {
+        auto futures = m_futures.read()->size();
+
+        while (futures)
+        {
+            run<false>();
+            futures = m_futures.read()->size();
+        }
+    }
+
     void smartview::resolve(function_data &data, const resolve_callback &callback)
     {
         auto result = callback(data);
@@ -118,13 +127,42 @@ namespace saucer
 
                 if (async)
                 {
-                    auto fut_ptr = std::make_shared<std::future<void>>();
+                    /*
+                    ? As it is completely "legal" to call "smartview.close()" inside of an async callback we have to
+                    ? ensure that all futures are properly processed before we close the smartview, as not doing so
+                    ? would cause a segmentation fault (more precisely: when a callback calls close the std::async which
+                    ? executes the callback will then call "resolve" with the captured result, however, due to the
+                    ? smartview potentially being destructed already this causes a segmentation fault).
 
-                    *fut_ptr = std::async(std::launch::async,
-                                          [fut_ptr, callback = callback, parsed = std::move(parsed), this]() mutable {
-                                              auto &message = dynamic_cast<function_data &>(*parsed);
-                                              resolve(message, callback);
-                                          });
+                    ? To circumvent this we save all futures for async callbacks in our smartview, however we'd like to
+                    ? avoid clobbering the memory with old futures.
+
+                    ? The solution to this is the following code, which just creates a shared_ptr to a future,
+                    ? then it saves the future, and assigns the async to the future, however the async callback has the
+                    ? shared_ptr to the future in it's capture list as a copy, which means that the shared_ptr will have
+                    ? a ref_count of 2, once in our smartview future list and once in the lambda capture, the lambda
+                    ? capture will destruct itself after execution, so it is completely safe for us to erase the future
+                    ? stored in the smartview from within the async's lambda (without causing an exception due to
+                    ? destructing a non ready future).
+
+                    ? On destruction of the smartview we then check for any remaining futures, and call the non blocking
+                    ? "run" method of the window to ensure that all callbacks that were safely queued (e.g. by
+                    ? "postSafe") are properly executed, once they're executed they will erase themselves from the
+                    ? futures list.
+                    */
+
+                    auto fut = std::make_shared<std::future<void>>();
+                    auto fut_id = m_id_counter++;
+
+                    m_futures.write()->emplace(fut_id, fut);
+
+                    *fut = std::async(std::launch::async,
+                                      [this, fut, fut_id, callback = callback, parsed = std::move(parsed)]() mutable {
+                                          auto &message = dynamic_cast<function_data &>(*parsed);
+
+                                          resolve(message, callback);
+                                          m_futures.write()->erase(fut_id);
+                                      });
 
                     return;
                 }

@@ -20,6 +20,9 @@ namespace saucer
         using resolve_callback = serializer::resolve_callback;
         using eval_callback = serializer::eval_callback;
 
+      private:
+        lockpp::lock<std::map<std::size_t, std::shared_ptr<std::future<void>>>> m_futures;
+
       protected:
         lockpp::lock<std::map<std::type_index, std::unique_ptr<serializer>>> m_serializers;
         lockpp::lock<std::vector<std::unique_ptr<plugin>>> m_plugins;
