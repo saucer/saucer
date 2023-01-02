@@ -123,10 +123,6 @@ extern "C"
     {
         strncpy(output, smartview->get_url().c_str(), size);
     }
-    bool smartview_get_transparent(smartview *smartview)
-    {
-        return smartview->get_transparent();
-    }
     bool smartview_get_context_menu(smartview *smartview)
     {
         return smartview->get_context_menu();
@@ -160,10 +156,6 @@ extern "C"
     void smartview_set_url(smartview *smartview, const char *url)
     {
         smartview->set_url(url);
-    }
-    void smartview_set_transparent(smartview *smartview, bool enabled, bool blur)
-    {
-        smartview->set_transparent(enabled, blur);
     }
 
     embedded_file *embedded_file_new(const char *name, const char *mime, size_t size, const uint8_t *data)
@@ -224,7 +216,8 @@ extern "C"
     }
     uint64_t smartview_on_url_changed(smartview *smartview, void (*callback)(const char *))
     {
-        return smartview->on<saucer::web_event::url_changed>([callback](const std::string &url) { callback(url.c_str()); });
+        return smartview->on<saucer::web_event::url_changed>(
+            [callback](const std::string &url) { callback(url.c_str()); });
     }
 
     void serializer_set_buffer_size(size_t size)
@@ -234,12 +227,12 @@ extern "C"
 
     void serializer_set_init_script(const char *script)
     {
-        serializer::init_script = script;
+        serializer::m_script = script;
     }
 
     void serializer_set_js_serializer(const char *js_serializer)
     {
-        serializer::js_serializer = js_serializer;
+        serializer::m_serializer = js_serializer;
     }
 
     void serializer_set_parse_callback(message_data *(*callback)(const char *))
@@ -247,7 +240,8 @@ extern "C"
         serializer::parse_callback = callback;
     }
 
-    void serializer_set_serializer_callback(bool (*callback)(smartview *, function_data *, char *, size_t, size_t *, int *))
+    void serializer_set_serializer_callback(bool (*callback)(smartview *, function_data *, char *, size_t, size_t *,
+                                                             int *))
     {
         serializer::serialize_callback = callback;
     }

@@ -12,13 +12,14 @@ namespace saucer
     struct message_data;
     struct function_data;
 } // namespace saucer
+
 #else
 #include <stddef.h>
 #include <stdint.h>
 #define bool int
 
-#define declare(name)                                                                                                                                                                        \
-    struct _##name;                                                                                                                                                                          \
+#define declare(name)                                                                                                  \
+    struct _##name;                                                                                                    \
     typedef struct _##name name;
 
 declare(embedded_file);
