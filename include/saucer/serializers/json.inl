@@ -4,18 +4,35 @@
 
 #include <variant>
 #include <fmt/args.h>
+#include <type_traits>
 #include <fmt/format.h>
 #include <boost/callable_traits.hpp>
 
 namespace saucer::serializers
 {
+    template <typename T> class is_serializable
+    {
+      private:
+        static auto test(...) -> std::uint8_t;
+
+      private:
+        template <typename O>
+        static auto test(O *) -> decltype(static_cast<nlohmann::json>(std::declval<O>()), std::uint16_t{});
+
+      public:
+        static constexpr bool value = sizeof(test(reinterpret_cast<T *>(0))) == sizeof(std::uint16_t);
+    };
+
+    template <typename O> using remove_const_ref_t = std::remove_cv_t<std::remove_reference_t<O>>;
+
     template <typename T> struct decay_tuple
     {
     };
 
     template <typename... T> struct decay_tuple<std::tuple<T...>>
     {
-        using type = std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...>;
+        using type = std::tuple<remove_const_ref_t<T>...>;
+        static constexpr auto serializable = std::conjunction_v<is_serializable<remove_const_ref_t<T>>...>;
     };
 
     template <typename T> using decay_tuple_t = typename decay_tuple<T>::type;
@@ -23,7 +40,13 @@ namespace saucer::serializers
     template <typename Function> auto json::serialize(const Function &func)
     {
         using rtn_t = boost::callable_traits::return_type_t<Function>;
-        using args_t = decay_tuple_t<boost::callable_traits::args_t<Function>>;
+        using raw_args_t = boost::callable_traits::args_t<Function>;
+        using args_t = decay_tuple_t<raw_args_t>;
+
+        static_assert(decay_tuple<raw_args_t>::serializable &&
+                          (std::is_same_v<rtn_t, void> || is_serializable<rtn_t>::value),
+                      "All arguments as well as the return type must be serializable, "
+                      "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
 
         return [func](function_data &data) -> tl::expected<std::string, error> {
             auto &message = dynamic_cast<json_function_data &>(data);
@@ -64,7 +87,7 @@ namespace saucer::serializers
             }
 
             // ? We dump twice to properly escape
-            return fmt::format("JSON.parse({})", nlohmann::json(nlohmann::json(rtn).dump()).dump());
+            return fmt::format("JSON.parse({})", static_cast<nlohmann::json>(nlohmann::json(rtn).dump()).dump());
         };
     }
 
@@ -77,6 +100,10 @@ namespace saucer::serializers
 
             if constexpr (is_args_v<arg_t>)
             {
+                static_assert((is_args_v<arg_t> && decay_tuple<args_t<arg_t>>::serializable),
+                              "All arguments must be serializable, "
+                              "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
+
                 std::string rtn;
                 auto tuple = static_cast<args_t<arg_t>>(arg);
 
@@ -96,6 +123,10 @@ namespace saucer::serializers
             }
             else
             {
+                static_assert(is_serializable<remove_const_ref_t<arg_t>>::value,
+                              "All arguments must be serializable, "
+                              "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
+
                 auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
                 return fmt::format(fmt::format("JSON.parse({})", json));
             }
@@ -107,6 +138,10 @@ namespace saucer::serializers
 
     template <typename T> auto json::resolve(std::shared_ptr<std::promise<T>> promise)
     {
+        static_assert((std::is_same_v<T, void> || is_serializable<T>::value),
+                      "The promise result must be serializable, "
+                      "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
+
         return [promise = std::move(promise)](result_data &data) mutable {
             auto &json_data = dynamic_cast<json_result_data &>(data);
 
