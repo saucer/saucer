@@ -32,7 +32,7 @@ struct serializer : public saucer::serializer
     [[nodiscard]] std::unique_ptr<saucer::message_data> parse(const std::string &data) const override;
 
   public:
-    static serializer::resolve_callback serialize_function(saucer::smartview *smartview);
+    static serializer::resolve_callback serialize(saucer::smartview *smartview);
 
   public:
     static std::string m_script;

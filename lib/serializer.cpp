@@ -1,5 +1,5 @@
 #include "serializer.hpp"
-#include "serializers/serializer.hpp"
+#include <saucer/serializers/serializer.hpp>
 
 ffi_function_data::~ffi_function_data() = default;
 
@@ -29,7 +29,7 @@ std::unique_ptr<saucer::message_data> serializer::parse(const std::string &data)
     return std::unique_ptr<saucer::message_data>(parse_callback(data.c_str()));
 }
 
-saucer::serializer::resolve_callback serializer::serialize_function(saucer::smartview *smartview)
+saucer::serializer::resolve_callback serializer::serialize(saucer::smartview *smartview)
 {
     return [smartview](saucer::function_data &data) -> tl::expected<std::string, error> {
         error error{};
