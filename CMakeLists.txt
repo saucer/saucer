@@ -13,7 +13,7 @@ endif()
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_tests             "Build tests"                                 ON)
+option(saucer_tests             "Build tests"                                OFF)
 option(saucer_assert            "Enable asserts"                              ON)
 option(saucer_wrapper           "Build C-Wrapper"                            OFF)
 option(saucer_examples          "Build examples"                             OFF)
@@ -53,6 +53,12 @@ endif()
 if (saucer_backend MATCHES "^Qt.$")
     set(CMAKE_AUTOMOC ON)
     message(STATUS "[Saucer] Using AUTOMOC for ${saucer_backend}")
+endif()
+
+# When using saucer in a shared library we need to enable position independent code
+
+if (saucer_wrapper)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -200,6 +206,11 @@ install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib INCLUDES DESTINATION inc
 if (saucer_tests)
     message(STATUS "[Saucer] Building Tests")
     add_subdirectory(tests)
+endif()
+
+if (saucer_wrapper)
+    message(STATUS "[Saucer] Building C-Wrapper")
+    add_subdirectory(lib)
 endif()
 
 if (saucer_examples)
