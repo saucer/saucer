@@ -146,25 +146,27 @@ if (saucer_backend STREQUAL "WebView2")
 endif()
 
 if (saucer_smartview)
-    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/serializer.json.cpp")
 
     if (saucer_prefer_remote)
         option(EXPECTED_BUILD_TESTS OFF)
 
-        FetchContent_Declare(nlohmann_json  GIT_REPOSITORY "https://github.com/nlohmann/json/"       GIT_TAG v3.11.2 GIT_SHALLOW TRUE OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(tl-expected    GIT_REPOSITORY "https://github.com/TartanLlama/expected" GIT_TAG b74fecd OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(fmt            GIT_REPOSITORY "https://github.com/fmtlib/fmt"           GIT_TAG 9.1.0 OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(lockpp         GIT_REPOSITORY "https://github.com/Soundux/lockpp"       GIT_TAG v1.0.2)
+        FetchContent_Declare(nlohmann_json          GIT_REPOSITORY "https://github.com/nlohmann/json/"              GIT_TAG v3.11.2 GIT_SHALLOW TRUE OVERRIDE_FIND_PACKAGE)
+        FetchContent_Declare(boost_callable_traits  GIT_REPOSITORY "https://github.com/boostorg/callable_traits"    GIT_TAG 2a56a3a OVERRIDE_FIND_PACKAGE)
+        FetchContent_Declare(tl-expected            GIT_REPOSITORY "https://github.com/TartanLlama/expected"        GIT_TAG b74fecd OVERRIDE_FIND_PACKAGE)
+        FetchContent_Declare(fmt                    GIT_REPOSITORY "https://github.com/fmtlib/fmt"                  GIT_TAG 9.1.0 OVERRIDE_FIND_PACKAGE)
+        FetchContent_Declare(lockpp                 GIT_REPOSITORY "https://github.com/Soundux/lockpp"              GIT_TAG v1.0.2)
         
-        FetchContent_MakeAvailable(nlohmann_json tl-expected fmt lockpp)
+        FetchContent_MakeAvailable(nlohmann_json tl-expected fmt lockpp boost_callable_traits)
         target_link_libraries(${PROJECT_NAME} PUBLIC lockpp::lockpp)
     endif()
 
     find_package(fmt CONFIG REQUIRED)
     find_package(tl-expected CONFIG REQUIRED)
     find_package(nlohmann_json CONFIG REQUIRED)
+    find_package(boost_callable_traits CONFIG REQUIRED)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt)
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt Boost::callable_traits)
 
     if (NOT saucer_prefer_remote)
         find_path(LOCKPP_INCLUDE_DIRS "lockpp/lock.hpp")
