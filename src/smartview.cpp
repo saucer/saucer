@@ -160,12 +160,14 @@ namespace saucer
         webview::on_message(message);
     }
 
-    void smartview::add_eval(const std::type_index &serializer, const eval_resolver &resolver, const std::string &code)
+    void smartview::add_eval(std::type_index type, eval_callback &&resolve, const std::string &code)
     {
-        auto id = m_id_counter++;
-        m_evals.write()->emplace(id, eval_t{resolver, serializer});
+        auto evals = m_evals.write();
+        auto serializers = m_serializers.read();
 
-        auto serializer_function = m_serializers.read()->at(serializer)->js_serializer();
+        auto id = m_id_counter++;
+        evals->emplace(id, eval_t{std::move(resolve), type});
+        const auto &serializer = serializers->at(type);
 
         run_java_script(fmt::format(
             R"(
@@ -173,25 +175,26 @@ namespace saucer
                     window.saucer._resolve({}, {}, {})
                 )();
             )",
-            id, code, serializer_function));
+            id, code, serializer->js_serializer()));
     }
 
-    void smartview::add_callback(const std::type_index &serializer, const std::string &name,
-                                 const callback_resolver &resolver, bool async)
+    void smartview::add_callback(std::type_index type, const std::string &name, resolve_callback &&resolve, bool async)
     {
-        m_callbacks.write()->emplace(name, callback_t{async, resolver, serializer});
+        auto callbacks = m_callbacks.write();
+        auto serializers = m_serializers.read();
 
-        auto serializer_function = m_serializers.read()->at(serializer)->js_serializer();
+        callbacks->emplace(name, callback_t{async, std::move(resolve), type});
+        const auto &serializer = serializers->at(type);
 
         inject(fmt::format(
                    R"(
                         window.saucer._known_functions.set("{}", {});
                     )",
-                   name, serializer_function),
+                   name, serializer->js_serializer()),
                load_time::creation);
     }
 
-    void smartview::resolve(const std::size_t &id, const std::string &result)
+    void smartview::resolve(std::size_t id, const std::string &result)
     {
         run_java_script(fmt::format(
             R"(
@@ -201,7 +204,7 @@ namespace saucer
             id, result));
     }
 
-    void smartview::reject(const std::size_t &id, const std::string &result)
+    void smartview::reject(std::size_t id, const std::string &result)
     {
         run_java_script(fmt::format(
             R"(
