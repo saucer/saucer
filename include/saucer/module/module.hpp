@@ -20,12 +20,14 @@ namespace saucer
         smartview &m_smartview;
 
       public:
-        virtual ~module() = default;
         module(smartview &, webview_impl *, window_impl *);
 
+      public:
+        virtual ~module();
+
       protected:
-        virtual std::string get_name() const = 0;
-        virtual std::string get_version() const = 0;
+        [[nodiscard]] virtual std::string get_name() const = 0;
+        [[nodiscard]] virtual std::string get_version() const = 0;
     };
 } // namespace saucer
 
