@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(saucer-tests  LANGUAGES CXX)
 
 # --------------------------------------------------------------------------------------------------------
-# Create library
+# Create executable
 # --------------------------------------------------------------------------------------------------------
 
 add_executable(${PROJECT_NAME})
