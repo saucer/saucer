@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <memory>
 #include <string>
 #include <functional>
@@ -34,14 +35,14 @@ namespace saucer
         virtual ~window();
 
       public:
-        bool get_resizable() const;
-        std::string get_title() const;
-        [[thread_safe]] bool get_decorations() const;
-        [[thread_safe]] bool get_always_on_top() const;
-        [[thread_safe]] std::pair<std::size_t, std::size_t> get_size() const;
-        [[thread_safe]] std::pair<std::size_t, std::size_t> get_max_size() const;
-        [[thread_safe]] std::pair<std::size_t, std::size_t> get_min_size() const;
-        [[thread_safe]] std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> get_background_color() const;
+        [[thread_safe]] [[nodiscard]] bool get_resizable() const;
+        [[thread_safe]] [[nodiscard]] bool get_decorations() const;
+        [[thread_safe]] [[nodiscard]] std::string get_title() const;
+        [[thread_safe]] [[nodiscard]] bool get_always_on_top() const;
+        [[thread_safe]] [[nodiscard]] std::pair<std::size_t, std::size_t> get_size() const;
+        [[thread_safe]] [[nodiscard]] std::pair<std::size_t, std::size_t> get_max_size() const;
+        [[thread_safe]] [[nodiscard]] std::pair<std::size_t, std::size_t> get_min_size() const;
+        [[thread_safe]] [[nodiscard]] std::array<std::size_t, 4> get_background_color() const;
 
       public:
         [[thread_safe]] void hide();
@@ -49,9 +50,9 @@ namespace saucer
         [[thread_safe]] void close();
 
       public:
-        void set_resizable(bool enabled);
-        void set_title(const std::string &);
+        [[thread_safe]] void set_resizable(bool enabled);
         [[thread_safe]] void set_decorations(bool enabled);
+        [[thread_safe]] void set_title(const std::string &);
         [[thread_safe]] void set_always_on_top(bool enabled);
         [[thread_safe]] void set_size(std::size_t width, std::size_t height);
         [[thread_safe]] void set_max_size(std::size_t width, std::size_t height);

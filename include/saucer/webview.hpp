@@ -50,9 +50,9 @@ namespace saucer
         ~webview() override;
 
       public:
-        [[thread_safe]] bool get_dev_tools() const;
-        [[thread_safe]] std::string get_url() const;
-        [[thread_safe]] bool get_context_menu() const;
+        [[thread_safe]] [[nodiscard]] bool get_dev_tools() const;
+        [[thread_safe]] [[nodiscard]] std::string get_url() const;
+        [[thread_safe]] [[nodiscard]] bool get_context_menu() const;
 
       public:
         void serve_embedded(const std::string &file);

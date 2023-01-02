@@ -37,12 +37,12 @@ namespace saucer
 
     bool window::get_resizable() const
     {
-        return m_impl->window->maximumSize() != m_impl->window->minimumSize();
-    }
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_resizable(); });
+        }
 
-    std::string window::get_title() const
-    {
-        return m_impl->window->windowTitle().toStdString();
+        return m_impl->window->maximumSize() != m_impl->window->minimumSize();
     }
 
     bool window::get_decorations() const
@@ -53,6 +53,16 @@ namespace saucer
         }
 
         return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
+    }
+
+    std::string window::get_title() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return get_title(); });
+        }
+
+        return m_impl->window->windowTitle().toStdString();
     }
 
     bool window::get_always_on_top() const
@@ -95,10 +105,12 @@ namespace saucer
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
     }
 
-    std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> window::get_background_color() const
+    std::array<std::size_t, 4> window::get_background_color() const
     {
         const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
-        return {color.red(), color.green(), color.blue(), color.alpha()};
+
+        return {static_cast<unsigned long>(color.red()), static_cast<unsigned long>(color.green()),
+                static_cast<unsigned long>(color.blue()), static_cast<unsigned long>(color.alpha())};
     }
 
     void window::hide()
@@ -157,11 +169,6 @@ namespace saucer
         }
     }
 
-    void window::set_title(const std::string &title)
-    {
-        m_impl->window->setWindowTitle(QString::fromStdString(title));
-    }
-
     void window::set_decorations(bool enabled)
     {
         if (!m_impl->is_thread_safe())
@@ -170,6 +177,16 @@ namespace saucer
         }
 
         m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
+    }
+
+    void window::set_title(const std::string &title)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([=] { return set_title(title); });
+        }
+
+        m_impl->window->setWindowTitle(QString::fromStdString(title));
     }
 
     void window::set_always_on_top(bool enabled)
