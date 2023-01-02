@@ -29,7 +29,9 @@ namespace saucer
 
                 window._saucer = new Promise((resolve) =>
                 {
-                    new QWebChannel(qt.webChannelTransport, function(channel) { resolve(channel.objects.saucer); });
+                    new QWebChannel(qt.webChannelTransport, function(channel) { 
+                        resolve(channel.objects.saucer); 
+                    });
                 });
                 
                 window.saucer.on_message("js_ready");
@@ -43,7 +45,10 @@ namespace saucer
         m_parent->on_message(message.toStdString());
     }
 
-    webview::impl::url_scheme_handler::url_scheme_handler(webview *parent) : QWebEngineUrlSchemeHandler(parent->m_impl->web_view), m_parent(parent) {}
+    webview::impl::url_scheme_handler::url_scheme_handler(webview *parent)
+        : QWebEngineUrlSchemeHandler(parent->m_impl->web_view), m_parent(parent)
+    {
+    }
 
     void webview::impl::url_scheme_handler::requestStarted(QWebEngineUrlRequestJob *request)
     {
