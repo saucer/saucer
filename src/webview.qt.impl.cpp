@@ -1,4 +1,4 @@
-#include "assert.hpp"
+#include "utils/assert.hpp"
 #include "webview.qt.impl.hpp"
 
 #include <QFile>

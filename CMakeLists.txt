@@ -76,7 +76,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PUBLIC "include")
-target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private" "utils")
+target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 
 # --------------------------------------------------------------------------------------------------------
 # Generate "constants" file
