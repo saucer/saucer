@@ -9,8 +9,9 @@ namespace saucer
 {
     enum class window_event
     {
+        closed,
         resize,
-        close
+        close,
     };
 
 #include "annotations.hpp"
@@ -21,6 +22,7 @@ namespace saucer
       private:
         using events = ereignis::event_manager<                                    //
             ereignis::event<window_event::resize, void(std::size_t, std::size_t)>, //
+            ereignis::event<window_event::closed, void()>,                         //
             ereignis::event<window_event::close, bool()>                           //
             >;
 
@@ -72,5 +74,6 @@ namespace saucer
 #include "annotations.hpp" //NOLINT
 
     template <> std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&);
+    template <> std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&);
     template <> std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&);
 } // namespace saucer

@@ -19,6 +19,7 @@ namespace saucer
             }
         }
 
+        m_parent->m_events.at<window_event::closed>().fire();
         QMainWindow::closeEvent(event);
     }
 
