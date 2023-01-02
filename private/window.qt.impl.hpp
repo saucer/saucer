@@ -24,7 +24,7 @@ namespace saucer
         std::optional<QSize> max_size, min_size;
 
       public:
-        bool is_thread_safe() const;
+        [[nodiscard]] bool is_thread_safe() const;
 
       public:
         template <typename Func> auto post_safe(Func &&);
