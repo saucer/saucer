@@ -25,7 +25,7 @@ We follow a specific coding-style throughout the project:
 - Includes
     - Includes should be sorted by length where applicable
     - Project/Internal Headers always come first
-    - System and Project Headers should be separated by a line break.
+    - System and Project Headers should be separated by a line break
 
 - Naming Convention
   - We use a "standard library-ish" naming convention
@@ -36,12 +36,13 @@ We follow a specific coding-style throughout the project:
   - In cases where nesting increases the overview of the functions flow or is absolutely necessary, it may be used unless it is explicitly requested to not do so
 
 - File/Folder Structure
-  - Implementation specific headers should be placed in the <kbd>private</kbd> directory.
-  - For each implementation header there should be a corresponding source file.
-  - Files should include their name and the operating-system their designed for _(only if applicable!)_ separated by a dot (.)
+  - Implementation specific headers should be placed in the <kbd>private</kbd> directory
+  - For each implementation header there should be a corresponding source file
+  - For all public headers a ".inl" file should be preferred over inline definitions
+  - Files should include their name and the operating-system they're designed for _(only if applicable!)_ separated by a dot (.)
 
 - Clang-Tidy / Clang-Format
-  - Before you commit your changes make sure that there are no clang-tidy warnings and format your code with our `.clang-format` config.
+  - Before you commit your changes make sure that there are no clang-tidy warnings and format your code with our `.clang-format` config
 
 - Annotations
   - All functions exposed to the user should be annotated accordingly _(only if applicable)_ _[see [annotations.hpp](include/saucer/annotations.hpp), for an example see [webview.hpp](include/saucer/webview.hpp)]_
