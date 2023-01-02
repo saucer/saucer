@@ -32,7 +32,7 @@ jobs:
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
 
       - name: Compile Shared
-        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=Qt && cmake --build . --config Debug"
+        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt && cmake --build . --config Debug"
 
   test-qt5-release:
     runs-on: ubuntu-latest
@@ -56,4 +56,4 @@ jobs:
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
 
       - name: Compile Shared
-        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_shared=ON -Dsaucer_backend=Qt && cmake --build . --config Release"
+        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt && cmake --build . --config Release"
