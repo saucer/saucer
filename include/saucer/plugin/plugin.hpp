@@ -13,7 +13,7 @@ namespace saucer
         virtual void load(smartview &) = 0;
 
       public:
-        virtual std::string get_name() const = 0;
-        virtual std::string get_version() const = 0;
+        [[nodiscard]] virtual std::string get_name() const = 0;
+        [[nodiscard]] virtual std::string get_version() const = 0;
     };
 } // namespace saucer
