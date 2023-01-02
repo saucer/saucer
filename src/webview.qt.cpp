@@ -83,11 +83,6 @@ namespace saucer
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
     }
 
-    void webview::serve_embedded(const std::string &file)
-    {
-        set_url(std::string{impl::scheme_prefix} + file);
-    }
-
     void webview::set_dev_tools(bool enabled)
     {
         if (!window::m_impl->is_thread_safe())
@@ -131,6 +126,11 @@ namespace saucer
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
+    }
+
+    void webview::serve_embedded(const std::string &file)
+    {
+        set_url(std::string{impl::scheme_prefix} + file);
     }
 
     void webview::embed_files(std::map<const std::string, const embedded_file> &&files)
