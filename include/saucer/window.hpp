@@ -69,7 +69,7 @@ namespace saucer
         [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&) = delete;
 
       public:
-        static void run();
+        template <bool Blocking = true> static void run();
     };
 #include "annotations.hpp" //NOLINT
 

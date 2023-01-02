@@ -86,7 +86,6 @@ namespace saucer
 
         // ? postEvent will automatically delete the event after processing.
         QApplication::postEvent(window, event);
-
         return result.get_future().get();
     }
 } // namespace saucer

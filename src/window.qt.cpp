@@ -7,7 +7,7 @@ namespace saucer
     window::window() : m_impl(std::make_unique<impl>())
     {
         static int argc{1};
-        static char *argv{strdup("")};
+        static char *argv[]{strdup("")};
 
         if (!m_impl->application)
         {
@@ -17,7 +17,7 @@ namespace saucer
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-            m_impl->application = new QApplication(argc, &argv);
+            m_impl->application = new QApplication(argc, argv);
         }
 
         m_impl->window = new impl::main_window(this);
@@ -265,8 +265,13 @@ namespace saucer
         return m_events.at<window_event::resize>().add(std::move(callback));
     }
 
-    void window::run()
+    template <> void window::run<true>()
     {
         QApplication::exec();
+    }
+
+    template <> void window::run<false>()
+    {
+        QApplication::processEvents();
     }
 } // namespace saucer
