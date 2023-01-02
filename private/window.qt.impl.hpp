@@ -3,6 +3,7 @@
 
 #include <future>
 #include <optional>
+#include <functional>
 
 #include <QMainWindow>
 #include <QCloseEvent>
@@ -21,6 +22,7 @@ namespace saucer
         QMainWindow *window;
 
       public:
+        std::function<void()> on_closed;
         std::optional<QSize> max_size, min_size;
 
       public:

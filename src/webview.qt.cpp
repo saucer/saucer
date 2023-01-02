@@ -41,7 +41,7 @@ namespace saucer
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged,
                                   [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
 
-        on<window_event::closed>([this] { set_dev_tools(false); });
+        window::m_impl->on_closed = [this] { set_dev_tools(false); };
 
         inject(impl::inject_script, load_time::creation);
 
