@@ -20,14 +20,14 @@ namespace saucer
             const auto &serializer =
                 m_serializers.write()->emplace(typeid(Serializer), std::make_unique<Serializer>()).first->second;
 
-            inject(serializer->initialization_script(), load_time::creation);
+            inject(serializer->init_script(), load_time::creation);
         }
 
         auto promise = std::make_shared<std::promise<Return>>();
         auto fut = promise->get_future();
 
-        add_eval(typeid(Serializer), Serializer::resolve_promise(std::move(promise)),
-                 fmt::vformat(code, Serializer::serialize_arguments(params...)));
+        add_eval(typeid(Serializer), Serializer::resolve(std::move(promise)),
+                 fmt::vformat(code, Serializer::serialize_args(params...)));
 
         return fut;
     }
@@ -39,10 +39,10 @@ namespace saucer
         {
             const auto &serializer =
                 m_serializers.write()->emplace(typeid(Serializer), std::make_unique<Serializer>()).first->second;
-            inject(serializer->initialization_script(), load_time::creation);
+            inject(serializer->init_script(), load_time::creation);
         }
 
-        add_callback(typeid(Serializer), name, Serializer::serialize_function(func), async);
+        add_callback(typeid(Serializer), name, Serializer::serialize(func), async);
     }
 
     template <typename DefaultSerializer>

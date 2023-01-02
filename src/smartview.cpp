@@ -160,7 +160,7 @@ namespace saucer
         auto id = m_id_counter++;
         m_evals.write()->emplace(id, eval_t{resolver, serializer});
 
-        auto serializer_function = m_serializers.read()->at(serializer)->java_script_serializer();
+        auto serializer_function = m_serializers.read()->at(serializer)->js_serializer();
 
         run_java_script(fmt::format(
             R"(
@@ -176,7 +176,7 @@ namespace saucer
     {
         m_callbacks.write()->emplace(name, callback_t{async, resolver, serializer});
 
-        auto serializer_function = m_serializers.read()->at(serializer)->java_script_serializer();
+        auto serializer_function = m_serializers.read()->at(serializer)->js_serializer();
 
         inject(fmt::format(
                    R"(
