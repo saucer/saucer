@@ -3,6 +3,7 @@
 #include "../smartview.hpp"
 
 #include <variant>
+#include <fmt/args.h>
 #include <fmt/format.h>
 #include <boost/callable_traits.hpp>
 
@@ -21,12 +22,12 @@ namespace saucer::serializers
 
     template <typename Function> auto json::serialize(const Function &func)
     {
-        return [func](const std::shared_ptr<function_data> &data) -> tl::expected<std::string, error> {
-            using rtn_t = boost::callable_traits::return_type_t<Function>;
-            using args_t = decay_tuple_t<boost::callable_traits::args_t<Function>>;
+        using rtn_t = boost::callable_traits::return_type_t<Function>;
+        using args_t = decay_tuple_t<boost::callable_traits::args_t<Function>>;
 
-            auto message = std::dynamic_pointer_cast<json_function_data>(data);
-            const auto &params = message->data;
+        return [func](function_data &data) -> tl::expected<std::string, error> {
+            auto &message = dynamic_cast<json_function_data &>(data);
+            const auto &params = message.data;
 
             if (params.size() != std::tuple_size_v<args_t>)
             {
@@ -106,8 +107,8 @@ namespace saucer::serializers
 
     template <typename T> auto json::resolve(std::shared_ptr<std::promise<T>> promise)
     {
-        return [promise = std::move(promise)](const std::shared_ptr<result_data> &data) mutable {
-            auto json_data = std::dynamic_pointer_cast<json_result_data>(data);
+        return [promise = std::move(promise)](result_data &data) mutable {
+            auto &json_data = dynamic_cast<json_result_data &>(data);
 
             if constexpr (std::is_same_v<T, void>)
             {
@@ -117,7 +118,7 @@ namespace saucer::serializers
             {
                 try
                 {
-                    promise->set_value(json_data->data);
+                    promise->set_value(json_data.data);
                 }
                 catch (...)
                 {

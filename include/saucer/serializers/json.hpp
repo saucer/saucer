@@ -30,7 +30,7 @@ namespace saucer
             [[nodiscard]] std::string js_serializer() const override;
 
           public:
-            [[nodiscard]] std::shared_ptr<message_data> parse(const std::string &data) const override;
+            [[nodiscard]] std::unique_ptr<message_data> parse(const std::string &data) const override;
 
           public:
             template <typename Function> static auto serialize(const Function &func);

@@ -65,24 +65,24 @@ namespace saucer
                load_time::creation);
     }
 
-    void smartview::resolve(const std::shared_ptr<function_data> &data, const callback_resolver &callback)
+    void smartview::resolve(function_data &data, const resolve_callback &callback)
     {
         auto result = callback(data);
 
         if (result.has_value())
         {
-            resolve(data->id, *result);
+            resolve(data.id, *result);
             return;
         }
 
         switch (result.error())
         {
         case serializer::error::argument_count_mismatch:
-            reject(data->id, R"("Argument Count Mismatch")");
+            reject(data.id, R"("Argument Count Mismatch")");
             break;
 
         case serializer::error::type_mismatch:
-            reject(data->id, R"("Type Mismatch")");
+            reject(data.id, R"("Type Mismatch")");
             break;
         }
     }
@@ -94,20 +94,22 @@ namespace saucer
 
         for (const auto &[serializer_type, serializer] : *serializers)
         {
-            auto parsed_message = serializer->parse(message);
+            auto parsed = serializer->parse(message);
 
-            if (!parsed_message)
+            if (!parsed)
                 continue;
 
-            if (auto function_message = std::dynamic_pointer_cast<function_data>(parsed_message); function_message)
+            if (dynamic_cast<function_data *>(parsed.get()))
             {
-                if (!callbacks->count(function_message->function))
+                auto &function_message = dynamic_cast<function_data &>(*parsed);
+
+                if (!callbacks->count(function_message.function))
                 {
-                    reject(function_message->id, R"("Invalid function")");
+                    reject(function_message.id, R"("Invalid function")");
                     return;
                 }
 
-                const auto &[async, callback, function_serializer_type] = callbacks->at(function_message->function);
+                const auto &[async, callback, function_serializer_type] = callbacks->at(function_message.function);
 
                 if (serializer_type != function_serializer_type)
                 {
@@ -118,9 +120,11 @@ namespace saucer
                 {
                     auto fut_ptr = std::make_shared<std::future<void>>();
 
-                    *fut_ptr = std::async(std::launch::async, [fut_ptr, callback = callback, function_message, this] {
-                        resolve(function_message, callback);
-                    });
+                    *fut_ptr = std::async(std::launch::async,
+                                          [fut_ptr, callback = callback, parsed = std::move(parsed), this]() mutable {
+                                              auto &message = dynamic_cast<function_data &>(*parsed);
+                                              resolve(message, callback);
+                                          });
 
                     return;
                 }
@@ -129,16 +133,17 @@ namespace saucer
                 return;
             }
 
-            if (auto result_message = std::dynamic_pointer_cast<result_data>(parsed_message); result_message)
+            if (dynamic_cast<result_data *>(parsed.get()))
             {
-                auto locked_evals = m_evals.write();
+                auto &result_message = dynamic_cast<result_data &>(*parsed);
+                auto evals = m_evals.write();
 
-                if (!locked_evals->count(result_message->id))
+                if (!evals->count(result_message.id))
                 {
                     return;
                 }
 
-                const auto &[resolve, eval_serializer_type] = locked_evals->at(result_message->id);
+                const auto &[resolve, eval_serializer_type] = evals->at(result_message.id);
 
                 if (serializer_type != eval_serializer_type)
                 {
@@ -147,7 +152,7 @@ namespace saucer
 
                 resolve(result_message);
 
-                locked_evals->erase(result_message->id);
+                evals->erase(result_message.id);
                 return;
             }
         }

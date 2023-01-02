@@ -18,7 +18,7 @@ namespace saucer::serializers
         return "JSON.stringify";
     }
 
-    std::shared_ptr<message_data> json::parse(const std::string &data) const
+    std::unique_ptr<message_data> json::parse(const std::string &data) const
     {
         auto parsed = nlohmann::json::parse(data, nullptr, false);
 
@@ -34,7 +34,7 @@ namespace saucer::serializers
 
         if (parsed["params"].is_array() && parsed["name"].is_string())
         {
-            auto rtn = std::make_shared<json_function_data>();
+            auto rtn = std::make_unique<json_function_data>();
 
             rtn->id = parsed["id"];
             rtn->data = parsed["params"];
@@ -45,7 +45,7 @@ namespace saucer::serializers
 
         if (!parsed["result"].is_discarded())
         {
-            auto rtn = std::make_shared<json_result_data>();
+            auto rtn = std::make_unique<json_result_data>();
 
             rtn->id = parsed["id"];
             rtn->data = parsed["result"];

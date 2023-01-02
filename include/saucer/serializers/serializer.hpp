@@ -3,6 +3,8 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <functional>
+#include <tl/expected.hpp>
 
 namespace saucer
 {
@@ -39,7 +41,17 @@ namespace saucer
         [[nodiscard]] virtual std::string js_serializer() const = 0;
 
       public:
-        [[nodiscard]] virtual std::shared_ptr<message_data> parse(const std::string &) const = 0;
+        [[nodiscard]] virtual std::unique_ptr<message_data> parse(const std::string &) const = 0;
+
+      public:
+        using resolve_callback = std::function<               //
+            tl::expected<std::string, error>(function_data &) //
+            >;
+
+      public:
+        using eval_callback = std::function< //
+            void(result_data &)              //
+            >;
     };
 
     template <typename... T> struct arguments : public std::tuple<T...>
