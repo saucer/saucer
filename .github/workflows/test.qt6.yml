@@ -49,13 +49,13 @@ jobs:
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
       - name: Run Tests [Debug Mode]
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
 
       - name: Compile [Release Mode]
         run: "mkdir build-rel && cd build-rel && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
 
       - name: Run Tests [Release Mode]
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build-rel/saucer_tests"'
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build-rel/tests/saucer-tests"'
 
       - name: Compile Shared [Debug Mode]
         run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
