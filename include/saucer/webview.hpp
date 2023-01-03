@@ -27,7 +27,7 @@ namespace saucer
 
     struct webview_options
     {
-        bool persistent_cookies{false};
+        bool persistent_cookies{true};
         std::filesystem::path storage_path;
     };
 
