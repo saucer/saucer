@@ -13,9 +13,9 @@ on:
   pull_request:
     branches: ["**"]
 
-name: Test Qt6
+name: Test Qt6 [Release & Debug]
 jobs:
-  test-qt6-debug:
+  test-qt6:
     runs-on: ubuntu-latest
     container: archlinux:base-20220403.0.51871
     strategy:
@@ -45,20 +45,20 @@ jobs:
           sudo: false
           limit-access-to-actor: true
 
-      - name: Compile (Debug)
+      - name: Compile [Debug Mode]
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
-      - name: Compile (Release)
+      - name: Compile [Release Mode]
         run: "mkdir build-rel && cd build-rel && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
 
-      - name: Run Tests (Debug)
+      - name: Run Tests [Debug Mode]
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
 
-      - name: Run Tests (Release)
+      - name: Run Tests [Release Mode]
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build-rel/saucer_tests"'
 
-      - name: Compile Shared (Debug)
+      - name: Compile Shared [Debug Mode]
         run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
-      - name: Compile Shared (Release)
+      - name: Compile Shared [Release Mode]
         run: "rm -rf build-rel && mkdir build-rel && cd build-rel && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
