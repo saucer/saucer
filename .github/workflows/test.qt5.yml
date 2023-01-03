@@ -40,11 +40,11 @@ jobs:
       - name: Compile [Debug Mode]
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt5 && cmake --build . --config Debug"
 
-      - name: Compile [Release Mode]
-        run: "mkdir build-rel && cd build-rel && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt5 && cmake --build . --config Release"
-
       - name: Run Tests [Debug Mode]
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
+
+      - name: Compile [Release Mode]
+        run: "mkdir build-rel && cd build-rel && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt5 && cmake --build . --config Release"
 
       - name: Run Tests [Release Mode]
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build-rel/saucer_tests"'
