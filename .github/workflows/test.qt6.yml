@@ -38,13 +38,13 @@ jobs:
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative xorg-server-xvfb qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
 
-      - name: Debug
+      - if: ${{ github.event.inputs.debug }} == "true"
+        name: Debug
         uses: lhotari/action-upterm@v1
-        if: ${{ github.event.inputs.debug }} == "true"
         with:
           limit-access-to-actor: true
 
- - name: Compile (Debug)
+      - name: Compile (Debug)
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
       - name: Compile (Release)
@@ -61,4 +61,3 @@ jobs:
 
       - name: Compile Shared (Release)
         run: "rm -rf build-rel && mkdir build-rel && cd build-rel && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
-
