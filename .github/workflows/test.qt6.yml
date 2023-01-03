@@ -1,5 +1,10 @@
 on:
   workflow_dispatch:
+    inputs:
+      debug:
+        description: "Debug"
+        required: false
+        default: "false"
   push:
     branches: ["**"]
     paths-ignore:
@@ -33,41 +38,27 @@ jobs:
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative xorg-server-xvfb qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
 
-      - name: Compile
+      - name: Debug
+        uses: lhotari/action-upterm@v1
+        if: ${{ github.event.inputs.debug }} == "true"
+        with:
+          limit-access-to-actor: true
+
+ - name: Compile (Debug)
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
-      - name: Run Tests
+      - name: Compile (Release)
+        run: "mkdir build-rel && cd build-rel && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
+
+      - name: Run Tests (Debug)
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
 
-      - name: Compile Shared
+      - name: Run Tests (Release)
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build-rel/saucer_tests"'
+
+      - name: Compile Shared (Debug)
         run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
-  test-qt6-release:
-    runs-on: ubuntu-latest
-    container: archlinux:base-20220403.0.51871
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["cpp"]
+      - name: Compile Shared (Release)
+        run: "rm -rf build-rel && mkdir build-rel && cd build-rel && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2.4.0
-
-      - name: Disable Signature Signing
-        run: "sed -i -E 's/SigLevel\\s+=\\s+.+/SigLevel = Never/g' /etc/pacman.conf"
-
-      - name: Downgrade Packages
-        run: 'echo "Server=https://archive.archlinux.org/repos/2022/04/08/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist && rm -rf "/usr/share/hwdata" && pacman --noconfirm -Syyuu'
-
-      - name: Install build dependencies
-        run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative qt6-positioning xorg-server-xvfb qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
-
-      - name: Compile
-        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
-
-      - name: Run Tests
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
-
-      - name: Compile Shared
-        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
