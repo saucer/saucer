@@ -22,6 +22,10 @@ namespace saucer
         QWebEngineView *web_view;
 
       public:
+        QWebEnginePage *page;
+        QWebEngineProfile *profile;
+
+      public:
         QObject *channel_obj;
         QWebChannel *web_channel;
         QWebEngineUrlSchemeHandler *scheme_handler;

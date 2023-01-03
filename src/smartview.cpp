@@ -6,7 +6,7 @@
 
 namespace saucer
 {
-    smartview::smartview()
+    smartview::smartview(const webview_options &options) : webview(options)
     {
         inject(R"js(
         window.saucer._idc = 0;

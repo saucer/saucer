@@ -74,6 +74,9 @@ namespace saucer
     template <typename DefaultSerializer> class simple_smartview : public smartview
     {
       public:
+        using smartview::smartview;
+
+      public:
         template <typename Serializer = DefaultSerializer, typename Function>
         void expose(const std::string &name, const Function &func, bool async = false)
         {
@@ -92,6 +95,9 @@ namespace saucer
     class modularized_smartview : public smartview, public Modules<backend>...
     {
       public:
+        using smartview::smartview;
+
+      public:
         modularized_smartview()
             : Modules<backend>(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),
                                reinterpret_cast<typename Modules<backend>::window_impl *>(window::m_impl.get()))...
@@ -102,6 +108,9 @@ namespace saucer
     template <typename DefaultSerializer, template <backend_type> class... Modules>
     class modularized_simple_smartview : public smartview, public Modules<backend>...
     {
+      public:
+        using smartview::smartview;
+
       public:
         modularized_simple_smartview()
             : Modules<backend>(*this, reinterpret_cast<typename Modules<backend>::webview_impl *>(m_impl.get()),

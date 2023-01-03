@@ -1,8 +1,9 @@
 #pragma once
-#include <map>
-#include <ereignis/manager.hpp>
-
 #include "window.hpp"
+
+#include <map>
+#include <filesystem>
+#include <ereignis/manager.hpp>
 
 namespace saucer
 {
@@ -22,6 +23,12 @@ namespace saucer
         const std::string mime;
         const std::size_t size;
         const std::uint8_t *data;
+    };
+
+    struct webview_options
+    {
+        bool persistent_cookies{false};
+        std::filesystem::path storage_path;
     };
 
 #include "annotations.hpp"
@@ -46,7 +53,9 @@ namespace saucer
         virtual void on_url_changed(const std::string &);
 
       public:
-        webview();
+        webview(const webview_options & = {});
+
+      public:
         ~webview() override;
 
       public:

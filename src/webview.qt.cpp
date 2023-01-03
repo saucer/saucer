@@ -2,6 +2,7 @@
 #include "window.qt.impl.hpp"
 #include "webview.qt.impl.hpp"
 
+#include <fmt/format.h>
 #include <QWebEngineScript>
 #include <QWebEngineProfile>
 #include <QWebEngineUrlScheme>
@@ -9,7 +10,7 @@
 
 namespace saucer
 {
-    webview::webview() : m_impl(std::make_unique<impl>())
+    webview::webview(const webview_options &options) : m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
 
@@ -24,7 +25,22 @@ namespace saucer
         });
 
         m_impl->web_view = new QWebEngineView(window::m_impl->window);
-        window::m_impl->window->setCentralWidget(m_impl->web_view);
+
+        auto profile_name = fmt::format("profile-{}", options.storage_path.string());
+        m_impl->profile = new QWebEngineProfile(QString::fromStdString(profile_name), m_impl->web_view);
+
+        m_impl->page = new QWebEnginePage(m_impl->profile, m_impl->web_view);
+
+        m_impl->profile->setPersistentCookiesPolicy(options.persistent_cookies
+                                                        ? QWebEngineProfile::AllowPersistentCookies
+                                                        : QWebEngineProfile::NoPersistentCookies);
+
+        if (!options.storage_path.empty())
+        {
+            m_impl->profile->setPersistentStoragePath(QString::fromStdString(options.storage_path));
+        }
+
+        m_impl->web_view->setPage(m_impl->page);
 
         m_impl->web_channel = new QWebChannel(m_impl->web_view);
         m_impl->web_view->page()->setWebChannel(m_impl->web_channel);
@@ -45,6 +61,7 @@ namespace saucer
 
         inject(impl::inject_script, load_time::creation);
 
+        window::m_impl->window->setCentralWidget(m_impl->web_view);
         m_impl->web_view->show();
     }
 
