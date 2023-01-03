@@ -26,13 +26,13 @@ jobs:
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb"
 
       - name: Compile
-        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt && cmake --build . --config Debug"
+        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt5 && cmake --build . --config Debug"
 
       - name: Run Tests
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
 
       - name: Compile Shared
-        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt && cmake --build . --config Debug"
+        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt5 && cmake --build . --config Debug"
 
   test-qt5-release:
     runs-on: ubuntu-latest
@@ -50,10 +50,10 @@ jobs:
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb"
 
       - name: Compile
-        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt && cmake --build . --config Release"
+        run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt5 && cmake --build . --config Release"
 
       - name: Run Tests
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/saucer_tests"'
 
       - name: Compile Shared
-        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt && cmake --build . --config Release"
+        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt5 && cmake --build . --config Release"
