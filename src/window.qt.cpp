@@ -7,7 +7,7 @@ namespace saucer
     window::window() : m_impl(std::make_unique<impl>())
     {
         static int argc{1};
-        static char *argv[]{strdup("")};
+        static std::vector<char *> argv{strdup("")};
 
         if (!m_impl->application)
         {
@@ -17,7 +17,8 @@ namespace saucer
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-            m_impl->application = new QApplication(argc, argv);
+            argc = static_cast<int>(argv.size());
+            m_impl->application = new QApplication(argc, argv.data());
         }
 
         m_impl->window = new impl::main_window(this);
@@ -233,9 +234,10 @@ namespace saucer
 
     void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
     {
+        auto color = QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
+
         auto palette = m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window,
-                         QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a)));
+        palette.setColor(QPalette::ColorRole::Window, color);
 
         m_impl->window->setPalette(palette);
     }
