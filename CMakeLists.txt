@@ -96,8 +96,10 @@ configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/co
 # Link Dependencies and Add Sources
 # --------------------------------------------------------------------------------------------------------
 
-include(FetchContent)
+include("Deps.cmake")
 include("NuGet.cmake")
+
+message(STATUS "[Saucer] Prefer Remote: ${saucer_prefer_remote}")
 
 set(saucer_conditional_linkage PRIVATE)
 
@@ -123,15 +125,10 @@ endif()
 if (saucer_backend STREQUAL "WebView2")
     target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.cpp" "src/webview.webview2.cpp")
 
-    if (saucer_prefer_remote)
-        option(WIL_BUILD_PACKAGING "" OFF)
-        option(WIL_BUILD_TESTS     "" OFF)
-        
-        FetchContent_Declare(wil GIT_REPOSITORY "https://github.com/microsoft/wil" OVERRIDE_FIND_PACKAGE)
-        FetchContent_MakeAvailable(wil)
-    endif()
+    option(WIL_BUILD_TESTS     "" OFF)
+    option(WIL_BUILD_PACKAGING "" OFF)
 
-    find_package(wil CONFIG REQUIRED)
+    add_dependency(wil "https://github.com/microsoft/wil" "5f4caba")
     target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} WIL::WIL Shlwapi)
 
     if (saucer_remote_webview2)
@@ -154,40 +151,28 @@ endif()
 if (saucer_smartview)
     target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/serializer.json.cpp")
 
-    if (saucer_prefer_remote)
-        option(EXPECTED_BUILD_TESTS OFF)
+    option(EXPECTED_BUILD_TESTS OFF)
 
-        FetchContent_Declare(nlohmann_json          GIT_REPOSITORY "https://github.com/nlohmann/json/"              GIT_TAG v3.11.2 GIT_SHALLOW TRUE OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(boost_callable_traits  GIT_REPOSITORY "https://github.com/boostorg/callable_traits"    GIT_TAG 2a56a3a OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(tl-expected            GIT_REPOSITORY "https://github.com/TartanLlama/expected"        GIT_TAG b74fecd OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(fmt                    GIT_REPOSITORY "https://github.com/fmtlib/fmt"                  GIT_TAG 9.1.0 OVERRIDE_FIND_PACKAGE)
-        FetchContent_Declare(lockpp                 GIT_REPOSITORY "https://github.com/Soundux/lockpp"              GIT_TAG v1.0.2)
+    add_dependency(nlohmann_json          "https://github.com/nlohmann/json/"             v3.11.2)
+    add_dependency(boost_callable_traits  "https://github.com/boostorg/callable_traits"   2a56a3a)
+    add_dependency(tl-expected            "https://github.com/TartanLlama/expected"       b74fecd)
+    add_dependency(fmt                    "https://github.com/fmtlib/fmt"                   9.1.0)
         
-        FetchContent_MakeAvailable(nlohmann_json tl-expected fmt lockpp boost_callable_traits)
-        target_link_libraries(${PROJECT_NAME} PUBLIC lockpp::lockpp)
-    endif()
-
-    find_package(fmt CONFIG REQUIRED)
-    find_package(tl-expected CONFIG REQUIRED)
-    find_package(nlohmann_json CONFIG REQUIRED)
-    find_package(boost_callable_traits CONFIG REQUIRED)
-
     target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt Boost::callable_traits)
 
-    if (NOT saucer_prefer_remote)
+    if (saucer_prefer_remote)
+        add_dependency(lockpp "https://github.com/Soundux/lockpp" v1.0.2)
+        target_link_libraries(${PROJECT_NAME} PUBLIC lockpp::lockpp)
+    else()
         find_path(LOCKPP_INCLUDE_DIRS "lockpp/lock.hpp")
         target_include_directories(${PROJECT_NAME} PUBLIC ${LOCKPP_INCLUDE_DIRS})
     endif()
 endif()
 
 if (saucer_prefer_remote)
-    FetchContent_Declare(ereignis GIT_REPOSITORY "https://github.com/Soundux/ereignis" GIT_TAG v1.1)
-    FetchContent_MakeAvailable(ereignis)
-
+    add_dependency(ereignis "https://github.com/Soundux/ereignis" v1.1)
     target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis)
-endif()
-
-if (NOT saucer_prefer_remote)
+else()
     find_path(EREIGNIS_INCLUDE_DIRS "ereignis/event.hpp")
     target_include_directories(${PROJECT_NAME} PUBLIC ${EREIGNIS_INCLUDE_DIRS})
 endif()

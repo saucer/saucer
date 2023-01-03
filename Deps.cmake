@@ -1,0 +1,10 @@
+include(FetchContent)
+
+function(add_dependency NAME URL TAG)
+    if (saucer_prefer_remote)
+        FetchContent_Declare(${NAME} GIT_REPOSITORY "${URL}" GIT_TAG "${TAG}" GIT_SHALLOW TRUE)
+        FetchContent_MakeAvailable(${NAME})
+    else()
+        find_package(${NAME} CONFIG REQUIRED)
+    endif()
+endfunction()
