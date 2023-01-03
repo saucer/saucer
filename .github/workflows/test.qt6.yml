@@ -40,8 +40,9 @@ jobs:
 
       - if: ${{ github.event.inputs.debug }} == "true"
         name: Debug
-        uses: lhotari/action-upterm@v1
+        uses: mxschmitt/action-tmate@v3
         with:
+          sudo: false
           limit-access-to-actor: true
 
       - name: Compile (Debug)
