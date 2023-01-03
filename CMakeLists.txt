@@ -128,7 +128,7 @@ if (saucer_backend STREQUAL "WebView2")
     option(WIL_BUILD_TESTS     "" OFF)
     option(WIL_BUILD_PACKAGING "" OFF)
 
-    add_dependency(wil "https://github.com/microsoft/wil" "5f4caba")
+    add_dependency(wil "https://github.com/microsoft/wil" 5f4caba)
     target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} WIL::WIL Shlwapi)
 
     if (saucer_remote_webview2)
@@ -153,29 +153,17 @@ if (saucer_smartview)
 
     option(EXPECTED_BUILD_TESTS OFF)
 
-    add_dependency(nlohmann_json          "https://github.com/nlohmann/json/"             v3.11.2)
-    add_dependency(boost_callable_traits  "https://github.com/boostorg/callable_traits"   2a56a3a)
-    add_dependency(tl-expected            "https://github.com/TartanLlama/expected"       b74fecd)
-    add_dependency(fmt                    "https://github.com/fmtlib/fmt"                   9.1.0)
+    add_dependency(lockpp                URL "https://github.com/Soundux/lockpp"           TAG   v1.0.2 HEADER "lockpp/lock.hpp" LIB_NAME lockpp::lockpp)
+    add_dependency(nlohmann_json         URL "https://github.com/nlohmann/json/"           TAG  v3.11.2)
+    add_dependency(boost_callable_traits URL "https://github.com/boostorg/callable_traits" TAG  2a56a3a)
+    add_dependency(tl-expected           URL "https://github.com/TartanLlama/expected"     TAG  b74fecd)
+    add_dependency(fmt                   URL "https://github.com/fmtlib/fmt"               TAG    9.1.0)
         
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt Boost::callable_traits)
-
-    if (saucer_prefer_remote)
-        add_dependency(lockpp "https://github.com/Soundux/lockpp" v1.0.2)
-        target_link_libraries(${PROJECT_NAME} PUBLIC lockpp::lockpp)
-    else()
-        find_path(LOCKPP_INCLUDE_DIRS "lockpp/lock.hpp")
-        target_include_directories(${PROJECT_NAME} PUBLIC ${LOCKPP_INCLUDE_DIRS})
-    endif()
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt Boost::callable_traits lockpp::lockpp)
 endif()
 
-if (saucer_prefer_remote)
-    add_dependency(ereignis "https://github.com/Soundux/ereignis" v1.1)
-    target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis)
-else()
-    find_path(EREIGNIS_INCLUDE_DIRS "ereignis/event.hpp")
-    target_include_directories(${PROJECT_NAME} PUBLIC ${EREIGNIS_INCLUDE_DIRS})
-endif()
+add_dependency(ereignis URL "https://github.com/Soundux/ereignis" TAG v1.1 HEADER "ereignis/event.hpp" LIB_NAME soundux::ereignis)
+target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis)
 
 # --------------------------------------------------------------------------------------------------------
 # Install Targets
