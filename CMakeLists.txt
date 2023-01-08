@@ -128,7 +128,7 @@ if (saucer_backend STREQUAL "WebView2")
     option(WIL_BUILD_TESTS     "" OFF)
     option(WIL_BUILD_PACKAGING "" OFF)
 
-    add_dependency(wil "https://github.com/microsoft/wil" 5f4caba)
+    add_dependency(wil URL "https://github.com/microsoft/wil" TAG 5f4caba)
     target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} WIL::WIL Shlwapi)
 
     if (saucer_remote_webview2)
