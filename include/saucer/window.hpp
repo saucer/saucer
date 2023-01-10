@@ -20,10 +20,10 @@ namespace saucer
         struct impl;
 
       private:
-        using events = ereignis::event_manager<                                    //
-            ereignis::event<window_event::resize, void(std::size_t, std::size_t)>, //
-            ereignis::event<window_event::closed, void()>,                         //
-            ereignis::event<window_event::close, bool()>                           //
+        using events = ereignis::event_manager<                    //
+            ereignis::event<window_event::resize, void(int, int)>, //
+            ereignis::event<window_event::closed, void()>,         //
+            ereignis::event<window_event::close, bool()>           //
             >;
 
       protected:
@@ -41,10 +41,10 @@ namespace saucer
         [[thread_safe]] [[nodiscard]] bool get_decorations() const;
         [[thread_safe]] [[nodiscard]] std::string get_title() const;
         [[thread_safe]] [[nodiscard]] bool get_always_on_top() const;
-        [[thread_safe]] [[nodiscard]] std::pair<std::size_t, std::size_t> get_size() const;
-        [[thread_safe]] [[nodiscard]] std::pair<std::size_t, std::size_t> get_max_size() const;
-        [[thread_safe]] [[nodiscard]] std::pair<std::size_t, std::size_t> get_min_size() const;
-        [[thread_safe]] [[nodiscard]] std::array<std::size_t, 4> get_background_color() const;
+        [[thread_safe]] [[nodiscard]] std::array<int, 2> get_size() const;
+        [[thread_safe]] [[nodiscard]] std::array<int, 2> get_max_size() const;
+        [[thread_safe]] [[nodiscard]] std::array<int, 2> get_min_size() const;
+        [[thread_safe]] [[nodiscard]] std::array<int, 4> get_background_color() const;
 
       public:
         [[thread_safe]] void hide();
@@ -56,10 +56,10 @@ namespace saucer
         [[thread_safe]] void set_decorations(bool enabled);
         [[thread_safe]] void set_title(const std::string &);
         [[thread_safe]] void set_always_on_top(bool enabled);
-        [[thread_safe]] void set_size(std::size_t width, std::size_t height);
-        [[thread_safe]] void set_max_size(std::size_t width, std::size_t height);
-        [[thread_safe]] void set_min_size(std::size_t width, std::size_t height);
-        [[thread_safe]] void set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a);
+        [[thread_safe]] void set_size(int width, int height);
+        [[thread_safe]] void set_max_size(int width, int height);
+        [[thread_safe]] void set_min_size(int width, int height);
+        [[thread_safe]] void set_background_color(int r, int g, int b, int a);
 
       public:
         [[thread_safe]] void clear(window_event event);
