@@ -84,7 +84,7 @@ namespace saucer
         using return_t = typename decltype(std::function(func))::result_type;
 
         std::promise<return_t> result;
-        auto event = new event_callback<return_t>(std::function(func), result);
+        auto *event = new event_callback<return_t>(std::function(func), result);
 
         // ? postEvent will automatically delete the event after processing.
         QApplication::postEvent(window, event);
