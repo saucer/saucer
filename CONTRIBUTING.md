@@ -14,6 +14,21 @@
 
 ----
 
+# Talk to us!
+
+Before starting to work on any patches please talk to use before hand.  
+This helps us prevent situations where you may want to implement a feature that is already in the works.  
+
+We're always grateful for your contributions :) We just want to make sure your hard work doesn't go to waste!
+
+<br/>
+<div align="center">
+  <a href="https://discord.gg/ndhmQE4225">
+    <img src="https://invidget.switchblade.xyz/ndhmQE4225" alt="Discord Invite"/>
+  </a>
+</div>
+<br/>
+
 # Semantic Commits
 
 Please always use [semantic commit messages](https://www.conventionalcommits.org/en/v1.0.0/), so that we can keep track of the changes more easily!
