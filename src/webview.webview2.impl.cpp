@@ -32,7 +32,7 @@ namespace saucer
 
         auto controller_created = [&](auto, ICoreWebView2Controller *webview_controller) {
             controller = webview_controller;
-            controller->get_CoreWebView2(&webview);
+            controller->get_CoreWebView2(&this->webview);
 
             return S_OK;
         };
@@ -95,7 +95,7 @@ namespace saucer
             wil::com_ptr<ICoreWebView2WebResourceRequest> request;
             args->get_Request(&request);
 
-            auto webview2 = webview.try_query<ICoreWebView2_2>();
+            auto webview2 = this->webview.try_query<ICoreWebView2_2>();
 
             if (!webview2)
             {
