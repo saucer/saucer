@@ -50,6 +50,8 @@ namespace saucer
             c_assert(impl::last_error());
         }
 
+        // TODO: set_process_dpi_awareness
+
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         impl::open_windows++;
     }

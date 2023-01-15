@@ -25,8 +25,13 @@ namespace saucer
         std::optional<EventRegistrationToken> event_token;
 
       public:
+        static const std::string inject_script;
         static constexpr std::string_view scheme_prefix = "https://saucer/";
         static constexpr std::wstring_view scheme_prefix_w = L"https://saucer/";
+
+      public:
+        void overwrite_wnd_proc(HWND hwnd);
+        void create_webview(HWND hwnd, const std::wstring &user_folder);
 
       public:
         static WNDPROC o_wnd_proc;

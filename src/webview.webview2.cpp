@@ -2,64 +2,118 @@
 #include "window.win32.impl.hpp"
 #include "webview.webview2.impl.hpp"
 
+#include <wil/win32_helpers.h>
+#include <filesystem>
 #include <regex>
-#include <shlwapi.h>
+#include <wrl.h>
 
 namespace saucer
 {
+    namespace fs = std::filesystem;
     using Microsoft::WRL::Callback;
-    webview::webview() : m_impl(std::make_unique<impl>())
+
+    webview::webview(const webview_options &options) : m_impl(std::make_unique<impl>())
     {
-        impl::original_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(window::m_impl->hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(impl::wnd_proc)));
-        m_impl->init_webview(window::m_impl->hwnd);
+        m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
+
+        window::m_impl->change_background = [&]() {
+            if (!m_impl->controller)
+            {
+                return;
+            }
+
+            auto controller2 = m_impl->controller.try_query<ICoreWebView2Controller2>();
+
+            if (!controller2)
+            {
+                return;
+            }
+
+            auto [r, g, b, a] = window::m_impl->background_color;
+
+            controller2->put_DefaultBackgroundColor(COREWEBVIEW2_COLOR{
+                static_cast<std::uint8_t>(a), //
+                static_cast<std::uint8_t>(r), //
+                static_cast<std::uint8_t>(g), //
+                static_cast<std::uint8_t>(b)  //
+            });
+        };
+
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+        std::wstring user_folder;
+        wil::GetEnvironmentVariableW(L"TEMP", user_folder);
+
+        if (options.persistent_cookies)
+        {
+            std::wstring appdata;
+            wil::GetEnvironmentVariableW(L"APPDATA", appdata);
+
+            auto path = fs::path{appdata} / "saucer";
+
+            if (!fs::exists(path))
+            {
+                fs::create_directories(path);
+            }
+
+            user_folder = path.wstring();
+        }
+
+        //? Ensure the WebView is created synchronously, may be easier in the future:
+        // https://github.com/MicrosoftEdge/WebView2Feedback/issues/740
+        m_impl->create_webview(window::m_impl->hwnd, user_folder);
+
+        while (!m_impl->webview)
+        {
+            window::run<false>();
+        }
+
+        // ? We disable the dev-tools explicitly as they're enabled by default on webview2.
+        set_dev_tools(false);
 
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
-        settings->put_AreDevToolsEnabled(false);
 
-        if (auto new_settings = settings.try_query<ICoreWebView2Settings3>(); new_settings)
+        // ? We disable the Accelerator-Keys because they should be disabled by default
+        if (auto settings3 = settings.try_query<ICoreWebView2Settings3>(); settings3)
         {
-            new_settings->put_AreBrowserAcceleratorKeysEnabled(false);
+            settings3->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
-        m_impl->webview->add_SourceChanged(Callback<ICoreWebView2SourceChangedEventHandler>([this](auto...) {
-                                               on_url_changed(get_url());
-                                               return S_OK;
-                                           }).Get(),
-                                           nullptr);
+        using source_changed = ICoreWebView2SourceChangedEventHandler;
+        auto url_changed = [&](auto...) { on_url_changed(get_url()); };
+        m_impl->webview->add_SourceChanged(Callback<source_changed>(url_changed).Get(), nullptr);
 
-        m_impl->webview->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](auto, auto *args) {
-                                                    LPWSTR message{};
-                                                    args->TryGetWebMessageAsString(&message);
-                                                    on_message(window::m_impl->narrow(message));
-                                                    return S_OK;
-                                                }).Get(),
-                                                nullptr);
+        using received_event = ICoreWebView2WebMessageReceivedEventHandler;
+        auto message_received = [&](auto, ICoreWebView2WebMessageReceivedEventArgs *args) {
+            LPWSTR message{};
+            args->TryGetWebMessageAsString(&message);
 
-        m_impl->webview->add_NavigationCompleted(Callback<ICoreWebView2NavigationCompletedEventHandler>([this](auto...) {
-                                                     for (const auto &script : m_impl->scripts_on_done)
-                                                     {
-                                                         run_java_script(script);
-                                                     }
-                                                     for (const auto &script : m_impl->scripts_once)
-                                                     {
-                                                         run_java_script(script);
-                                                     }
-                                                     m_impl->scripts_once.clear();
-                                                     return S_OK;
-                                                 }).Get(),
-                                                 nullptr);
+            on_message(window::m_impl->narrow(message));
+            return S_OK;
+        };
+        m_impl->webview->add_WebMessageReceived(Callback<received_event>(message_received).Get(), nullptr);
 
-        inject(R"(
-                            window.saucer = {
-                                async on_message(message) 
-                                {
-                                    window.chrome.webview.postMessage(message);
-                                }
-                            };
-                            window.saucer.on_message("js_ready");
-                            )",
-               load_time::creation);
+        using navigation_event = ICoreWebView2NavigationCompletedEventHandler;
+        auto navigation_completed = [&](auto...) {
+            for (const auto &script : m_impl->scripts_load)
+            {
+                run_java_script(script);
+            }
+
+            for (const auto &script : m_impl->scripts_once)
+            {
+                run_java_script(script);
+            }
+
+            m_impl->scripts_once.clear();
+            return S_OK;
+        };
+        m_impl->webview->add_NavigationCompleted(Callback<navigation_event>(navigation_completed).Get(), nullptr);
+
+        inject(impl::inject_script, load_time::creation);
+
+        CoUninitialize();
     }
 
     webview::~webview() = default;
@@ -87,7 +141,7 @@ namespace saucer
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
 
-        BOOL rtn{};
+        BOOL rtn{false};
         settings->get_AreDevToolsEnabled(&rtn);
 
         return static_cast<bool>(rtn);
@@ -99,14 +153,11 @@ namespace saucer
         {
             return window::m_impl->post_safe([this] { return get_url(); });
         }
+
         wil::unique_cotaskmem_string url;
         m_impl->webview->get_Source(&url);
-        return window::m_impl->narrow(url.get());
-    }
 
-    bool webview::get_transparent() const
-    {
-        return window::m_impl->transparency_enabled;
+        return window::m_impl->narrow(url.get());
     }
 
     bool webview::get_context_menu() const
@@ -119,15 +170,10 @@ namespace saucer
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
 
-        BOOL rtn{};
+        BOOL rtn{false};
         settings->get_AreDefaultContextMenusEnabled(&rtn);
 
         return static_cast<bool>(rtn);
-    }
-
-    void webview::serve_embedded(const std::string &file)
-    {
-        set_url(std::string{impl::scheme_prefix} + file);
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -141,10 +187,12 @@ namespace saucer
         m_impl->webview->get_Settings(&settings);
         settings->put_AreDevToolsEnabled(enabled);
 
-        if (enabled)
+        if (!enabled)
         {
-            m_impl->webview->OpenDevToolsWindow();
+            return;
         }
+
+        m_impl->webview->OpenDevToolsWindow();
     }
 
     void webview::set_context_menu(bool enabled)
@@ -153,8 +201,10 @@ namespace saucer
         {
             return window::m_impl->post_safe([=] { return set_context_menu(enabled); });
         }
+
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
+
         settings->put_AreDefaultContextMenusEnabled(enabled);
     }
 
@@ -164,90 +214,93 @@ namespace saucer
         {
             return window::m_impl->post_safe([=] { return set_url(url); });
         }
+
         m_impl->webview->Navigate(window::m_impl->widen(url).c_str());
     }
 
-    void webview::set_transparent(bool enabled, bool blur)
+    void webview::serve_embedded(const std::string &file)
     {
-        auto webview_controller2 = m_impl->webview_controller.try_query<ICoreWebView2Controller2>();
-        if (webview_controller2)
-        {
-            webview_controller2->put_DefaultBackgroundColor(enabled ? COREWEBVIEW2_COLOR{0, 0, 0, 0} : COREWEBVIEW2_COLOR{255, 255, 255, 255});
-        }
-        window::m_impl->enable_transparency(enabled, blur);
+        set_url(std::string{impl::scheme_prefix} + file);
     }
 
-    void webview::embed_files(std::map<const std::string, const embedded_file> &&files)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this, files = std::move(files)]() mutable { return embed_files(std::move(files)); });
-        }
+    // void webview::embed_files(std::map<const std::string, const embedded_file> &&files)
+    // {
+    // TODO: Make beautiful
+    //     if (!window::m_impl->is_thread_safe())
+    //     {
+    //         return window::m_impl->post_safe(
+    //             [this, files = std::move(files)]() mutable { return embed_files(std::move(files)); });
+    //     }
 
-        m_embedded_files.merge(files);
+    //     m_embedded_files.merge(files);
 
-        if (!m_impl->resource_requested_token)
-        {
-            m_impl->resource_requested_token = EventRegistrationToken{};
-            m_impl->webview->AddWebResourceRequestedFilter(std::wstring{std::wstring{impl::scheme_prefix_w} + L"*"}.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+    //     if (!m_impl->event_token)
+    //     {
+    //         m_impl->event_token = EventRegistrationToken{};
+    //         m_impl->webview->AddWebResourceRequestedFilter(
+    //             std::wstring{std::wstring{impl::scheme_prefix_w} + L"*"}.c_str(),
+    //             COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
-            m_impl->webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([this](auto, auto *args) {
-                                                          wil::com_ptr<ICoreWebView2WebResourceRequest> request;
-                                                          args->get_Request(&request);
+    //         m_impl->webview->add_WebResourceRequested(
+    //             Callback<ICoreWebView2WebResourceRequestedEventHandler>([this](auto, auto *args) {
+    //                 wil::com_ptr<ICoreWebView2WebResourceRequest> request;
+    //                 args->get_Request(&request);
 
-                                                          auto webview2 = m_impl->webview.try_query<ICoreWebView2_2>();
-                                                          if (webview2)
-                                                          {
-                                                              wil::com_ptr<ICoreWebView2Environment> env;
-                                                              webview2->get_Environment(&env);
+    //                 auto webview2 = m_impl->webview.try_query<ICoreWebView2_2>();
+    //                 if (webview2)
+    //                 {
+    //                     wil::com_ptr<ICoreWebView2Environment> env;
+    //                     webview2->get_Environment(&env);
 
-                                                              LPWSTR raw_url{};
-                                                              request->get_Uri(&raw_url);
-                                                              auto url = window::m_impl->narrow(raw_url);
+    //                     LPWSTR raw_url{};
+    //                     request->get_Uri(&raw_url);
+    //                     auto url = window::m_impl->narrow(raw_url);
 
-                                                              // TODO(webview2): Windows does not seem to offer any methods that are *as easy* as QUri
-                                                              std::smatch match;
-                                                              std::regex_search(url, match, std::regex{R"(^(https:\/?\/?[^:\/\s]+(\/\w+)*\/[\w\-\.]+[^#?\s]+))"});
+    //                     // TODO(webview2): Windows does not seem to offer any methods that are *as easy* as QUri
+    //                     std::smatch match;
+    //                     std::regex_search(url, match,
+    //                                       std::regex{R"(^(https:\/?\/?[^:\/\s]+(\/\w+)*\/[\w\-\.]+[^#?\s]+))"});
 
-                                                              url = match[1];
+    //                     url = match[1];
 
-                                                              if (url.size() > impl::scheme_prefix.size())
-                                                              {
-                                                                  url = url.substr(impl::scheme_prefix.size());
+    //                     if (url.size() > impl::scheme_prefix.size())
+    //                     {
+    //                         url = url.substr(impl::scheme_prefix.size());
 
-                                                                  if (m_embedded_files.count(url))
-                                                                  {
-                                                                      const auto &file = m_embedded_files.at(url);
+    //                         if (m_embedded_files.count(url))
+    //                         {
+    //                             const auto &file = m_embedded_files.at(url);
 
-                                                                      wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                                                                      wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
-                                                                      env->CreateWebResourceResponse(data.get(), 200, L"OK", window::m_impl->widen("Content-Type: " + file.mime).c_str(),
-                                                                                                     &response);
+    //                             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+    //                             wil::com_ptr<IStream> data = SHCreateMemStream(file.data,
+    //                             static_cast<UINT>(file.size)); env->CreateWebResourceResponse(
+    //                                 data.get(), 200, L"OK", window::m_impl->widen("Content-Type: " +
+    //                                 file.mime).c_str(), &response);
 
-                                                                      args->put_Response(response.get());
-                                                                  }
-                                                                  else
-                                                                  {
-                                                                      wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                                                                      env->CreateWebResourceResponse(nullptr, 404, L"Not found", L"", &response);
+    //                             args->put_Response(response.get());
+    //                         }
+    //                         else
+    //                         {
+    //                             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+    //                             env->CreateWebResourceResponse(nullptr, 404, L"Not found", L"", &response);
 
-                                                                      args->put_Response(response.get());
-                                                                  }
-                                                              }
-                                                              else
-                                                              {
-                                                                  wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                                                                  env->CreateWebResourceResponse(nullptr, 500, L"Bad request", L"", &response);
+    //                             args->put_Response(response.get());
+    //                         }
+    //                     }
+    //                     else
+    //                     {
+    //                         wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+    //                         env->CreateWebResourceResponse(nullptr, 500, L"Bad request", L"", &response);
 
-                                                                  args->put_Response(response.get());
-                                                              }
-                                                          }
+    //                         args->put_Response(response.get());
+    //                     }
+    //                 }
 
-                                                          return S_OK;
-                                                      }).Get(),
-                                                      &*m_impl->resource_requested_token);
-        }
-    }
+    //                 return S_OK;
+    //             }).Get(),
+    //             &*m_impl->event_token);
+    //     }
+    // }
 
     void webview::clear_scripts()
     {
@@ -256,12 +309,13 @@ namespace saucer
             return window::m_impl->post_safe([this] { return clear_scripts(); });
         }
 
-        for (const auto &script : m_impl->injected_scripts)
+        for (const auto &script : m_impl->injected)
         {
             m_impl->webview->RemoveScriptToExecuteOnDocumentCreated(script);
         }
-        m_impl->injected_scripts.clear();
-        m_impl->scripts_on_done.clear();
+
+        m_impl->injected.clear();
+        m_impl->scripts_load.clear();
     }
 
     void webview::clear_embedded()
@@ -273,13 +327,16 @@ namespace saucer
 
         m_embedded_files.clear();
 
-        if (m_impl->resource_requested_token)
+        if (!m_impl->event_token)
         {
-            m_impl->webview->remove_WebResourceRequested(*m_impl->resource_requested_token);
-            m_impl->webview->RemoveWebResourceRequestedFilter(L"https://saucer/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
-
-            m_impl->resource_requested_token.reset();
+            return;
         }
+
+        // NOLINTNEXTLINE
+        m_impl->webview->remove_WebResourceRequested(*m_impl->event_token);
+        m_impl->webview->RemoveWebResourceRequestedFilter(L"https://saucer/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+
+        m_impl->event_token.reset();
     }
 
     void webview::run_java_script(const std::string &java_script)
@@ -292,11 +349,10 @@ namespace saucer
         if (!m_impl->is_ready)
         {
             m_impl->scripts_once.emplace_back(java_script);
+            return;
         }
-        else
-        {
-            m_impl->webview->ExecuteScript(window::m_impl->widen(java_script).c_str(), nullptr);
-        }
+
+        m_impl->webview->ExecuteScript(window::m_impl->widen(java_script).c_str(), nullptr);
     }
 
     void webview::inject(const std::string &java_script, const load_time &load_time)
@@ -308,16 +364,19 @@ namespace saucer
 
         if (load_time == load_time::creation)
         {
-            m_impl->webview->AddScriptToExecuteOnDocumentCreated(window::m_impl->widen(java_script).c_str(),
-                                                                 Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>([this](HRESULT, LPCWSTR id) {
-                                                                     m_impl->injected_scripts.emplace_back(id);
-                                                                     return S_OK;
-                                                                 }).Get());
+            // TODO: Make beautiful
+            m_impl->webview->AddScriptToExecuteOnDocumentCreated(
+                window::m_impl->widen(java_script).c_str(),
+                Microsoft::WRL::Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>(
+                    [this](HRESULT, LPCWSTR id) {
+                        m_impl->injected.emplace_back(id);
+                        return S_OK;
+                    })
+                    .Get());
+            return;
         }
-        else
-        {
-            m_impl->scripts_on_done.emplace_back(java_script);
-        }
+
+        m_impl->scripts_load.emplace_back(java_script);
     }
 
     void webview::clear(web_event event)

@@ -73,6 +73,7 @@ namespace saucer
 
         std::string out(size, 0);
         WideCharToMultiByte(CP_UTF8, 0, w_str.c_str(), -1, out.data(), size, nullptr, nullptr);
+
         return out;
     }
 
