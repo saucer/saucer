@@ -81,8 +81,8 @@ namespace saucer
         auto title_length = GetWindowTextLengthW(m_impl->hwnd);
         auto *title = new WCHAR[title_length];
 
-        GetWindowTextW(m_impl->hwnd, title, 256);
-        auto rtn = impl::narrow(title);
+        GetWindowTextW(m_impl->hwnd, title, title_length);
+        auto rtn = narrow(title);
 
         delete[] title;
         return rtn;
