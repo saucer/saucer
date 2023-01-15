@@ -81,7 +81,7 @@ namespace saucer
             return m_impl->post_safe([this] { return get_title(); });
         }
 
-        auto title_length = GetWindowTextLengthW(m_impl->hwnd);
+        auto title_length = GetWindowTextLengthW(m_impl->hwnd) + 1;
         auto *title = new WCHAR[title_length];
 
         GetWindowTextW(m_impl->hwnd, title, title_length);
