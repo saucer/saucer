@@ -77,7 +77,7 @@ namespace saucer
         return m_impl->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
     }
 
-    std::pair<std::size_t, std::size_t> window::get_size() const
+    std::array<int, 2> window::get_size() const
     {
         if (!m_impl->is_thread_safe())
         {
@@ -87,7 +87,7 @@ namespace saucer
         return {m_impl->window->width(), m_impl->window->height()};
     }
 
-    std::pair<std::size_t, std::size_t> window::get_max_size() const
+    std::array<int, 2> window::get_max_size() const
     {
         if (!m_impl->is_thread_safe())
         {
@@ -97,7 +97,7 @@ namespace saucer
         return {m_impl->window->maximumWidth(), m_impl->window->maximumHeight()};
     }
 
-    std::pair<std::size_t, std::size_t> window::get_min_size() const
+    std::array<int, 2> window::get_min_size() const
     {
         if (!m_impl->is_thread_safe())
         {
@@ -107,12 +107,10 @@ namespace saucer
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
     }
 
-    std::array<std::size_t, 4> window::get_background_color() const
+    std::array<int, 4> window::get_background_color() const
     {
         const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
-
-        return {static_cast<unsigned long>(color.red()), static_cast<unsigned long>(color.green()),
-                static_cast<unsigned long>(color.blue()), static_cast<unsigned long>(color.alpha())};
+        return {color.red(), color.green(), color.blue(), color.alpha()};
     }
 
     void window::hide()
@@ -201,42 +199,41 @@ namespace saucer
         m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
     }
 
-    void window::set_size(std::size_t width, std::size_t height)
+    void window::set_size(int width, int height)
     {
         if (!m_impl->is_thread_safe())
         {
             return m_impl->post_safe([=] { return set_size(width, height); });
         }
 
-        m_impl->window->resize(static_cast<int>(width), static_cast<int>(height));
+        m_impl->window->resize(width, height);
     }
 
-    void window::set_max_size(std::size_t width, std::size_t height)
+    void window::set_max_size(int width, int height)
     {
         if (!m_impl->is_thread_safe())
         {
             return m_impl->post_safe([=] { return set_max_size(width, height); });
         }
 
-        m_impl->window->setMaximumSize(static_cast<int>(width), static_cast<int>(height));
+        m_impl->window->setMaximumSize(width, height);
         m_impl->max_size = m_impl->window->maximumSize();
     }
 
-    void window::set_min_size(std::size_t width, std::size_t height)
+    void window::set_min_size(int width, int height)
     {
         if (!m_impl->is_thread_safe())
         {
             return m_impl->post_safe([=] { return set_min_size(width, height); });
         }
 
-        m_impl->window->setMinimumSize(static_cast<int>(width), static_cast<int>(height));
+        m_impl->window->setMinimumSize(width, height);
         m_impl->min_size = m_impl->window->minimumSize();
     }
 
-    void window::set_background_color(std::size_t r, std::size_t g, std::size_t b, std::size_t a)
+    void window::set_background_color(int r, int g, int b, int a)
     {
-        auto color = QColor(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
-
+        auto color = QColor(r, g, b, a);
         auto palette = m_impl->window->palette();
         palette.setColor(QPalette::ColorRole::Window, color);
 
