@@ -3,6 +3,7 @@
 #include "window.win32.impl.hpp"
 
 #include <winuser.h>
+#include <fmt/format.h>
 #include <VersionHelpers.h>
 
 namespace saucer
@@ -25,7 +26,7 @@ namespace saucer
             wnd_class.lpfnWndProc = m_impl->wnd_proc;
 
             if (!RegisterClassW(&wnd_class))
-            {
+                c_assert(fmt::format("RegisterClassW() failed: {}", last_error()));
                 c_assert(impl::last_error());
             }
         }
@@ -47,7 +48,7 @@ namespace saucer
 
         if (!m_impl->hwnd)
         {
-            c_assert(impl::last_error());
+            c_assert(fmt::format("CreateWindowExW() failed: {}", last_error()));
         }
 
         // TODO: set_process_dpi_awareness
