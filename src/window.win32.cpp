@@ -60,6 +60,7 @@ namespace saucer
 
     window::~window()
     {
+        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(nullptr));
         DestroyWindow(m_impl->hwnd);
     }
 
@@ -175,7 +176,7 @@ namespace saucer
             return m_impl->post_safe([this] { close(); });
         }
 
-        DestroyWindow(m_impl->hwnd);
+        PostQuitMessage(0);
     }
 
     void window::set_resizable(bool enabled)
