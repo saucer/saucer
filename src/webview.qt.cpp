@@ -87,7 +87,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([&] { return get_url(); });
+            return window::m_impl->post_safe([this] { return get_url(); });
         }
 
         return m_impl->web_view->url().toString().toStdString();
