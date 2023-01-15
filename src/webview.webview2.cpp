@@ -86,7 +86,7 @@ namespace saucer
         wil::com_ptr<ICoreWebView2Settings> settings;
         m_impl->webview->get_Settings(&settings);
 
-        // ? We disable the Accelerator-Keys because they should be disabled by default
+        // ? We disable the Accelerator-Keys because they should be disabled by default.
         if (auto settings3 = settings.try_query<ICoreWebView2Settings3>(); settings3)
         {
             settings3->put_AreBrowserAcceleratorKeysEnabled(false);
