@@ -6,7 +6,7 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # --------------------------------------------------------------------------------------------------------
 
 if (MSVC AND MSVC_TOOLSET_VERSION LESS 143)
-    message(WARNING "[Saucer] MSVC Toolsets below 14.3 are not supported by saucer")
+    message(WARNING "[Saucer] MSVC Toolsets below 14.3 are not supported")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -124,11 +124,12 @@ endif()
 
 if (saucer_backend STREQUAL "WebView2")
     target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.cpp" "src/webview.webview2.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.impl.cpp" "src/webview.webview2.impl.cpp" "src/utils.win32.cpp")
 
     option(WIL_BUILD_TESTS     "" OFF)
     option(WIL_BUILD_PACKAGING "" OFF)
 
-    add_dependency(wil URL "https://github.com/microsoft/wil" TAG 5f4caba)
+    add_dependency(wil URL "https://github.com/microsoft/wil" TAG master)
     target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} WIL::WIL Shlwapi)
 
     if (saucer_remote_webview2)
