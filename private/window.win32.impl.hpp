@@ -4,7 +4,6 @@
 #include <array>
 #include <thread>
 #include <future>
-#include <optional>
 #include <Windows.h>
 
 namespace saucer
@@ -37,17 +36,13 @@ namespace saucer
         static std::atomic<std::size_t> open_windows;
 
       public:
-        static std::string last_error();
-        static std::wstring widen(const std::string &);
-        static std::string narrow(const std::wstring &);
-
-      public:
+        static void set_dpi_awareness();
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
     struct message
     {
-        virtual ~message();
+        virtual ~message() = default;
     };
 
     template <typename Return> class safe_message : public message
@@ -85,6 +80,7 @@ namespace saucer
 
         // ? the WndProc will delete the message after processing.
         PostMessage(hwnd, WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
+
         return result.get_future().get();
     }
 } // namespace saucer

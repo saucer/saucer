@@ -1,7 +1,6 @@
 #pragma once
 #include "webview.hpp"
 
-#include <optional>
 #include <wil/com.h>
 #include <WebView2.h>
 #include <string_view>
@@ -14,15 +13,16 @@ namespace saucer
         wil::com_ptr<ICoreWebView2Controller> controller;
 
       public:
-        bool is_ready{false};
-
-      public:
         std::vector<LPCWSTR> injected;
         std::vector<std::string> scripts_once;
         std::vector<std::string> scripts_load;
 
       public:
-        std::optional<EventRegistrationToken> event_token;
+        WNDPROC o_wnd_proc;
+        std::unique_ptr<EventRegistrationToken> event_token;
+
+      public:
+        bool is_ready{false};
 
       public:
         static const std::string inject_script;
@@ -30,11 +30,13 @@ namespace saucer
         static constexpr std::wstring_view scheme_prefix_w = L"https://saucer/";
 
       public:
-        void overwrite_wnd_proc(HWND hwnd);
         void create_webview(HWND hwnd, const std::wstring &user_folder);
 
       public:
-        static WNDPROC o_wnd_proc;
+        void overwrite_wnd_proc(HWND hwnd);
+        void install_scheme_handler(class webview &);
+
+      public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer
