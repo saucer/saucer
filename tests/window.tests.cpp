@@ -23,19 +23,19 @@ TEST_CASE("Window functionality is tested", "[window]")
     REQUIRE(!window.get_decorations());
 
     window.set_background_color(255, 0, 0, 255);
-    REQUIRE(window.get_background_color() == std::array<std::size_t, 4>{255, 0, 0, 255});
+    REQUIRE(window.get_background_color() == std::array<int, 4>{255, 0, 0, 255});
 
     window.set_title("Hello World!");
     REQUIRE(window.get_title() == "Hello World!");
 
     window.set_max_size(100, 100);
-    REQUIRE(window.get_max_size() == std::pair<std::size_t, std::size_t>(100, 100));
+    REQUIRE(window.get_max_size() == std::array<int, 2>{100, 100});
 
     window.set_min_size(50, 50);
-    REQUIRE(window.get_min_size() == std::pair<std::size_t, std::size_t>(50, 50));
+    REQUIRE(window.get_min_size() == std::array<int, 2>{50, 50});
 
     window.set_size(70, 70);
-    REQUIRE(window.get_size() == std::pair<std::size_t, std::size_t>(70, 70));
+    REQUIRE(window.get_size() == std::array<int, 2>{70, 70});
 
     //! Hide & Show require platform specifc code.
     //! On Close requires user input
@@ -53,13 +53,13 @@ TEST_CASE("Window functionality is tested", "[window]")
                 std::this_thread::sleep_for(std::chrono::seconds(2));
 
                 window.set_size(60, 60);
-                REQUIRE(window.get_size() == std::pair<std::size_t, std::size_t>(60, 60));
+                REQUIRE(window.get_size() == std::array<int, 2>{60, 60});
 
                 window.set_max_size(200, 200);
-                REQUIRE(window.get_max_size() == std::pair<std::size_t, std::size_t>(200, 200));
+                REQUIRE(window.get_max_size() == std::array<int, 2>{200, 200});
 
                 window.set_min_size(0, 0);
-                REQUIRE(window.get_min_size() == std::pair<std::size_t, std::size_t>(0, 0));
+                REQUIRE(window.get_min_size() == std::array<int, 2>{0, 0});
 
                 window.set_decorations(true);
                 REQUIRE(window.get_decorations());
