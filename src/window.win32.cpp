@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include "utils.win32.hpp"
 #include "utils/assert.hpp"
 #include "window.win32.impl.hpp"
 
@@ -26,8 +27,8 @@ namespace saucer
             wnd_class.lpfnWndProc = m_impl->wnd_proc;
 
             if (!RegisterClassW(&wnd_class))
+            {
                 c_assert(fmt::format("RegisterClassW() failed: {}", last_error()));
-                c_assert(impl::last_error());
             }
         }
 
@@ -51,7 +52,7 @@ namespace saucer
             c_assert(fmt::format("CreateWindowExW() failed: {}", last_error()));
         }
 
-        // TODO: set_process_dpi_awareness
+        impl::set_dpi_awareness();
 
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         impl::open_windows++;
@@ -206,7 +207,7 @@ namespace saucer
             return m_impl->post_safe([=] { return set_title(title); });
         }
 
-        SetWindowTextW(m_impl->hwnd, impl::widen(title).c_str());
+        SetWindowTextW(m_impl->hwnd, widen(title).c_str());
     }
 
     void window::set_decorations(bool enabled)

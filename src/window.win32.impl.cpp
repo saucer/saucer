@@ -22,62 +22,28 @@ namespace saucer
         return creation_thread == std::this_thread::get_id();
     }
 
-    std::string window::impl::last_error()
+    void window::impl::set_dpi_awareness()
     {
-        auto error = GetLastError();
 
-        if (!error)
+        auto *shcore = LoadLibraryW(L"Shcore.dll");
+        auto set_process_dpi_awareness = GetProcAddress(shcore, "SetProcessDpiAwareness");
+
+        if (set_process_dpi_awareness)
         {
-            return "<No Error>";
+            reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(set_process_dpi_awareness)(2);
+            return;
         }
 
-        constexpr DWORD dw_flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | //
-                                   FORMAT_MESSAGE_FROM_SYSTEM |     //
-                                   FORMAT_MESSAGE_IGNORE_INSERTS;
+        auto *user32 = LoadLibraryW(L"user32.dll");
+        auto set_process_dpi_aware = GetProcAddress(user32, "SetProcessDPIAware");
 
-        LPWSTR buffer{};
-        auto lang_id = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
-        auto size = FormatMessageW(dw_flags, nullptr, error, lang_id, reinterpret_cast<LPWSTR>(&buffer), 0, nullptr);
-
-        auto message = narrow(std::wstring{buffer, size});
-        LocalFree(buffer);
-
-        return message;
-    }
-
-    inline std::wstring window::impl::widen(const std::string &str)
-    {
-        auto size = MultiByteToWideChar(65001, 0, str.c_str(), -1, nullptr, 0);
-
-        if (!size)
+        if (set_process_dpi_aware)
         {
-            return {};
+            reinterpret_cast<bool(CALLBACK *)()>(set_process_dpi_aware)();
         }
-
-        std::wstring out(size, 0);
-        MultiByteToWideChar(65001, 0, str.c_str(), -1, out.data(), size);
-
-        out.resize(size - 1);
-        return out;
     }
 
-    inline std::string window::impl::narrow(const std::wstring &w_str)
-    {
-        auto size = WideCharToMultiByte(65001, 0, w_str.c_str(), static_cast<int>(w_str.length()), nullptr, 0, nullptr,
-                                        nullptr);
-
-        if (!size)
-        {
-            return {};
-        }
-
-        std::string out(size, 0);
-        WideCharToMultiByte(CP_UTF8, 0, w_str.c_str(), -1, out.data(), size, nullptr, nullptr);
-
-        return out;
-    }
-
-    inline LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto *window = reinterpret_cast<class window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
