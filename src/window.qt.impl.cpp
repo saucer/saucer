@@ -4,8 +4,6 @@
 
 namespace saucer
 {
-    QApplication *window::impl::application;
-
     window::impl::main_window::main_window(class window *parent) : m_parent(parent) {}
 
     void window::impl::main_window::closeEvent(QCloseEvent *event)

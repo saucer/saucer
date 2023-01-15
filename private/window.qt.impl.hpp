@@ -30,9 +30,6 @@ namespace saucer
 
       public:
         template <typename Func> auto post_safe(Func &&);
-
-      public:
-        static QApplication *application;
     };
 
     class window::impl::main_window : public QMainWindow

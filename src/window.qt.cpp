@@ -7,9 +7,10 @@ namespace saucer
     window::window() : m_impl(std::make_unique<impl>())
     {
         static int argc{1};
+        static QApplication *application;
         static std::vector<char *> argv{strdup("")};
 
-        if (!m_impl->application)
+        if (!application)
         {
             qputenv("QT_LOGGING_RULES", "*=false");
 
@@ -18,7 +19,7 @@ namespace saucer
 #endif
 
             argc = static_cast<int>(argv.size());
-            m_impl->application = new QApplication(argc, argv.data());
+            application = new QApplication(argc, argv.data());
         }
 
         m_impl->window = new impl::main_window(this);
