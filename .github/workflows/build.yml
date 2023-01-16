@@ -4,7 +4,7 @@ on:
     branches: ["**"]
     paths-ignore:
       - "**/*.md"
-      - "**/*.yml"
+      - "**/test.*.yml"
 
 name: Build Libraries
 jobs:
