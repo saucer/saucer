@@ -46,10 +46,10 @@ namespace saucer
         Q_OBJECT
 
       private:
-        webview *m_parent;
+        webview &m_parent;
 
       public:
-        web_class(webview *);
+        web_class(webview &);
 
       public slots:
         void on_message(const QString &);
@@ -58,10 +58,10 @@ namespace saucer
     class webview::impl::url_scheme_handler : public QWebEngineUrlSchemeHandler
     {
       private:
-        webview *m_parent;
+        webview &m_parent;
 
       public:
-        url_scheme_handler(webview *);
+        url_scheme_handler(webview &);
 
       public:
         void requestStarted(QWebEngineUrlRequestJob *) override;

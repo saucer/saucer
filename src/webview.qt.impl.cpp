@@ -38,15 +38,15 @@ namespace saucer
             )js";
     }();
 
-    webview::impl::web_class::web_class(webview *parent) : QObject(parent->m_impl->web_view), m_parent(parent) {}
+    webview::impl::web_class::web_class(webview &parent) : QObject(parent.m_impl->web_view), m_parent(parent) {}
 
     void webview::impl::web_class::on_message(const QString &message)
     {
-        m_parent->on_message(message.toStdString());
+        m_parent.on_message(message.toStdString());
     }
 
-    webview::impl::url_scheme_handler::url_scheme_handler(webview *parent)
-        : QWebEngineUrlSchemeHandler(parent->m_impl->web_view), m_parent(parent)
+    webview::impl::url_scheme_handler::url_scheme_handler(webview &parent)
+        : QWebEngineUrlSchemeHandler(parent.m_impl->web_view), m_parent(parent)
     {
     }
 
@@ -62,13 +62,13 @@ namespace saucer
 
         url = url.substr(scheme_prefix.size());
 
-        if (!m_parent->m_embedded_files.count(url))
+        if (!m_parent.m_embedded_files.count(url))
         {
             request->fail(QWebEngineUrlRequestJob::UrlNotFound);
             return;
         }
 
-        const auto &file = m_parent->m_embedded_files.at(url);
+        const auto &file = m_parent.m_embedded_files.at(url);
 
         auto *buffer = new QBuffer;
 

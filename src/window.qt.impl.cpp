@@ -4,11 +4,11 @@
 
 namespace saucer
 {
-    window::impl::main_window::main_window(class window *parent) : m_parent(parent) {}
+    window::impl::main_window::main_window(class window &parent) : m_parent(parent) {}
 
     void window::impl::main_window::closeEvent(QCloseEvent *event)
     {
-        for (const auto &result : m_parent->m_events.at<window_event::close>().fire())
+        for (const auto &result : m_parent.m_events.at<window_event::close>().fire())
         {
             if (result)
             {
@@ -17,11 +17,11 @@ namespace saucer
             }
         }
 
-        m_parent->m_events.at<window_event::closed>().fire();
+        m_parent.m_events.at<window_event::closed>().fire();
 
-        if (m_parent->m_impl->on_closed)
+        if (m_parent.m_impl->on_closed)
         {
-            m_parent->m_impl->on_closed();
+            m_parent.m_impl->on_closed();
         }
 
         QMainWindow::closeEvent(event);
@@ -29,7 +29,7 @@ namespace saucer
 
     void window::impl::main_window::resizeEvent(QResizeEvent *event)
     {
-        m_parent->m_events.at<window_event::resize>().fire(width(), height());
+        m_parent.m_events.at<window_event::resize>().fire(width(), height());
         QMainWindow::resizeEvent(event);
     }
 

@@ -35,10 +35,10 @@ namespace saucer
     class window::impl::main_window : public QMainWindow
     {
       private:
-        class window *m_parent;
+        class window &m_parent;
 
       public:
-        main_window(class window *parent);
+        main_window(class window &parent);
 
       public:
         void closeEvent(QCloseEvent *event) override;
