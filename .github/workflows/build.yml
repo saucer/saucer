@@ -24,15 +24,18 @@ jobs:
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt5-base qt5-webchannel qt5-webengine"
 
       - name: Compile [Release, Asserts, Modules]
-        run: "mkdir build && cd build && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=Qt5 && cmake --build . --config Release"
+        run: |
+             mkdir build && cd build
+             && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=Qt5 -Dsaucer_package_all=ON 
+             && cmake --build . --config Release 
+             && cmake --install . --prefix 'saucer_export'
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: saucer.qt5
           path: |
-            build/libsaucer.a
-            include/
+            build/saucer_export
 
   build-qt6:
     runs-on: ubuntu-latest
@@ -50,15 +53,18 @@ jobs:
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
 
       - name: Compile [Release, Asserts, Modules]
-        run: "mkdir build && cd build && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
+        run: |
+             mkdir build && cd build 
+             && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=Qt6 -Dsaucer_package_all=ON 
+             && cmake --build . --config Release
+             && cmake --install . --prefix 'saucer_export'
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: saucer.qt6
           path: |
-            build/libsaucer.a
-            include/
+            build/saucer_export
 
   build-webview2:
     runs-on: windows-2022
@@ -72,12 +78,15 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Compile [Release, Asserts, Modules]
-        run: "mkdir build && cd build && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 && cmake --build . --config Release"
+        run: |
+             mkdir build && cd build 
+             && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
+             && cmake --build . --config Release
+             && cmake --install . --prefix 'saucer_export'
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: saucer.webview2
           path: |
-            build/Release/saucer.lib
-            include/
+            build/saucer_export
