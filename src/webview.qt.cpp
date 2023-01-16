@@ -48,16 +48,21 @@ namespace saucer
         m_impl->channel_obj = new impl::web_class(*this);
         m_impl->web_channel->registerObject("saucer", m_impl->channel_obj);
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted,
-                                  [this]() { m_impl->is_ready = false; });
+        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted, [this]() { //
+            m_impl->is_ready = false;
+        });
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished,
-                                  [this]() { m_impl->is_ready = true; });
+        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished, [this]() { //
+            m_impl->is_ready = true;
+        });
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged,
-                                  [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
+        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged, [this](const QUrl &url) { //
+            on_url_changed(url.toString().toStdString());
+        });
 
-        window::m_impl->on_closed = [this] { set_dev_tools(false); };
+        window::m_impl->on_closed = [this] { //
+            set_dev_tools(false);
+        };
 
         inject(impl::inject_script, load_time::creation);
 
@@ -65,7 +70,7 @@ namespace saucer
         m_impl->web_view->show();
     }
 
-    // ? The window destructor will delete the web_view
+    // ? The window destructor will implicitly delete the web_view
     webview::~webview() = default;
 
     void webview::on_url_changed(const std::string &url)
