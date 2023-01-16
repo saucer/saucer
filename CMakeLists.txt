@@ -13,14 +13,15 @@ endif()
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_tests             "Build tests"                                OFF)
-option(saucer_assert            "Enable asserts"                              ON)
-option(saucer_wrapper           "Build C-Wrapper"                            OFF)
-option(saucer_examples          "Build examples"                             OFF)
-option(saucer_modules           "Enable modules"                             OFF)
-option(saucer_smartview         "Enable the smartview"                        ON)
-option(saucer_prefer_remote     "Prefer remote packages over local packages"  ON)
-option(saucer_remote_webview2   "Acquire WebView2 through Nughet"             ON)
+option(saucer_tests             "Build tests"                                      OFF)
+option(saucer_assert            "Enable asserts"                                    ON)
+option(saucer_wrapper           "Build C-Wrapper"                                  OFF)
+option(saucer_examples          "Build examples"                                   OFF)
+option(saucer_modules           "Enable modules"                                   OFF)
+option(saucer_smartview         "Enable the smartview"                              ON)
+option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
+option(saucer_package_all       "Add all required dependencies to install target"   ON)
+option(saucer_remote_webview2   "Acquire WebView2 through Nughet"                   ON)
 
 set(saucer_webview2_version "1.0.1462.37" CACHE STRING "The WebView2 version to use")
 
@@ -169,11 +170,20 @@ add_dependency(fmt      URL "https://github.com/fmtlib/fmt"       TAG 9.1.0)
 target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis fmt::fmt)
 
 # --------------------------------------------------------------------------------------------------------
-# Install Targets
+# Install Target
 # --------------------------------------------------------------------------------------------------------
 
 install(DIRECTORY "include/" TYPE INCLUDE)
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib INCLUDES DESTINATION include)
+install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+
+# Some targets do not get included to the export dir automatically, so we add them manually here.
+
+if (saucer_package_all)
+    install(TARGETS fmt DESTINATION lib OPTIONAL)
+    install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
+    install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
+    install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Tests and Examples
