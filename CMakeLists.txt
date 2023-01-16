@@ -14,13 +14,13 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_tests             "Build tests"                                      OFF)
-option(saucer_assert            "Enable asserts"                                    ON)
+option(saucer_assert            "Enable asserts"                                   OFF)
 option(saucer_wrapper           "Build C-Wrapper"                                  OFF)
 option(saucer_examples          "Build examples"                                   OFF)
 option(saucer_modules           "Enable modules"                                   OFF)
 option(saucer_smartview         "Enable the smartview"                              ON)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
-option(saucer_package_all       "Add all required dependencies to install target"   ON)
+option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_remote_webview2   "Acquire WebView2 through Nughet"                   ON)
 
 set(saucer_webview2_version "1.0.1462.37" CACHE STRING "The WebView2 version to use")
