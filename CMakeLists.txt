@@ -159,13 +159,14 @@ if (saucer_smartview)
     add_dependency(nlohmann_json         URL "https://github.com/nlohmann/json/"           TAG  v3.11.2)
     add_dependency(boost_callable_traits URL "https://github.com/boostorg/callable_traits" TAG  2a56a3a)
     add_dependency(tl-expected           URL "https://github.com/TartanLlama/expected"     TAG  b74fecd)
-    add_dependency(fmt                   URL "https://github.com/fmtlib/fmt"               TAG    9.1.0)
         
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected fmt::fmt Boost::callable_traits lockpp::lockpp)
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected Boost::callable_traits lockpp::lockpp)
 endif()
 
 add_dependency(ereignis URL "https://github.com/Soundux/ereignis" TAG v1.1 HEADER "ereignis/event.hpp" LIB_NAME soundux::ereignis)
-target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis)
+add_dependency(fmt      URL "https://github.com/fmtlib/fmt"       TAG 9.1.0)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis fmt::fmt)
 
 # --------------------------------------------------------------------------------------------------------
 # Install Targets
