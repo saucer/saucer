@@ -2,7 +2,7 @@
 #include "smartview.hpp"
 #include "constants.hpp"
 
-#include <fmt/format.h>
+#include <fmt/core.h>
 
 namespace saucer
 {

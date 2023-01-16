@@ -4,8 +4,8 @@
 #include <wrl.h>
 #include <regex>
 #include <Shlwapi.h>
+#include <fmt/core.h>
 #include <fmt/xchar.h>
-#include <fmt/format.h>
 #include <wil/win32_helpers.h>
 
 namespace saucer

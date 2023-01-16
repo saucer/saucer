@@ -4,7 +4,7 @@
 #include "window.win32.impl.hpp"
 
 #include <winuser.h>
-#include <fmt/format.h>
+#include <fmt/core.h>
 #include <VersionHelpers.h>
 
 namespace saucer

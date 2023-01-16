@@ -2,7 +2,7 @@
 #include "window.qt.impl.hpp"
 #include "webview.qt.impl.hpp"
 
-#include <fmt/format.h>
+#include <fmt/core.h>
 #include <QWebEngineScript>
 #include <QWebEngineProfile>
 #include <QWebEngineUrlScheme>

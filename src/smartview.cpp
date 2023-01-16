@@ -2,7 +2,7 @@
 #include "smartview.hpp"
 #include "serializers/serializer.hpp"
 
-#include <fmt/format.h>
+#include <fmt/core.h>
 
 namespace saucer
 {

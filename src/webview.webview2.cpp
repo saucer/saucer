@@ -6,8 +6,8 @@
 #include <regex>
 #include <wrl.h>
 #include <filesystem>
+#include <fmt/core.h>
 #include <fmt/xchar.h>
-#include <fmt/format.h>
 #include <wil/win32_helpers.h>
 
 namespace saucer

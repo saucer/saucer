@@ -3,9 +3,9 @@
 #include "../smartview.hpp"
 
 #include <variant>
+#include <fmt/core.h>
 #include <fmt/args.h>
 #include <type_traits>
-#include <fmt/format.h>
 #include <boost/callable_traits.hpp>
 
 namespace saucer::serializers
