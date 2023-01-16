@@ -105,6 +105,7 @@ set(saucer_conditional_linkage PRIVATE)
 
 if (saucer_modules)
     set(saucer_conditional_linkage PUBLIC)
+    message(STATUS "[Saucer] Conditional Linkage is set to PUBLIC")
 endif()
 
 if (saucer_backend MATCHES "^Qt.$")
