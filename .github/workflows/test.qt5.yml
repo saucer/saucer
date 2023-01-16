@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
 
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb"

@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
 
       # We need to downgrade because qt6 has a critical bug that breaks CI Testing: https://bugreports.qt.io/browse/QTBUG-104423
 
