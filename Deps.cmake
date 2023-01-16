@@ -6,7 +6,7 @@ include(FetchContent)
 # Since "OVERRIDE_FIND_PACKAGE" causes issues with some CMake versions
 # we use this function instead. 
 
-function(add_dependency)
+macro(add_dependency)
     set(argn_list "${ARGN}")
     list(POP_FRONT argn_list NAME)
 
@@ -38,4 +38,4 @@ function(add_dependency)
             find_package(${NAME} CONFIG REQUIRED)
         endif()
     endif()
-endfunction()
+endmacro()
