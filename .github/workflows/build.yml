@@ -5,8 +5,6 @@ on:
     paths-ignore:
       - "**/*.md"
       - "**/*.yml"
-  pull_request:
-    branches: ["**"]
 
 name: Build Libraries
 jobs:
