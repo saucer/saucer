@@ -176,6 +176,7 @@ namespace saucer
             return m_impl->post_safe([this] { close(); });
         }
 
+        ShowWindow(m_impl->hwnd, SW_HIDE);
         PostQuitMessage(0);
     }
 
