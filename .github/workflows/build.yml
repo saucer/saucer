@@ -84,19 +84,19 @@ jobs:
           && cmake --build . --config Release
           && cmake --install . --prefix 'saucer_export'
 
-      - name: Compile [Debug, Asserts, Modules]
-        run: >
-          mkdir build-debug && cd build-debug 
-          && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
-          && cmake --build . --config Debug
-          && cmake --install . --prefix 'saucer_export'
-
       - name: Upload Artifact [Release]
         uses: actions/upload-artifact@v3
         with:
           name: saucer.webview2.release
           path: |
             build/saucer_export
+
+      - name: Compile [Debug, Asserts, Modules]
+        run: >
+          rm -r -fo build && mkdir build && cd build 
+          && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
+          && cmake --build . --config Debug
+          && cmake --install . --prefix 'saucer_export'
 
       - name: Upload Artifact [Debug]
         uses: actions/upload-artifact@v3
