@@ -103,4 +103,4 @@ jobs:
         with:
           name: saucer.webview2.debug
           path: |
-            build-debug/saucer_export
+            build/saucer_export
