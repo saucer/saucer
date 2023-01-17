@@ -141,13 +141,15 @@ if (saucer_backend STREQUAL "WebView2")
         target_include_directories(${PROJECT_NAME} ${saucer_conditional_linkage} ${WebView2_PATH}/build/native/include)
 
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            target_link_libraries(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/x64/WebView2LoaderStatic.lib)
+            set(saucer_webview2_lib "${WebView2_PATH}/build/native/x64/WebView2LoaderStatic.lib")
         else()
-            target_link_libraries(${PROJECT_NAME} PRIVATE ${WebView2_PATH}/build/native/x86/WebView2LoaderStatic.lib)
+            set(saucer_webview2_lib "${WebView2_PATH}/build/native/x86/WebView2LoaderStatic.lib")
         endif()
+    
+        target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} ${saucer_webview2_lib})
     else()
         find_package(webview2 CONFIG REQUIRED)
-        target_link_libraries(${PROJECT_NAME} PRIVATE webview2::webview2)
+        target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} webview2::webview2)
     endif()
 endif()
 
@@ -176,6 +178,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis fmt::fmt)
 install(DIRECTORY "include/" TYPE INCLUDE)
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
+if (saucer_package_all AND (NOT saucer_remote_webview2 OR NOT saucer_smartview))
+    message(ERROR "[Saucer] package_all is only supported in conjunction with remote_webview2 and smartview")
+endif()
+
 # Some targets do not get included to the export dir automatically, so we add them manually here.
 
 if (saucer_package_all)
@@ -183,6 +189,10 @@ if (saucer_package_all)
     install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
     install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
     install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
+    
+    if (WIN32)
+        install(FILES ${saucer_webview2_lib} DESTINATION lib)
+    endif()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
