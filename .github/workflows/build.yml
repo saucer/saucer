@@ -96,7 +96,7 @@ jobs:
           rm -r -fo build && mkdir build && cd build 
           && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
           && cmake --build . --config Debug
-          && cmake --install . --prefix 'saucer_export'
+          && cmake --install . --prefix 'saucer_export' --config Debug
 
       - name: Upload Artifact [Debug]
         uses: actions/upload-artifact@v3
