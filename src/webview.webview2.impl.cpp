@@ -86,7 +86,7 @@ namespace saucer
         return original();
     }
 
-    void webview::impl::install_scheme_handler(class webview &parent)
+    EventRegistrationToken webview::impl::install_scheme_handler(class webview &parent) const
     {
         auto uri = fmt::format(L"{}*", scheme_prefix_w);
         webview->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
@@ -136,18 +136,23 @@ namespace saucer
 
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
             wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
-            env->CreateWebResourceResponse(data.get(), 200, L"OK", widen("Content-Type: " + file.mime).c_str(),
+
+            env->CreateWebResourceResponse(data.get(),                                                 //
+                                           200,                                                        //
+                                           L"OK",                                                      //
+                                           fmt::format(L"Content-Type: {}", widen(file.mime)).c_str(), //
                                            &response);
 
             args->put_Response(response.get());
             return S_OK;
         };
 
-        event_token = std::make_unique<EventRegistrationToken>();
-
         using resource_requested = ICoreWebView2WebResourceRequestedEventHandler;
         auto callback = Callback<resource_requested>(requested_callback);
 
-        webview->add_WebResourceRequested(callback.Get(), event_token.get());
+        EventRegistrationToken rtn;
+        webview->add_WebResourceRequested(callback.Get(), &rtn);
+
+        return rtn;
     }
 } // namespace saucer

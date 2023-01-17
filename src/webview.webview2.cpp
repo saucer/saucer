@@ -253,7 +253,7 @@ namespace saucer
             return;
         }
 
-        m_impl->install_scheme_handler(*this);
+        m_impl->event_token = m_impl->install_scheme_handler(*this);
     }
 
     void webview::clear_scripts()

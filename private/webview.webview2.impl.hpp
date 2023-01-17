@@ -1,12 +1,16 @@
 #pragma once
 #include "webview.hpp"
 
+#include <optional>
 #include <wil/com.h>
 #include <WebView2.h>
 #include <string_view>
 
 namespace saucer
 {
+    //! The webview and controller should be the first members of the impl struct, as they should
+    //! be easily accessible for modules.
+
     struct webview::impl
     {
         wil::com_ptr<ICoreWebView2> webview;
@@ -19,7 +23,7 @@ namespace saucer
 
       public:
         WNDPROC o_wnd_proc;
-        std::unique_ptr<EventRegistrationToken> event_token;
+        std::optional<EventRegistrationToken> event_token;
 
       public:
         bool is_ready{false};
@@ -34,7 +38,7 @@ namespace saucer
 
       public:
         void overwrite_wnd_proc(HWND hwnd);
-        void install_scheme_handler(class webview &);
+        EventRegistrationToken install_scheme_handler(class webview &) const;
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
