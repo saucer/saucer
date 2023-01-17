@@ -11,6 +11,7 @@ namespace saucer
     struct result_data;
     struct message_data;
     struct function_data;
+    struct webview_options;
 } // namespace saucer
 
 #else
@@ -28,6 +29,7 @@ declare(smartview);
 declare(result_data);
 declare(message_data);
 declare(function_data);
+declare(webview_options);
 #endif
 
 #ifdef __cplusplus
@@ -37,11 +39,19 @@ extern "C"
     using saucer::message_data;
     using saucer::result_data;
     using saucer::smartview;
+    using saucer::webview_options;
     using std::size_t;
     using std::uint8_t;
 #endif
-    smartview *smartview_new();
+    smartview *smartview_new(webview_options *);
     void smartview_free(smartview *);
+
+    // ? Options
+    webview_options *webview_options_new();
+    void webview_options_free(webview_options *);
+
+    void webview_options_set_persistent_cookies(webview_options *, bool);
+    void webview_options_set_storage_path(webview_options *, const char *);
 
     //? Window
 
@@ -50,10 +60,10 @@ extern "C"
     bool smartview_get_decorations(smartview *);
     bool smartview_get_always_on_top(smartview *);
 
-    void smartview_get_size(smartview *, size_t *, size_t *);
-    void smartview_get_max_size(smartview *, size_t *, size_t *);
-    void smartview_get_min_size(smartview *, size_t *, size_t *);
-    void smartview_get_background_color(smartview *, size_t *, size_t *, size_t *, size_t *);
+    void smartview_get_size(smartview *, int *, int *);
+    void smartview_get_max_size(smartview *, int *, int *);
+    void smartview_get_min_size(smartview *, int *, int *);
+    void smartview_get_background_color(smartview *, int *, int *, int *, int *);
 
     void smartview_hide(smartview *);
     void smartview_show(smartview *);
@@ -64,10 +74,10 @@ extern "C"
     void smartview_set_decorations(smartview *, bool);
     void smartview_set_always_on_top(smartview *, bool);
 
-    void smartview_set_size(smartview *, size_t, size_t);
-    void smartview_set_max_size(smartview *, size_t, size_t);
-    void smartview_set_min_size(smartview *, size_t, size_t);
-    void smartview_set_background_color(smartview *, size_t, size_t, size_t, size_t);
+    void smartview_set_size(smartview *, int, int);
+    void smartview_set_max_size(smartview *, int, int);
+    void smartview_set_min_size(smartview *, int, int);
+    void smartview_set_background_color(smartview *, int, int, int, int);
 
     //? Webview
 

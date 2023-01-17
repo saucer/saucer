@@ -10,14 +10,41 @@ struct embedded_file
 
 extern "C"
 {
-    smartview *smartview_new()
+    smartview *smartview_new(webview_options *_options)
     {
-        return new smartview;
+        webview_options options;
+
+        if (_options)
+        {
+            options = *_options;
+        }
+
+        return new smartview(options);
     }
 
     void smartview_free(smartview *smartview)
     {
         delete smartview;
+    }
+
+    webview_options *webview_options_new()
+    {
+        return new webview_options;
+    }
+
+    void webview_options_free(webview_options *options)
+    {
+        delete options;
+    }
+
+    void webview_options_set_persistent_cookies(webview_options *options, bool enabled)
+    {
+        options->persistent_cookies = enabled;
+    }
+
+    void webview_options_set_storage_path(webview_options *options, const char *path)
+    {
+        options->storage_path = path;
     }
 
     bool smartview_get_resizable(smartview *smartview)
@@ -37,28 +64,28 @@ extern "C"
         return smartview->get_always_on_top();
     }
 
-    void smartview_get_size(smartview *smartview, size_t *width_o, size_t *height_o)
+    void smartview_get_size(smartview *smartview, int *width_o, int *height_o)
     {
         auto [width, height] = smartview->get_size();
 
         *width_o = width;
         *height_o = height;
     }
-    void smartview_get_max_size(smartview *smartview, size_t *width_o, size_t *height_o)
+    void smartview_get_max_size(smartview *smartview, int *width_o, int *height_o)
     {
         auto [width, height] = smartview->get_max_size();
 
         *width_o = width;
         *height_o = height;
     }
-    void smartview_get_min_size(smartview *smartview, size_t *width_o, size_t *height_o)
+    void smartview_get_min_size(smartview *smartview, int *width_o, int *height_o)
     {
         auto [width, height] = smartview->get_min_size();
 
         *width_o = width;
         *height_o = height;
     }
-    void smartview_get_background_color(smartview *smartview, size_t *r_o, size_t *g_o, size_t *b_o, size_t *a_o)
+    void smartview_get_background_color(smartview *smartview, int *r_o, int *g_o, int *b_o, int *a_o)
     {
         auto [r, g, b, a] = smartview->get_background_color();
 
@@ -98,19 +125,19 @@ extern "C"
         smartview->set_always_on_top(enabled);
     }
 
-    void smartview_set_size(smartview *smartview, size_t width, size_t height)
+    void smartview_set_size(smartview *smartview, int width, int height)
     {
         smartview->set_size(width, height);
     }
-    void smartview_set_max_size(smartview *smartview, size_t width, size_t height)
+    void smartview_set_max_size(smartview *smartview, int width, int height)
     {
         smartview->set_max_size(width, height);
     }
-    void smartview_set_min_size(smartview *smartview, size_t width, size_t height)
+    void smartview_set_min_size(smartview *smartview, int width, int height)
     {
         smartview->set_min_size(width, height);
     }
-    void smartview_set_background_color(smartview *smartview, size_t r, size_t g, size_t b, size_t a)
+    void smartview_set_background_color(smartview *smartview, int r, int g, int b, int a)
     {
         smartview->set_background_color(r, g, b, a);
     }
