@@ -318,20 +318,19 @@ namespace saucer
             return window::m_impl->post_safe([=] { return inject(java_script, load_time); });
         }
 
-        if (load_time == load_time::creation)
+        if (load_time == load_time::ready)
         {
-            using InjectionCompleted = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
-
-            m_impl->webview->AddScriptToExecuteOnDocumentCreated(widen(java_script).c_str(),
-                                                                 Callback<InjectionCompleted>([this](auto, LPCWSTR id) {
-                                                                     m_impl->injected.emplace_back(id);
-                                                                     return S_OK;
-                                                                 }).Get());
-
+            m_impl->scripts_load.emplace_back(java_script);
             return;
         }
 
-        m_impl->scripts_load.emplace_back(java_script);
+        using InjectionCompleted = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
+
+        m_impl->webview->AddScriptToExecuteOnDocumentCreated(widen(java_script).c_str(),
+                                                             Callback<InjectionCompleted>([this](auto, LPCWSTR id) {
+                                                                 m_impl->injected.emplace_back(id);
+                                                                 return S_OK;
+                                                             }).Get());
     }
 
     void webview::clear(web_event event)
