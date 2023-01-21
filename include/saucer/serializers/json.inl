@@ -45,8 +45,7 @@ namespace saucer::serializers
 
         static_assert(decay_tuple<raw_args_t>::serializable &&
                           (std::is_same_v<rtn_t, void> || is_serializable<rtn_t>::value),
-                      "All arguments as well as the return type must be serializable, "
-                      "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
+                      "All arguments as well as the return type must be serializable");
 
         return [func](function_data &data) -> tl::expected<std::string, error> {
             auto &message = dynamic_cast<json_function_data &>(data);
@@ -101,8 +100,7 @@ namespace saucer::serializers
             if constexpr (is_args_v<arg_t>)
             {
                 static_assert((is_args_v<arg_t> && decay_tuple<args_t<arg_t>>::serializable),
-                              "All arguments must be serializable, "
-                              "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
+                              "All arguments must be serializable");
 
                 std::string rtn;
                 auto tuple = static_cast<args_t<arg_t>>(arg);
@@ -123,10 +121,7 @@ namespace saucer::serializers
             }
             else
             {
-                static_assert(is_serializable<remove_const_ref_t<arg_t>>::value,
-                              "All arguments must be serializable, "
-                              "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
-
+                static_assert(is_serializable<remove_const_ref_t<arg_t>>::value, "All arguments must be serializable");
                 auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
                 return fmt::format(fmt::format("JSON.parse({})", json));
             }
@@ -139,8 +134,7 @@ namespace saucer::serializers
     template <typename T> auto json::resolve(std::shared_ptr<std::promise<T>> promise)
     {
         static_assert((std::is_same_v<T, void> || is_serializable<T>::value),
-                      "The promise result must be serializable, "
-                      "https://saucer.github.io/getting-started/interoperability/#user-defined-types");
+                      "The promise result must be serializable");
 
         return [promise = std::move(promise)](result_data &data) mutable {
             auto &json_data = dynamic_cast<json_result_data &>(data);
