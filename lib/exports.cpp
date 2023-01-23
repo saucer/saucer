@@ -194,9 +194,9 @@ extern "C"
         delete file;
     }
 
-    void smartview_serve_embedded(smartview *smartview, const char *file)
+    void smartview_serve(smartview *smartview, const char *file)
     {
-        smartview->serve_embedded(file);
+        smartview->serve(file);
     }
     void smartview_embed_files(smartview *smartview, embedded_file **files, size_t size)
     {

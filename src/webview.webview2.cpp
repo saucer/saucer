@@ -233,7 +233,7 @@ namespace saucer
         m_impl->webview->Navigate(widen(url).c_str());
     }
 
-    void webview::serve_embedded(const std::string &file)
+    void webview::serve(const std::string &file)
     {
         set_url(std::string{impl::scheme_prefix} + file);
     }

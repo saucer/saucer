@@ -4629,7 +4629,7 @@ int main()
     embedded_files.emplace("index.js", saucer::embedded_file{"text/javascript", 132, index_js});
 
     webview.embed_files(std::move(embedded_files));
-    webview.serve_embedded("index.html");
+    webview.serve("index.html");
     webview.show();
     webview.run();
     return 0;

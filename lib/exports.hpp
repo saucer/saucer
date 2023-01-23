@@ -115,7 +115,7 @@ extern "C"
     embedded_file *embedded_file_new(const char *, const char *, size_t, const uint8_t *);
     void embedded_file_free(embedded_file *);
 
-    void smartview_serve_embedded(smartview *, const char *);
+    void smartview_serve(smartview *, const char *);
     void smartview_embed_files(smartview *, embedded_file **, size_t);
 
     // ? Events

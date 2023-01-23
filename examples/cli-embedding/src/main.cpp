@@ -7,7 +7,7 @@ int main()
     webview.set_title("Automated Embedding!");
     webview.embed_files(std::move(embedded::get_all_files()));
 
-    webview.serve_embedded("src/index.html");
+    webview.serve("src/index.html");
     webview.set_size(500, 600);
     webview.show();
     webview.run();
