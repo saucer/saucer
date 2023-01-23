@@ -12,8 +12,10 @@ namespace saucer
         if (message == "js_ready")
         {
             m_impl->is_ready = true;
+            return;
         }
-        else if (message == "js_finished")
+
+        if (message == "js_finished")
         {
             auto script = m_impl->web_view->page()->scripts().find("_run_js");
 
@@ -40,7 +42,6 @@ namespace saucer
         }
 
         QWebEngineScript script;
-
         auto scripts = m_impl->web_view->page()->scripts().find("_run_js");
 
         if (!scripts.empty())
