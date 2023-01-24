@@ -123,7 +123,7 @@ namespace saucer::serializers
             {
                 static_assert(is_serializable<remove_const_ref_t<arg_t>>::value, "All arguments must be serializable");
                 auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
-                return fmt::format(fmt::format("JSON.parse({})", json));
+                return fmt::format("JSON.parse({})", json);
             }
         };
 
