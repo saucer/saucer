@@ -198,7 +198,7 @@ extern "C"
     {
         smartview->serve(file);
     }
-    void smartview_embed_files(smartview *smartview, embedded_file **files, size_t size)
+    void smartview_embed(smartview *smartview, embedded_file **files, size_t size)
     {
         std::map<const std::string, const saucer::embedded_file> embedded_files;
 
@@ -207,7 +207,7 @@ extern "C"
             embedded_files.emplace(files[i]->name, files[i]->file);
         }
 
-        smartview->embed_files(std::move(embedded_files));
+        smartview->embed(std::move(embedded_files));
     }
 
     void smartview_clear(smartview *smartview, event event)

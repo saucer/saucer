@@ -70,7 +70,7 @@ namespace saucer
 
       public:
         [[thread_safe]] void serve(const std::string &file);
-        [[thread_safe]] void embed_files(std::map<const std::string, const embedded_file> &&files);
+        [[thread_safe]] void embed(std::map<const std::string, const embedded_file> &&files);
 
       public:
         [[thread_safe]] void clear_scripts();

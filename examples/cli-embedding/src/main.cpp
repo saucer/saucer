@@ -5,7 +5,7 @@ int main()
 {
     saucer::webview webview;
     webview.set_title("Automated Embedding!");
-    webview.embed_files(std::move(embedded::get_all_files()));
+    webview.embed(std::move(embedded::get_all_files()));
 
     webview.serve("src/index.html");
     webview.set_size(500, 600);

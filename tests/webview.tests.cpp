@@ -91,7 +91,7 @@ TEST_CASE("Webview functionality is tested", "[webview]")
 
                 std::this_thread::sleep_for(std::chrono::seconds(5));
                 webview.clear_embedded();
-                webview.embed_files({{"test.html", saucer::embedded_file{"text/html", 97, test_html}}});
+                webview.embed({{"test.html", saucer::embedded_file{"text/html", 97, test_html}}});
                 webview.serve("test.html");
 
                 std::this_thread::sleep_for(std::chrono::seconds(10));

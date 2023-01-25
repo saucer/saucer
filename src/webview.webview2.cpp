@@ -238,12 +238,12 @@ namespace saucer
         set_url(std::string{impl::scheme_prefix} + file);
     }
 
-    void webview::embed_files(std::map<const std::string, const embedded_file> &&files)
+    void webview::embed(std::map<const std::string, const embedded_file> &&files)
     {
         if (!window::m_impl->is_thread_safe())
         {
             return window::m_impl->post_safe(
-                [this, files = std::move(files)]() mutable { return embed_files(std::move(files)); });
+                [this, files = std::move(files)]() mutable { return embed(std::move(files)); });
         }
 
         m_embedded_files.merge(files);
