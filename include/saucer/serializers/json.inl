@@ -23,16 +23,14 @@ namespace saucer::serializers
         static constexpr bool value = sizeof(test(reinterpret_cast<T *>(0))) == sizeof(std::uint16_t);
     };
 
-    template <typename O> using remove_const_ref_t = std::remove_cv_t<std::remove_reference_t<O>>;
-
     template <typename T> struct decay_tuple
     {
     };
 
     template <typename... T> struct decay_tuple<std::tuple<T...>>
     {
-        using type = std::tuple<remove_const_ref_t<T>...>;
-        static constexpr auto serializable = std::conjunction_v<is_serializable<remove_const_ref_t<T>>...>;
+        using type = std::tuple<std::decay_t<T>...>;
+        static constexpr auto serializable = std::conjunction_v<is_serializable<std::decay_t<T>>...>;
     };
 
     template <typename T> using decay_tuple_t = typename decay_tuple<T>::type;
@@ -121,7 +119,8 @@ namespace saucer::serializers
             }
             else
             {
-                static_assert(is_serializable<remove_const_ref_t<arg_t>>::value, "All arguments must be serializable");
+                static_assert(is_serializable<arg_t>::value, "All arguments must be serializable");
+
                 auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
                 return fmt::format("JSON.parse({})", json);
             }
