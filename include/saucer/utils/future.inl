@@ -65,7 +65,7 @@ namespace saucer
         }
     };
 
-    forget_pipe forget()
+    inline forget_pipe forget()
     {
         return forget_pipe{};
     }
