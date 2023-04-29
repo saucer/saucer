@@ -161,7 +161,7 @@ if (saucer_smartview)
     add_dependency(lockpp                URL "https://github.com/Soundux/lockpp"           TAG  v1.0.2 HEADER "lockpp/lock.hpp" LIB_NAME lockpp::lockpp)
     add_dependency(nlohmann_json         URL "https://github.com/nlohmann/json/"           TAG  v3.11.2)
     add_dependency(boost_callable_traits URL "https://github.com/boostorg/callable_traits" TAG  2a56a3a)
-    add_dependency(tl-expected           URL "https://github.com/TartanLlama/expected"     TAG  aa4f7a5)
+    add_dependency(tl-expected           URL "https://github.com/TartanLlama/expected"     TAG  v1.1.0)
         
     target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected Boost::callable_traits lockpp::lockpp)
 endif()
