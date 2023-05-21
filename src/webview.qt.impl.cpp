@@ -53,7 +53,7 @@ namespace saucer
     {
         auto url = request->requestUrl().toString(QUrl::RemoveQuery).toStdString();
 
-        if (url.find(scheme_prefix) != 0)
+        if (!url.starts_with(scheme_prefix))
         {
             request->fail(QWebEngineUrlRequestJob::UrlInvalid);
             return;
@@ -61,7 +61,7 @@ namespace saucer
 
         url = url.substr(scheme_prefix.size());
 
-        if (!m_parent.m_embedded_files.count(url))
+        if (!m_parent->m_embedded_files.contains(url))
         {
             request->fail(QWebEngineUrlRequestJob::UrlNotFound);
             return;
