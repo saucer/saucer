@@ -8,15 +8,15 @@ namespace saucer
 {
     struct smartview::callback_t
     {
-        const bool async;
-        const resolve_callback resolve;
-        const std::type_index serializer_type;
+        bool async;
+        resolve_callback resolve;
+        std::type_index serializer_type;
     };
 
     struct smartview::eval_t
     {
-        const eval_callback resolve;
-        const std::type_index serializer_type;
+        eval_callback resolve;
+        std::type_index serializer_type;
     };
 
     template <typename Plugin> Plugin &smartview::add_plugin()

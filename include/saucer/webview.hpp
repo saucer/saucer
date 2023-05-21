@@ -20,8 +20,8 @@ namespace saucer
 
     struct embedded_file
     {
-        const std::string mime;
-        const std::size_t size;
+        std::string mime;
+        std::size_t size;
         const std::uint8_t *data;
     };
 
