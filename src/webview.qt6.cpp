@@ -32,7 +32,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { run_java_script(java_script); });
+            return window::m_impl->post_safe([java_script, this] { run_java_script(java_script); });
         }
 
         if (m_impl->is_ready)
@@ -66,7 +66,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { inject(java_script, load_time); });
+            return window::m_impl->post_safe([java_script, load_time, this] { inject(java_script, load_time); });
         }
 
         QWebEngineScript script;
