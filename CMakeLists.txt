@@ -6,7 +6,7 @@ project(saucer LANGUAGES CXX VERSION 1.0)
 # --------------------------------------------------------------------------------------------------------
 
 if (MSVC AND MSVC_TOOLSET_VERSION LESS 143)
-    message(WARNING "[Saucer] MSVC Toolsets below 14.3 are not supported")
+    message(WARNING "[saucer] MSVC Toolsets below 14.3 are not supported")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -34,9 +34,9 @@ set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
 # --------------------------------------------------------------------------------------------------------
 
 if (NOT saucer_backend IN_LIST saucer_backend_types)
-    message(FATAL_ERROR "[Saucer] Backend must be one of ${saucer_backend_types}")
+    message(FATAL_ERROR "[saucer] Backend must be one of ${saucer_backend_types}")
 else()
-    message(STATUS "[Saucer] Using backend: ${saucer_backend}")
+    message(STATUS "[saucer] Using backend: ${saucer_backend}")
 
     if (saucer_backend STREQUAL "Default")
         if (WIN32)
@@ -45,15 +45,19 @@ else()
             set(saucer_backend Qt5)
         endif()
         
-        message(STATUS "[Saucer] Deault backend for current platform is: ${saucer_backend}")
+        message(STATUS "[saucer] Deault backend for current platform is: ${saucer_backend}")
     endif()    
 endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup some switches
+# --------------------------------------------------------------------------------------------------------
 
 # AUTOMOC has to be enabled before `add_library` is called.
 
 if (saucer_backend MATCHES "^Qt.$")
     set(CMAKE_AUTOMOC ON)
-    message(STATUS "[Saucer] Using AUTOMOC for ${saucer_backend}")
+    message(STATUS "[saucer] Using AUTOMOC for ${saucer_backend}")
 endif()
 
 # When using saucer in a shared library we need to enable position independent code
@@ -69,20 +73,25 @@ endif()
 add_library(${PROJECT_NAME} STATIC)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
-if (MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
-else()
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
+# We only enable warnings if built standalone.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    message(STATUS "[saucer] Enabling compilation warnings")
+
+    if (MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
+    else()
+        target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
+    endif()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Include directories
 # --------------------------------------------------------------------------------------------------------
 
-target_include_directories(${PROJECT_NAME} PUBLIC "include")
+target_include_directories(${PROJECT_NAME} PUBLIC  "include")
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 
 # --------------------------------------------------------------------------------------------------------
@@ -97,16 +106,16 @@ configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/co
 # Link Dependencies and Add Sources
 # --------------------------------------------------------------------------------------------------------
 
-include("Deps.cmake")
-include("NuGet.cmake")
+include("cmake/deps.cmake")
+include("cmake/nuget.cmake")
 
-message(STATUS "[Saucer] Prefer Remote: ${saucer_prefer_remote}")
+message(STATUS "[saucer] Prefer Remote: ${saucer_prefer_remote}")
 
 set(saucer_conditional_linkage PRIVATE)
 
 if (saucer_modules)
     set(saucer_conditional_linkage PUBLIC)
-    message(STATUS "[Saucer] Conditional Linkage is set to PUBLIC")
+    message(STATUS "[saucer] Conditional Linkage is set to PUBLIC")
 endif()
 
 if (saucer_backend MATCHES "^Qt.$")
@@ -179,7 +188,7 @@ install(DIRECTORY "include/" TYPE INCLUDE)
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
 if (saucer_package_all AND (NOT saucer_remote_webview2 OR NOT saucer_smartview))
-    message(ERROR "[Saucer] package_all is only supported in conjunction with remote_webview2 and smartview")
+    message(ERROR "[saucer] package_all is only supported in conjunction with remote_webview2 and smartview")
 endif()
 
 # Some targets do not get included to the export dir automatically, so we add them manually here.
@@ -200,17 +209,17 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_tests)
-    message(STATUS "[Saucer] Building Tests")
+    message(STATUS "[saucer] Building Tests")
     add_subdirectory(tests)
 endif()
 
 if (saucer_wrapper)
-    message(STATUS "[Saucer] Building C-Wrapper")
+    message(STATUS "[saucer] Building C-Wrapper")
     add_subdirectory(lib)
 endif()
 
 if (saucer_examples)
-    message(STATUS "[Saucer] Building Examples")
+    message(STATUS "[saucer] Building Examples")
     
     if (saucer_smartview)
         add_subdirectory("examples/json-bridge")

@@ -17,7 +17,7 @@ macro(add_dependency)
         OR DEP_URL IN_LIST DEP_KEYWORDS_MISSING_VALUES
         OR DEP_TAG IN_LIST DEP_KEYWORDS_MISSING_VALUES
     )
-        message(WARNING "[Saucer] add_dependency called without url or tag")
+        message(WARNING "[saucer] add_dependency called without url or tag")
     endif()
 
     if (saucer_prefer_remote)
