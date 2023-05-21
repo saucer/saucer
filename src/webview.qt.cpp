@@ -112,7 +112,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return set_dev_tools(enabled); });
+            return window::m_impl->post_safe([enabled, this] { return set_dev_tools(enabled); });
         }
 
         if (!enabled)
@@ -143,7 +143,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return set_context_menu(enabled); });
+            return window::m_impl->post_safe([enabled, this] { return set_context_menu(enabled); });
         }
 
         m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
@@ -154,7 +154,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return set_url(url); });
+            return window::m_impl->post_safe([url, this] { return set_url(url); });
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
@@ -180,7 +180,7 @@ namespace saucer
             return;
         }
 
-        m_impl->scheme_handler = new impl::url_scheme_handler(*this);
+        m_impl->scheme_handler = new impl::url_scheme_handler(this);
         m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->scheme_handler);
     }
 

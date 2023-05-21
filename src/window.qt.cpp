@@ -147,7 +147,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_resizable(enabled); });
+            return m_impl->post_safe([enabled, this] { return set_resizable(enabled); });
         }
 
         if (!enabled)
@@ -173,7 +173,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_decorations(enabled); });
+            return m_impl->post_safe([enabled, this] { return set_decorations(enabled); });
         }
 
         m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
@@ -183,7 +183,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_title(title); });
+            return m_impl->post_safe([title, this] { return set_title(title); });
         }
 
         m_impl->window->setWindowTitle(QString::fromStdString(title));
@@ -193,7 +193,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_always_on_top(enabled); });
+            return m_impl->post_safe([enabled, this] { return set_always_on_top(enabled); });
         }
 
         m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
@@ -203,7 +203,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_size(width, height); });
+            return m_impl->post_safe([width, height, this] { return set_size(width, height); });
         }
 
         m_impl->window->resize(width, height);
@@ -213,7 +213,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_max_size(width, height); });
+            return m_impl->post_safe([width, height, this] { return set_max_size(width, height); });
         }
 
         m_impl->window->setMaximumSize(width, height);
@@ -224,7 +224,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_min_size(width, height); });
+            return m_impl->post_safe([width, height, this] { return set_min_size(width, height); });
         }
 
         m_impl->window->setMinimumSize(width, height);
