@@ -22,7 +22,7 @@ target_sources(${PROJECT_NAME} PRIVATE ${src})
 # Link Dependencies 
 # --------------------------------------------------------------------------------------------------------
 
-include("../Deps.cmake")
+include("../cmake/deps.cmake")
 
 option(CATCH_BUILD_STATIC_LIBRARY "" ON)
 add_dependency(catch2 URL "https://github.com/catchorg/Catch2" TAG v2.13.7)
