@@ -10,7 +10,7 @@
 
 namespace saucer
 {
-    webview::webview(const webview_options &options) : m_impl(std::make_unique<impl>())
+    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
 
@@ -45,7 +45,7 @@ namespace saucer
         m_impl->web_channel = new QWebChannel(m_impl->web_view);
         m_impl->web_view->page()->setWebChannel(m_impl->web_channel);
 
-        m_impl->channel_obj = new impl::web_class(*this);
+        m_impl->channel_obj = new impl::web_class(this);
         m_impl->web_channel->registerObject("saucer", m_impl->channel_obj);
 
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted, [this]() { //

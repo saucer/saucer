@@ -4,7 +4,7 @@
 
 namespace saucer
 {
-    window::window() : m_impl(std::make_unique<impl>())
+    window::window(const options &options) : m_impl(std::make_unique<impl>())
     {
         static int argc{1};
         static QApplication *application;
@@ -13,6 +13,13 @@ namespace saucer
         if (!application)
         {
             qputenv("QT_LOGGING_RULES", "*=false");
+
+            if (options.hardware_acceleration)
+            {
+                qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+                        "--enable-oop-rasterization --enable-gpu-rasterization --enable-native-gpu-memory-buffers "
+                        "--use-gl=desktop");
+            }
 
 #if SAUCER_BACKEND_VERSION == 5
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

@@ -25,12 +25,6 @@ namespace saucer
         const std::uint8_t *data;
     };
 
-    struct webview_options
-    {
-        bool persistent_cookies{true};
-        std::filesystem::path storage_path;
-    };
-
 #include "annotations.hpp"
     class webview : public window
     {
@@ -53,7 +47,7 @@ namespace saucer
         virtual void on_url_changed(const std::string &);
 
       public:
-        webview(const webview_options & = {});
+        webview(const options & = {});
 
       public:
         ~webview() override;

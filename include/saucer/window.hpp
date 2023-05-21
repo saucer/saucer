@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <filesystem>
 #include <ereignis/manager.hpp>
 
 namespace saucer
@@ -12,6 +13,13 @@ namespace saucer
         closed,
         resize,
         close,
+    };
+
+    struct options
+    {
+        bool persistent_cookies{true};
+        bool hardware_acceleration{true};
+        std::filesystem::path storage_path;
     };
 
 #include "annotations.hpp"
@@ -31,7 +39,7 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
-        window();
+        window(const options & = {});
 
       public:
         virtual ~window();

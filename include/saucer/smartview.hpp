@@ -35,7 +35,7 @@ namespace saucer
         std::atomic<std::size_t> m_id_counter{0};
 
       public:
-        smartview(const webview_options & = {});
+        smartview(const options & = {});
 
       public:
         ~smartview() override;
