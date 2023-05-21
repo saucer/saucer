@@ -1,4 +1,3 @@
-#include "utils/assert.hpp"
 #include "webview.qt.impl.hpp"
 
 #include <QFile>
@@ -12,7 +11,7 @@ namespace saucer
 
         if (!web_channel_api.open(QIODevice::ReadOnly))
         {
-            c_assert("Failed to open required qwebchannel.js");
+            throw std::runtime_error("Failed to open required qwebchannel.js");
         }
 
         auto content = web_channel_api.readAll().toStdString();
@@ -38,15 +37,15 @@ namespace saucer
             )js";
     }();
 
-    webview::impl::web_class::web_class(webview &parent) : QObject(parent.m_impl->web_view), m_parent(parent) {}
+    webview::impl::web_class::web_class(webview *parent) : QObject(parent->m_impl->web_view), m_parent(parent) {}
 
     void webview::impl::web_class::on_message(const QString &message)
     {
-        m_parent.on_message(message.toStdString());
+        m_parent->on_message(message.toStdString());
     }
 
-    webview::impl::url_scheme_handler::url_scheme_handler(webview &parent)
-        : QWebEngineUrlSchemeHandler(parent.m_impl->web_view), m_parent(parent)
+    webview::impl::url_scheme_handler::url_scheme_handler(webview *parent)
+        : QWebEngineUrlSchemeHandler(parent->m_impl->web_view), m_parent(parent)
     {
     }
 
@@ -68,7 +67,7 @@ namespace saucer
             return;
         }
 
-        const auto &file = m_parent.m_embedded_files.at(url);
+        const auto &file = m_parent->m_embedded_files.at(url);
 
         auto *buffer = new QBuffer;
 

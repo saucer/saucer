@@ -1,6 +1,4 @@
 #pragma once
-#define SAUCER_ENABLE_ASSERTS ${saucer_assert}
-#define SAUCER_CURRENT_BACKEND ${saucer_backend_lower}
 #define SAUCER_BACKEND_VERSION ${saucer_backend_version}
 
 namespace saucer
@@ -12,12 +10,5 @@ namespace saucer
         webview2,
     };
 
-    enum class assert_value : bool
-    {
-        ON = true,
-        OFF = false
-    };
-
-    constexpr backend_type backend = backend_type::SAUCER_CURRENT_BACKEND;
-    constexpr bool enable_assert = static_cast<bool>(assert_value::SAUCER_ENABLE_ASSERTS);
+    constexpr backend_type backend = backend_type::${saucer_backend_lower};
 } // namespace saucer
