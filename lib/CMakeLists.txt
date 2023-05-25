@@ -8,8 +8,8 @@ project(saucer-wrapper LANGUAGES CXX)
 add_library(${PROJECT_NAME} SHARED)
 add_library(saucer::wrapper ALIAS ${PROJECT_NAME})
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET default CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET default CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
 if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS=1)

@@ -36,7 +36,7 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
         REQUIRE(result == 4);
     });
 
-    smartview.eval<int>("Math.pow({})", saucer::make_arguments(2, 2)) | saucer::then([](int result) { //
+    smartview.eval<int>("Math.pow({})", saucer::make_args(2, 2)) | saucer::then([](int result) { //
         REQUIRE(result == 4);
     });
 
