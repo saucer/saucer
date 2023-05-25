@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <boost/callable_traits.hpp>
 
-namespace saucer::serializers
+namespace saucer::serializers::detail::json
 {
     template <typename T>
     concept is_serializable = requires(T t) { static_cast<nlohmann::json>(t); };
@@ -26,13 +26,20 @@ namespace saucer::serializers
         static constexpr bool serializable = (is_serializable<std::decay_t<T>> && ...);
     };
 
+    template <typename T> using decay_tuple_t = typename decay_tuple<T>::type;
+}; // namespace saucer::serializers::detail::json
+
+namespace saucer::serializers
+{
     template <typename Function> auto json::serialize(const Function &func)
     {
-        using rtn_t = boost::callable_traits::return_type_t<Function>;
         using raw_args_t = boost::callable_traits::args_t<Function>;
-        using args_t = typename decay_tuple<raw_args_t>::type;
 
-        static_assert(decay_tuple<raw_args_t>::serializable && (std::is_same_v<rtn_t, void> || is_serializable<rtn_t>),
+        using rtn_t = boost::callable_traits::return_type_t<Function>;
+        using args_t = detail::json::decay_tuple_t<raw_args_t>;
+
+        static_assert(detail::json::decay_tuple<raw_args_t>::serializable &&
+                          (std::is_same_v<rtn_t, void> || detail::json::is_serializable<rtn_t>),
                       "All arguments as well as the return type must be serializable");
 
         return [func](function_data &data) -> function_serializer::result_type {
@@ -81,7 +88,8 @@ namespace saucer::serializers
         auto unpack = [&]<typename T>(const T &arg) {
             if constexpr (is_arguments<std::decay_t<T>>)
             {
-                static_assert((decay_tuple<typename T::tuple_t>::serializable), "All arguments must be serializable");
+                static_assert((detail::json::decay_tuple<typename T::tuple_t>::serializable),
+                              "All arguments must be serializable");
 
                 std::string rtn;
                 auto tuple = static_cast<typename T::tuple_t>(arg);
@@ -102,7 +110,7 @@ namespace saucer::serializers
             }
             else
             {
-                static_assert(is_serializable<T>, "All arguments must be serializable");
+                static_assert(detail::json::is_serializable<T>, "All arguments must be serializable");
 
                 auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
                 return fmt::format("JSON.parse({})", json);
@@ -115,7 +123,8 @@ namespace saucer::serializers
 
     template <typename T> auto json::resolve(std::shared_ptr<std::promise<T>> promise)
     {
-        static_assert((std::is_same_v<T, void> || is_serializable<T>), "The promise result must be serializable");
+        static_assert((std::is_same_v<T, void> || detail::json::is_serializable<T>),
+                      "The promise result must be serializable");
 
         return [promise = std::move(promise)](result_data &data) mutable {
             auto &json_data = dynamic_cast<json_result_data &>(data);
