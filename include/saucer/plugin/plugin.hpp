@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <concepts>
 
 namespace saucer
 {
@@ -16,4 +17,7 @@ namespace saucer
         [[nodiscard]] virtual std::string get_name() const = 0;
         [[nodiscard]] virtual std::string get_version() const = 0;
     };
+
+    template <typename T>
+    concept Plugin = requires() { requires std::derived_from<T, plugin>; };
 } // namespace saucer

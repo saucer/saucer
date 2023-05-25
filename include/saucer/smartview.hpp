@@ -55,7 +55,7 @@ namespace saucer
         [[thread_safe]] void resolve(std::size_t, const std::string &);
 
       public:
-        template <typename Plugin> //
+        template <Plugin Plugin> //
         [[thread_safe]] Plugin &add_plugin();
 
       public:
