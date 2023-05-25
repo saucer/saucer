@@ -19,7 +19,7 @@ namespace saucer
         std::type_index serializer_type;
     };
 
-    template <typename Plugin> Plugin &smartview::add_plugin()
+    template <Plugin Plugin> Plugin &smartview::add_plugin()
     {
         auto plugin = std::make_unique<Plugin>();
         plugin->load(*this);
