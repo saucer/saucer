@@ -26,7 +26,7 @@ namespace saucer
             ~json() override;
 
           public:
-            [[nodiscard]] std::string init_script() const override;
+            [[nodiscard]] std::string script() const override;
             [[nodiscard]] std::string js_serializer() const override;
 
           public:

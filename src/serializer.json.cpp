@@ -8,7 +8,7 @@ namespace saucer::serializers
 
     json::~json() = default;
 
-    std::string json::init_script() const
+    std::string json::script() const
     {
         return "";
     }

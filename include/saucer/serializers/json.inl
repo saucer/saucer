@@ -1,5 +1,8 @@
 #pragma once
 #include "json.hpp"
+
+#include "args.hpp"
+#include "serializer.hpp"
 #include "../smartview.hpp"
 
 #include <variant>
@@ -10,18 +13,8 @@
 
 namespace saucer::serializers
 {
-    template <typename T> class is_serializable
-    {
-      private:
-        static auto test(...) -> std::uint8_t;
-
-      private:
-        template <typename O>
-        static auto test(O *) -> decltype(static_cast<nlohmann::json>(std::declval<O>()), std::uint16_t{});
-
-      public:
-        static constexpr bool value = sizeof(test(reinterpret_cast<T *>(0))) == sizeof(std::uint16_t);
-    };
+    template <typename T>
+    concept is_serializable = requires(T t) { static_cast<nlohmann::json>(t); };
 
     template <typename T> struct decay_tuple
     {
@@ -30,28 +23,25 @@ namespace saucer::serializers
     template <typename... T> struct decay_tuple<std::tuple<T...>>
     {
         using type = std::tuple<std::decay_t<T>...>;
-        static constexpr auto serializable = std::conjunction_v<is_serializable<std::decay_t<T>>...>;
+        static constexpr bool serializable = (is_serializable<std::decay_t<T>> && ...);
     };
-
-    template <typename T> using decay_tuple_t = typename decay_tuple<T>::type;
 
     template <typename Function> auto json::serialize(const Function &func)
     {
         using rtn_t = boost::callable_traits::return_type_t<Function>;
         using raw_args_t = boost::callable_traits::args_t<Function>;
-        using args_t = decay_tuple_t<raw_args_t>;
+        using args_t = typename decay_tuple<raw_args_t>::type;
 
-        static_assert(decay_tuple<raw_args_t>::serializable &&
-                          (std::is_same_v<rtn_t, void> || is_serializable<rtn_t>::value),
+        static_assert(decay_tuple<raw_args_t>::serializable && (std::is_same_v<rtn_t, void> || is_serializable<rtn_t>),
                       "All arguments as well as the return type must be serializable");
 
-        return [func](function_data &data) -> tl::expected<std::string, error> {
+        return [func](function_data &data) -> function_serializer::result_type {
             auto &message = dynamic_cast<json_function_data &>(data);
             const auto &params = message.data;
 
             if (params.size() != std::tuple_size_v<args_t>)
             {
-                return tl::make_unexpected(error::argument_count_mismatch);
+                return tl::make_unexpected(serializer_error::argument_count_mismatch);
             }
 
             args_t args;
@@ -59,17 +49,13 @@ namespace saucer::serializers
             try
             {
                 std::size_t current_arg{0};
-
-                auto serialize_item = [&](auto &arg) {
-                    using arg_t = std::decay_t<decltype(arg)>;
-                    arg = static_cast<arg_t>(params.at(current_arg++));
-                };
+                auto serialize_item = [&]<typename T>(T &arg) { arg = static_cast<T>(params.at(current_arg++)); };
 
                 std::apply([&](auto &...args) { (serialize_item(args), ...); }, args);
             }
             catch (...)
             {
-                return tl::make_unexpected(error::type_mismatch);
+                return tl::make_unexpected(serializer_error::type_mismatch);
             }
 
             nlohmann::json rtn;
@@ -92,16 +78,13 @@ namespace saucer::serializers
     {
         fmt::dynamic_format_arg_store<fmt::format_context> rtn;
 
-        auto unpack = [&](const auto &arg) {
-            using arg_t = std::decay_t<decltype(arg)>;
-
-            if constexpr (is_args_v<arg_t>)
+        auto unpack = [&]<typename T>(const T &arg) {
+            if constexpr (is_arguments<T>)
             {
-                static_assert((is_args_v<arg_t> && decay_tuple<args_t<arg_t>>::serializable),
-                              "All arguments must be serializable");
+                static_assert((decay_tuple<typename T::tuple_t>::serializable), "All arguments must be serializable");
 
                 std::string rtn;
-                auto tuple = static_cast<args_t<arg_t>>(arg);
+                auto tuple = static_cast<typename T::tuple_t>(arg);
 
                 auto serialize_item = [&](const auto &item) {
                     auto json = static_cast<nlohmann::json>(nlohmann::json(item).dump()).dump();
@@ -119,7 +102,7 @@ namespace saucer::serializers
             }
             else
             {
-                static_assert(is_serializable<arg_t>::value, "All arguments must be serializable");
+                static_assert(is_serializable<T>, "All arguments must be serializable");
 
                 auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
                 return fmt::format("JSON.parse({})", json);
@@ -132,8 +115,7 @@ namespace saucer::serializers
 
     template <typename T> auto json::resolve(std::shared_ptr<std::promise<T>> promise)
     {
-        static_assert((std::is_same_v<T, void> || is_serializable<T>::value),
-                      "The promise result must be serializable");
+        static_assert((std::is_same_v<T, void> || is_serializable<T>), "The promise result must be serializable");
 
         return [promise = std::move(promise)](result_data &data) mutable {
             auto &json_data = dynamic_cast<json_result_data &>(data);
