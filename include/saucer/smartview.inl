@@ -9,13 +9,13 @@ namespace saucer
     struct smartview::callback_t
     {
         bool async;
-        resolve_callback resolve;
+        function_serializer resolve;
         std::type_index serializer_type;
     };
 
     struct smartview::eval_t
     {
-        eval_callback resolve;
+        promise_serializer resolve;
         std::type_index serializer_type;
     };
 
@@ -30,7 +30,7 @@ namespace saucer
         return *plugins->back();
     }
 
-    template <typename Return, typename Serializer, typename... Params>
+    template <typename Return, Serializer Serializer, typename... Params>
     std::future<Return> smartview::eval(const std::string &code, Params &&...params)
     {
         const auto &type = typeid(Serializer);
@@ -41,7 +41,7 @@ namespace saucer
             serializers->emplace(type, std::make_unique<Serializer>());
             const auto &serializer = serializers->at(type);
 
-            inject(serializer->init_script(), load_time::creation);
+            inject(serializer->script(), load_time::creation);
         }
 
         auto promise = std::make_shared<std::promise<Return>>();
@@ -53,7 +53,7 @@ namespace saucer
         return fut;
     }
 
-    template <typename Serializer, typename Function>
+    template <Serializer Serializer, typename Function>
     void smartview::expose(const std::string &name, const Function &func, bool async)
     {
         const auto &type = typeid(Serializer);
@@ -64,7 +64,7 @@ namespace saucer
             serializers->emplace(type, std::make_unique<Serializer>());
             const auto &serializer = serializers->at(type);
 
-            inject(serializer->init_script(), load_time::creation);
+            inject(serializer->script(), load_time::creation);
         }
 
         auto resolve = Serializer::serialize(func);

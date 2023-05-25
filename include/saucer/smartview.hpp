@@ -17,8 +17,8 @@ namespace saucer
         struct eval_t;
 
       private:
-        using resolve_callback = serializer::resolve_callback;
-        using eval_callback = serializer::eval_callback;
+        using function_serializer = serializer::function_serializer;
+        using promise_serializer = serializer::promise_serializer;
 
       private:
         lockpp::lock<std::map<std::size_t, std::shared_ptr<std::future<void>>>> m_futures;
@@ -44,11 +44,11 @@ namespace saucer
         void on_message(const std::string &) override;
 
       protected:
-        [[thread_safe]] void resolve(function_data &, const resolve_callback &);
+        [[thread_safe]] void resolve(function_data &, const function_serializer &);
 
       protected:
-        [[thread_safe]] void add_eval(std::type_index, eval_callback &&, const std::string &);
-        [[thread_safe]] void add_callback(std::type_index, const std::string &, resolve_callback &&, bool);
+        [[thread_safe]] void add_eval(std::type_index, promise_serializer &&, const std::string &);
+        [[thread_safe]] void add_callback(std::type_index, const std::string &, function_serializer &&, bool);
 
       protected:
         [[thread_safe]] void reject(std::size_t, const std::string &);
@@ -59,11 +59,11 @@ namespace saucer
         [[thread_safe]] Plugin &add_plugin();
 
       public:
-        template <typename Serializer, typename Function>
+        template <Serializer Serializer, typename Function>
         [[thread_safe]] void expose(const std::string &name, const Function &func, bool async = false);
 
       public:
-        template <typename Return, typename Serializer, typename... Params>
+        template <typename Return, Serializer Serializer, typename... Params>
         [[thread_safe]] [[nodiscard]] std::future<Return> eval(const std::string &code, Params &&...params);
     };
 #include "annotations.hpp" //NOLINT
