@@ -10,8 +10,8 @@ namespace saucer
 
     template <typename... T> auto all(std::future<T> &&...futures)
     {
-        return std::tuple_cat([](auto &&future) {
-            if constexpr (std::is_same_v<decltype(future.get()), void>)
+        return std::tuple_cat([]<typename F>(std::future<F> &&future) {
+            if constexpr (std::is_same_v<F, void>)
             {
                 return std::tuple<>();
             }
