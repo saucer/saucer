@@ -79,7 +79,7 @@ namespace saucer::serializers
         fmt::dynamic_format_arg_store<fmt::format_context> rtn;
 
         auto unpack = [&]<typename T>(const T &arg) {
-            if constexpr (is_arguments<T>)
+            if constexpr (is_arguments<std::decay_t<T>>)
             {
                 static_assert((decay_tuple<typename T::tuple_t>::serializable), "All arguments must be serializable");
 
