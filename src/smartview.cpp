@@ -74,7 +74,7 @@ namespace saucer
         }
     }
 
-    void smartview::resolve(function_data &data, const resolve_callback &callback)
+    void smartview::resolve(function_data &data, const function_serializer &callback)
     {
         auto result = callback(data);
 
@@ -86,11 +86,11 @@ namespace saucer
 
         switch (result.error())
         {
-        case serializer::error::argument_count_mismatch:
+        case serializer_error::argument_count_mismatch:
             reject(data.id, R"("Argument Count Mismatch")");
             break;
 
-        case serializer::error::type_mismatch:
+        case serializer_error::type_mismatch:
             reject(data.id, R"("Type Mismatch")");
             break;
         }
@@ -198,7 +198,7 @@ namespace saucer
         webview::on_message(message);
     }
 
-    void smartview::add_eval(std::type_index type, eval_callback &&resolve, const std::string &code)
+    void smartview::add_eval(std::type_index type, promise_serializer &&resolve, const std::string &code)
     {
         auto evals = m_evals.write();
         auto serializers = m_serializers.read();
@@ -216,7 +216,8 @@ namespace saucer
             id, code, serializer->js_serializer()));
     }
 
-    void smartview::add_callback(std::type_index type, const std::string &name, resolve_callback &&resolve, bool async)
+    void smartview::add_callback(std::type_index type, const std::string &name, function_serializer &&resolve,
+                                 bool async)
     {
         auto callbacks = m_callbacks.write();
         auto serializers = m_serializers.read();
