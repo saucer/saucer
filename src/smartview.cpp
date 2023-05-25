@@ -108,17 +108,15 @@ namespace saucer
             if (!parsed)
                 continue;
 
-            if (dynamic_cast<function_data *>(parsed.get()))
+            if (auto *function_message = dynamic_cast<function_data *>(parsed.get()); function_message)
             {
-                auto &function_message = dynamic_cast<function_data &>(*parsed);
-
-                if (!callbacks->count(function_message.function))
+                if (!callbacks->count(function_message->function))
                 {
-                    reject(function_message.id, R"("Invalid function")");
+                    reject(function_message->id, R"("Invalid function")");
                     return;
                 }
 
-                const auto &[async, callback, function_serializer_type] = callbacks->at(function_message.function);
+                const auto &[async, callback, function_serializer_type] = callbacks->at(function_message->function);
 
                 if (serializer_type != function_serializer_type)
                 {
@@ -167,30 +165,29 @@ namespace saucer
                     return;
                 }
 
-                resolve(function_message, callback);
+                resolve(*function_message, callback);
                 return;
             }
 
-            if (dynamic_cast<result_data *>(parsed.get()))
+            if (auto *result_message = dynamic_cast<result_data *>(parsed.get()); result_message)
             {
-                auto &result_message = dynamic_cast<result_data &>(*parsed);
                 auto evals = m_evals.write();
 
-                if (!evals->count(result_message.id))
+                if (!evals->count(result_message->id))
                 {
                     return;
                 }
 
-                const auto &[resolve, eval_serializer_type] = evals->at(result_message.id);
+                const auto &[resolve, eval_serializer_type] = evals->at(result_message->id);
 
                 if (serializer_type != eval_serializer_type)
                 {
                     continue;
                 }
 
-                resolve(result_message);
+                resolve(*result_message);
 
-                evals->erase(result_message.id);
+                evals->erase(result_message->id);
                 return;
             }
         }
