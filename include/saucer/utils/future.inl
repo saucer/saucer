@@ -10,8 +10,8 @@ namespace saucer
 
     template <typename... T> auto all(std::future<T> &&...futures)
     {
-        return std::tuple_cat([]<typename F>(std::future<F> &&future) {
-            if constexpr (std::is_same_v<F, void>)
+        return std::tuple_cat([]<typename F>(std::future<F> future) {
+            if constexpr (std::same_as<F, void>)
             {
                 return std::tuple<>();
             }
@@ -19,7 +19,7 @@ namespace saucer
             {
                 return std::make_tuple(future.get());
             }
-        }(std::move(futures))...);
+        }(std::move(futures)...));
     }
 
     template <typename T, typename Callback> void then(std::future<T> &&future, Callback &&callback)
