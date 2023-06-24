@@ -22,6 +22,10 @@ namespace saucer
 
     struct serializer
     {
+        using promise = std::function<void(result_data &)>;
+        using function = std::function<tl::expected<std::string, serializer_error>(function_data &)>;
+
+      public:
         virtual ~serializer() = default;
 
       public:
@@ -30,18 +34,15 @@ namespace saucer
 
       public:
         [[nodiscard]] virtual std::unique_ptr<message_data> parse(const std::string &) const = 0;
-
-      public:
-        using promise_serializer = std::function<void(result_data &)>;
-        using function_serializer = std::function<tl::expected<std::string, serializer_error>(function_data &)>;
     };
 
     template <class T>
     concept Serializer = requires() {
+        requires std::movable<T>;
         requires std::derived_from<T, serializer>;
         {
             T::serialize([](int) { return 5; })
-        } -> std::convertible_to<serializer::function_serializer>;
+        } -> std::convertible_to<serializer::function>;
         {
             T::serialize_args(10, 15, 20)
         } -> std::convertible_to<fmt::dynamic_format_arg_store<fmt::format_context>>;
@@ -50,6 +51,6 @@ namespace saucer
         } -> std::convertible_to<fmt::dynamic_format_arg_store<fmt::format_context>>;
         {
             T::resolve(std::declval<std::shared_ptr<std::promise<int>>>())
-        };
+        } -> std::convertible_to<serializer::promise>;
     };
 } // namespace saucer

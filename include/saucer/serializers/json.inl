@@ -42,7 +42,7 @@ namespace saucer::serializers
                           (std::is_same_v<rtn_t, void> || detail::json::is_serializable<rtn_t>),
                       "All arguments as well as the return type must be serializable");
 
-        return [func](function_data &data) -> function_serializer::result_type {
+        return [func](function_data &data) -> function::result_type {
             auto &message = dynamic_cast<json_function_data &>(data);
             const auto &params = message.data;
 

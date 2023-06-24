@@ -12,7 +12,7 @@ namespace saucer
 
     struct function_data : public message_data
     {
-        std::string function;
+        std::string name;
         ~function_data() override = default;
     };
 
