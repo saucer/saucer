@@ -38,7 +38,7 @@ namespace saucer::serializers
 
             rtn->id = parsed["id"];
             rtn->data = parsed["params"];
-            rtn->function = parsed["name"];
+            rtn->name = parsed["name"];
 
             return rtn;
         }
