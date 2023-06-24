@@ -2,7 +2,8 @@
 #include "window.hpp"
 
 #include <map>
-#include <filesystem>
+#include <string>
+#include <memory>
 #include <ereignis/manager.hpp>
 
 namespace saucer
@@ -25,7 +26,7 @@ namespace saucer
         const std::uint8_t *data;
     };
 
-#include "annotations.hpp"
+#include "meta/annotations.hpp"
     class webview : public window
     {
         struct impl;
@@ -53,9 +54,9 @@ namespace saucer
         ~webview() override;
 
       public:
-        [[thread_safe]] [[nodiscard]] bool get_dev_tools() const;
-        [[thread_safe]] [[nodiscard]] std::string get_url() const;
-        [[thread_safe]] [[nodiscard]] bool get_context_menu() const;
+        [[thread_safe]] [[nodiscard]] bool dev_tools() const;
+        [[thread_safe]] [[nodiscard]] std::string url() const;
+        [[thread_safe]] [[nodiscard]] bool context_menu() const;
 
       public:
         [[thread_safe]] void set_dev_tools(bool enabled);
@@ -83,7 +84,7 @@ namespace saucer
         template <web_event Event> //
         [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&callback) = delete;
     };
-#include "annotations.hpp" //NOLINT
+#include "meta/annotations.hpp" //NOLINT
 
     template <>
     std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);

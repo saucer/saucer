@@ -1,8 +1,8 @@
 #pragma once
-#include <array>
+#include "utils/color.hpp"
+
 #include <memory>
 #include <string>
-#include <functional>
 #include <filesystem>
 #include <ereignis/manager.hpp>
 
@@ -22,7 +22,7 @@ namespace saucer
         std::filesystem::path storage_path;
     };
 
-#include "annotations.hpp"
+#include "meta/annotations.hpp"
     class window
     {
         struct impl;
@@ -45,14 +45,18 @@ namespace saucer
         virtual ~window();
 
       public:
-        [[thread_safe]] [[nodiscard]] bool get_resizable() const;
-        [[thread_safe]] [[nodiscard]] bool get_decorations() const;
-        [[thread_safe]] [[nodiscard]] std::string get_title() const;
-        [[thread_safe]] [[nodiscard]] bool get_always_on_top() const;
-        [[thread_safe]] [[nodiscard]] std::array<int, 2> get_size() const;
-        [[thread_safe]] [[nodiscard]] std::array<int, 2> get_max_size() const;
-        [[thread_safe]] [[nodiscard]] std::array<int, 2> get_min_size() const;
-        [[thread_safe]] [[nodiscard]] std::array<int, 4> get_background_color() const;
+        [[thread_safe]] [[nodiscard]] bool resizable() const;
+        [[thread_safe]] [[nodiscard]] bool decorations() const;
+        [[thread_safe]] [[nodiscard]] bool always_on_top() const;
+
+      public:
+        [[thread_safe]] [[nodiscard]] std::string title() const;
+        [[thread_safe]] [[nodiscard]] color background() const;
+
+      public:
+        [[thread_safe]] [[nodiscard]] std::pair<int, int> size() const;
+        [[thread_safe]] [[nodiscard]] std::pair<int, int> max_size() const;
+        [[thread_safe]] [[nodiscard]] std::pair<int, int> min_size() const;
 
       public:
         [[thread_safe]] void hide();
@@ -62,12 +66,16 @@ namespace saucer
       public:
         [[thread_safe]] void set_resizable(bool enabled);
         [[thread_safe]] void set_decorations(bool enabled);
-        [[thread_safe]] void set_title(const std::string &);
         [[thread_safe]] void set_always_on_top(bool enabled);
+
+      public:
+        [[thread_safe]] void set_title(const std::string &);
+        [[thread_safe]] void set_background(const color &color);
+
+      public:
         [[thread_safe]] void set_size(int width, int height);
         [[thread_safe]] void set_max_size(int width, int height);
         [[thread_safe]] void set_min_size(int width, int height);
-        [[thread_safe]] void set_background_color(int r, int g, int b, int a);
 
       public:
         [[thread_safe]] void clear(window_event event);
@@ -79,7 +87,7 @@ namespace saucer
       public:
         template <bool Blocking = true> static void run();
     };
-#include "annotations.hpp" //NOLINT
+#include "meta/annotations.hpp" //NOLINT
 
     template <> std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&);
     template <> std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&);

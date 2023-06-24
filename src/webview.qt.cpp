@@ -78,31 +78,31 @@ namespace saucer
         m_events.at<web_event::url_changed>().fire(url);
     }
 
-    bool webview::get_dev_tools() const
+    bool webview::dev_tools() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return get_dev_tools(); });
+            return window::m_impl->post_safe([this] { return dev_tools(); });
         }
 
         return static_cast<bool>(m_impl->dev_view);
     }
 
-    std::string webview::get_url() const
+    std::string webview::url() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return get_url(); });
+            return window::m_impl->post_safe([this] { return url(); });
         }
 
         return m_impl->web_view->url().toString().toStdString();
     }
 
-    bool webview::get_context_menu() const
+    bool webview::context_menu() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return get_context_menu(); });
+            return window::m_impl->post_safe([this] { return context_menu(); });
         }
 
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
