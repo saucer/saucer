@@ -46,7 +46,7 @@ namespace saucer
             script.setName("_run_js");
             script.setRunsOnSubFrames(false);
             script.setWorldId(QWebEngineScript::MainWorld);
-            script.setInjectionPoint(QWebEngineScript::DocumentReady);
+            script.setInjectionPoint(QWebEngineScript::Deferred);
             script.setSourceCode(R"(window.saucer.on_message("js_finished");)");
         }
         else
