@@ -1,76 +1,61 @@
 #pragma once
 #include "webview.hpp"
-#include "plugin/plugin.hpp"
-#include "module/module.hpp"
 #include "serializers/serializer.hpp"
 
 #include <future>
-#include <typeindex>
+#include <atomic>
+#include <memory>
+#include <string>
 #include <lockpp/lock.hpp>
 
 namespace saucer
 {
-#include "annotations.hpp"
-    class smartview : public webview
+#include "meta/annotations.hpp"
+    class smartview_core : public webview
     {
-        struct callback_t;
-        struct eval_t;
+        struct impl;
 
       private:
-        using function_serializer = serializer::function_serializer;
-        using promise_serializer = serializer::promise_serializer;
-
-      private:
-        lockpp::lock<std::map<std::size_t, std::shared_ptr<std::future<void>>>> m_futures;
+        std::unique_ptr<impl> m_impl;
 
       protected:
-        lockpp::lock<std::map<std::type_index, std::unique_ptr<serializer>>> m_serializers;
-        lockpp::lock<std::vector<std::unique_ptr<plugin>>> m_plugins;
+        std::atomic_uint64_t m_id_counter{0};
 
       protected:
-        lockpp::lock<std::map<std::string, callback_t>> m_callbacks;
-        lockpp::lock<std::map<std::size_t, eval_t>> m_evals;
-
-      protected:
-        std::atomic<std::size_t> m_id_counter{0};
+        smartview_core(std::unique_ptr<serializer>, const options & = {});
 
       public:
-        smartview(const options & = {});
-
-      public:
-        ~smartview() override;
+        ~smartview_core() override;
 
       protected:
         void on_message(const std::string &) override;
 
       protected:
-        [[thread_safe]] void resolve(function_data &, const function_serializer &);
+        [[thread_safe]] void call(function_data &, const serializer::function &);
 
       protected:
-        [[thread_safe]] void add_eval(std::type_index, promise_serializer &&, const std::string &);
-        [[thread_safe]] void add_callback(std::type_index, const std::string &, function_serializer &&, bool);
+        [[thread_safe]] void add_evaluation(serializer::promise &&, const std::string &);
+        [[thread_safe]] void add_function(const std::string &, serializer::function &&, bool);
 
       protected:
         [[thread_safe]] void reject(std::size_t, const std::string &);
         [[thread_safe]] void resolve(std::size_t, const std::string &);
+    };
+
+    template <Serializer Serializer> class smartview : public smartview_core
+    {
+      public:
+        smartview(const options & = {});
 
       public:
-        template <Plugin Plugin> //
-        [[thread_safe]] Plugin &add_plugin();
-
-      public:
-        template <Serializer Serializer, typename Function>
+        template <typename Function>
         [[thread_safe]] void expose(const std::string &name, const Function &func, bool async = false);
 
       public:
-        template <typename Return, Serializer Serializer, typename... Params>
-        [[thread_safe]] [[nodiscard]] std::future<Return> eval(const std::string &code, Params &&...params);
+        template <typename Return, typename... Params>
+        [[thread_safe]] [[nodiscard]] std::future<Return> evaluate(const std::string &code, Params &&...params);
     };
-#include "annotations.hpp" //NOLINT
-
-    template <typename DefaultSerializer> class simple_smartview;
-    template <template <backend_type> class... Modules> class modularized_smartview;
-    template <typename DefaultSerializer, template <backend_type> class... Modules> class modularized_simple_smartview;
+#include "meta/annotations.hpp" //NOLINT
 } // namespace saucer
 
 #include "smartview.inl"

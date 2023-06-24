@@ -1,80 +1,98 @@
-#include "webview.hpp"
 #include "smartview.hpp"
+#include "serializers/data.hpp"
 #include "serializers/serializer.hpp"
 
+#include <regex>
 #include <fmt/core.h>
 
 namespace saucer
 {
-    smartview::smartview(const options &options) : webview(options)
+    using lockpp::lock;
+
+    struct function
     {
-        inject(R"js(
+        bool async;
+        serializer::function function;
+    };
+
+    struct smartview_core::impl
+    {
+      public:
+        lock<std::map<std::uint64_t, serializer::promise>> evaluations;
+
+      public:
+        lock<std::map<std::uint64_t, std::shared_ptr<std::future<void>>>> pending;
+        lock<std::map<std::string, function>> functions;
+
+      public:
+        std::unique_ptr<serializer> serializer;
+    };
+
+    smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
+        : webview(options), m_impl(std::make_unique<impl>())
+    {
+        m_impl->serializer = std::move(serializer);
+
+        inject(std::regex_replace(R"js(
         window.saucer._idc = 0;
         window.saucer._rpc = [];
-        window.saucer._known_functions = new Map();
         
-        window.saucer.call = async (name, params, serializer = null) =>
+        window.saucer.call = async (name, params) =>
         {
-            if (Array.isArray(params) && (typeof name === 'string' || name instanceof String))
+            if (!Array.isArray(params))
             {
-                if (serializer == null)
-                {
-                    if (window.saucer._known_functions.has(name))
-                    {
-                        serializer = window.saucer._known_functions.get(name);
-                    }
-                    else
-                    {
-                        throw "Unable to automatically determine the serializer for this function. Please provide it manually."; 
-                    }
-                }
+                throw "Bad Arguments, expected array";
+            }
 
-                const id = ++window.saucer._idc;
-                const rtn = new Promise((resolve, reject) => 
-                {
-                    window.saucer._rpc[id] = {
-                        reject,
-                        resolve,
-                    };
-                });
+            if (typeof name !== 'string' && !(name instanceof String))
+            {
+                throw "Bad Name, expected string";
+            }
 
-                await window.saucer.on_message(serializer({
+            const id = ++window.saucer._idc;
+            
+            const rtn = new Promise((resolve, reject) => {
+                window.saucer._rpc[id] = {
+                    reject,
+                    resolve,
+                };
+            });
+
+            await window.saucer.on_message(<serializer>({
                     id,
                     name,
                     params,
-                }));
+            }));
 
-                return rtn;
-            }
-            else
-            {
-                throw "Invalid arguments";
-            }
+            return rtn;
         }
 
-        window.saucer._resolve = async (id, value, serializer = null) =>
+        window.saucer._resolve = async (id, value) =>
         {
-            await window.saucer.on_message(serializer({
-                id,
-                result: value === undefined ? null : value,
+            await window.saucer.on_message(<serializer>({
+                    id,
+                    result: value === undefined ? null : value,
             }));
         }
         )js",
+                                  std::regex{"<serializer>"}, m_impl->serializer->js_serializer()),
                load_time::creation);
+
+        inject(m_impl->serializer->script(), load_time::creation);
     }
 
-    smartview::~smartview()
+    smartview_core::~smartview_core()
     {
-        auto futures = m_futures.read()->size();
+        auto finished = m_impl->pending.read()->empty();
 
-        while (futures)
+        while (!finished)
         {
             run<false>();
-            futures = m_futures.read()->size();
+            finished = m_impl->pending.read()->empty();
         }
     }
 
-    void smartview::resolve(function_data &data, const function_serializer &callback)
+    void smartview_core::call(function_data &data, const serializer::function &callback)
     {
         auto result = callback(data);
 
@@ -87,150 +105,97 @@ namespace saucer
         switch (result.error())
         {
         case serializer_error::argument_count_mismatch:
-            reject(data.id, R"("Argument Count Mismatch")");
+            reject(data.id, "Argument count mismatch");
             break;
 
         case serializer_error::type_mismatch:
-            reject(data.id, R"("Type Mismatch")");
+            reject(data.id, "Type mismatch");
             break;
         }
     }
 
-    void smartview::on_message(const std::string &message)
+    void smartview_core::on_message(const std::string &message)
     {
-        auto callbacks = m_callbacks.read();
-        auto serializers = m_serializers.read();
+        auto parsed = m_impl->serializer->parse(message);
 
-        for (const auto &[serializer_type, serializer] : *serializers)
+        if (!parsed)
         {
-            auto parsed = serializer->parse(message);
+            return;
+        }
 
-            if (!parsed)
-                continue;
+        if (auto *function_message = dynamic_cast<function_data *>(parsed.get()); function_message)
+        {
+            auto functions = m_impl->functions.copy();
 
-            if (auto *function_message = dynamic_cast<function_data *>(parsed.get()); function_message)
+            if (!functions.contains(function_message->name))
             {
-                if (!callbacks->count(function_message->function))
-                {
-                    reject(function_message->id, R"("Invalid function")");
-                    return;
-                }
-
-                const auto &[async, callback, function_serializer_type] = callbacks->at(function_message->function);
-
-                if (serializer_type != function_serializer_type)
-                {
-                    continue;
-                }
-
-                if (async)
-                {
-                    /*
-                    ? As it is completely "legal" to call "smartview.close()" inside of an async callback we have to
-                    ? ensure that all futures are properly processed before we close the smartview, as not doing so
-                    ? would cause a segmentation fault (more precisely: when a callback calls close the std::async which
-                    ? executes the callback will then call "resolve" with the captured result, however, due to the
-                    ? smartview potentially being destructed already this causes a segmentation fault).
-
-                    ? To circumvent this we save all futures for async callbacks in our smartview, however we'd like to
-                    ? avoid clobbering the memory with old futures.
-
-                    ? The solution to this is the following code, which just creates a shared_ptr to a future,
-                    ? then it saves the future, and assigns the async to the future, however the async callback has the
-                    ? shared_ptr to the future in it's capture list as a copy, which means that the shared_ptr will have
-                    ? a ref_count of 2, once in our smartview future list and once in the lambda capture, the lambda
-                    ? capture will destruct itself after execution, so it is completely safe for us to erase the future
-                    ? stored in the smartview from within the async's lambda (without causing an exception due to
-                    ? destructing a non ready future).
-
-                    ? On destruction of the smartview we then check for any remaining futures, and call the non blocking
-                    ? "run" method of the window to ensure that all callbacks that were safely queued (e.g. by
-                    ? "postSafe") are properly executed, once they're executed they will erase themselves from the
-                    ? futures list.
-                    */
-
-                    auto fut = std::make_shared<std::future<void>>();
-                    auto fut_id = m_id_counter++;
-
-                    m_futures.write()->emplace(fut_id, fut);
-
-                    *fut = std::async(std::launch::async,
-                                      [this, fut, fut_id, callback = callback, parsed = std::move(parsed)]() mutable {
-                                          auto &message = dynamic_cast<function_data &>(*parsed);
-
-                                          resolve(message, callback);
-                                          m_futures.write()->erase(fut_id);
-                                      });
-
-                    return;
-                }
-
-                resolve(*function_message, callback);
+                reject(function_message->id, "Invalid function, did you forget to call smartview::expose(...)?");
                 return;
             }
 
-            if (auto *result_message = dynamic_cast<result_data *>(parsed.get()); result_message)
+            const auto &[async, callback] = functions.at(function_message->name);
+
+            if (!async)
             {
-                auto evals = m_evals.write();
-
-                if (!evals->count(result_message->id))
-                {
-                    return;
-                }
-
-                const auto &[resolve, eval_serializer_type] = evals->at(result_message->id);
-
-                if (serializer_type != eval_serializer_type)
-                {
-                    continue;
-                }
-
-                resolve(*result_message);
-
-                evals->erase(result_message->id);
+                call(*function_message, callback);
                 return;
             }
+
+            auto id = m_id_counter++;
+            auto future = std::make_shared<std::future<void>>();
+
+            m_impl->pending.write()->emplace(id, future);
+
+            *future = std::async(std::launch::async, [this, future, id, callback, parsed = std::move(parsed)]() {
+                auto &message = dynamic_cast<function_data &>(*parsed);
+                call(message, callback);
+
+                m_impl->pending.write()->erase(id);
+            });
+
+            return;
+        }
+
+        if (auto *result_message = dynamic_cast<result_data *>(parsed.get()); result_message)
+        {
+            auto evals = m_impl->evaluations.write();
+
+            if (!evals->contains(result_message->id))
+            {
+                return;
+            }
+
+            const auto &resolve = evals->at(result_message->id);
+            resolve(*result_message);
+
+            evals->erase(result_message->id);
+            return;
         }
 
         webview::on_message(message);
     }
 
-    void smartview::add_eval(std::type_index type, promise_serializer &&resolve, const std::string &code)
+    void smartview_core::add_evaluation(serializer::promise &&resolve, const std::string &code)
     {
-        auto evals = m_evals.write();
-        auto serializers = m_serializers.read();
-
         auto id = m_id_counter++;
-        evals->emplace(id, eval_t{std::move(resolve), type});
-        const auto &serializer = serializers->at(type);
+        m_impl->evaluations.write()->emplace(id, std::move(resolve));
 
         run_java_script(fmt::format(
             R"(
                 (async () =>
-                    window.saucer._resolve({}, {}, {})
+                    window.saucer._resolve({}, {})
                 )();
             )",
-            id, code, serializer->js_serializer()));
+            id, code));
     }
 
-    void smartview::add_callback(std::type_index type, const std::string &name, function_serializer &&resolve,
-                                 bool async)
+    void smartview_core::add_function(const std::string &name, serializer::function &&resolve, bool async)
     {
-        auto callbacks = m_callbacks.write();
-        auto serializers = m_serializers.read();
-
-        callbacks->emplace(name, callback_t{async, std::move(resolve), type});
-        const auto &serializer = serializers->at(type);
-
-        inject(fmt::format(
-                   R"(
-                        window.saucer._known_functions.set("{}", {});
-                    )",
-                   name, serializer->js_serializer()),
-               load_time::creation);
+        auto functions = m_impl->functions.write();
+        functions->emplace(name, function{async, std::move(resolve)});
     }
 
-    void smartview::resolve(std::size_t id, const std::string &result)
+    void smartview_core::resolve(std::size_t id, const std::string &result)
     {
         run_java_script(fmt::format(
             R"(
@@ -240,11 +205,11 @@ namespace saucer
             id, result));
     }
 
-    void smartview::reject(std::size_t id, const std::string &result)
+    void smartview_core::reject(std::size_t id, const std::string &result)
     {
         run_java_script(fmt::format(
             R"(
-                window.saucer._rpc[{0}].reject({1});
+                window.saucer._rpc[{0}].reject("{1}");
                 delete window.saucer._rpc[{0}];
             )",
             id, result));
