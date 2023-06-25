@@ -22,6 +22,7 @@ namespace saucer
 
     struct serializer
     {
+        using message_ptr = std::unique_ptr<message_data>;
         using promise = std::function<void(result_data &)>;
         using function = std::function<tl::expected<std::string, serializer_error>(function_data &)>;
 
@@ -33,7 +34,7 @@ namespace saucer
         [[nodiscard]] virtual std::string js_serializer() const = 0;
 
       public:
-        [[nodiscard]] virtual std::unique_ptr<message_data> parse(const std::string &) const = 0;
+        [[nodiscard]] virtual message_ptr parse(const std::string &) const = 0;
     };
 
     template <class T>

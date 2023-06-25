@@ -10,7 +10,7 @@ namespace saucer::serializers
 
     std::string json::script() const
     {
-        return "";
+        return {};
     }
 
     std::string json::js_serializer() const
@@ -37,8 +37,8 @@ namespace saucer::serializers
             auto rtn = std::make_unique<json_function_data>();
 
             rtn->id = parsed["id"];
-            rtn->data = parsed["params"];
             rtn->name = parsed["name"];
+            rtn->data = parsed["params"];
 
             return rtn;
         }

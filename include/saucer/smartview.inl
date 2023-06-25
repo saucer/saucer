@@ -15,17 +15,19 @@ namespace saucer
         auto promise = std::make_shared<std::promise<Return>>();
         auto rtn = promise->get_future();
 
-        auto resolve = Serializer::resolve(std::move(promise));
-        add_evaluation(std::move(resolve), fmt::vformat(code, Serializer::serialize_args(params...)));
+        auto args = Serializer::serialize_args(std::forward<Params>(params)...);
+        auto resolve = Serializer::resolve(promise);
+
+        add_evaluation(std::move(resolve), fmt::vformat(code, args));
 
         return rtn;
     }
 
     template <Serializer Serializer>
     template <typename Function>
-    void smartview<Serializer>::expose(const std::string &name, const Function &func, bool async)
+    void smartview<Serializer>::expose(std::string name, const Function &func, bool async)
     {
         auto resolve = Serializer::serialize(func);
-        add_function(name, std::move(resolve), async);
+        add_function(std::move(name), std::move(resolve), async);
     }
 } // namespace saucer

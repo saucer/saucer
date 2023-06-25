@@ -120,6 +120,7 @@ namespace saucer
 
         if (!parsed)
         {
+            webview::on_message(message);
             return;
         }
 
@@ -171,8 +172,6 @@ namespace saucer
             evals->erase(result_message->id);
             return;
         }
-
-        webview::on_message(message);
     }
 
     void smartview_core::add_evaluation(serializer::promise &&resolve, const std::string &code)
@@ -189,10 +188,10 @@ namespace saucer
             id, code));
     }
 
-    void smartview_core::add_function(const std::string &name, serializer::function &&resolve, bool async)
+    void smartview_core::add_function(std::string name, serializer::function &&resolve, bool async)
     {
         auto functions = m_impl->functions.write();
-        functions->emplace(name, function{async, std::move(resolve)});
+        functions->emplace(std::move(name), function{async, std::move(resolve)});
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
