@@ -10,19 +10,20 @@
 
 namespace saucer
 {
+    const auto register_scheme = [] {
+        using Flags = QWebEngineUrlScheme::Flag;
+        auto scheme = QWebEngineUrlScheme("saucer");
+
+        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
+        scheme.setFlags(Flags::LocalScheme | Flags::LocalAccessAllowed | Flags::SecureScheme);
+
+        QWebEngineUrlScheme::registerScheme(scheme);
+    };
+
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-
-        std::call_once(flag, [] {
-            using Flags = QWebEngineUrlScheme::Flag;
-            auto scheme = QWebEngineUrlScheme("saucer");
-
-            scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
-            scheme.setFlags(Flags::LocalScheme | Flags::LocalAccessAllowed | Flags::SecureScheme);
-
-            QWebEngineUrlScheme::registerScheme(scheme);
-        });
+        std::call_once(flag, register_scheme);
 
         m_impl->web_view = new QWebEngineView(window::m_impl->window);
 
@@ -48,19 +49,16 @@ namespace saucer
         m_impl->channel_obj = new impl::web_class(this);
         m_impl->web_channel->registerObject("saucer", m_impl->channel_obj);
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted, [this]() { //
-            m_impl->is_ready = false;
-        });
+        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted,
+                                  [this]() { m_impl->is_ready = false; });
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished, [this]() { //
-            m_impl->is_ready = true;
-        });
+        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished,
+                                  [this]() { m_impl->is_ready = true; });
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged, [this](const QUrl &url) { //
-            on_url_changed(url.toString().toStdString());
-        });
+        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged,
+                                  [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
 
-        window::m_impl->on_closed = [this] { //
+        window::m_impl->on_closed = [this] {
             set_dev_tools(false);
         };
 
@@ -112,7 +110,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([enabled, this] { return set_dev_tools(enabled); });
+            return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
         if (!enabled)
@@ -143,7 +141,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([enabled, this] { return set_context_menu(enabled); });
+            return window::m_impl->post_safe([this, enabled] { return set_context_menu(enabled); });
         }
 
         m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
@@ -154,7 +152,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([url, this] { return set_url(url); });
+            return window::m_impl->post_safe([this, url] { return set_url(url); });
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
@@ -162,7 +160,7 @@ namespace saucer
 
     void webview::serve(const std::string &file)
     {
-        set_url(std::string{impl::scheme_prefix} + file);
+        set_url(fmt::format("{}{}", impl::scheme_prefix, file));
     }
 
     void webview::embed(std::map<const std::string, const embedded_file> &&files)
@@ -224,7 +222,8 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <> std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback)
+    template <>
+    std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback)
     {
         return m_events.at<web_event::url_changed>().add(std::move(callback));
     }

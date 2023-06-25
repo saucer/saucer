@@ -12,8 +12,10 @@ namespace saucer
         if (message == "js_ready")
         {
             m_impl->is_ready = true;
+            return;
         }
-        else if (message == "js_finished")
+
+        if (message == "js_finished")
         {
             auto script = m_impl->web_view->page()->scripts().findScript("_run_js");
 
@@ -30,7 +32,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([java_script, this] { run_java_script(java_script); });
+            return window::m_impl->post_safe([this, java_script] { run_java_script(java_script); });
         }
 
         if (m_impl->is_ready)
@@ -46,7 +48,7 @@ namespace saucer
             script.setName("_run_js");
             script.setRunsOnSubFrames(false);
             script.setWorldId(QWebEngineScript::MainWorld);
-            script.setInjectionPoint(QWebEngineScript::Deferred);
+            script.setInjectionPoint(QWebEngineScript::DocumentReady);
             script.setSourceCode(R"(window.saucer.on_message("js_finished");)");
         }
         else
