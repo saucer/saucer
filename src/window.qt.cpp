@@ -163,17 +163,11 @@ namespace saucer
             return;
         }
 
-        m_impl->window->setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+        auto max_size = m_impl->max_size.value_or(QSize{QWIDGETSIZE_MAX, QWIDGETSIZE_MAX});
+        m_impl->window->setMaximumSize(max_size);
 
-        if (m_impl->max_size)
-        {
-            m_impl->window->setMaximumSize(*m_impl->max_size);
-        }
-
-        if (m_impl->min_size)
-        {
-            m_impl->window->setMinimumSize(*m_impl->min_size);
-        }
+        auto min_size = m_impl->min_size.value_or(QSize{0, 0});
+        m_impl->window->setMinimumSize(min_size);
     }
 
     void window::set_decorations(bool enabled)
@@ -256,27 +250,32 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <> std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&callback)
+    template <>
+    std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&callback)
     {
         return m_events.at<window_event::close>().add(std::move(callback));
     }
 
-    template <> std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&callback)
+    template <>
+    std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&callback)
     {
         return m_events.at<window_event::closed>().add(std::move(callback));
     }
 
-    template <> std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&callback)
+    template <>
+    std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&callback)
     {
         return m_events.at<window_event::resize>().add(std::move(callback));
     }
 
-    template <> void window::run<true>()
+    template <>
+    void window::run<true>()
     {
         QApplication::exec();
     }
 
-    template <> void window::run<false>()
+    template <>
+    void window::run<false>()
     {
         QApplication::processEvents();
     }
