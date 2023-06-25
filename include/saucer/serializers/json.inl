@@ -14,32 +14,35 @@
 namespace saucer::serializers::detail::json
 {
     template <typename T>
-    concept is_serializable = requires(T t) { static_cast<nlohmann::json>(t); };
+    concept is_serializable = requires(T value) { static_cast<nlohmann::json>(value); };
 
-    template <typename T> struct decay_tuple
+    template <typename T>
+    struct decay_tuple
     {
     };
 
-    template <typename... T> struct decay_tuple<std::tuple<T...>>
+    template <typename... T>
+    struct decay_tuple<std::tuple<T...>>
     {
         using type = std::tuple<std::decay_t<T>...>;
         static constexpr bool serializable = (is_serializable<std::decay_t<T>> && ...);
     };
 
-    template <typename T> using decay_tuple_t = typename decay_tuple<T>::type;
+    template <typename T>
+    using decay_tuple_t = typename decay_tuple<T>::type;
 }; // namespace saucer::serializers::detail::json
 
 namespace saucer::serializers
 {
-    template <typename Function> auto json::serialize(const Function &func)
+    template <typename Function>
+    auto json::serialize(const Function &func)
     {
-        using raw_args_t = boost::callable_traits::args_t<Function>;
-
         using rtn_t = boost::callable_traits::return_type_t<Function>;
+        using raw_args_t = boost::callable_traits::args_t<Function>;
         using args_t = detail::json::decay_tuple_t<raw_args_t>;
 
         static_assert(detail::json::decay_tuple<raw_args_t>::serializable &&
-                          (std::is_same_v<rtn_t, void> || detail::json::is_serializable<rtn_t>),
+                          (std::is_void_v<rtn_t> || detail::json::is_serializable<rtn_t>),
                       "All arguments as well as the return type must be serializable");
 
         return [func](function_data &data) -> function::result_type {
@@ -56,7 +59,9 @@ namespace saucer::serializers
             try
             {
                 std::size_t current_arg{0};
-                auto serialize_item = [&]<typename T>(T &arg) { arg = static_cast<T>(params.at(current_arg++)); };
+                auto serialize_item = [&]<typename T>(T &arg) {
+                    arg = static_cast<T>(params.at(current_arg++));
+                };
 
                 std::apply([&](auto &...args) { (serialize_item(args), ...); }, args);
             }
@@ -81,18 +86,19 @@ namespace saucer::serializers
         };
     }
 
-    template <typename... Params> auto json::serialize_args(const Params &...params)
+    template <typename... Params>
+    auto json::serialize_args(const Params &...params)
     {
         fmt::dynamic_format_arg_store<fmt::format_context> rtn;
 
         auto unpack = [&]<typename T>(const T &arg) {
             if constexpr (is_arguments<std::decay_t<T>>)
             {
-                static_assert((detail::json::decay_tuple<typename T::tuple_t>::serializable),
-                              "All arguments must be serializable");
+                using tuple_t = typename T::tuple_t;
+                static_assert((detail::json::decay_tuple<tuple_t>::serializable), "All arguments must be serializable");
 
                 std::string rtn;
-                auto tuple = static_cast<typename T::tuple_t>(arg);
+                auto tuple = static_cast<tuple_t>(arg);
 
                 auto serialize_item = [&](const auto &item) {
                     auto json = static_cast<nlohmann::json>(nlohmann::json(item).dump()).dump();
@@ -121,15 +127,16 @@ namespace saucer::serializers
         return rtn;
     }
 
-    template <typename T> auto json::resolve(std::shared_ptr<std::promise<T>> promise)
+    template <typename T>
+    auto json::resolve(std::shared_ptr<std::promise<T>> promise)
     {
-        static_assert((std::is_same_v<T, void> || detail::json::is_serializable<T>),
+        static_assert((std::is_void_v<T> || detail::json::is_serializable<T>),
                       "The promise result must be serializable");
 
-        return [promise = std::move(promise)](result_data &data) mutable {
+        return [promise](result_data &data) mutable {
             auto &json_data = dynamic_cast<json_result_data &>(data);
 
-            if constexpr (std::is_same_v<T, void>)
+            if constexpr (std::is_void_v<T>)
             {
                 promise->set_value();
             }
