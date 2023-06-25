@@ -195,7 +195,7 @@ namespace saucer
         functions->emplace(name, function{async, std::move(resolve)});
     }
 
-    void smartview_core::resolve(std::size_t id, const std::string &result)
+    void smartview_core::resolve(std::uint64_t id, const std::string &result)
     {
         run_java_script(fmt::format(
             R"(
@@ -205,7 +205,7 @@ namespace saucer
             id, result));
     }
 
-    void smartview_core::reject(std::size_t id, const std::string &result)
+    void smartview_core::reject(std::uint64_t id, const std::string &result)
     {
         run_java_script(fmt::format(
             R"(

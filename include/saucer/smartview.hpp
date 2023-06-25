@@ -38,8 +38,8 @@ namespace saucer
         [[thread_safe]] void add_function(const std::string &, serializer::function &&, bool);
 
       protected:
-        [[thread_safe]] void reject(std::size_t, const std::string &);
-        [[thread_safe]] void resolve(std::size_t, const std::string &);
+        [[thread_safe]] void reject(std::uint64_t, const std::string &);
+        [[thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 
     template <Serializer Serializer> class smartview : public smartview_core

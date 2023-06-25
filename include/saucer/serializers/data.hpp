@@ -6,7 +6,7 @@ namespace saucer
 {
     struct message_data
     {
-        std::size_t id;
+        std::uint64_t id;
         virtual ~message_data() = default;
     };
 
