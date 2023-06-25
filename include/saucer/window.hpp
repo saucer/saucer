@@ -81,15 +81,19 @@ namespace saucer
         [[thread_safe]] void clear(window_event event);
         [[thread_safe]] void remove(window_event event, std::uint64_t id);
 
-        template <window_event Event> //
+        template <window_event Event>
         [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&) = delete;
 
       public:
-        template <bool Blocking = true> static void run();
+        template <bool Blocking = true>
+        static void run();
     };
 #include "meta/annotations.hpp" //NOLINT
 
-    template <> std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&);
-    template <> std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&);
-    template <> std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&);
+    template <>
+    std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&);
+    template <>
+    std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&);
+    template <>
+    std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&);
 } // namespace saucer

@@ -81,7 +81,7 @@ namespace saucer
         [[thread_safe]] void remove(web_event event, std::uint64_t id);
 
         using window::on;
-        template <web_event Event> //
+        template <web_event Event>
         [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&callback) = delete;
     };
 #include "meta/annotations.hpp" //NOLINT

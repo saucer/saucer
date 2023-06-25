@@ -7,7 +7,7 @@ namespace saucer
     window::window(const options &options) : m_impl(std::make_unique<impl>())
     {
         static int argc{1};
-        static QApplication *application;
+        static QApplication *application; // NOLINT
         static std::vector<char *> argv{strdup("")};
 
         if (!application)

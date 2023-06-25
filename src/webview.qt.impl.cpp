@@ -6,7 +6,7 @@
 
 namespace saucer
 {
-    const std::string webview::impl::inject_script = []() {
+    const std::string webview::impl::inject_script = []() { // NOLINT(cert-err58-cpp)
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
 
         if (!web_channel_api.open(QIODevice::ReadOnly))
