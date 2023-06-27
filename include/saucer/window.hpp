@@ -28,7 +28,7 @@ namespace saucer
         struct impl;
 
       private:
-        using events = ereignis::event_manager<                    //
+        using events = ereignis::manager<                          //
             ereignis::event<window_event::resize, void(int, int)>, //
             ereignis::event<window_event::closed, void()>,         //
             ereignis::event<window_event::close, bool()>           //
@@ -82,7 +82,7 @@ namespace saucer
         [[thread_safe]] void remove(window_event event, std::uint64_t id);
 
         template <window_event Event>
-        [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&) = delete;
+        [[thread_safe]] std::uint64_t on(events::type_t<Event> &&) = delete;
 
       public:
         template <bool Blocking = true>
@@ -91,9 +91,9 @@ namespace saucer
 #include "meta/annotations.hpp" //NOLINT
 
     template <>
-    std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&);
+    std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
     template <>
-    std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&);
+    std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
     template <>
-    std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&);
+    std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
 } // namespace saucer

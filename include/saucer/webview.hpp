@@ -32,7 +32,7 @@ namespace saucer
         struct impl;
 
       private:
-        using events = ereignis::event_manager<                                //
+        using events = ereignis::manager<                                      //
             ereignis::event<web_event::url_changed, void(const std::string &)> //
             >;
 
@@ -82,10 +82,10 @@ namespace saucer
 
         using window::on;
         template <web_event Event>
-        [[thread_safe]] std::uint64_t on(events::callback_t<Event> &&callback) = delete;
+        [[thread_safe]] std::uint64_t on(events::type_t<Event> &&callback) = delete;
     };
 #include "meta/annotations.hpp" //NOLINT
 
     template <>
-    std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback);
+    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback);
 } // namespace saucer

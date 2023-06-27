@@ -251,19 +251,19 @@ namespace saucer
     }
 
     template <>
-    std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&callback)
+    std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&callback)
     {
         return m_events.at<window_event::close>().add(std::move(callback));
     }
 
     template <>
-    std::uint64_t window::on<window_event::closed>(events::callback_t<window_event::closed> &&callback)
+    std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&callback)
     {
         return m_events.at<window_event::closed>().add(std::move(callback));
     }
 
     template <>
-    std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&callback)
+    std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&callback)
     {
         return m_events.at<window_event::resize>().add(std::move(callback));
     }

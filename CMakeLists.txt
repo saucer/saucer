@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(saucer LANGUAGES CXX VERSION 1.0)
+project(saucer LANGUAGES CXX VERSION 2.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
@@ -13,71 +13,63 @@ endif()
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_tests             "Build tests"                                      OFF)
-option(saucer_assert            "Enable asserts"                                   OFF)
-option(saucer_wrapper           "Build C-Wrapper"                                  OFF)
-option(saucer_examples          "Build examples"                                   OFF)
 option(saucer_modules           "Enable modules"                                   OFF)
-option(saucer_smartview         "Enable the smartview"                              ON)
-option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
+
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
-option(saucer_remote_webview2   "Acquire WebView2 through Nughet"                   ON)
+option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
-set(saucer_webview2_version "1.0.1462.37" CACHE STRING "The WebView2 version to use")
+option(saucer_tests             "Build tests"                                      OFF)
+option(saucer_examples          "Build examples"                                   OFF)
 
-set(saucer_backend_types Default Qt5 Qt6 WebView2)
-set(saucer_backend Default CACHE STRING "The backend to use")
-set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_backend_types})
+set(saucer_webview2_version "1.0.1462.37" CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_backend "Default" CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 
 # --------------------------------------------------------------------------------------------------------
-# Ensure backend is set to allowed value
+# Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
 # --------------------------------------------------------------------------------------------------------
 
-if (NOT saucer_backend IN_LIST saucer_backend_types)
-    message(FATAL_ERROR "[saucer] Backend must be one of ${saucer_backend_types}")
-else()
-    message(STATUS "[saucer] Using backend: ${saucer_backend}")
-
-    if (saucer_backend STREQUAL "Default")
-        if (WIN32)
-            set(saucer_backend WebView2)
-        else()
-            set(saucer_backend Qt5)
-        endif()
-        
-        message(STATUS "[saucer] Deault backend for current platform is: ${saucer_backend}")
-    endif()    
+if (saucer_prefer_remote)
+    message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
+    set(CPM_DOWNLOAD_ALL ON)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Setup some switches
+# Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
-# AUTOMOC has to be enabled before `add_library` is called.
+set(saucer_valid_backends Qt5 Qt6 WebView2 Default)
+set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
-if (saucer_backend MATCHES "^Qt.$")
-    set(CMAKE_AUTOMOC ON)
-    message(STATUS "[saucer] Using AUTOMOC for ${saucer_backend}")
-endif()
-
-# When using saucer in a shared library we need to enable position independent code
-
-if (saucer_wrapper)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if (NOT saucer_backend IN_LIST saucer_valid_backends)
+    message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Create library
+# Determine appropiate default backend
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_backend STREQUAL "Default")
+    if (WIN32)
+        set(saucer_backend WebView2)
+    else()
+        set(saucer_backend Qt5)
+    endif()
+
+    message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Library
 # --------------------------------------------------------------------------------------------------------
 
 add_library(${PROJECT_NAME} STATIC)
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS saucer)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
-# We only enable warnings if built standalone.
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # We only enable warnings if built standalone.
     message(STATUS "[saucer] Enabling compilation warnings")
 
     if (MSVC)
@@ -103,109 +95,86 @@ string(REGEX REPLACE "[a-zA-Z]+" "" saucer_backend_version "${saucer_backend}")
 configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/constants.hpp")
 
 # --------------------------------------------------------------------------------------------------------
-# Link Dependencies and Add Sources
+# Setup Sources
 # --------------------------------------------------------------------------------------------------------
 
-include("cmake/deps.cmake")
-include("cmake/nuget.cmake")
+target_sources(${PROJECT_NAME} PRIVATE 
+    "src/utils.color.cpp"
+    "src/smartview.cpp"
+    "src/serializer.json.cpp"
+)
 
-message(STATUS "[saucer] Prefer Remote: ${saucer_prefer_remote}")
+# --------------------------------------------------------------------------------------------------------
+# Setup Dependencies
+# --------------------------------------------------------------------------------------------------------
 
-set(saucer_conditional_linkage PRIVATE)
+include("cmake/cpm.cmake")
 
-if (saucer_modules)
-    set(saucer_conditional_linkage PUBLIC)
-    message(STATUS "[saucer] Conditional Linkage is set to PUBLIC")
-endif()
+CPMFindPackage(
+  NAME           lockpp
+  VERSION        1.0.2
+  GIT_REPOSITORY "https://github.com/Soundux/lockpp"
+)
+
+CPMFindPackage(
+  NAME           nlohmann_json
+  VERSION        3.11.2
+  GIT_REPOSITORY "https://github.com/nlohmann/json"
+)
+
+CPMFindPackage(
+  NAME           boost_callable_traits
+  GIT_TAG        2a56a3a
+  GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
+)
+
+CPMFindPackage(
+  NAME           tl-expected
+  VERSION        1.1.0
+  GIT_REPOSITORY "https://github.com/TartanLlama/expected"
+  OPTIONS        "EXPECTED_BUILD_TESTS OFF"
+)
+
+CPMFindPackage(
+  NAME           ereignis
+  VERSION        2.0
+  GIT_REPOSITORY "https://github.com/Soundux/ereignis"
+)
+
+CPMFindPackage(
+  NAME           fmt
+  GIT_TAG        9.1.0
+  GIT_REPOSITORY "https://github.com/fmtlib/fmt"
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC lockpp nlohmann_json boost_callable_traits tl::expected ereignis fmt)
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Backends
+# --------------------------------------------------------------------------------------------------------
+
+#! TODO: Conditional Linkage based on saucer_modules
+#! TODO: Packaging
+#! TODO: Windows
 
 if (saucer_backend MATCHES "^Qt.$")
-    target_sources(${PROJECT_NAME} PRIVATE "src/window.qt.cpp" "src/webview.qt.cpp")
-    target_sources(${PROJECT_NAME} PRIVATE "src/webview.qt${saucer_backend_version}.cpp")
-    target_sources(${PROJECT_NAME} PRIVATE "src/window.qt.impl.cpp" "src/webview.qt.impl.cpp")
-    target_sources(${PROJECT_NAME} PRIVATE "private/window.qt.impl.hpp" "private/webview.qt.impl.hpp")
+    set(qt_ver ${saucer_backend_version})
 
-    find_package(Qt${saucer_backend_version} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
-    
-    target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} 
-        Qt${saucer_backend_version}::Widgets 
-        Qt${saucer_backend_version}::WebChannel
-        Qt${saucer_backend_version}::WebEngineWidgets 
+    file(GLOB qt_sources 
+      "src/*.qt.*cpp"
+      "private/*.qt.*hpp"
+      "src/*.qt${qt_ver}.*cpp"
     )
-endif()
 
-if (saucer_backend STREQUAL "WebView2")
-    target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.cpp" "src/webview.webview2.cpp")
-    target_sources(${PROJECT_NAME} PRIVATE "src/window.win32.impl.cpp" "src/webview.webview2.impl.cpp" "src/utils.win32.cpp")
+    target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
+    set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
 
-    option(WIL_BUILD_TESTS     "" OFF)
-    option(WIL_BUILD_PACKAGING "" OFF)
-
-    add_dependency(wil URL "https://github.com/microsoft/wil" TAG master)
-    target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} WIL::WIL Shlwapi)
-
-    if (saucer_remote_webview2)
-        nuget_add(WebView2 "Microsoft.Web.WebView2" ${saucer_webview2_version})
-
-        target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
-        target_include_directories(${PROJECT_NAME} ${saucer_conditional_linkage} ${WebView2_PATH}/build/native/include)
-
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            set(saucer_webview2_lib "${WebView2_PATH}/build/native/x64/WebView2LoaderStatic.lib")
-        else()
-            set(saucer_webview2_lib "${WebView2_PATH}/build/native/x86/WebView2LoaderStatic.lib")
-        endif()
-    
-        target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} ${saucer_webview2_lib})
-    else()
-        find_package(webview2 CONFIG REQUIRED)
-        target_link_libraries(${PROJECT_NAME} ${saucer_conditional_linkage} webview2::webview2)
-    endif()
-endif()
-
-if (saucer_smartview)
-    target_sources(${PROJECT_NAME} PRIVATE "src/smartview.cpp" "src/serializer.json.cpp")
-
-    option(EXPECTED_BUILD_TESTS OFF)
-
-    add_dependency(lockpp                URL "https://github.com/Soundux/lockpp"           TAG  v1.0.2 HEADER "lockpp/lock.hpp" LIB_NAME lockpp::lockpp)
-    add_dependency(nlohmann_json         URL "https://github.com/nlohmann/json/"           TAG  v3.11.2)
-    add_dependency(boost_callable_traits URL "https://github.com/boostorg/callable_traits" TAG  2a56a3a)
-    add_dependency(tl-expected           URL "https://github.com/TartanLlama/expected"     TAG  v1.1.0)
-        
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json tl::expected Boost::callable_traits lockpp::lockpp)
-endif()
-
-add_dependency(ereignis URL "https://github.com/Soundux/ereignis" TAG v1.1 HEADER "ereignis/event.hpp" LIB_NAME soundux::ereignis)
-add_dependency(fmt      URL "https://github.com/fmtlib/fmt"       TAG 9.1.0)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC soundux::ereignis fmt::fmt)
-
-# --------------------------------------------------------------------------------------------------------
-# Install Target
-# --------------------------------------------------------------------------------------------------------
-
-install(DIRECTORY "include/" TYPE INCLUDE)
-install(TARGETS ${PROJECT_NAME} DESTINATION lib)
-
-if (saucer_package_all AND (NOT saucer_remote_webview2 OR NOT saucer_smartview))
-    message(ERROR "[saucer] package_all is only supported in conjunction with remote_webview2 and smartview")
-endif()
-
-# Some targets do not get included to the export dir automatically, so we add them manually here.
-
-if (saucer_package_all)
-    install(TARGETS fmt DESTINATION lib OPTIONAL)
-    install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
-    install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
-    install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
-    
-    if (WIN32)
-        install(FILES ${saucer_webview2_lib} DESTINATION lib)
-    endif()
+    find_package(Qt${qt_ver} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt${qt_ver}::Widgets Qt${qt_ver}::WebChannel Qt${qt_ver}::WebEngineWidgets)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Tests and Examples
+# Setup Tests
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_tests)
@@ -213,18 +182,14 @@ if (saucer_tests)
     add_subdirectory(tests)
 endif()
 
-if (saucer_wrapper)
-    message(STATUS "[saucer] Building C-Wrapper")
-    add_subdirectory(lib)
-endif()
+# --------------------------------------------------------------------------------------------------------
+# Setup Examples
+# --------------------------------------------------------------------------------------------------------
 
 if (saucer_examples)
     message(STATUS "[saucer] Building Examples")
     
-    if (saucer_smartview)
-        add_subdirectory("examples/json-bridge")
-    endif()
-        
     add_subdirectory("examples/manual-embedding")
     add_subdirectory("examples/cli-embedding")
+    add_subdirectory("examples/json-bridge")
 endif()

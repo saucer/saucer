@@ -22,8 +22,13 @@ target_sources(${PROJECT_NAME} PRIVATE ${src})
 # Link Dependencies 
 # --------------------------------------------------------------------------------------------------------
 
-include("../cmake/deps.cmake")
+include("../cmake/cpm.cmake")
 
-option(CATCH_BUILD_STATIC_LIBRARY "" ON)
-add_dependency(catch2 URL "https://github.com/catchorg/Catch2" TAG v2.13.7)
+CPMFindPackage(
+  NAME           catch2
+  VERSION        2.13.7
+  GIT_REPOSITORY "https://github.com/catchorg/Catch2"
+  OPTIONS        "CATCH_BUILD_STATIC_LIBRARY ON"
+)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Catch2::Catch2WithMain saucer::saucer)
