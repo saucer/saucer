@@ -68,16 +68,10 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS saucer)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    # We only enable warnings if built standalone.
-    message(STATUS "[saucer] Enabling compilation warnings")
-
-    if (MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
-    else()
-        target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
-        target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-changes-meaning -Wno-missing-field-initializers)
-    endif()
+# We only enable warnings if built standalone.
+if (NOT MSVC AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-changes-meaning -Wno-missing-field-initializers)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -183,6 +177,26 @@ if (saucer_backend MATCHES "^Qt.$")
     find_package(Qt${qt_ver} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
     target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${qt_ver}::Widgets Qt${qt_ver}::WebChannel Qt${qt_ver}::WebEngineWidgets)
 endif()
+
+if (saucer_backend STREQUAL "WebView2")
+    file(GLOB win_sources 
+      "src/*.win32.*cpp"
+      "src/*.webview2.*cpp"
+    )
+
+    target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
+
+    include("cmake/webview2.cmake")
+
+    CPMFindPackage(
+      NAME           wil
+      GIT_TAG        master
+      GIT_REPOSITORY "https://github.com/microsoft/wil"
+      OPTIONS        "WIL_BUILD_TESTS OFF" "WIL_BUILD_PACKAGING OFF"
+    )    
+
+    target_link_libraries(${PROJECT_NAME} ${saucer_linkage} WIL::WIL Shlwapi webview2::webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -219,6 +233,11 @@ install(TARGETS  ${PROJECT_NAME}
         ARCHIVE  DESTINATION lib
         RUNTIME  DESTINATION bin
 )
+
+if (saucer_prefer_remote AND saucer_backend STREQUAL "WebView2")
+  install(FILES ${webview2_lib_path} DESTINATION lib)
+endif()
+
 install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
 install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
 install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
