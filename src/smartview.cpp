@@ -9,7 +9,7 @@ namespace saucer
 {
     using lockpp::lock;
 
-    struct function
+    struct exposed_function
     {
         bool async;
         serializer::function function;
@@ -22,7 +22,7 @@ namespace saucer
 
       public:
         lock<std::map<std::uint64_t, std::shared_ptr<std::future<void>>>> pending;
-        lock<std::map<std::string, function>> functions;
+        lock<std::map<std::string, exposed_function>> functions;
 
       public:
         std::unique_ptr<serializer> serializer;
@@ -191,7 +191,7 @@ namespace saucer
     void smartview_core::add_function(std::string name, serializer::function &&resolve, bool async)
     {
         auto functions = m_impl->functions.write();
-        functions->emplace(std::move(name), function{async, std::move(resolve)});
+        functions->emplace(std::move(name), exposed_function{async, std::move(resolve)});
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)

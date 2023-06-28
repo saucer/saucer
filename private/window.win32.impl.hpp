@@ -1,7 +1,7 @@
 #pragma once
 #include "window.hpp"
+#include "utils/color.hpp"
 
-#include <array>
 #include <thread>
 #include <future>
 #include <Windows.h>
@@ -10,22 +10,18 @@ namespace saucer
 {
     struct window::impl
     {
-        using color_t = std::array<int, 4>;
-        using bounds_t = std::array<int, 2>;
-
-      public:
         HWND hwnd;
-        bounds_t min_size, max_size;
+        std::pair<int, int> min_size, max_size;
 
       public:
-        color_t background_color;
+        color background_color;
         std::function<void()> change_background;
 
       public:
         std::thread::id creation_thread;
 
       public:
-        void set_background_color(const color_t &);
+        void set_background_color(const color &);
 
       public:
         [[nodiscard]] bool is_thread_safe() const;

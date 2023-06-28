@@ -15,7 +15,7 @@ namespace saucer
     namespace fs = std::filesystem;
     using Microsoft::WRL::Callback;
 
-    webview::webview(const webview_options &options) : m_impl(std::make_unique<impl>())
+    webview::webview(const options &options) : m_impl(std::make_unique<impl>())
     {
         m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
 
@@ -94,7 +94,7 @@ namespace saucer
 
         using source_changed = ICoreWebView2SourceChangedEventHandler;
         auto url_changed = [&](auto...) {
-            on_url_changed(get_url());
+            on_url_changed(url());
             return S_OK;
         };
         m_impl->webview->add_SourceChanged(Callback<source_changed>(url_changed).Get(), nullptr);
@@ -146,11 +146,11 @@ namespace saucer
         m_events.at<web_event::url_changed>().fire(url);
     }
 
-    bool webview::get_dev_tools() const
+    bool webview::dev_tools() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return get_dev_tools(); });
+            return window::m_impl->post_safe([this] { return dev_tools(); });
         }
 
         wil::com_ptr<ICoreWebView2Settings> settings;
@@ -162,11 +162,11 @@ namespace saucer
         return static_cast<bool>(rtn);
     }
 
-    std::string webview::get_url() const
+    std::string webview::url() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return get_url(); });
+            return window::m_impl->post_safe([this] { return url(); });
         }
 
         wil::unique_cotaskmem_string url;
@@ -175,11 +175,11 @@ namespace saucer
         return narrow(url.get());
     }
 
-    bool webview::get_context_menu() const
+    bool webview::context_menu() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return get_context_menu(); });
+            return window::m_impl->post_safe([this] { return context_menu(); });
         }
 
         wil::com_ptr<ICoreWebView2Settings> settings;
@@ -343,7 +343,7 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <> std::uint64_t webview::on<web_event::url_changed>(events::callback_t<web_event::url_changed> &&callback)
+    template <> std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
     {
         return m_events.at<web_event::url_changed>().add(std::move(callback));
     }

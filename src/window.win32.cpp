@@ -1,6 +1,5 @@
 #include "window.hpp"
 #include "utils.win32.hpp"
-#include "utils/assert.hpp"
 #include "window.win32.impl.hpp"
 
 #include <winuser.h>
@@ -9,7 +8,7 @@
 
 namespace saucer
 {
-    window::window() : m_impl(std::make_unique<impl>())
+    window::window(const options&) : m_impl(std::make_unique<impl>())
     {
         static HMODULE instance;
         static WNDCLASSW wnd_class;
@@ -28,7 +27,7 @@ namespace saucer
 
             if (!RegisterClassW(&wnd_class))
             {
-                c_assert(fmt::format("RegisterClassW() failed: {}", last_error()));
+                throw std::runtime_error(fmt::format("RegisterClassW() failed: {}", last_error()));
             }
         }
 
@@ -49,7 +48,7 @@ namespace saucer
 
         if (!m_impl->hwnd)
         {
-            c_assert(fmt::format("CreateWindowExW() failed: {}", last_error()));
+            throw std::runtime_error(fmt::format("CreateWindowExW() failed: {}", last_error()));
         }
 
         impl::set_dpi_awareness();
@@ -64,21 +63,21 @@ namespace saucer
         DestroyWindow(m_impl->hwnd);
     }
 
-    bool window::get_resizable() const
+    bool window::resizable() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_resizable(); });
+            return m_impl->post_safe([this] { return resizable(); });
         }
 
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
     }
 
-    std::string window::get_title() const
+    std::string window::title() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_title(); });
+            return m_impl->post_safe([this] { return title(); });
         }
 
         auto title_length = GetWindowTextLengthW(m_impl->hwnd) + 1;
@@ -91,60 +90,60 @@ namespace saucer
         return rtn;
     }
 
-    bool window::get_decorations() const
+    bool window::decorations() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_decorations(); });
+            return m_impl->post_safe([this] { return decorations(); });
         }
 
         const auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & flags;
     }
 
-    bool window::get_always_on_top() const
+    bool window::always_on_top() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_always_on_top(); });
+            return m_impl->post_safe([this] { return always_on_top(); });
         }
 
         return GetWindowLong(m_impl->hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST;
     }
 
-    std::array<int, 2> window::get_size() const
+    std::pair<int, int> window::size() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_size(); });
+            return m_impl->post_safe([this] { return size(); });
         }
 
         RECT rect;
         GetClientRect(m_impl->hwnd, &rect);
-        return std::array<int, 2>{rect.right - rect.left, rect.bottom - rect.top};
+        return std::pair<int, int>{rect.right - rect.left, rect.bottom - rect.top};
     }
 
-    std::array<int, 2> window::get_max_size() const
+    std::pair<int, int> window::max_size() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_max_size(); });
+            return m_impl->post_safe([this] { return max_size(); });
         }
 
         return m_impl->max_size;
     }
 
-    std::array<int, 2> window::get_min_size() const
+    std::pair<int, int> window::min_size() const
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return get_min_size(); });
+            return m_impl->post_safe([this] { return min_size(); });
         }
 
         return m_impl->min_size;
     }
 
-    std::array<int, 4> window::get_background_color() const
+    color window::background() const
     {
         return m_impl->background_color;
     }
@@ -265,9 +264,9 @@ namespace saucer
         m_impl->max_size = {width, height};
     }
 
-    void window::set_background_color(int r, int g, int b, int a)
+    void window::set_background(const color &color)
     {
-        m_impl->set_background_color({r, g, b, a});
+        m_impl->set_background_color(color);
     }
 
     void window::clear(window_event event)
@@ -280,12 +279,13 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <> std::uint64_t window::on<window_event::close>(events::callback_t<window_event::close> &&callback)
+    template <> std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&callback)
     {
         return m_events.at<window_event::close>().add(std::move(callback));
     }
 
-    template <> std::uint64_t window::on<window_event::resize>(events::callback_t<window_event::resize> &&callback)
+    template <>
+    std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&callback)
     {
         return m_events.at<window_event::resize>().add(std::move(callback));
     }

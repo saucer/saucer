@@ -5,7 +5,7 @@ namespace saucer
     const UINT window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call");
     std::atomic<std::size_t> window::impl::open_windows = 0;
 
-    void window::impl::set_background_color(const color_t &color)
+    void window::impl::set_background_color(const color &color)
     {
         background_color = color;
 
