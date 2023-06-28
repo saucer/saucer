@@ -76,6 +76,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         target_compile_options(${PROJECT_NAME} PRIVATE /W3 /WX)
     else()
         target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
+        target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-changes-meaning -Wno-missing-field-initializers)
     endif()
 endif()
 
@@ -99,8 +100,8 @@ configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/co
 # --------------------------------------------------------------------------------------------------------
 
 target_sources(${PROJECT_NAME} PRIVATE 
-    "src/utils.color.cpp"
     "src/smartview.cpp"
+    "src/utils.color.cpp"
     "src/serializer.json.cpp"
 )
 
@@ -109,6 +110,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 # --------------------------------------------------------------------------------------------------------
 
 include("cmake/cpm.cmake")
+include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
@@ -150,12 +152,21 @@ CPMFindPackage(
 target_link_libraries(${PROJECT_NAME} PUBLIC lockpp nlohmann_json boost_callable_traits tl::expected ereignis fmt)
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Backends
+# Setup Linkage
+# └ we use conditional linkage, because we want to publicly link against qt/webview2 when module support
+#   is enabled, so that consumers of the library can easily use the undlerying API for their modules
+#   without having to link qt/webview2 themselves.
 # --------------------------------------------------------------------------------------------------------
 
-#! TODO: Conditional Linkage based on saucer_modules
-#! TODO: Packaging
-#! TODO: Windows
+set(saucer_linkage PRIVATE)
+
+if (saucer_modules)
+  set(saucer_linkage PUBLIC)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Backends
+# --------------------------------------------------------------------------------------------------------
 
 if (saucer_backend MATCHES "^Qt.$")
     set(qt_ver ${saucer_backend_version})
@@ -170,7 +181,8 @@ if (saucer_backend MATCHES "^Qt.$")
     set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
 
     find_package(Qt${qt_ver} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt${qt_ver}::Widgets Qt${qt_ver}::WebChannel Qt${qt_ver}::WebEngineWidgets)
+    target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${qt_ver}::Widgets Qt${qt_ver}::WebChannel Qt${qt_ver}::WebEngineWidgets)
+endif()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -193,3 +205,20 @@ if (saucer_examples)
     add_subdirectory("examples/cli-embedding")
     add_subdirectory("examples/json-bridge")
 endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Packaging Target
+# └ We build this artifact so that people who don't use CMake can manually include all required headers
+#   of our dependencies and link against our static-lib.
+# --------------------------------------------------------------------------------------------------------
+
+install(TARGETS  ${PROJECT_NAME} 
+        EXPORT   ${PROJECT_NAME}-artifact
+        INCLUDES DESTINATION include
+        LIBRARY  DESTINATION lib
+        ARCHIVE  DESTINATION lib
+        RUNTIME  DESTINATION bin
+)
+install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
+install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
+install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
