@@ -73,7 +73,7 @@ namespace saucer
 
         //? Ensure the WebView is created synchronously, may be easier in the future:
         // https://github.com/MicrosoftEdge/WebView2Feedback/issues/740
-        m_impl->create_webview(window::m_impl->hwnd, user_folder);
+        m_impl->create_webview(window::m_impl->hwnd, user_folder, options.hardware_acceleration);
 
         while (!m_impl->web_view)
         {

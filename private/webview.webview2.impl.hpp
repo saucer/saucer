@@ -34,7 +34,7 @@ namespace saucer
         static constexpr std::wstring_view scheme_prefix_w = L"https://saucer/";
 
       public:
-        void create_webview(HWND hwnd, const std::wstring &user_folder);
+        void create_webview(HWND hwnd, const std::wstring &user_folder, bool hardware_accel);
 
       public:
         void overwrite_wnd_proc(HWND hwnd);

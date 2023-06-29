@@ -7,6 +7,7 @@
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 #include <wil/win32_helpers.h>
+#include <WebView2EnvironmentOptions.h>
 
 namespace saucer
 {
@@ -24,7 +25,7 @@ namespace saucer
         window.saucer.on_message("js_ready");
     )js";
 
-    void webview::impl::create_webview(HWND hwnd, const std::wstring &user_folder)
+    void webview::impl::create_webview(HWND hwnd, const std::wstring &user_folder, bool hardware_accel)
     {
         // ! Whoever chose to use struct names this long: I will find you and I will slap you.
 
@@ -42,9 +43,16 @@ namespace saucer
             auto handler = Callback<controller_completed>(controller_created);
             return environment->CreateCoreWebView2Controller(hwnd, handler.Get());
         };
-
         auto created_handler = Callback<env_completed>(environment_created);
-        CreateCoreWebView2EnvironmentWithOptions(nullptr, user_folder.c_str(), nullptr, created_handler.Get());
+
+        auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
+
+        if (!hardware_accel)
+        {
+            options->put_AdditionalBrowserArguments(L"--disable-gpu");
+        }
+
+        CreateCoreWebView2EnvironmentWithOptions(nullptr, user_folder.c_str(), options.Get(), created_handler.Get());
     }
 
     void webview::impl::overwrite_wnd_proc(HWND hwnd)
