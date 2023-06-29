@@ -2,7 +2,7 @@
 
 namespace saucer
 {
-    const UINT window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call");
+    const UINT window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call"); // NOLINT(cert-err58-cpp)
     std::atomic<std::size_t> window::impl::open_windows = 0;
 
     void window::impl::set_background_color(const color &color)
@@ -22,30 +22,10 @@ namespace saucer
         return creation_thread == std::this_thread::get_id();
     }
 
-    void window::impl::set_dpi_awareness()
-    {
-
-        auto *shcore = LoadLibraryW(L"Shcore.dll");
-        auto set_process_dpi_awareness = GetProcAddress(shcore, "SetProcessDpiAwareness");
-
-        if (set_process_dpi_awareness)
-        {
-            reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(set_process_dpi_awareness)(2);
-            return;
-        }
-
-        auto *user32 = LoadLibraryW(L"user32.dll");
-        auto set_process_dpi_aware = GetProcAddress(user32, "SetProcessDPIAware");
-
-        if (set_process_dpi_aware)
-        {
-            reinterpret_cast<bool(CALLBACK *)()>(set_process_dpi_aware)();
-        }
-    }
-
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        auto *window = reinterpret_cast<class window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
+        auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
         if (!window)
         {
@@ -54,16 +34,16 @@ namespace saucer
 
         if (msg == WM_GETMINMAXINFO)
         {
-            auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
+            auto *info = reinterpret_cast<MINMAXINFO *>(l_param); // NOLINT(performance-no-int-to-ptr)
 
-            auto [max_x, max_y] = window->m_impl->max_size;
-            auto [min_x, min_y] = window->m_impl->min_size;
+            auto [min_x, min_y] = window->min_size();
+            auto [max_x, max_y] = window->max_size();
 
-            info->ptMaxTrackSize.x = max_x ? max_x : GetSystemMetrics(SM_CXMAXTRACK);
-            info->ptMaxTrackSize.y = max_y ? max_y : GetSystemMetrics(SM_CXMAXTRACK);
+            info->ptMaxTrackSize.x = max_x;
+            info->ptMaxTrackSize.y = max_y;
 
-            info->ptMinTrackSize.x = min_x ? min_x : GetSystemMetrics(SM_CXMINTRACK);
-            info->ptMinTrackSize.y = min_y ? min_y : GetSystemMetrics(SM_CXMINTRACK);
+            info->ptMinTrackSize.x = min_x;
+            info->ptMinTrackSize.y = min_y;
         }
 
         if (msg == WM_SIZE)
@@ -81,7 +61,9 @@ namespace saucer
                 }
             }
 
-            if (!(--open_windows))
+            open_windows--;
+
+            if (!open_windows)
             {
                 PostQuitMessage(0);
             }
@@ -89,7 +71,7 @@ namespace saucer
 
         if (msg == window->window::m_impl->WM_SAFE_CALL)
         {
-            delete reinterpret_cast<message *>(l_param);
+            delete reinterpret_cast<message *>(l_param); // NOLINT(performance-no-int-to-ptr)
         }
 
         return DefWindowProcW(hwnd, msg, w_param, l_param);
