@@ -75,7 +75,7 @@ namespace saucer
         // https://github.com/MicrosoftEdge/WebView2Feedback/issues/740
         m_impl->create_webview(window::m_impl->hwnd, user_folder);
 
-        while (!m_impl->webview)
+        while (!m_impl->web_view)
         {
             window::run<false>();
         }
@@ -84,7 +84,7 @@ namespace saucer
         set_dev_tools(false);
 
         wil::com_ptr<ICoreWebView2Settings> settings;
-        m_impl->webview->get_Settings(&settings);
+        m_impl->web_view->get_Settings(&settings);
 
         // ? We disable the Accelerator-Keys because they should be disabled by default.
         if (auto settings3 = settings.try_query<ICoreWebView2Settings3>(); settings3)
@@ -97,7 +97,7 @@ namespace saucer
             on_url_changed(url());
             return S_OK;
         };
-        m_impl->webview->add_SourceChanged(Callback<source_changed>(url_changed).Get(), nullptr);
+        m_impl->web_view->add_SourceChanged(Callback<source_changed>(url_changed).Get(), nullptr);
 
         using received_event = ICoreWebView2WebMessageReceivedEventHandler;
         auto message_received = [&](auto, ICoreWebView2WebMessageReceivedEventArgs *args) {
@@ -107,7 +107,7 @@ namespace saucer
             on_message(narrow(message));
             return S_OK;
         };
-        m_impl->webview->add_WebMessageReceived(Callback<received_event>(message_received).Get(), nullptr);
+        m_impl->web_view->add_WebMessageReceived(Callback<received_event>(message_received).Get(), nullptr);
 
         using navigation_event = ICoreWebView2NavigationCompletedEventHandler;
         auto navigation_completed = [&](auto...) {
@@ -124,7 +124,7 @@ namespace saucer
             m_impl->scripts_once.clear();
             return S_OK;
         };
-        m_impl->webview->add_NavigationCompleted(Callback<navigation_event>(navigation_completed).Get(), nullptr);
+        m_impl->web_view->add_NavigationCompleted(Callback<navigation_event>(navigation_completed).Get(), nullptr);
 
         inject(impl::inject_script, load_time::creation);
 
@@ -154,7 +154,7 @@ namespace saucer
         }
 
         wil::com_ptr<ICoreWebView2Settings> settings;
-        m_impl->webview->get_Settings(&settings);
+        m_impl->web_view->get_Settings(&settings);
 
         BOOL rtn{false};
         settings->get_AreDevToolsEnabled(&rtn);
@@ -170,7 +170,7 @@ namespace saucer
         }
 
         wil::unique_cotaskmem_string url;
-        m_impl->webview->get_Source(&url);
+        m_impl->web_view->get_Source(&url);
 
         return narrow(url.get());
     }
@@ -183,7 +183,7 @@ namespace saucer
         }
 
         wil::com_ptr<ICoreWebView2Settings> settings;
-        m_impl->webview->get_Settings(&settings);
+        m_impl->web_view->get_Settings(&settings);
 
         BOOL rtn{false};
         settings->get_AreDefaultContextMenusEnabled(&rtn);
@@ -195,11 +195,11 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return set_dev_tools(enabled); });
+            return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
         wil::com_ptr<ICoreWebView2Settings> settings;
-        m_impl->webview->get_Settings(&settings);
+        m_impl->web_view->get_Settings(&settings);
         settings->put_AreDevToolsEnabled(enabled);
 
         if (!enabled)
@@ -207,18 +207,18 @@ namespace saucer
             return;
         }
 
-        m_impl->webview->OpenDevToolsWindow();
+        m_impl->web_view->OpenDevToolsWindow();
     }
 
     void webview::set_context_menu(bool enabled)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return set_context_menu(enabled); });
+            return window::m_impl->post_safe([this, enabled] { return set_context_menu(enabled); });
         }
 
         wil::com_ptr<ICoreWebView2Settings> settings;
-        m_impl->webview->get_Settings(&settings);
+        m_impl->web_view->get_Settings(&settings);
 
         settings->put_AreDefaultContextMenusEnabled(enabled);
     }
@@ -227,10 +227,10 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return set_url(url); });
+            return window::m_impl->post_safe([this, url] { return set_url(url); });
         }
 
-        m_impl->webview->Navigate(widen(url).c_str());
+        m_impl->web_view->Navigate(widen(url).c_str());
     }
 
     void webview::serve(const std::string &file)
@@ -265,7 +265,7 @@ namespace saucer
 
         for (const auto &script : m_impl->injected)
         {
-            m_impl->webview->RemoveScriptToExecuteOnDocumentCreated(script);
+            m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(script);
         }
 
         m_impl->injected.clear();
@@ -287,10 +287,10 @@ namespace saucer
         }
 
         // NOLINTNEXTLINE
-        m_impl->webview->remove_WebResourceRequested(*m_impl->event_token);
+        m_impl->web_view->remove_WebResourceRequested(*m_impl->event_token);
 
         auto uri = fmt::format(L"{}*", impl::scheme_prefix_w);
-        m_impl->webview->RemoveWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        m_impl->web_view->RemoveWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
         m_impl->event_token.reset();
     }
@@ -299,7 +299,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return run_java_script(java_script); });
+            return window::m_impl->post_safe([this, java_script] { return run_java_script(java_script); });
         }
 
         if (!m_impl->is_ready)
@@ -308,14 +308,14 @@ namespace saucer
             return;
         }
 
-        m_impl->webview->ExecuteScript(widen(java_script).c_str(), nullptr);
+        m_impl->web_view->ExecuteScript(widen(java_script).c_str(), nullptr);
     }
 
     void webview::inject(const std::string &java_script, const load_time &load_time)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([=] { return inject(java_script, load_time); });
+            return window::m_impl->post_safe([this, java_script, load_time] { return inject(java_script, load_time); });
         }
 
         if (load_time == load_time::ready)
@@ -326,11 +326,11 @@ namespace saucer
 
         using InjectionCompleted = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
 
-        m_impl->webview->AddScriptToExecuteOnDocumentCreated(widen(java_script).c_str(),
-                                                             Callback<InjectionCompleted>([this](auto, LPCWSTR id) {
-                                                                 m_impl->injected.emplace_back(id);
-                                                                 return S_OK;
-                                                             }).Get());
+        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(widen(java_script).c_str(),
+                                                              Callback<InjectionCompleted>([this](auto, LPCWSTR id) {
+                                                                  m_impl->injected.emplace_back(id);
+                                                                  return S_OK;
+                                                              }).Get());
     }
 
     void webview::clear(web_event event)
@@ -343,7 +343,8 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <> std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
+    template <>
+    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
     {
         return m_events.at<web_event::url_changed>().add(std::move(callback));
     }

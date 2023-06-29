@@ -12,6 +12,7 @@ namespace saucer
 {
     using Microsoft::WRL::Callback;
 
+    // NOLINTNEXTLINE(cert-err58-cpp)
     const std::string webview::impl::inject_script = R"js(
         window.saucer = {
             async on_message(message)
@@ -32,7 +33,7 @@ namespace saucer
 
         auto controller_created = [&](auto, ICoreWebView2Controller *webview_controller) {
             controller = webview_controller;
-            controller->get_CoreWebView2(&this->webview);
+            controller->get_CoreWebView2(&this->web_view);
 
             return S_OK;
         };
@@ -49,24 +50,26 @@ namespace saucer
     void webview::impl::overwrite_wnd_proc(HWND hwnd)
     {
         auto wnd_proc_ptr = reinterpret_cast<LONG_PTR>(wnd_proc);
-        o_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, wnd_proc_ptr));
+
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
+        original_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, wnd_proc_ptr));
     }
 
     LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto userdata = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-        const auto *webview = reinterpret_cast<class webview *>(userdata);
+        const auto *web_view = reinterpret_cast<webview *>(userdata); // NOLINT(performance-no-int-to-ptr)
 
-        if (!webview)
+        if (!web_view)
         {
             return 0;
         }
 
-        auto original = [&]() { //
-            return CallWindowProcW(webview->m_impl->o_wnd_proc, hwnd, msg, w_param, l_param);
-        };
+        const auto &impl = web_view->m_impl;
 
-        const auto &impl = webview->m_impl;
+        auto original = [&]() {
+            return CallWindowProcW(impl->original_wnd_proc, hwnd, msg, w_param, l_param);
+        };
 
         if (!impl->controller)
         {
@@ -75,7 +78,7 @@ namespace saucer
 
         if (msg == WM_SHOWWINDOW)
         {
-            webview->m_impl->controller->put_IsVisible(static_cast<BOOL>(w_param));
+            impl->controller->put_IsVisible(static_cast<BOOL>(w_param));
         }
 
         if (msg == WM_SIZE)
@@ -89,13 +92,13 @@ namespace saucer
     EventRegistrationToken webview::impl::install_scheme_handler(class webview &parent) const
     {
         auto uri = fmt::format(L"{}*", scheme_prefix_w);
-        webview->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        web_view->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
         auto requested_callback = [&](auto, ICoreWebView2WebResourceRequestedEventArgs *args) {
             wil::com_ptr<ICoreWebView2WebResourceRequest> request;
             args->get_Request(&request);
 
-            auto webview2 = this->webview.try_query<ICoreWebView2_2>();
+            auto webview2 = this->web_view.try_query<ICoreWebView2_2>();
 
             if (!webview2)
             {
@@ -123,7 +126,7 @@ namespace saucer
 
             url = match[1];
 
-            if (!parent.m_embedded_files.count(url))
+            if (!parent.m_embedded_files.contains(url))
             {
                 wil::com_ptr<ICoreWebView2WebResourceResponse> response;
                 env->CreateWebResourceResponse(nullptr, 404, L"Not found", L"", &response);
@@ -137,11 +140,8 @@ namespace saucer
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
             wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
 
-            env->CreateWebResourceResponse(data.get(),                                                 //
-                                           200,                                                        //
-                                           L"OK",                                                      //
-                                           fmt::format(L"Content-Type: {}", widen(file.mime)).c_str(), //
-                                           &response);
+            env->CreateWebResourceResponse(data.get(), 200, L"OK",
+                                           fmt::format(L"Content-Type: {}", widen(file.mime)).c_str(), &response);
 
             args->put_Response(response.get());
             return S_OK;
@@ -151,7 +151,7 @@ namespace saucer
         auto callback = Callback<resource_requested>(requested_callback);
 
         EventRegistrationToken rtn;
-        webview->add_WebResourceRequested(callback.Get(), &rtn);
+        web_view->add_WebResourceRequested(callback.Get(), &rtn);
 
         return rtn;
     }

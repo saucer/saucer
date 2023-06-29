@@ -8,7 +8,7 @@
 
 namespace saucer
 {
-    window::window(const options&) : m_impl(std::make_unique<impl>())
+    window::window(const options &) : m_impl(std::make_unique<impl>())
     {
         static HMODULE instance;
         static WNDCLASSW wnd_class;
@@ -51,7 +51,7 @@ namespace saucer
             throw std::runtime_error(fmt::format("CreateWindowExW() failed: {}", last_error()));
         }
 
-        impl::set_dpi_awareness();
+        set_dpi_awareness();
 
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         impl::open_windows++;
@@ -130,7 +130,8 @@ namespace saucer
             return m_impl->post_safe([this] { return max_size(); });
         }
 
-        return m_impl->max_size;
+        const auto max_track = GetSystemMetrics(SM_CXMAXTRACK);
+        return m_impl->max_size.value_or(std::pair<int, int>{max_track, max_track});
     }
 
     std::pair<int, int> window::min_size() const
@@ -140,7 +141,8 @@ namespace saucer
             return m_impl->post_safe([this] { return min_size(); });
         }
 
-        return m_impl->min_size;
+        const auto min_track = GetSystemMetrics(SM_CXMINTRACK);
+        return m_impl->min_size.value_or(std::pair<int, int>{min_track, min_track});
     }
 
     color window::background() const
@@ -183,7 +185,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { set_resizable(enabled); });
+            return m_impl->post_safe([this, enabled] { set_resizable(enabled); });
         }
 
         constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
@@ -205,7 +207,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { return set_title(title); });
+            return m_impl->post_safe([this, title] { return set_title(title); });
         }
 
         SetWindowTextW(m_impl->hwnd, widen(title).c_str());
@@ -215,7 +217,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { set_decorations(enabled); });
+            return m_impl->post_safe([this, enabled] { set_decorations(enabled); });
         }
 
         constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
@@ -237,10 +239,9 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { set_always_on_top(enabled); });
+            return m_impl->post_safe([this, enabled] { set_always_on_top(enabled); });
         }
 
-        // NOLINTNEXTLINE
         SetWindowPos(m_impl->hwnd, enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 
@@ -248,7 +249,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([=] { set_size(width, height); });
+            return m_impl->post_safe([this, width, height] { set_size(width, height); });
         }
 
         SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
@@ -279,7 +280,8 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <> std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&callback)
+    template <>
+    std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&callback)
     {
         return m_events.at<window_event::close>().add(std::move(callback));
     }
@@ -290,7 +292,8 @@ namespace saucer
         return m_events.at<window_event::resize>().add(std::move(callback));
     }
 
-    template <> void window::run<true>()
+    template <>
+    void window::run<true>()
     {
         MSG msg;
 
@@ -301,7 +304,8 @@ namespace saucer
         }
     }
 
-    template <> void window::run<false>()
+    template <>
+    void window::run<false>()
     {
         MSG msg;
 

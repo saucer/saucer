@@ -13,7 +13,7 @@ namespace saucer
 
     struct webview::impl
     {
-        wil::com_ptr<ICoreWebView2> webview;
+        wil::com_ptr<ICoreWebView2> web_view;
         wil::com_ptr<ICoreWebView2Controller> controller;
 
       public:
@@ -22,7 +22,7 @@ namespace saucer
         std::vector<std::string> scripts_load;
 
       public:
-        WNDPROC o_wnd_proc;
+        WNDPROC original_wnd_proc;
         std::optional<EventRegistrationToken> event_token;
 
       public:
@@ -38,7 +38,7 @@ namespace saucer
 
       public:
         void overwrite_wnd_proc(HWND hwnd);
-        EventRegistrationToken install_scheme_handler(class webview &) const;
+        EventRegistrationToken install_scheme_handler(webview &) const;
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
