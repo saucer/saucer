@@ -21,7 +21,7 @@ option(saucer_prefer_remote     "Prefer remote packages over local packages"    
 option(saucer_tests             "Build tests"                                      OFF)
 option(saucer_examples          "Build examples"                                   OFF)
 
-set(saucer_webview2_version "1.0.1462.37" CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_webview2_version "1.0.1823.32" CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_backend "Default" CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 
 # --------------------------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS 
 # We only enable warnings if built standalone.
 if (NOT MSVC AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-changes-meaning -Wno-missing-field-initializers)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-changes-meaning -Wno-missing-field-initializers -Wno-cast-function-type)
 endif()
 
 # --------------------------------------------------------------------------------------------------------

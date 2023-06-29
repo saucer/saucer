@@ -24,6 +24,7 @@ Checks: "*,
         -readability-identifier-length,
         -cppcoreguidelines-owning-memory,
         -cppcoreguidelines-pro-type-reinterpret-cast,
+        -cppcoreguidelines-avoid-non-const-global-variables,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
