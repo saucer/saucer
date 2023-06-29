@@ -25,6 +25,7 @@ Checks: "*,
         -cppcoreguidelines-owning-memory,
         -cppcoreguidelines-pro-type-reinterpret-cast,
         -cppcoreguidelines-avoid-non-const-global-variables,
+        -hicpp-signed-bitwise
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
