@@ -1,4 +1,5 @@
 #define CONFIG_CATCH_MAIN
+#include <saucer/constants.hpp>
 #include <saucer/window.hpp>
 #include <catch2/catch.hpp>
 #include <future>
@@ -52,24 +53,28 @@ TEST_CASE("Window functionality is tested", "[window]")
                 //? Now we'll test thread safe functions
                 std::this_thread::sleep_for(std::chrono::seconds(2));
 
-                window.set_size(60, 60);
-                REQUIRE(window.size() == std::pair<int, int>{60, 60});
+                //? Bug Report: https://bugreports.qt.io/browse/QTBUG-104423
+                if constexpr (saucer::backend != saucer::backend_type::qt6)
+                {
+                    window.set_size(60, 60);
+                    REQUIRE(window.size() == std::pair<int, int>{60, 60});
 
-                window.set_max_size(200, 200);
-                REQUIRE(window.max_size() == std::pair<int, int>{200, 200});
+                    window.set_max_size(200, 200);
+                    REQUIRE(window.max_size() == std::pair<int, int>{200, 200});
 
-                window.set_min_size(0, 0);
-                REQUIRE(window.min_size() == std::pair<int, int>{0, 0});
+                    window.set_min_size(0, 0);
+                    REQUIRE(window.min_size() == std::pair<int, int>{0, 0});
 
-                window.set_decorations(true);
-                REQUIRE(window.decorations());
-                window.set_decorations(false);
-                REQUIRE(!window.decorations());
+                    window.set_decorations(true);
+                    REQUIRE(window.decorations());
+                    window.set_decorations(false);
+                    REQUIRE(!window.decorations());
 
-                window.set_always_on_top(true);
-                REQUIRE(window.always_on_top());
-                window.set_always_on_top(false);
-                REQUIRE_FALSE(window.always_on_top());
+                    window.set_always_on_top(true);
+                    REQUIRE(window.always_on_top());
+                    window.set_always_on_top(false);
+                    REQUIRE_FALSE(window.always_on_top());
+                }
 
                 window.close();
             });
