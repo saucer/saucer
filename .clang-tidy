@@ -30,6 +30,7 @@ Checks: "*,
         -*-cognitive-complexity,
         -*-multiway-paths-covered,
         -*-switch-missing-default-case,
+        -*-avoid-endl,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
