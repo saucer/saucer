@@ -3,7 +3,6 @@
 
 #include "args.hpp"
 #include "serializer.hpp"
-#include "../smartview.hpp"
 
 #include <variant>
 #include <fmt/core.h>
