@@ -29,7 +29,8 @@ namespace saucer
         [[nodiscard]] bool is_thread_safe() const;
 
       public:
-        template <typename Func> auto post_safe(Func &&);
+        template <typename Func>
+        auto post_safe(Func &&);
     };
 
     class window::impl::main_window : public QMainWindow
@@ -47,17 +48,18 @@ namespace saucer
         void resizeEvent(QResizeEvent *event) override;
     };
 
-    template <typename Return> class event_callback : public QEvent
+    template <typename Return>
+    class event_callback : public QEvent
     {
         using callback_t = std::function<Return()>;
 
       private:
         callback_t m_func;
-        std::promise<Return> &m_result;
+        std::promise<Return> *m_result;
 
       public:
-        event_callback(callback_t &&func, std::promise<Return> &result)
-            : QEvent(QEvent::None), m_func(func), m_result(result)
+        event_callback(callback_t &&func, std::promise<Return> *result)
+            : QEvent(QEvent::None), m_func(std::move(func)), m_result(result)
         {
         }
 
@@ -67,21 +69,22 @@ namespace saucer
             if constexpr (std::is_same_v<Return, void>)
             {
                 m_func();
-                m_result.set_value();
+                m_result->set_value();
             }
             else
             {
-                m_result.set_value(m_func());
+                m_result->set_value(m_func());
             }
         }
     };
 
-    template <typename Func> auto window::impl::post_safe(Func &&func)
+    template <typename Func>
+    auto window::impl::post_safe(Func &&func)
     {
         using return_t = typename decltype(std::function(func))::result_type;
 
         std::promise<return_t> result;
-        auto *event = new event_callback<return_t>(std::function(func), result);
+        auto *event = new event_callback<return_t>(std::forward<Func>(func), &result);
 
         // ? postEvent will automatically delete the event after processing.
         QApplication::postEvent(window, event);
