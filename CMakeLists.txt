@@ -21,7 +21,7 @@ option(saucer_prefer_remote     "Prefer remote packages over local packages"    
 option(saucer_tests             "Build tests"                                      OFF)
 option(saucer_examples          "Build examples"                                   OFF)
 
-set(saucer_webview2_version "1.0.1823.32" CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_webview2_version "1.0.1901.177" CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_backend "Default" CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 
 # --------------------------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        2.1
+  VERSION        2.2
   GIT_REPOSITORY "https://github.com/Soundux/lockpp"
 )
 
@@ -139,7 +139,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        9.1.0
+  GIT_TAG        10.1.0
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
