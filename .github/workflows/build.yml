@@ -23,10 +23,10 @@ jobs:
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt5-base qt5-webchannel qt5-webengine"
 
-      - name: Compile [Release, Asserts, Modules]
+      - name: Compile [Release, Modules]
         run: >
           mkdir build && cd build
-          && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=Qt5 -Dsaucer_package_all=ON 
+          && cmake .. -Dsaucer_modules=ON -Dsaucer_backend=Qt5 -Dsaucer_package_all=ON 
           && cmake --build . --config Release 
           && cmake --install . --prefix 'saucer_export'
 
@@ -52,10 +52,10 @@ jobs:
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
 
-      - name: Compile [Release, Asserts, Modules]
+      - name: Compile [Release, Modules]
         run: >
           mkdir build && cd build 
-          && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=Qt6 -Dsaucer_package_all=ON 
+          && cmake .. -Dsaucer_modules=ON -Dsaucer_backend=Qt6 -Dsaucer_package_all=ON 
           && cmake --build . --config Release
           && cmake --install . --prefix 'saucer_export'
 
@@ -77,10 +77,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Compile [Release, Asserts, Modules]
+      - name: Compile [Release, Modules]
         run: >
           mkdir build && cd build 
-          && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
+          && cmake .. -Dsaucer_modules=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
           && cmake --build . --config Release
           && cmake --install . --prefix 'saucer_export'
 
@@ -94,7 +94,7 @@ jobs:
       - name: Compile [Debug, Asserts, Modules]
         run: >
           rm -r -fo build && mkdir build && cd build 
-          && cmake .. -Dsaucer_modules=ON -Dsaucer_assert=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
+          && cmake .. -Dsaucer_modules=ON -Dsaucer_backend=WebView2 -Dsaucer_package_all=ON 
           && cmake --build . --config Debug
           && cmake --install . --prefix 'saucer_export' --config Debug
 

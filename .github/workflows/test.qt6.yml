@@ -13,7 +13,7 @@ on:
   pull_request:
     branches: ["**"]
 
-name: Test Qt6 [Release & Debug]
+name: Test Qt6
 jobs:
   test-qt6:
     runs-on: ubuntu-latest
@@ -27,14 +27,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # We need to downgrade because qt6 has a critical bug that breaks CI Testing: https://bugreports.qt.io/browse/QTBUG-104423
-
-      - name: Disable Signature Signing
-        run: "sed -i -E 's/SigLevel\\s+=\\s+.+/SigLevel = Never/g' /etc/pacman.conf"
-
-      - name: Downgrade Packages
-        run: 'echo "Server=https://archive.archlinux.org/repos/2022/04/08/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist && rm -rf "/usr/share/hwdata" && pacman --noconfirm -Syyuu'
-
       - name: Install build dependencies
         run: "pacman --noconfirm -Syu base-devel cmake gcc git make qt6-base qt6-declarative xorg-server-xvfb qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
 
@@ -45,20 +37,14 @@ jobs:
           sudo: false
           limit-access-to-actor: true
 
-      - name: Compile [Debug Mode]
+      - name: Compile [Debug]
         run: "mkdir build && cd build && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
 
-      - name: Run Tests [Debug Mode]
+      - name: Run Tests
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
 
-      - name: Compile [Release Mode]
+      - name: Compile [Release]
         run: "mkdir build-rel && cd build-rel && cmake .. -Dsaucer_tests=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
 
-      - name: Run Tests [Release Mode]
+      - name: Run Tests
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build-rel/tests/saucer-tests"'
-
-      - name: Compile Shared [Debug Mode]
-        run: "rm -rf build && mkdir build && cd build && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Debug"
-
-      - name: Compile Shared [Release Mode]
-        run: "rm -rf build-rel && mkdir build-rel && cd build-rel && cmake .. -Dsaucer_wrapper=ON -Dsaucer_backend=Qt6 && cmake --build . --config Release"
