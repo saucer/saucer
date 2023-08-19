@@ -6,7 +6,7 @@
 
 TEST_CASE("Smartview functionality is tested", "[smartview]")
 {
-    auto smartview = saucer::smartview<saucer::serializers::json>{};
+    saucer::smartview smartview{};
 
     bool test_called = false;
     smartview.expose("test", [&]() { test_called = true; });
