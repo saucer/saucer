@@ -25,7 +25,11 @@ Checks: "*,
         -cppcoreguidelines-owning-memory,
         -cppcoreguidelines-pro-type-reinterpret-cast,
         -cppcoreguidelines-avoid-non-const-global-variables,
-        -hicpp-signed-bitwise
+        -hicpp-signed-bitwise,
+        -*-uppercase-literal-suffix,
+        -*-cognitive-complexity,
+        -*-multiway-paths-covered,
+        -*-switch-missing-default-case,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
