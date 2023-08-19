@@ -13,29 +13,29 @@ TEST_CASE("Window functionality is tested", "[window]")
     auto window = test_window();
 
     window.set_resizable(false);
-    REQUIRE_FALSE(window.get_resizable());
+    REQUIRE_FALSE(window.resizable());
     window.set_resizable(true);
-    REQUIRE(window.get_resizable());
+    REQUIRE(window.resizable());
 
     window.set_decorations(true);
-    REQUIRE(window.get_decorations());
+    REQUIRE(window.decorations());
     window.set_decorations(false);
-    REQUIRE(!window.get_decorations());
+    REQUIRE(!window.decorations());
 
-    window.set_background_color(255, 0, 0, 255);
-    REQUIRE(window.get_background_color() == std::array<int, 4>{255, 0, 0, 255});
+    window.set_background({255, 0, 0, 255});
+    REQUIRE(window.background() == saucer::color{255, 0, 0, 255});
 
     window.set_title("Hello World!");
-    REQUIRE(window.get_title() == "Hello World!");
+    REQUIRE(window.title() == "Hello World!");
 
     window.set_max_size(100, 100);
-    REQUIRE(window.get_max_size() == std::array<int, 2>{100, 100});
+    REQUIRE(window.max_size() == std::pair<int, int>{100, 100});
 
     window.set_min_size(50, 50);
-    REQUIRE(window.get_min_size() == std::array<int, 2>{50, 50});
+    REQUIRE(window.min_size() == std::pair<int, int>{50, 50});
 
     window.set_size(70, 70);
-    REQUIRE(window.get_size() == std::array<int, 2>{70, 70});
+    REQUIRE(window.size() == std::pair<int, int>{70, 70});
 
     //! Hide & Show require platform specifc code.
     //! On Close requires user input
@@ -53,23 +53,23 @@ TEST_CASE("Window functionality is tested", "[window]")
                 std::this_thread::sleep_for(std::chrono::seconds(2));
 
                 window.set_size(60, 60);
-                REQUIRE(window.get_size() == std::array<int, 2>{60, 60});
+                REQUIRE(window.size() == std::pair<int, int>{60, 60});
 
                 window.set_max_size(200, 200);
-                REQUIRE(window.get_max_size() == std::array<int, 2>{200, 200});
+                REQUIRE(window.max_size() == std::pair<int, int>{200, 200});
 
                 window.set_min_size(0, 0);
-                REQUIRE(window.get_min_size() == std::array<int, 2>{0, 0});
+                REQUIRE(window.min_size() == std::pair<int, int>{0, 0});
 
                 window.set_decorations(true);
-                REQUIRE(window.get_decorations());
+                REQUIRE(window.decorations());
                 window.set_decorations(false);
-                REQUIRE(!window.get_decorations());
+                REQUIRE(!window.decorations());
 
                 window.set_always_on_top(true);
-                REQUIRE(window.get_always_on_top());
+                REQUIRE(window.always_on_top());
                 window.set_always_on_top(false);
-                REQUIRE_FALSE(window.get_always_on_top());
+                REQUIRE_FALSE(window.always_on_top());
 
                 window.close();
             });
@@ -78,9 +78,9 @@ TEST_CASE("Window functionality is tested", "[window]")
         if (width == 60 && height == 60)
         {
             window.set_always_on_top(true);
-            REQUIRE(window.get_always_on_top());
+            REQUIRE(window.always_on_top());
             window.set_always_on_top(false);
-            REQUIRE_FALSE(window.get_always_on_top());
+            REQUIRE_FALSE(window.always_on_top());
         }
     });
 

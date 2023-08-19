@@ -6,7 +6,7 @@
 
 TEST_CASE("Smartview functionality is tested", "[smartview]")
 {
-    auto smartview = saucer::simple_smartview<saucer::serializers::json>();
+    auto smartview = saucer::smartview<saucer::serializers::json>{};
 
     bool test_called = false;
     smartview.expose("test", [&]() { test_called = true; });
@@ -23,25 +23,25 @@ TEST_CASE("Smartview functionality is tested", "[smartview]")
 
             REQUIRE(a == 10);
             REQUIRE(b == "Hello World!");
-            REQUIRE(smartview.eval<int>("Math.pow({}, {})", 2, 2).get() == 4);
+            REQUIRE(smartview.evaluate<int>("Math.pow({}, {})", 2, 2).get() == 4);
 
-            smartview.eval<void>("window.saucer.call({}, [])", "test").wait();
+            smartview.evaluate<void>("window.saucer.call({}, [])", "test").wait();
             REQUIRE(test_called);
 
             smartview.close();
         },
         true);
 
-    smartview.eval<int>("Math.pow({}, {})", 2, 2) | saucer::then([](int result) { //
+    smartview.evaluate<int>("Math.pow({}, {})", 2, 2) | saucer::then([](int result) { //
         REQUIRE(result == 4);
     });
 
-    smartview.eval<int>("Math.pow({})", saucer::make_args(2, 2)) | saucer::then([](int result) { //
+    smartview.evaluate<int>("Math.pow({})", saucer::make_args(2, 2)) | saucer::then([](int result) { //
         REQUIRE(result == 4);
     });
 
-    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test2", 10, "Hello World!") | saucer::forget();
-    smartview.eval<void>("window.saucer.call({}, [{}, {}])", "test_async", 10, "Hello World!") | saucer::forget();
+    smartview.evaluate<void>("window.saucer.call({}, [{}, {}])", "test2", 10, "Hello World!") | saucer::forget();
+    smartview.evaluate<void>("window.saucer.call({}, [{}, {}])", "test_async", 10, "Hello World!") | saucer::forget();
 
     smartview.set_url("https://google.com");
     smartview.show();

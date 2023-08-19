@@ -20,14 +20,14 @@ TEST_CASE("Webview functionality is tested", "[webview]")
     auto webview = test_webview();
 
     webview.set_dev_tools(true);
-    REQUIRE(webview.get_dev_tools());
+    REQUIRE(webview.dev_tools());
     webview.set_dev_tools(false);
-    REQUIRE_FALSE(webview.get_dev_tools());
+    REQUIRE_FALSE(webview.dev_tools());
 
     webview.set_context_menu(true);
-    REQUIRE(webview.get_context_menu());
+    REQUIRE(webview.context_menu());
     webview.set_context_menu(false);
-    REQUIRE_FALSE(webview.get_context_menu());
+    REQUIRE_FALSE(webview.context_menu());
 
     webview.on<saucer::web_event::url_changed>([&](const std::string &new_url) {
         static auto call_count = 0u;
@@ -36,23 +36,23 @@ TEST_CASE("Webview functionality is tested", "[webview]")
         {
         case 0:
             REQUIRE(new_url.find("youtube.com") != std::string::npos);
-            REQUIRE(webview.get_url().find("youtube.com") != std::string::npos);
+            REQUIRE(webview.url().find("youtube.com") != std::string::npos);
             break;
         case 1:
             REQUIRE(new_url.find("google.com") != std::string::npos);
-            REQUIRE(webview.get_url().find("google.com") != std::string::npos);
+            REQUIRE(webview.url().find("google.com") != std::string::npos);
             break;
         case 2:
             REQUIRE(new_url.find("github.com") != std::string::npos);
-            REQUIRE(webview.get_url().find("github.com") != std::string::npos);
+            REQUIRE(webview.url().find("github.com") != std::string::npos);
             break;
         case 3:
             REQUIRE(new_url.find("youtube.com") != std::string::npos);
-            REQUIRE(webview.get_url().find("youtube.com") != std::string::npos);
+            REQUIRE(webview.url().find("youtube.com") != std::string::npos);
             break;
         case 5:
             REQUIRE(new_url.find("startpage.com") != std::string::npos);
-            REQUIRE(webview.get_url().find("startpage.com") != std::string::npos);
+            REQUIRE(webview.url().find("startpage.com") != std::string::npos);
             break;
         }
 
@@ -63,17 +63,17 @@ TEST_CASE("Webview functionality is tested", "[webview]")
                 //? Now we'll test thread safe functions
                 std::this_thread::sleep_for(std::chrono::seconds(2));
 
-                REQUIRE(webview.get_url().find("youtube.com") != std::string::npos);
+                REQUIRE(webview.url().find("youtube.com") != std::string::npos);
 
                 webview.set_dev_tools(true);
-                REQUIRE(webview.get_dev_tools());
+                REQUIRE(webview.dev_tools());
                 webview.set_dev_tools(false);
-                REQUIRE_FALSE(webview.get_dev_tools());
+                REQUIRE_FALSE(webview.dev_tools());
 
                 webview.set_context_menu(true);
-                REQUIRE(webview.get_context_menu());
+                REQUIRE(webview.context_menu());
                 webview.set_context_menu(false);
-                REQUIRE_FALSE(webview.get_context_menu());
+                REQUIRE_FALSE(webview.context_menu());
 
                 webview.inject(R"(
                         if(window.location.href == "https://www.google.com/")
@@ -91,7 +91,9 @@ TEST_CASE("Webview functionality is tested", "[webview]")
 
                 std::this_thread::sleep_for(std::chrono::seconds(5));
                 webview.clear_embedded();
-                webview.embed({{"test.html", saucer::embedded_file{"text/html", 97, test_html}}});
+
+                auto file = saucer::embedded_file{"text/html", 97, static_cast<const std::uint8_t *>(test_html)};
+                webview.embed({{"test.html", file}});
                 webview.serve("test.html");
 
                 std::this_thread::sleep_for(std::chrono::seconds(10));
