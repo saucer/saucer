@@ -17,15 +17,14 @@ namespace saucer
 
     struct smartview_core::impl
     {
-      public:
-        lock<std::map<std::uint64_t, serializer::promise>> evaluations;
+        lock<std::map<std::uint64_t, saucer::serializer::promise>> evaluations;
 
       public:
         lock<std::map<std::uint64_t, std::shared_ptr<std::future<void>>>> pending;
         lock<std::map<std::string, exposed_function>> functions;
 
       public:
-        std::unique_ptr<serializer> serializer;
+        std::unique_ptr<saucer::serializer> serializer;
     };
 
     smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
