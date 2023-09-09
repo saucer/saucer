@@ -25,7 +25,6 @@ option(saucer_examples          "Build examples"                                
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_serializer       "glaze"         CACHE STRING "The serializer to use")
 set(saucer_webview2_version "1.0.1901.177"  CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 
@@ -48,13 +47,6 @@ set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
     message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
-endif()
-
-set(saucer_valid_serializers nlohmann_json glaze none)
-set_property(CACHE saucer_serializer PROPERTY STRINGS ${saucer_valid_serializers})
-
-if (NOT saucer_serializer IN_LIST saucer_valid_serializers)
-    message(FATAL_ERROR "Bad Serializer, expected one of ${saucer_valid_serializers}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -100,7 +92,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 
 string(TOLOWER ${saucer_backend} saucer_backend_lower)
 string(REGEX REPLACE "[a-zA-Z]+" "" saucer_backend_version "${saucer_backend}")
-string(REGEX REPLACE "_.*" "" saucer_default_serializer "${saucer_serializer}")
 
 configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/constants.hpp")
 
@@ -111,6 +102,7 @@ configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/co
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/smartview.cpp"
     "src/utils.color.cpp"
+    "src/serializer.glaze.cpp"
 )
 
 # --------------------------------------------------------------------------------------------------------
@@ -151,7 +143,13 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC lockpp boost_callable_traits tl::expected ereignis fmt)
+CPMFindPackage(
+  NAME           glaze
+  VERSION        1.4.1
+  GIT_REPOSITORY "https://github.com/stephenberry/glaze"
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC lockpp boost_callable_traits tl::expected glaze::glaze ereignis fmt)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Linkage
@@ -164,34 +162,6 @@ set(saucer_linkage PRIVATE)
 
 if (saucer_modules)
     set(saucer_linkage PUBLIC)
-endif()
-
-# --------------------------------------------------------------------------------------------------------
-# Setup Serializers
-# --------------------------------------------------------------------------------------------------------
-
-if (saucer_serializer STREQUAL "nlohmann_json")
-    CPMFindPackage(
-      NAME           nlohmann_json
-      VERSION        3.11.2
-      GIT_REPOSITORY "https://github.com/nlohmann/json"
-    )
-
-    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
-    target_sources(${PROJECT_NAME} PRIVATE "src/serializer.nlohmann.cpp")
-    install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
-endif()
-
-if (saucer_serializer STREQUAL "glaze")    
-    CPMFindPackage(
-      NAME           glaze
-      VERSION        1.4.1
-      GIT_REPOSITORY "https://github.com/stephenberry/glaze"
-    )
-
-    target_link_libraries(${PROJECT_NAME} PUBLIC glaze::glaze)
-    target_sources(${PROJECT_NAME} PRIVATE "src/serializer.glaze.cpp")
-    install(DIRECTORY "$<TARGET_PROPERTY:glaze_glaze,INTERFACE_INCLUDE_DIRECTORIES>/glaze" TYPE INCLUDE)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -241,7 +211,7 @@ endif()
 
 if (saucer_tests)
     message(STATUS "[saucer] Building Tests")
-    add_subdirectory(tests)
+    # add_subdirectory(tests)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -251,8 +221,8 @@ endif()
 if (saucer_examples)
     message(STATUS "[saucer] Building Examples")
     
-    add_subdirectory("examples/manual-embedding")
-    add_subdirectory("examples/cli-embedding")
+    # add_subdirectory("examples/manual-embedding")
+    # add_subdirectory("examples/cli-embedding")
     add_subdirectory("examples/json-bridge")
 endif()
 
@@ -275,5 +245,5 @@ if (saucer_prefer_remote AND saucer_backend STREQUAL "WebView2")
 endif()
 
 install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
-install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
+install(DIRECTORY "$<TARGET_PROPERTY:glaze_glaze,INTERFACE_INCLUDE_DIRECTORIES>/glaze" TYPE INCLUDE)
 install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)

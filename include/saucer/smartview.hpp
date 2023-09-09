@@ -1,6 +1,6 @@
 #pragma once
 #include "webview.hpp"
-#include "constants.hpp"
+#include "serializers/glaze/glaze.hpp"
 
 #include <future>
 #include <atomic>
@@ -42,7 +42,7 @@ namespace saucer
         [[thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 
-    template <Serializer Serializer = default_serializer>
+    template <Serializer Serializer = serializers::glaze>
     class smartview : public smartview_core
     {
       public:

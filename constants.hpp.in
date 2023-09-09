@@ -1,8 +1,5 @@
 #pragma once
-#define SAUCER_SERIALIZER      ${saucer_serializer}
 #define SAUCER_BACKEND_VERSION ${saucer_backend_version}
-
-#include "serializers/${saucer_default_serializer}/${saucer_default_serializer}.hpp"
 
 namespace saucer
 {
@@ -13,6 +10,5 @@ namespace saucer
         webview2,
     };
 
-    using default_serializer = serializers::${saucer_default_serializer};
     constexpr backend_type backend = backend_type::${saucer_backend_lower};
 } // namespace saucer
