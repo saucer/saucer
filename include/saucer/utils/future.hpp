@@ -10,7 +10,7 @@ namespace saucer
     auto all(std::future<T>...);
 
     template <typename Callback>
-    struct then_pipe;
+    class then_pipe;
 
     template <typename Callback>
     then_pipe<Callback> then(Callback &&);

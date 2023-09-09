@@ -72,7 +72,10 @@ namespace saucer
         auto *buffer = new QBuffer;
 
         buffer->open(QIODevice::WriteOnly);
-        buffer->write(reinterpret_cast<const char *>(file.data), static_cast<std::int64_t>(file.size));
+
+        auto size = file.content.size();
+        auto *content = file.content.data();
+        buffer->write(reinterpret_cast<const char *>(content), static_cast<std::int64_t>(size));
 
         buffer->close();
         connect(request, &QObject::destroyed, buffer, &QObject::deleteLater);

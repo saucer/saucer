@@ -12,16 +12,18 @@ namespace saucer
     template <typename... T>
     auto all(std::future<T>... futures)
     {
-        return std::tuple_cat([]<typename F>(std::future<F> future) {
-            if constexpr (std::same_as<F, void>)
+        return std::tuple_cat(
+            []<typename F>(std::future<F> future)
             {
-                return std::tuple<>();
-            }
-            else
-            {
-                return std::make_tuple(future.get());
-            }
-        }(std::move(futures)...));
+                if constexpr (!std::same_as<F, void>)
+                {
+                    return std::make_tuple(future.get());
+                }
+                else
+                {
+                    return std::tuple<>();
+                }
+            }(std::move(futures)...));
     }
 
     template <typename T, typename Callback>
@@ -30,15 +32,13 @@ namespace saucer
         auto fut = std::make_shared<std::future<void>>();
 
         *fut = std::async(std::launch::async,
-                          [fut, future = std::move(future), callback = std::forward<Callback>(callback)]() mutable {
-                              callback(future.get());
-                          });
+                          [fut, future = std::move(future), callback = std::forward<Callback>(callback)]() mutable
+                          { callback(future.get()); });
     }
 
     template <typename Callback>
-    struct then_pipe
+    class then_pipe
     {
-      private:
         Callback m_callback;
 
       public:
