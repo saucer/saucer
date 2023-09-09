@@ -10,19 +10,24 @@ if (MSVC AND MSVC_TOOLSET_VERSION LESS 143)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Library options
+# Library switches
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_modules           "Enable modules"                                   OFF)
+option(saucer_modules           "Enable modules"                                    ON)
 
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
-option(saucer_tests             "Build tests"                                      OFF)
-option(saucer_examples          "Build examples"                                   OFF)
+option(saucer_tests             "Build tests"                                       ON)
+option(saucer_examples          "Build examples"                                    ON)
 
-set(saucer_webview2_version "1.0.1901.177" CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
-set(saucer_backend "Default" CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
+# --------------------------------------------------------------------------------------------------------
+# Library options
+# --------------------------------------------------------------------------------------------------------
+
+set(saucer_serializer       "glaze"         CACHE STRING "The serializer to use")
+set(saucer_webview2_version "1.0.1901.177"  CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 
 # --------------------------------------------------------------------------------------------------------
 # Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
@@ -30,8 +35,9 @@ set(saucer_backend "Default" CACHE STRING "The backend to use, will use the most
 
 if (saucer_prefer_remote)
     message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
-    set(CPM_DOWNLOAD_ALL ON)
 endif()
+
+set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
 
 # --------------------------------------------------------------------------------------------------------
 # Ensure valid library options
@@ -44,6 +50,13 @@ if (NOT saucer_backend IN_LIST saucer_valid_backends)
     message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
 endif()
 
+set(saucer_valid_serializers nlohmann_json glaze none)
+set_property(CACHE saucer_serializer PROPERTY STRINGS ${saucer_valid_serializers})
+
+if (NOT saucer_serializer IN_LIST saucer_valid_serializers)
+    message(FATAL_ERROR "Bad Serializer, expected one of ${saucer_valid_serializers}")
+endif()
+
 # --------------------------------------------------------------------------------------------------------
 # Determine appropiate default backend
 # --------------------------------------------------------------------------------------------------------
@@ -52,7 +65,7 @@ if (saucer_backend STREQUAL "Default")
     if (WIN32)
         set(saucer_backend WebView2)
     else()
-        set(saucer_backend Qt5)
+        set(saucer_backend Qt6)
     endif()
 
     message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
@@ -71,7 +84,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS 
 # We only enable warnings if built standalone.
 if (NOT MSVC AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-changes-meaning -Wno-missing-field-initializers -Wno-cast-function-type)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -87,6 +100,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 
 string(TOLOWER ${saucer_backend} saucer_backend_lower)
 string(REGEX REPLACE "[a-zA-Z]+" "" saucer_backend_version "${saucer_backend}")
+string(REGEX REPLACE "_.*" "" saucer_default_serializer "${saucer_serializer}")
+
 configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/constants.hpp")
 
 # --------------------------------------------------------------------------------------------------------
@@ -96,7 +111,6 @@ configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/co
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/smartview.cpp"
     "src/utils.color.cpp"
-    "src/serializer.json.cpp"
 )
 
 # --------------------------------------------------------------------------------------------------------
@@ -110,12 +124,6 @@ CPMFindPackage(
   NAME           lockpp
   VERSION        2.2
   GIT_REPOSITORY "https://github.com/Soundux/lockpp"
-)
-
-CPMFindPackage(
-  NAME           nlohmann_json
-  VERSION        3.11.2
-  GIT_REPOSITORY "https://github.com/nlohmann/json"
 )
 
 CPMFindPackage(
@@ -143,7 +151,7 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC lockpp nlohmann_json boost_callable_traits tl::expected ereignis fmt)
+target_link_libraries(${PROJECT_NAME} PUBLIC lockpp boost_callable_traits tl::expected ereignis fmt)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Linkage
@@ -155,7 +163,35 @@ target_link_libraries(${PROJECT_NAME} PUBLIC lockpp nlohmann_json boost_callable
 set(saucer_linkage PRIVATE)
 
 if (saucer_modules)
-  set(saucer_linkage PUBLIC)
+    set(saucer_linkage PUBLIC)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Serializers
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_serializer STREQUAL "nlohmann_json")
+    CPMFindPackage(
+      NAME           nlohmann_json
+      VERSION        3.11.2
+      GIT_REPOSITORY "https://github.com/nlohmann/json"
+    )
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
+    target_sources(${PROJECT_NAME} PRIVATE "src/serializer.nlohmann.cpp")
+    install(DIRECTORY "$<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>/nlohmann" TYPE INCLUDE)
+endif()
+
+if (saucer_serializer STREQUAL "glaze")    
+    CPMFindPackage(
+      NAME           glaze
+      VERSION        1.4.1
+      GIT_REPOSITORY "https://github.com/stephenberry/glaze"
+    )
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC glaze::glaze)
+    target_sources(${PROJECT_NAME} PRIVATE "src/serializer.glaze.cpp")
+    install(DIRECTORY "$<TARGET_PROPERTY:glaze_glaze,INTERFACE_INCLUDE_DIRECTORIES>/glaze" TYPE INCLUDE)
 endif()
 
 # --------------------------------------------------------------------------------------------------------

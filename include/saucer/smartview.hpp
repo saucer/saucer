@@ -1,6 +1,6 @@
 #pragma once
 #include "webview.hpp"
-#include "serializers/json.hpp"
+#include "constants.hpp"
 
 #include <future>
 #include <atomic>
@@ -34,15 +34,15 @@ namespace saucer
         [[thread_safe]] void call(function_data &, const serializer::function &);
 
       protected:
-        [[thread_safe]] void add_evaluation(serializer::promise &&, const std::string &);
         [[thread_safe]] void add_function(std::string, serializer::function &&, bool);
+        [[thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
 
       protected:
-        [[thread_safe]] void reject(std::uint64_t, const std::string &);
+        [[thread_safe]] void reject(std::uint64_t, serializer_error);
         [[thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 
-    template <Serializer Serializer = serializers::json>
+    template <Serializer Serializer = default_serializer>
     class smartview : public smartview_core
     {
       public:

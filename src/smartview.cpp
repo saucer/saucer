@@ -17,11 +17,15 @@ namespace saucer
 
     struct smartview_core::impl
     {
-        lock<std::map<std::uint64_t, saucer::serializer::promise>> evaluations;
+        using id = std::uint64_t;
+        using pending_future = std::shared_ptr<std::future<void>>;
 
       public:
-        lock<std::map<std::uint64_t, std::shared_ptr<std::future<void>>>> pending;
+        lock<std::map<id, pending_future>> pending;
+
+      public:
         lock<std::map<std::string, exposed_function>> functions;
+        lock<std::map<id, saucer::serializer::resolver>> evaluations;
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
@@ -101,16 +105,7 @@ namespace saucer
             return;
         }
 
-        switch (result.error())
-        {
-        case serializer_error::argument_count_mismatch:
-            reject(data.id, "Argument count mismatch");
-            break;
-
-        case serializer_error::type_mismatch:
-            reject(data.id, "Type mismatch");
-            break;
-        }
+        reject(data.id, result.error());
     }
 
     void smartview_core::on_message(const std::string &message)
@@ -123,57 +118,65 @@ namespace saucer
             return;
         }
 
-        if (auto *function_message = dynamic_cast<function_data *>(parsed.get()); function_message)
+        if (auto *message = dynamic_cast<function_data *>(parsed.get()); message)
         {
             auto functions = m_impl->functions.copy();
 
-            if (!functions.contains(function_message->name))
+            if (!functions.contains(message->name))
             {
-                reject(function_message->id, "Invalid function, did you forget to call smartview::expose(...)?");
+                reject(message->id, serializer_error::invalid_function);
                 return;
             }
 
-            const auto &[async, callback] = functions.at(function_message->name);
+            const auto &[async, callback] = functions.at(message->name);
 
             if (!async)
             {
-                call(*function_message, callback);
+                call(*message, callback);
                 return;
             }
 
             auto id = m_id_counter++;
-            auto future = std::make_shared<std::future<void>>();
+            auto future = std::make_shared<impl::pending_future::element_type>();
 
             m_impl->pending.write()->emplace(id, future);
 
-            *future = std::async(std::launch::async, [this, future, id, callback, parsed = std::move(parsed)]() {
-                auto &message = dynamic_cast<function_data &>(*parsed);
-                call(message, callback);
+            *future = std::async(std::launch::async,
+                                 [this, future, id, callback, parsed = std::move(parsed)]()
+                                 {
+                                     auto *message = static_cast<function_data *>(parsed.get());
 
-                m_impl->pending.write()->erase(id);
-            });
+                                     call(*message, callback);
+                                     m_impl->pending.write()->erase(id);
+                                 });
 
             return;
         }
 
-        if (auto *result_message = dynamic_cast<result_data *>(parsed.get()); result_message)
+        if (auto *message = dynamic_cast<result_data *>(parsed.get()); message)
         {
             auto evals = m_impl->evaluations.write();
 
-            if (!evals->contains(result_message->id))
+            if (!evals->contains(message->id))
             {
                 return;
             }
 
-            const auto &resolve = evals->at(result_message->id);
-            resolve(*result_message);
+            const auto &resolve = evals->at(message->id);
+            resolve(*message);
 
-            evals->erase(result_message->id);
+            evals->erase(message->id);
             return;
         }
     }
 
-    void smartview_core::add_evaluation(serializer::promise &&resolve, const std::string &code)
+    void smartview_core::add_function(std::string name, serializer::function &&resolve, bool async)
+    {
+        auto functions = m_impl->functions.write();
+        functions->emplace(std::move(name), exposed_function{async, std::move(resolve)});
+    }
+
+    void smartview_core::add_evaluation(serializer::resolver &&resolve, const std::string &code)
     {
         auto id = m_id_counter++;
         m_impl->evaluations.write()->emplace(id, std::move(resolve));
@@ -187,10 +190,16 @@ namespace saucer
             id, code));
     }
 
-    void smartview_core::add_function(std::string name, serializer::function &&resolve, bool async)
+    void smartview_core::reject(std::uint64_t id, serializer_error error)
     {
-        auto functions = m_impl->functions.write();
-        functions->emplace(std::move(name), exposed_function{async, std::move(resolve)});
+        using underlying = std::underlying_type_t<serializer_error>;
+
+        run_java_script(fmt::format(
+            R"(
+                window.saucer._rpc[{0}].reject("{1}");
+                delete window.saucer._rpc[{0}];
+            )",
+            id, static_cast<underlying>(error)));
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
@@ -198,16 +207,6 @@ namespace saucer
         run_java_script(fmt::format(
             R"(
                 window.saucer._rpc[{0}].resolve({1});
-                delete window.saucer._rpc[{0}];
-            )",
-            id, result));
-    }
-
-    void smartview_core::reject(std::uint64_t id, const std::string &result)
-    {
-        run_java_script(fmt::format(
-            R"(
-                window.saucer._rpc[{0}].reject("{1}");
                 delete window.saucer._rpc[{0}];
             )",
             id, result));
