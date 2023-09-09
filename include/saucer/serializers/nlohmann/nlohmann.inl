@@ -1,19 +1,15 @@
 #pragma once
-#include "json.hpp"
+#include "nlohmann.hpp"
 
-#include "args.hpp"
-#include "serializer.hpp"
-
-#include <variant>
 #include <fmt/core.h>
 #include <fmt/args.h>
 #include <type_traits>
 #include <boost/callable_traits.hpp>
 
-namespace saucer::serializers::detail::json
+namespace saucer::serializers::detail::nlohmann
 {
     template <typename T>
-    concept is_serializable = requires(T value) { static_cast<nlohmann::json>(value); };
+    concept is_serializable = requires(T value) { static_cast<::nlohmann::json>(value); };
 
     template <typename T>
     struct decay_tuple
@@ -29,23 +25,24 @@ namespace saucer::serializers::detail::json
 
     template <typename T>
     using decay_tuple_t = typename decay_tuple<T>::type;
-}; // namespace saucer::serializers::detail::json
+}; // namespace saucer::serializers::detail::nlohmann
 
 namespace saucer::serializers
 {
     template <typename Function>
-    auto json::serialize(const Function &func)
+    auto nlohmann::serialize(const Function &func)
     {
         using rtn_t = boost::callable_traits::return_type_t<Function>;
         using raw_args_t = boost::callable_traits::args_t<Function>;
-        using args_t = detail::json::decay_tuple_t<raw_args_t>;
+        using args_t = detail::nlohmann::decay_tuple_t<raw_args_t>;
 
-        static_assert(detail::json::decay_tuple<raw_args_t>::serializable &&
-                          (std::is_void_v<rtn_t> || detail::json::is_serializable<rtn_t>),
+        static_assert(detail::nlohmann::decay_tuple<raw_args_t>::serializable &&
+                          (std::is_void_v<rtn_t> || detail::nlohmann::is_serializable<rtn_t>),
                       "All arguments as well as the return type must be serializable");
 
-        return [func](function_data &data) -> function::result_type {
-            auto &message = dynamic_cast<json_function_data &>(data);
+        return [func](function_data &data) -> function::result_type
+        {
+            auto &message = dynamic_cast<nlohmann_function_data &>(data);
             const auto &params = message.data;
 
             if (params.size() != std::tuple_size_v<args_t>)
@@ -58,7 +55,8 @@ namespace saucer::serializers
             try
             {
                 std::size_t current_arg{0};
-                auto serialize_item = [&]<typename T>(T &arg) {
+                auto serialize_item = [&]<typename T>(T &arg)
+                {
                     arg = static_cast<T>(params.at(current_arg++));
                 };
 
@@ -69,7 +67,7 @@ namespace saucer::serializers
                 return tl::make_unexpected(serializer_error::type_mismatch);
             }
 
-            nlohmann::json rtn;
+            ::nlohmann::json rtn;
 
             if constexpr (std::is_void_v<rtn_t>)
             {
@@ -81,26 +79,29 @@ namespace saucer::serializers
             }
 
             // ? We dump twice to properly escape
-            return fmt::format("JSON.parse({})", static_cast<nlohmann::json>(nlohmann::json(rtn).dump()).dump());
+            return fmt::format("JSON.parse({})", static_cast<::nlohmann::json>(::nlohmann::json(rtn).dump()).dump());
         };
     }
 
     template <typename... Params>
-    auto json::serialize_args(const Params &...params)
+    auto nlohmann::serialize_args(const Params &...params)
     {
         fmt::dynamic_format_arg_store<fmt::format_context> rtn;
 
-        auto unpack = [&]<typename T>(const T &arg) {
+        auto unpack = [&]<typename T>(const T &arg)
+        {
             if constexpr (is_arguments<std::decay_t<T>>)
             {
                 using tuple_t = typename T::tuple_t;
-                static_assert((detail::json::decay_tuple<tuple_t>::serializable), "All arguments must be serializable");
+                static_assert((detail::nlohmann::decay_tuple<tuple_t>::serializable),
+                              "All arguments must be serializable");
 
                 std::string rtn;
                 auto tuple = static_cast<tuple_t>(arg);
 
-                auto serialize_item = [&](const auto &item) {
-                    auto json = static_cast<nlohmann::json>(nlohmann::json(item).dump()).dump();
+                auto serialize_item = [&](const auto &item)
+                {
+                    auto json = static_cast<::nlohmann::json>(::nlohmann::json(item).dump()).dump();
                     rtn += fmt::format("JSON.parse({}),", json);
                 };
 
@@ -115,9 +116,9 @@ namespace saucer::serializers
             }
             else
             {
-                static_assert(detail::json::is_serializable<T>, "All arguments must be serializable");
+                static_assert(detail::nlohmann::is_serializable<T>, "All arguments must be serializable");
 
-                auto json = static_cast<nlohmann::json>(nlohmann::json(arg).dump()).dump();
+                auto json = static_cast<::nlohmann::json>(::nlohmann::json(arg).dump()).dump();
                 return fmt::format("JSON.parse({})", json);
             }
         };
@@ -127,13 +128,14 @@ namespace saucer::serializers
     }
 
     template <typename T>
-    auto json::resolve(std::shared_ptr<std::promise<T>> promise)
+    auto nlohmann::resolve(std::shared_ptr<std::promise<T>> promise)
     {
-        static_assert((std::is_void_v<T> || detail::json::is_serializable<T>),
+        static_assert((std::is_void_v<T> || detail::nlohmann::is_serializable<T>),
                       "The promise result must be serializable");
 
-        return [promise](result_data &data) mutable {
-            auto &json_data = dynamic_cast<json_result_data &>(data);
+        return [promise](result_data &data) mutable
+        {
+            auto &json_data = dynamic_cast<nlohmann_result_data &>(data);
 
             if constexpr (std::is_void_v<T>)
             {
