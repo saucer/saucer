@@ -6,18 +6,17 @@ namespace saucer
 {
     struct message_data
     {
-        std::uint64_t id;
         virtual ~message_data() = default;
     };
 
     struct function_data : public message_data
     {
+        std::uint64_t id;
         std::string name;
-        ~function_data() override = default;
     };
 
     struct result_data : public message_data
     {
-        ~result_data() override = default;
+        std::uint64_t id;
     };
 } // namespace saucer
