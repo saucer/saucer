@@ -44,18 +44,18 @@ namespace saucer
         QWebEngineScript script;
         auto scripts = m_impl->web_view->page()->scripts().find("_run_js");
 
-        if (!scripts.empty())
-        {
-            script = scripts.first();
-            m_impl->web_view->page()->scripts().remove(script);
-        }
-        else
+        if (scripts.empty())
         {
             script.setName("_run_js");
             script.setRunsOnSubFrames(false);
             script.setWorldId(QWebEngineScript::MainWorld);
             script.setInjectionPoint(QWebEngineScript::DocumentReady);
             script.setSourceCode(R"(window.saucer.on_message("js_finished");)");
+        }
+        else
+        {
+            script = scripts.first();
+            m_impl->web_view->page()->scripts().remove(script);
         }
 
         script.setSourceCode(QString::fromStdString(java_script) + "\n" + script.sourceCode());
@@ -72,7 +72,8 @@ namespace saucer
         QWebEngineScript script;
         bool found = false;
 
-        auto check_previous = [&](const char *name) {
+        auto check_previous = [&](const char *name)
+        {
             auto scripts = m_impl->web_view->page()->scripts().find(name);
 
             if (scripts.empty())

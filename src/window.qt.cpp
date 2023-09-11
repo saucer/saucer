@@ -7,7 +7,7 @@ namespace saucer
     window::window(const options &options) : m_impl(std::make_unique<impl>())
     {
         static int argc{1};
-        static QApplication *application; // NOLINT
+        static QApplication *application;
         static std::vector<char *> argv{strdup("")};
 
         if (!application)
@@ -74,6 +74,12 @@ namespace saucer
         return m_impl->window->windowTitle().toStdString();
     }
 
+    color window::background() const
+    {
+        const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
+        return {color.red(), color.green(), color.blue(), color.alpha()};
+    }
+
     bool window::always_on_top() const
     {
         if (!m_impl->is_thread_safe())
@@ -112,12 +118,6 @@ namespace saucer
         }
 
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
-    }
-
-    color window::background() const
-    {
-        const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
-        return {color.red(), color.green(), color.blue(), color.alpha()};
     }
 
     void window::hide()

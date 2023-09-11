@@ -35,7 +35,6 @@ namespace saucer
 
     class window::impl::main_window : public QMainWindow
     {
-      private:
         class window &m_parent;
 
       public:
@@ -66,14 +65,14 @@ namespace saucer
       public:
         ~event_callback() override
         {
-            if constexpr (std::is_same_v<Return, void>)
+            if constexpr (!std::is_same_v<Return, void>)
             {
-                m_func();
-                m_result->set_value();
+                m_result->set_value(m_func());
             }
             else
             {
-                m_result->set_value(m_func());
+                m_func();
+                m_result->set_value();
             }
         }
     };
@@ -88,6 +87,7 @@ namespace saucer
 
         // ? postEvent will automatically delete the event after processing.
         QApplication::postEvent(window, event);
+
         return result.get_future().get();
     }
 } // namespace saucer

@@ -6,7 +6,9 @@
 
 namespace saucer
 {
-    const std::string webview::impl::inject_script = []() { // NOLINT(cert-err58-cpp)
+    // NOLINTNEXTLINE(cert-err58-cpp)
+    const std::string webview::impl::inject_script = []()
+    {
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
 
         if (!web_channel_api.open(QIODevice::ReadOnly))
@@ -70,7 +72,6 @@ namespace saucer
         const auto &file = m_parent->m_embedded_files.at(url);
 
         auto *buffer = new QBuffer;
-
         buffer->open(QIODevice::WriteOnly);
 
         auto size = file.content.size();

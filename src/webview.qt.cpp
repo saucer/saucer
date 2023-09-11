@@ -10,7 +10,8 @@
 
 namespace saucer
 {
-    const auto register_scheme = [] {
+    const auto register_scheme = []
+    {
         using Flags = QWebEngineUrlScheme::Flag;
         auto scheme = QWebEngineUrlScheme("saucer");
 
@@ -58,7 +59,8 @@ namespace saucer
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged,
                                   [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
 
-        window::m_impl->on_closed = [this] {
+        window::m_impl->on_closed = [this]
+        {
             set_dev_tools(false);
         };
 
@@ -113,26 +115,18 @@ namespace saucer
             return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        if (!enabled)
+        if (!enabled && m_impl->dev_view)
         {
-            if (!m_impl->dev_view)
-            {
-                return;
-            }
-
             m_impl->dev_view->deleteLater();
             m_impl->dev_view = nullptr;
             return;
         }
 
-        if (m_impl->dev_view)
+        if (!m_impl->dev_view)
         {
-            m_impl->dev_view->show();
-            return;
+            m_impl->dev_view = new QWebEngineView;
+            m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
         }
-
-        m_impl->dev_view = new QWebEngineView;
-        m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
 
         m_impl->dev_view->show();
     }
@@ -158,17 +152,12 @@ namespace saucer
         m_impl->web_view->setUrl(QString::fromStdString(url));
     }
 
-    void webview::serve(const std::string &file)
-    {
-        set_url(fmt::format("{}{}", impl::scheme_prefix, file));
-    }
-
-    void webview::embed(std::map<const std::string, const embedded_file> &&files)
+    void webview::embed(embedded_files &&files)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe(
-                [this, files = std::move(files)]() mutable { return embed(std::move(files)); });
+            return window::m_impl->post_safe([this, files = std::move(files)]() mutable
+                                             { return embed(std::move(files)); });
         }
 
         m_embedded_files.merge(files);
@@ -180,6 +169,10 @@ namespace saucer
 
         m_impl->scheme_handler = new impl::url_scheme_handler(this);
         m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->scheme_handler);
+    }
+    void webview::serve(const std::string &file)
+    {
+        set_url(fmt::format("{}{}", impl::scheme_prefix, file));
     }
 
     void webview::clear_scripts()
