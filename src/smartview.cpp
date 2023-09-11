@@ -141,15 +141,15 @@ namespace saucer
 
             m_impl->pending.write()->emplace(id, future);
 
-            *future = std::async(std::launch::async,
-                                 [this, future, id, callback, parsed = std::move(parsed)]()
-                                 {
-                                     auto *message = static_cast<function_data *>(parsed.get());
+            auto fn = [this, future, id, callback, parsed = std::move(parsed)]()
+            {
+                auto *message = static_cast<function_data *>(parsed.get());
 
-                                     call(*message, callback);
-                                     m_impl->pending.write()->erase(id);
-                                 });
+                call(*message, callback);
+                m_impl->pending.write()->erase(id);
+            };
 
+            *future = std::async(std::launch::async, std::move(fn));
             return;
         }
 

@@ -31,9 +31,12 @@ namespace saucer
     {
         auto fut = std::make_shared<std::future<void>>();
 
-        *fut = std::async(std::launch::async,
-                          [fut, future = std::move(future), callback = std::forward<Callback>(callback)]() mutable
-                          { callback(future.get()); });
+        auto fn = [fut, future = std::move(future), callback = std::forward<Callback>(callback)]() mutable
+        {
+            callback(future.get());
+        };
+
+        *fut = std::async(std::launch::async, std::move(fn));
     }
 
     template <typename Callback>
