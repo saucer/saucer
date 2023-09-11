@@ -2,19 +2,20 @@
 #include "window.hpp"
 
 #include <map>
+#include <span>
 #include <string>
 #include <memory>
 #include <ereignis/manager.hpp>
 
 namespace saucer
 {
-    enum class load_time
+    enum class load_time : std::uint8_t
     {
         ready,
         creation,
     };
 
-    enum class web_event
+    enum class web_event : std::uint8_t
     {
         url_changed
     };
@@ -31,13 +32,16 @@ namespace saucer
         struct impl;
 
       private:
+        using embedded_files = std::map<std::string, embedded_file>;
+
+      private:
         using events = ereignis::manager<                                      //
             ereignis::event<web_event::url_changed, void(const std::string &)> //
             >;
 
       private:
         events m_events;
-        std::map<const std::string, const embedded_file> m_embedded_files;
+        embedded_files m_embedded_files;
 
       protected:
         std::unique_ptr<impl> m_impl;
@@ -63,8 +67,8 @@ namespace saucer
         [[thread_safe]] void set_url(const std::string &url);
 
       public:
+        [[thread_safe]] void embed(embedded_files &&files);
         [[thread_safe]] void serve(const std::string &file);
-        [[thread_safe]] void embed(std::map<const std::string, const embedded_file> &&files);
 
       public:
         [[thread_safe]] void clear_scripts();
