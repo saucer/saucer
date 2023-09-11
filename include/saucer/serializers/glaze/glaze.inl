@@ -133,11 +133,7 @@ namespace saucer::serializers
         {
             auto &result = static_cast<glaze_result_data &>(data);
 
-            if constexpr (std::is_void_v<T>)
-            {
-                promise->set_value();
-            }
-            else
+            if constexpr (!std::is_void_v<T>)
             {
                 auto value = glz::read_json<T>(result.result.str);
 
@@ -151,6 +147,10 @@ namespace saucer::serializers
                 }
 
                 promise->set_value(value.value());
+            }
+            else
+            {
+                promise->set_value();
             }
         };
     }

@@ -1,7 +1,6 @@
 #pragma once
 #include "../serializer.hpp"
 
-#include <future>
 #include <glaze/glaze.hpp>
 
 namespace saucer::serializers
