@@ -8,7 +8,7 @@
 
 namespace saucer
 {
-    enum class window_event
+    enum class window_event : std::uint8_t
     {
         closed,
         resize,
