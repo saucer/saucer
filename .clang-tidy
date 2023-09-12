@@ -32,6 +32,7 @@ Checks: "*,
         -*-switch-missing-default-case,
         -*-avoid-endl,
         -cppcoreguidelines-pro-type-static-cast-downcast,
+        -misc-header-include-cycle
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
