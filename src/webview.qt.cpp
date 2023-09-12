@@ -115,10 +115,14 @@ namespace saucer
             return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        if (!enabled && m_impl->dev_view)
+        if (!enabled)
         {
-            m_impl->dev_view->deleteLater();
-            m_impl->dev_view = nullptr;
+            if (m_impl->dev_view)
+            {
+                m_impl->dev_view->deleteLater();
+                m_impl->dev_view = nullptr;
+            }
+
             return;
         }
 
