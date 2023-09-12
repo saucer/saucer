@@ -13,7 +13,7 @@ namespace saucer
     class then_pipe;
 
     template <typename Callback>
-    then_pipe<Callback> then(Callback &&);
+    then_pipe<Callback> then(Callback);
 
     template <typename T, typename Callback, typename>
     void then(std::future<T>, Callback &&);

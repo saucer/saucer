@@ -27,11 +27,11 @@ namespace saucer
     }
 
     template <typename T, typename Callback>
-    void then(std::future<T> future, Callback &&callback)
+    void then(std::future<T> future, Callback callback)
     {
         auto fut = std::make_shared<std::future<void>>();
 
-        auto fn = [fut, future = std::move(future), callback = std::forward<Callback>(callback)]() mutable
+        auto fn = [fut, future = std::move(future), callback = std::move(callback)]() mutable
         {
             callback(future.get());
         };
@@ -56,9 +56,9 @@ namespace saucer
     };
 
     template <typename Callback>
-    then_pipe<Callback> then(Callback &&callback)
+    then_pipe<Callback> then(Callback callback)
     {
-        return then_pipe{std::forward<Callback>(callback)};
+        return then_pipe{std::move(callback)};
     }
 
     template <typename T>
