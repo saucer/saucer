@@ -211,7 +211,7 @@ endif()
 
 if (saucer_tests)
     message(STATUS "[saucer] Building Tests")
-    # add_subdirectory(tests)
+    add_subdirectory(tests)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
