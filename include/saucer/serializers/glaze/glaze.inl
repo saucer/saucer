@@ -63,22 +63,29 @@ namespace saucer::serializers
         return [func](function_data &data) -> function::result_type
         {
             auto &message = static_cast<glaze_function_data &>(data);
-            auto params = glz::read_json<decayed_t>(message.params.str);
 
-            if (!params.has_value())
+            decayed_t params;
+            glz::parse_error error;
+
+            if constexpr (std::tuple_size_v<decayed_t> > 0)
+            {
+                error = glz::read_json<decayed_t>(params, message.params.str);
+            }
+
+            if (error)
             {
                 return tl::make_unexpected(serializer_error::type_mismatch);
             }
 
-            std::string result;
+            std::string result{"null"};
 
             if constexpr (!std::is_void_v<return_t>)
             {
-                result = glz::write_json(std::apply(func, params.value()));
+                result = glz::write_json(std::apply(func, params));
             }
             else
             {
-                std::apply(func, params.value());
+                std::apply(func, params);
             }
 
             auto escaped = glz::write_json(result);
