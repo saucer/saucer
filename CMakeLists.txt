@@ -57,7 +57,7 @@ if (saucer_backend STREQUAL "Default")
     if (WIN32)
         set(saucer_backend WebView2)
     else()
-        set(saucer_backend Qt6)
+        set(saucer_backend Qt5)
     endif()
 
     message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
