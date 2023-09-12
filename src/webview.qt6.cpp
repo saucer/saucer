@@ -58,7 +58,7 @@ namespace saucer
             m_impl->web_view->page()->scripts().remove(script);
         }
 
-        script.setSourceCode(QString::fromStdString(java_script) + "\n" + script.sourceCode());
+        script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(java_script));
         m_impl->web_view->page()->scripts().insert(script);
     }
 
