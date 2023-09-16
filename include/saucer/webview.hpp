@@ -23,7 +23,7 @@ namespace saucer
     struct embedded_file
     {
         std::string mime;
-        std::span<std::uint8_t> content;
+        std::span<const std::uint8_t> content;
     };
 
 #include "meta/annotations.hpp"
