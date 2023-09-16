@@ -18,8 +18,8 @@ option(saucer_modules           "Enable modules"                                
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
-option(saucer_tests             "Build tests"                                       ON)
-option(saucer_examples          "Build examples"                                    ON)
+option(saucer_tests             "Build tests"                                      OFF)
+option(saucer_examples          "Build examples"                                   OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Library options
@@ -220,10 +220,9 @@ endif()
 
 if (saucer_examples)
     message(STATUS "[saucer] Building Examples")
-    
-    # add_subdirectory("examples/manual-embedding")
-    # add_subdirectory("examples/cli-embedding")
+        
     add_subdirectory("examples/json-bridge")
+    add_subdirectory("examples/embedding")
 endif()
 
 # --------------------------------------------------------------------------------------------------------

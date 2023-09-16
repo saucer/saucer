@@ -1,0 +1,1 @@
+Please refer to the [documentation](https://saucer.github.io/docs/getting-started/embedding) on how to embed files.

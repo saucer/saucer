@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.1)
-project("cli-embedding" LANGUAGES CXX VERSION 1.0)
+cmake_minimum_required(VERSION 3.16)
+project(embedding LANGUAGES CXX VERSION 1.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Create executable

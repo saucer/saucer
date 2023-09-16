@@ -1,14 +1,15 @@
-#include "../embedding/all.hpp"
 #include <saucer/webview.hpp>
+#include "../embedded/all.hpp"
 
 int main()
 {
     saucer::webview webview;
+
+    webview.set_size(500, 600);
     webview.set_title("Automated Embedding!");
-    webview.embed(std::move(embedded::get_all_files()));
+    webview.embed(saucer::embedded::all());
 
     webview.serve("src/index.html");
-    webview.set_size(500, 600);
     webview.show();
     webview.run();
 
