@@ -1,0 +1,70 @@
+on:
+  push:
+  pull_request:
+
+name: 🧪 Tests
+
+jobs:
+  test-qt5:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
+
+      - name: 📋 Build Dependencies
+        run: "pacman --noconfirm -Syu cmake gcc qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb"
+
+      - name: 🔨 Build (Debug)
+        run: |
+          mkdir build 
+          cd build
+          cmake .. -Dsaucer_backend=Qt5 -Dsaucer_tests=ON
+          cmake --build . --config Debug
+
+      - name: 🧪 Test (Debug)
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+
+      - name: 🔨 Build (Release)
+        run: |
+          rm -rf build
+          mkdir build 
+          cd build
+          cmake .. -Dsaucer_backend=Qt5 -Dsaucer_tests=ON
+          cmake --build . --config Release
+
+      - name: 🧪 Test (Release)
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+
+  test-qt6:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
+
+      - name: 📋 Build Dependencies
+        run: "pacman --noconfirm -Syu cmake gcc qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine xorg-server-xvfb"
+
+      - name: 🔨 Build (Debug)
+        run: |
+          mkdir build 
+          cd build
+          cmake .. -Dsaucer_backend=Qt6 -Dsaucer_tests=ON
+          cmake --build . --config Debug
+
+      - name: 🧪 Test (Debug)
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+
+      - name: 🔨 Build (Release)
+        run: |
+          rm -rf build
+          mkdir build 
+          cd build
+          cmake .. -Dsaucer_backend=Qt6 -Dsaucer_tests=ON
+          cmake --build . --config Release
+
+      - name: 🧪 Test (Release)
+        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
