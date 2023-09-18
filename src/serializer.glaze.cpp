@@ -1,5 +1,7 @@
 #include "serializers/glaze/glaze.hpp"
 
+#include <tl/expected.hpp>
+
 template <>
 struct glz::meta<saucer::serializers::glaze_function_data>
 {
@@ -36,26 +38,31 @@ namespace saucer::serializers
     }
 
     template <typename T>
-    auto parse_as(const std::string &buffer)
+    tl::expected<T, glz::parse_error> parse_as(const std::string &buffer)
     {
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
         T value;
         auto error = glz::read<opts>(value, buffer);
 
-        return std::make_pair(error, value);
+        if (error)
+        {
+            return tl::make_unexpected(error);
+        }
+
+        return value;
     }
 
     std::unique_ptr<message_data> glaze::parse(const std::string &data) const
     {
-        if (auto [error, value] = parse_as<glaze_function_data>(data); !error)
+        if (auto res = parse_as<glaze_function_data>(data); res.has_value())
         {
-            return std::make_unique<glaze_function_data>(value);
+            return std::make_unique<glaze_function_data>(res.value());
         }
 
-        if (auto [error, value] = parse_as<glaze_result_data>(data); !error)
+        if (auto res = parse_as<glaze_result_data>(data); res.has_value())
         {
-            return std::make_unique<glaze_result_data>(value);
+            return std::make_unique<glaze_result_data>(res.value());
         }
 
         return nullptr;
