@@ -26,13 +26,13 @@ suite smartview_suite = []
     saucer::smartview smartview;
 
     std::size_t i{0};
-    std::array<bool, 5> called{};
+    std::array<std::promise<bool>, 5> called{};
 
     "evaluate"_test = [&]
     {
         auto callback = [&](int result)
         {
-            called.at(i++) = true;
+            called.at(i++).set_value(true);
             expect(eq(result, 4));
         };
 
@@ -42,12 +42,12 @@ suite smartview_suite = []
 
     "expose"_test = [&]
     {
-        smartview.expose("f1", [&] { called[2] = true; });
+        smartview.expose("f1", [&] { called[2].set_value(true); });
 
         smartview.expose("f2",
                          [&](int a, const std::string &b)
                          {
-                             called[3] = true;
+                             called[3].set_value(true);
 
                              expect(eq(a, 10));
                              expect(b == "hello!") << b;
@@ -57,12 +57,11 @@ suite smartview_suite = []
             "f3",
             [&](custom_type custom)
             {
-                called[4] = true;
-                std::this_thread::sleep_for(std::chrono::seconds(10));
+                called[4].set_value(true);
 
-                for (const auto &flag : called)
+                for (auto &flag : called)
                 {
-                    expect(flag);
+                    expect(flag.get_future().get());
                 }
 
                 expect(eq(custom.field, 1337));

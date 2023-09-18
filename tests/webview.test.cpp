@@ -49,7 +49,12 @@ suite webview_suite = []
 
         "scripting"_test = [&]
         {
-            webview.inject("setTimeout(() => window.location = 'https://www.github.com', 10000)",
+            webview.inject(R"js(
+                if (!window.location.href.includes("github"))
+                {
+                    window.location = 'https://www.github.com';
+                }
+            )js",
                            saucer::load_time::ready);
 
             auto callback = [&](const std::string &url)

@@ -78,7 +78,7 @@ suite window_suite = []
 
             auto fn = [fut, &window]
             {
-                std::this_thread::sleep_for(std::chrono::seconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 window.set_size(45, 45);
             };
 
