@@ -5,7 +5,7 @@
 # MIT License
 # -----------
 #[[
-  Copyright (c) 2019-2022 Lars Melchior and contributors
+  Copyright (c) 2019-2023 Lars Melchior and contributors
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ if(NOT COMMAND cpm_message)
   endfunction()
 endif()
 
-set(CURRENT_CPM_VERSION 0.38.1)
+set(CURRENT_CPM_VERSION 1.0.0-development-version)
 
 get_filename_component(CPM_CURRENT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" REALPATH)
 if(CPM_DIRECTORY)
@@ -528,7 +528,6 @@ function(CPMAddPackage)
       BITBUCKET_REPOSITORY
       GIT_REPOSITORY
       SOURCE_DIR
-      DOWNLOAD_COMMAND
       FIND_PACKAGE_ARGUMENTS
       NO_CACHE
       SYSTEM
@@ -537,7 +536,7 @@ function(CPMAddPackage)
       SOURCE_SUBDIR
   )
 
-  set(multiValueArgs URL OPTIONS)
+  set(multiValueArgs URL OPTIONS DOWNLOAD_COMMAND)
 
   cmake_parse_arguments(CPM_ARGS "" "${oneValueArgs}" "${multiValueArgs}" "${ARGN}")
 
@@ -797,7 +796,7 @@ function(CPMAddPackage)
       "${CPM_ARGS_NAME}" "${CPM_ARGS_VERSION}" "${PACKAGE_INFO}" "${CPM_ARGS_UNPARSED_ARGUMENTS}"
     )
     cpm_fetch_package("${CPM_ARGS_NAME}" populated)
-    if(CPM_CACHE_SOURCE AND download_directory)
+    if(CPM_SOURCE_CACHE AND download_directory)
       file(LOCK ${download_directory}/../cmake.lock RELEASE)
     endif()
     if(${populated})
@@ -1098,13 +1097,12 @@ function(cpm_prettify_package_arguments OUT_VAR IS_IN_COMMENT)
       GITLAB_REPOSITORY
       GIT_REPOSITORY
       SOURCE_DIR
-      DOWNLOAD_COMMAND
       FIND_PACKAGE_ARGUMENTS
       NO_CACHE
       SYSTEM
       GIT_SHALLOW
   )
-  set(multiValueArgs OPTIONS)
+  set(multiValueArgs URL OPTIONS DOWNLOAD_COMMAND)
   cmake_parse_arguments(CPM_ARGS "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach(oneArgName ${oneValueArgs})
