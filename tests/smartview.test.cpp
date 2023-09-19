@@ -33,6 +33,8 @@ suite smartview_suite = []
     {
         auto callback = [&](int result)
         {
+            std::cout << "evaluate called (" << i << ")" << std::endl;
+
             called.at(i++).set_value(true);
             expect(eq(result, 4));
         };
@@ -43,11 +45,17 @@ suite smartview_suite = []
 
     "expose"_test = [&]
     {
-        smartview.expose("f1", [&] { called[2].set_value(true); });
+        smartview.expose("f1",
+                         [&]
+                         {
+                             std::cout << "f1 called" << std::endl;
+                             called[2].set_value(true);
+                         });
 
         smartview.expose("f2",
                          [&](int a, const std::string &b)
                          {
+                             std::cout << "f2 called" << std::endl;
                              called[3].set_value(true);
 
                              expect(eq(a, 10));
@@ -58,6 +66,7 @@ suite smartview_suite = []
             "f3",
             [&](custom_type custom)
             {
+                std::cout << "f3 called" << std::endl;
                 called[4].set_value(true);
 
                 for (auto &flag : called)
