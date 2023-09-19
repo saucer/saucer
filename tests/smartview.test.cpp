@@ -3,6 +3,7 @@
 #include <array>
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
+#include <thread>
 
 using namespace boost::ut;
 using namespace boost::ut::literals;
@@ -28,6 +29,7 @@ suite smartview_suite = []
 
     std::size_t i{0};
     std::array<std::promise<bool>, 5> called{};
+    auto thread_id = std::this_thread::get_id();
 
     "evaluate"_test = [&]
     {
@@ -70,6 +72,7 @@ suite smartview_suite = []
                 called[4].set_value(true);
 
                 expect(eq(custom.field, 1337));
+                expect(neq(std::this_thread::get_id(), thread_id));
             },
             true);
 
