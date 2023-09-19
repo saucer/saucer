@@ -40,18 +40,6 @@ namespace saucer
             )js";
     }();
 
-    void webview::impl::web_page::javaScriptConsoleMessage([[maybe_unused]] JavaScriptConsoleMessageLevel level,
-                                                           [[maybe_unused]] const QString &message,
-                                                           [[maybe_unused]] int line,
-                                                           [[maybe_unused]] const QString &source)
-    {
-#if SAUCER_TESTS == ON
-        qDebug() << "[JS] (" << level << ") [" << source << ":" << line << "] " << message;
-#endif
-
-        QWebEnginePage::javaScriptConsoleMessage(level, message, line, source);
-    }
-
     webview::impl::web_class::web_class(webview *parent) : QObject(parent->m_impl->web_view), m_parent(parent) {}
 
     void webview::impl::web_class::on_message(const QString &message)
