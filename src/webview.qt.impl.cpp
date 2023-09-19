@@ -1,3 +1,4 @@
+#include "constants.hpp"
 #include "webview.qt.impl.hpp"
 
 #include <QFile>
@@ -34,10 +35,22 @@ namespace saucer
                         resolve(channel.objects.saucer); 
                     });
                 });
-                
+
                 window.saucer.on_message("js_ready");
             )js";
     }();
+
+    void webview::impl::web_page::javaScriptConsoleMessage([[maybe_unused]] JavaScriptConsoleMessageLevel level,
+                                                           [[maybe_unused]] const QString &message,
+                                                           [[maybe_unused]] int line,
+                                                           [[maybe_unused]] const QString &source)
+    {
+#if SAUCER_TESTS == ON
+        qDebug() << "[JS] (" << level << ") [" << source << ":" << line << "] " << message;
+#endif
+
+        QWebEnginePage::javaScriptConsoleMessage(level, message, line, source);
+    }
 
     webview::impl::web_class::web_class(webview *parent) : QObject(parent->m_impl->web_view), m_parent(parent) {}
 
@@ -75,7 +88,7 @@ namespace saucer
         buffer->open(QIODevice::WriteOnly);
 
         auto size = file.content.size();
-        auto *content = file.content.data();
+        const auto *content = file.content.data();
         buffer->write(reinterpret_cast<const char *>(content), static_cast<std::int64_t>(size));
 
         buffer->close();

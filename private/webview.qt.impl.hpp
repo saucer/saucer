@@ -15,6 +15,7 @@ namespace saucer
 
     struct webview::impl
     {
+        class web_page;
         class web_class;
         class url_scheme_handler;
 
@@ -41,6 +42,15 @@ namespace saucer
         static constexpr std::string_view scheme_prefix = "saucer:/";
     };
 
+    class webview::impl::web_page : public QWebEnginePage
+    {
+      public:
+        using QWebEnginePage::QWebEnginePage;
+
+      protected:
+        void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel, const QString &, int, const QString &) override;
+    };
+
     class webview::impl::web_class : public QObject
     {
         Q_OBJECT
@@ -57,7 +67,6 @@ namespace saucer
 
     class webview::impl::url_scheme_handler : public QWebEngineUrlSchemeHandler
     {
-      private:
         webview *m_parent;
 
       public:

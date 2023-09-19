@@ -1,4 +1,5 @@
 #pragma once
+#define SAUCER_TESTS ${saucer_tests}
 #define SAUCER_BACKEND_VERSION ${saucer_backend_version}
 
 namespace saucer

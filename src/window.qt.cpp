@@ -13,7 +13,9 @@ namespace saucer
 
         if (!application)
         {
+#if SAUCER_TESTS != ON
             qputenv("QT_LOGGING_RULES", "*=false");
+#endif
 
             if (options.hardware_acceleration)
             {

@@ -31,7 +31,7 @@ namespace saucer
         auto profile_name = fmt::format("profile-{}", options.storage_path.string());
         m_impl->profile = new QWebEngineProfile(QString::fromStdString(profile_name), m_impl->web_view);
 
-        m_impl->page = new QWebEnginePage(m_impl->profile, m_impl->web_view);
+        m_impl->page = new impl::web_page(m_impl->profile, m_impl->web_view);
 
         m_impl->profile->setPersistentCookiesPolicy(options.persistent_cookies
                                                         ? QWebEngineProfile::AllowPersistentCookies
