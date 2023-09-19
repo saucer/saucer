@@ -12,18 +12,20 @@ namespace saucer
     template <typename... T>
     auto all(std::future<T>... futures)
     {
-        return std::tuple_cat(
-            []<typename F>(std::future<F> future)
+        auto make_tuple = []<typename F>(std::future<F> future)
+        {
+            if constexpr (!std::same_as<F, void>)
             {
-                if constexpr (!std::same_as<F, void>)
-                {
-                    return std::make_tuple(future.get());
-                }
-                else
-                {
-                    return std::tuple<>();
-                }
-            }(std::move(futures)...));
+                return std::make_tuple(future.get());
+            }
+            else
+            {
+                future.get();
+                return std::tuple<>();
+            }
+        };
+
+        return std::tuple_cat(make_tuple(std::move(futures))...);
     }
 
     template <typename T, typename Callback>
