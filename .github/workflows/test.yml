@@ -24,6 +24,7 @@ jobs:
           cmake --build . --config Debug
 
       - name: 🧪 Test (Debug)
+        timeout-minutes: 10
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
 
       - name: 🔨 Compile (Release)
@@ -35,6 +36,7 @@ jobs:
           cmake --build . --config Release
 
       - name: 🧪 Test (Release)
+        timeout-minutes: 10
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
 
   test-qt6:
@@ -56,6 +58,7 @@ jobs:
           cmake --build . --config Debug
 
       - name: 🧪 Test (Debug)
+        timeout-minutes: 10
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
 
       - name: 🔨 Compile (Release)
@@ -67,4 +70,5 @@ jobs:
           cmake --build . --config Release
 
       - name: 🧪 Test (Release)
+        timeout-minutes: 10
         run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
