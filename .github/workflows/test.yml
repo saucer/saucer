@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: 📋 Build Dependencies
-        run: "pacman --noconfirm -Syu cmake gcc git qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb"
+        run: "pacman --noconfirm -Syu cmake gcc git qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb imagemagick"
 
       - name: 🔨 Compile (Debug)
         run: |
@@ -25,7 +25,10 @@ jobs:
 
       - name: 🧪 Test (Debug)
         timeout-minutes: 10
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+        run: |
+          Xvfb :1 -screen 1 1920x1080x16 & 
+          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot.png" &
+          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
 
       - name: 🔨 Compile (Release)
         run: |
@@ -37,7 +40,17 @@ jobs:
 
       - name: 🧪 Test (Release)
         timeout-minutes: 10
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+        run: |
+          Xvfb :1 -screen 1 1920x1080x16 & 
+          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
+          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
+
+      - name: 🖼️ Screenshots
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots
+          path: /tmp/screenshot*
 
   test-qt6:
     runs-on: ubuntu-latest
@@ -59,7 +72,10 @@ jobs:
 
       - name: 🧪 Test (Debug)
         timeout-minutes: 10
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+        run: |
+          Xvfb :1 -screen 1 1920x1080x16 & 
+          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot.png" &
+          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
 
       - name: 🔨 Compile (Release)
         run: |
@@ -71,4 +87,14 @@ jobs:
 
       - name: 🧪 Test (Release)
         timeout-minutes: 10
-        run: 'QTWEBENGINE_DISABLE_SANDBOX=1 xvfb-run "./build/tests/saucer-tests"'
+        run: |
+          Xvfb :1 -screen 1 1920x1080x16 & 
+          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
+          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
+
+      - name: 🖼️ Screenshots
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots
+          path: /tmp/screenshot*
