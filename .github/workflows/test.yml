@@ -41,9 +41,9 @@ jobs:
       - name: 🧪 Test (Release)
         timeout-minutes: 10
         run: |
-          Xvfb :1 -screen 1 1920x1080x16 & 
-          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
-          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
+          Xvfb :2 -screen 2 1920x1080x16 & 
+          bash -c "sleep 5m && xwd -display :2 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
+          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:2 "./build/tests/saucer-tests"
 
       - name: 🖼️ Screenshots
         if: failure() || cancelled()
@@ -88,9 +88,9 @@ jobs:
       - name: 🧪 Test (Release)
         timeout-minutes: 10
         run: |
-          Xvfb :1 -screen 1 1920x1080x16 & 
-          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
-          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
+          Xvfb :2 -screen 2 1920x1080x16 & 
+          bash -c "sleep 5m && xwd -display :2 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
+          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:2 "./build/tests/saucer-tests"
 
       - name: 🖼️ Screenshots
         if: failure() || cancelled()
