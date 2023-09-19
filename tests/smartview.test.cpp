@@ -69,23 +69,28 @@ suite smartview_suite = []
                 std::cout << "f3 called" << std::endl;
                 called[4].set_value(true);
 
-                for (auto &flag : called)
-                {
-                    expect(flag.get_future().get());
-                }
-
                 expect(eq(custom.field, 1337));
-
-                smartview.close();
             },
             true);
 
-        smartview.evaluate<void>("window.saucer.call({}, [])", "f1") | saucer::forget();
+        std::async(std::launch::deferred,
+                   [&]
+                   {
+                       expect(called[0].get_future().get());
+                       expect(called[1].get_future().get());
 
-        smartview.evaluate<void>("window.saucer.call({})", saucer::make_args("f2", std::make_tuple(10, "hello!"))) |
-            saucer::forget();
+                       saucer::all(smartview.evaluate<void>("window.saucer.call({}, [])", "f1"),
+                                   smartview.evaluate<void>("window.saucer.call({})",
+                                                            saucer::make_args("f2", std::make_tuple(10, "hello!"))),
+                                   smartview.evaluate<void>("window.saucer.call({}, {})", "f3",
+                                                            std::make_tuple(custom_type{.field = 1337})));
 
-        smartview.evaluate<void>("window.saucer.call({}, {})", "f3", std::make_tuple(custom_type{.field = 1337})) |
+                       expect(called[2].get_future().get());
+                       expect(called[3].get_future().get());
+                       expect(called[4].get_future().get());
+
+                       smartview.close();
+                   }) |
             saucer::forget();
     };
 
