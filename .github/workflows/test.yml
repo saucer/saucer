@@ -5,7 +5,7 @@ on:
 name: 🧪 Tests
 
 jobs:
-  test-qt5:
+  qt5-debug:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
 
@@ -13,46 +13,23 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v3
 
-      - name: 📋 Build Dependencies
-        run: "pacman --noconfirm -Syu cmake gcc git qt5-base qt5-webchannel qt5-webengine xorg-server-xvfb xorg-xwd imagemagick"
-
-      - name: 🔨 Compile (Debug)
-        run: |
-          mkdir build 
-          cd build
-          cmake .. -Dsaucer_backend=Qt5 -Dsaucer_tests=ON
-          cmake --build . --config Debug
-
-      - name: 🧪 Test (Debug)
-        timeout-minutes: 10
-        run: |
-          Xvfb :1 -screen 1 1920x1080x16 & 
-          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot.png" &
-          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
-
-      - name: 🔨 Compile (Release)
-        run: |
-          rm -rf build
-          mkdir build 
-          cd build
-          cmake .. -Dsaucer_backend=Qt5 -Dsaucer_tests=ON
-          cmake --build . --config Release
-
-      - name: 🧪 Test (Release)
-        timeout-minutes: 10
-        run: |
-          Xvfb :2 -screen 2 1920x1080x16 & 
-          bash -c "sleep 5m && xwd -display :2 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
-          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:2 "./build/tests/saucer-tests"
-
-      - name: 🖼️ Screenshots
-        if: failure() || cancelled()
-        uses: actions/upload-artifact@v3
+      - name: 🛸 Setup Saucer
+        uses: ./.github/actions/setup
         with:
-          name: screenshots
-          path: /tmp/screenshot*
+          backend: Qt5
+          platform: Linux
+          build-type: Debug
+          cmake-args: -Dsaucer_tests=ON
 
-  test-qt6:
+      - name: 🧪 Test
+        timeout-minutes: 10
+        uses: ./.github/actions/test
+
+      - name: 🖼️ Screenshot
+        if: failure() || cancelled()
+        uses: ./.github/actions/screenshot
+
+  qt5-release:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
 
@@ -60,41 +37,66 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v3
 
-      - name: 📋 Build Dependencies
-        run: "pacman --noconfirm -Syu cmake gcc git qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine xorg-server-xvfb xorg-xwd imagemagick"
-
-      - name: 🔨 Compile (Debug)
-        run: |
-          mkdir build 
-          cd build
-          cmake .. -Dsaucer_backend=Qt6 -Dsaucer_tests=ON
-          cmake --build . --config Debug
-
-      - name: 🧪 Test (Debug)
-        timeout-minutes: 10
-        run: |
-          Xvfb :1 -screen 1 1920x1080x16 & 
-          bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot.png" &
-          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
-
-      - name: 🔨 Compile (Release)
-        run: |
-          rm -rf build
-          mkdir build 
-          cd build
-          cmake .. -Dsaucer_backend=Qt6 -Dsaucer_tests=ON
-          cmake --build . --config Release
-
-      - name: 🧪 Test (Release)
-        timeout-minutes: 10
-        run: |
-          Xvfb :2 -screen 2 1920x1080x16 & 
-          bash -c "sleep 5m && xwd -display :2 -root -silent | convert xwd:- png:/tmp/screenshot-2.png" &
-          QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:2 "./build/tests/saucer-tests"
-
-      - name: 🖼️ Screenshots
-        if: failure() || cancelled()
-        uses: actions/upload-artifact@v3
+      - name: 🛸 Setup Saucer
+        uses: ./.github/actions/setup
         with:
-          name: screenshots
-          path: /tmp/screenshot*
+          backend: Qt5
+          platform: Linux
+          build-type: Release
+          cmake-args: -Dsaucer_tests=ON
+
+      - name: 🧪 Test
+        timeout-minutes: 10
+        uses: ./.github/actions/test
+
+      - name: 🖼️ Screenshot
+        if: failure() || cancelled()
+        uses: ./.github/actions/screenshot
+
+  qt6-debug:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
+
+      - name: 🛸 Setup Saucer
+        uses: ./.github/actions/setup
+        with:
+          backend: Qt6
+          platform: Linux
+          build-type: Debug
+          cmake-args: -Dsaucer_tests=ON
+
+      - name: 🧪 Test
+        timeout-minutes: 10
+        uses: ./.github/actions/test
+
+      - name: 🖼️ Screenshot
+        if: failure() || cancelled()
+        uses: ./.github/actions/screenshot
+
+  qt6-release:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
+
+      - name: 🛸 Setup Saucer
+        uses: ./.github/actions/setup
+        with:
+          backend: Qt6
+          platform: Linux
+          build-type: Release
+          cmake-args: -Dsaucer_tests=ON
+
+      - name: 🧪 Test
+        timeout-minutes: 10
+        uses: ./.github/actions/test
+
+      - name: 🖼️ Screenshot
+        if: failure() || cancelled()
+        uses: ./.github/actions/screenshot
