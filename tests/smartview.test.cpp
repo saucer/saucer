@@ -1,9 +1,9 @@
 #include "cfg.hpp"
 
 #include <array>
+#include <thread>
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
-#include <thread>
 
 using namespace boost::ut;
 using namespace boost::ut::literals;
@@ -25,7 +25,7 @@ struct glz::meta<custom_type>
 // NOLINTNEXTLINE
 suite smartview_suite = []
 {
-    saucer::smartview smartview;
+    saucer::smartview smartview({.hardware_acceleration = false});
 
     std::size_t i{0};
     std::array<std::promise<bool>, 5> called{};
@@ -97,7 +97,7 @@ suite smartview_suite = []
             saucer::forget();
     };
 
-    smartview.set_url("https://github.com");
+    smartview.set_url("https://www.google.com");
     smartview.show();
     smartview.run();
 };

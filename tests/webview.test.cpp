@@ -8,13 +8,9 @@ using namespace boost::ut::literals;
 // NOLINTNEXTLINE
 suite webview_suite = []
 {
-    class dummy_webview : public saucer::webview
-    {
-    };
-
     "webview"_test = [&]
     {
-        auto webview = dummy_webview{};
+        saucer::webview webview({.hardware_acceleration = false});
         std::uint64_t id{};
 
         "dev_tools"_test = [&]
@@ -93,7 +89,7 @@ suite webview_suite = []
 
     "embedding"_test = [&]
     {
-        auto webview = dummy_webview{};
+        saucer::webview webview;
 
         std::array<std::uint8_t, 97> data{
             0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0x20, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0x0a, 0x3c,

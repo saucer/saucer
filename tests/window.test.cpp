@@ -9,13 +9,14 @@ using namespace boost::ut::literals;
 // NOLINTNEXTLINE
 suite window_suite = []
 {
-    class dummy_window : public saucer::window
+    struct dummy_window : public saucer::window
     {
+        dummy_window(const saucer::options &opts) : saucer::window(opts) {}
     };
 
     "window"_test = [&]
     {
-        auto window = dummy_window{};
+        dummy_window window({.hardware_acceleration = false});
 
         "resize"_test = [&]
         {
