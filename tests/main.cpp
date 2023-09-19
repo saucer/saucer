@@ -1,6 +1,6 @@
-#include <boost/ut.hpp>
+#include "cfg.hpp"
 
 int main()
 {
-    return boost::ut::cfg<>.run();
+    return boost::ut::cfg<boost::ut::override>.run();
 }

@@ -1,5 +1,6 @@
+#include "cfg.hpp"
+
 #include <future>
-#include <boost/ut.hpp>
 #include <saucer/window.hpp>
 
 using namespace boost::ut;

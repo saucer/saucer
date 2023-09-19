@@ -1,4 +1,5 @@
-#include <boost/ut.hpp>
+#include "cfg.hpp"
+
 #include <saucer/webview.hpp>
 
 using namespace boost::ut;

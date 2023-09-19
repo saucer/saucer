@@ -31,7 +31,7 @@ include("../cmake/cpm.cmake")
 
 CPMFindPackage(
   NAME           ut
-  VERSION        1.1.9
+  GIT_TAG        bf8388f
   GIT_REPOSITORY "https://github.com/boost-ext/ut"
 )
 
