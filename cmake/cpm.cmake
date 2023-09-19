@@ -42,7 +42,7 @@ if(NOT COMMAND cpm_message)
   endfunction()
 endif()
 
-set(CURRENT_CPM_VERSION 1.0.0-development-version)
+set(CURRENT_CPM_VERSION 0.38.5)
 
 get_filename_component(CPM_CURRENT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" REALPATH)
 if(CPM_DIRECTORY)
