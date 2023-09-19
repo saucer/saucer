@@ -6,9 +6,10 @@ namespace saucer
 {
     window::window(const options &options) : m_impl(std::make_unique<impl>())
     {
-        static int argc{1};
         static QApplication *application;
-        static std::vector<char *> argv{strdup("")};
+
+        static int argc{1};
+        static std::vector<char *> argv{strdup("saucer")};
 
         if (!application)
         {
@@ -25,7 +26,6 @@ namespace saucer
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-            argc = static_cast<int>(argv.size());
             application = new QApplication(argc, argv.data());
         }
 
