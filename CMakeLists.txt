@@ -73,11 +73,11 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS saucer)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
-# We only enable warnings if built standalone.
-if (NOT MSVC AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+if (NOT MSVC AND PROJECT_IS_TOP_LEVEL)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
 endif()
+  
+target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
 
 # --------------------------------------------------------------------------------------------------------
 # Include directories
@@ -139,7 +139,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        10.1.0
+  GIT_TAG        10.1.1
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
