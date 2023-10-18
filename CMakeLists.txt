@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 project(saucer LANGUAGES CXX VERSION 2.0)
 
 # --------------------------------------------------------------------------------------------------------
@@ -6,7 +6,7 @@ project(saucer LANGUAGES CXX VERSION 2.0)
 # --------------------------------------------------------------------------------------------------------
 
 if (MSVC AND MSVC_TOOLSET_VERSION LESS 143)
-    message(WARNING "[saucer] MSVC Toolsets below 14.3 are not supported")
+  message(WARNING "[saucer] MSVC Toolsets below 14.3 are not supported")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ set(saucer_backend          "Default"       CACHE STRING "The backend to use, wi
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_prefer_remote)
-    message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
+  message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
 endif()
 
 set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
@@ -46,7 +46,7 @@ set(saucer_valid_backends Qt5 Qt6 WebView2 Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
-    message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
+  message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -54,13 +54,13 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_backend STREQUAL "Default")
-    if (WIN32)
-        set(saucer_backend WebView2)
-    else()
-        set(saucer_backend Qt5)
-    endif()
+  if (WIN32)
+    set(saucer_backend WebView2)
+  else()
+    set(saucer_backend Qt5)
+  endif()
 
-    message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
+  message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        2.2
+  VERSION        2.4
   GIT_REPOSITORY "https://github.com/Soundux/lockpp"
 )
 
@@ -164,7 +164,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        1.5.2
+  VERSION        1.5.3
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -180,7 +180,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC lockpp boost_callable_traits tl::ex
 set(saucer_linkage PRIVATE)
 
 if (saucer_modules)
-    set(saucer_linkage PUBLIC)
+  set(saucer_linkage PUBLIC)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -188,40 +188,38 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_backend MATCHES "^Qt.$")
-    set(qt_ver ${saucer_backend_version})
+  file(GLOB qt_sources 
+    "src/*.qt.*cpp"
+    "private/*.qt.*hpp"
+    "src/*.qt${QT_VERSION}.*cpp"
+  )
 
-    file(GLOB qt_sources 
-      "src/*.qt.*cpp"
-      "private/*.qt.*hpp"
-      "src/*.qt${qt_ver}.*cpp"
-    )
+  target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
+  set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
 
-    target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
-    set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
-
-    find_package(Qt${qt_ver} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
-    target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${qt_ver}::Widgets Qt${qt_ver}::WebChannel Qt${qt_ver}::WebEngineWidgets)
+  find_package(Qt${QT_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
-    file(GLOB win_sources 
-      "src/*.win32.*cpp"
-      "src/*.webview2.*cpp"
-    )
+  file(GLOB win_sources 
+    "src/*.win32.*cpp"
+    "src/*.webview2.*cpp"
+  )
 
-    target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
-    target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
+  target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
+  target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
 
-    include("cmake/webview2.cmake")
+  include("cmake/webview2.cmake")
 
-    CPMFindPackage(
-      NAME           wil
-      GIT_TAG        master
-      GIT_REPOSITORY "https://github.com/microsoft/wil"
-      OPTIONS        "WIL_BUILD_TESTS OFF" "WIL_BUILD_PACKAGING OFF"
-    )    
+  CPMFindPackage(
+    NAME           wil
+    GIT_TAG        master
+    GIT_REPOSITORY "https://github.com/microsoft/wil"
+    OPTIONS        "WIL_BUILD_TESTS OFF" "WIL_BUILD_PACKAGING OFF"
+  )    
 
-    target_link_libraries(${PROJECT_NAME} ${saucer_linkage} WIL::WIL Shlwapi webview2::webview2)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} WIL::WIL Shlwapi webview2::webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -229,8 +227,8 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_tests)
-    message(STATUS "[saucer] Building Tests")
-    add_subdirectory(tests)
+  message(STATUS "[saucer] Building Tests")
+  add_subdirectory(tests)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -238,10 +236,9 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_examples)
-    message(STATUS "[saucer] Building Examples")
-        
-    add_subdirectory("examples/json-bridge")
-    add_subdirectory("examples/embedding")
+  message(STATUS "[saucer] Building Examples")
+  add_subdirectory("examples/json-bridge")
+  add_subdirectory("examples/embedding")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
