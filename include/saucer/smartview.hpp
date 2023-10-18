@@ -10,7 +10,6 @@
 
 namespace saucer
 {
-#include "meta/annotations.hpp"
     class smartview_core : public webview
     {
         struct impl;
@@ -31,15 +30,15 @@ namespace saucer
         void on_message(const std::string &) override;
 
       protected:
-        [[thread_safe]] void call(function_data &, const serializer::function &);
+        [[sc::thread_safe]] void call(function_data &, const serializer::function &);
 
       protected:
-        [[thread_safe]] void add_function(std::string, serializer::function &&, bool);
-        [[thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
+        [[sc::thread_safe]] void add_function(std::string, serializer::function &&, bool);
+        [[sc::thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
 
       protected:
-        [[thread_safe]] void reject(std::uint64_t, serializer_error);
-        [[thread_safe]] void resolve(std::uint64_t, const std::string &);
+        [[sc::thread_safe]] void reject(std::uint64_t, serializer_error);
+        [[sc::thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 
     template <Serializer Serializer = serializers::glaze>
@@ -50,13 +49,12 @@ namespace saucer
 
       public:
         template <typename Function>
-        [[thread_safe]] void expose(std::string name, const Function &func, bool async = false);
+        [[sc::thread_safe]] void expose(std::string name, const Function &func, bool async = false);
 
       public:
         template <typename Return, typename... Params>
-        [[thread_safe]] [[nodiscard]] std::future<Return> evaluate(const std::string &code, Params &&...params);
+        [[sc::thread_safe]] [[nodiscard]] std::future<Return> evaluate(const std::string &code, Params &&...params);
     };
-#include "meta/annotations.hpp" //NOLINT
 } // namespace saucer
 
 #include "smartview.inl"

@@ -72,12 +72,20 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS saucer)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-
-if (NOT MSVC AND PROJECT_IS_TOP_LEVEL)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
-endif()
   
-target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
+if (NOT MSVC)
+  if (PROJECT_IS_TOP_LEVEL)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
+  endif()
+
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_compile_options(${PROJECT_NAME} PUBLIC -Wno-attributes=sc::)
+  else()
+    target_compile_options(${PROJECT_NAME} PUBLIC -Wno-unknown-attributes)
+  endif()
+
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Include directories

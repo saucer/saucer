@@ -26,7 +26,6 @@ namespace saucer
         std::span<const std::uint8_t> content;
     };
 
-#include "meta/annotations.hpp"
     class webview : public window
     {
         struct impl;
@@ -57,37 +56,36 @@ namespace saucer
         ~webview() override;
 
       public:
-        [[thread_safe]] [[nodiscard]] bool dev_tools() const;
-        [[thread_safe]] [[nodiscard]] std::string url() const;
-        [[thread_safe]] [[nodiscard]] bool context_menu() const;
+        [[sc::thread_safe]] [[nodiscard]] bool dev_tools() const;
+        [[sc::thread_safe]] [[nodiscard]] std::string url() const;
+        [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
 
       public:
-        [[thread_safe]] void set_dev_tools(bool enabled);
-        [[thread_safe]] void set_context_menu(bool enabled);
-        [[thread_safe]] void set_url(const std::string &url);
+        [[sc::thread_safe]] void set_dev_tools(bool enabled);
+        [[sc::thread_safe]] void set_context_menu(bool enabled);
+        [[sc::thread_safe]] void set_url(const std::string &url);
 
       public:
-        [[thread_safe]] void embed(embedded_files &&files);
-        [[thread_safe]] void serve(const std::string &file);
+        [[sc::thread_safe]] void embed(embedded_files &&files);
+        [[sc::thread_safe]] void serve(const std::string &file);
 
       public:
-        [[thread_safe]] void clear_scripts();
-        [[thread_safe]] void clear_embedded();
-        [[thread_safe]] void run_java_script(const std::string &java_script);
-        [[thread_safe]] void inject(const std::string &java_script, const load_time &load_time);
+        [[sc::thread_safe]] void clear_scripts();
+        [[sc::thread_safe]] void clear_embedded();
+        [[sc::thread_safe]] void run_java_script(const std::string &java_script);
+        [[sc::thread_safe]] void inject(const std::string &java_script, const load_time &load_time);
 
       public:
         using window::clear;
-        [[thread_safe]] void clear(web_event event);
+        [[sc::thread_safe]] void clear(web_event event);
 
         using window::remove;
-        [[thread_safe]] void remove(web_event event, std::uint64_t id);
+        [[sc::thread_safe]] void remove(web_event event, std::uint64_t id);
 
         using window::on;
         template <web_event Event>
-        [[thread_safe]] std::uint64_t on(events::type_t<Event> &&callback) = delete;
+        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&callback) = delete;
     };
-#include "meta/annotations.hpp" //NOLINT
 
     template <>
     std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback);
