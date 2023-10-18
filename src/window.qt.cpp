@@ -30,7 +30,7 @@ namespace saucer
             application = new QApplication(argc, argv.data());
         }
 
-        m_impl->window = new impl::main_window(*this);
+        m_impl->window = new impl::main_window(this);
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
