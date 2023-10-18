@@ -1,11 +1,14 @@
 #pragma once
 #include "webview.hpp"
+
+#include "modules/module.hpp"
 #include "serializers/glaze/glaze.hpp"
 
 #include <future>
 #include <atomic>
 #include <memory>
 #include <string>
+
 #include <lockpp/lock.hpp>
 
 namespace saucer
@@ -41,8 +44,8 @@ namespace saucer
         [[sc::thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 
-    template <Serializer Serializer = serializers::glaze>
-    class smartview : public smartview_core
+    template <Serializer Serializer = serializers::glaze, Module... Modules>
+    class smartview : public smartview_core, public Modules...
     {
       public:
         smartview(const options & = {});
