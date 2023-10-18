@@ -1,4 +1,3 @@
 build
 .cache
 .vscode
-include/saucer/constants.hpp
