@@ -1,7 +1,8 @@
+#include <thread>
 #include <iostream>
+
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
-#include <thread>
 
 struct custom_data
 {
@@ -11,7 +12,7 @@ struct custom_data
 template <>
 struct glz::meta<custom_data>
 {
-    using T = custom_data;
+    using T                     = custom_data;
     static constexpr auto value = object( //
         "field", &T::field                //
     );
