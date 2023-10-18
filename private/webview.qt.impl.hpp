@@ -23,7 +23,6 @@ namespace saucer
 
       public:
         QWebEnginePage *page;
-        QWebEngineProfile *profile;
 
       public:
         QObject *channel_obj;

@@ -26,21 +26,22 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, register_scheme);
 
-        m_impl->web_view = new QWebEngineView(window::m_impl->window);
-
-        auto profile_name = fmt::format("profile-{}", options.storage_path.string());
-        m_impl->profile   = new QWebEngineProfile(QString::fromStdString(profile_name), m_impl->web_view);
-
-        m_impl->page = new QWebEnginePage(m_impl->profile, m_impl->web_view);
-
-        m_impl->profile->setPersistentCookiesPolicy(options.persistent_cookies
-                                                        ? QWebEngineProfile::AllowPersistentCookies
-                                                        : QWebEngineProfile::NoPersistentCookies);
+        auto *profile = QWebEngineProfile::defaultProfile();
 
         if (!options.storage_path.empty())
         {
-            m_impl->profile->setPersistentStoragePath(QString::fromStdString(options.storage_path));
+            auto path = QString::fromStdString(options.storage_path.string());
+
+            profile->setCachePath(path);
+            profile->setPersistentStoragePath(path);
         }
+
+        profile->setPersistentCookiesPolicy(options.persistent_cookies ? QWebEngineProfile::AllowPersistentCookies
+                                                                       : QWebEngineProfile::NoPersistentCookies);
+
+        m_impl->web_view = new QWebEngineView(window::m_impl->window);
+
+        m_impl->page = new QWebEnginePage(profile, m_impl->web_view);
 
         m_impl->web_view->setPage(m_impl->page);
 
