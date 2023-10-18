@@ -1,5 +1,4 @@
 #include "window.hpp"
-#include "constants.hpp"
 #include "window.qt.impl.hpp"
 
 namespace saucer
@@ -13,7 +12,7 @@ namespace saucer
 
         if (!application)
         {
-#if SAUCER_TESTS != ON
+#ifndef SAUCER_TESTS
             qputenv("QT_LOGGING_RULES", "*=false");
 #endif
 
@@ -24,7 +23,7 @@ namespace saucer
                         "--use-gl=desktop");
             }
 
-#if SAUCER_BACKEND_VERSION == 5
+#ifdef SAUCER_QT5
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 

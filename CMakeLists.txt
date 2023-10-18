@@ -95,13 +95,21 @@ target_include_directories(${PROJECT_NAME} PUBLIC  "include")
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 
 # --------------------------------------------------------------------------------------------------------
-# Generate "constants" file
+# Setup feature macros
 # --------------------------------------------------------------------------------------------------------
 
-string(TOLOWER ${saucer_backend} saucer_backend_lower)
-string(REGEX REPLACE "[a-zA-Z]+" "" saucer_backend_version "${saucer_backend}")
+if (saucer_tests)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_TESTS)
+endif()
 
-configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/constants.hpp")
+if (saucer_backend MATCHES "^Qt.$")
+  string(REGEX REPLACE "[a-zA-Z]+" "" QT_VERSION "${saucer_backend}")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT${QT_VERSION})
+endif()
+
+if (saucer_backend STREQUAL "WebView2")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBVIEW2)
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Sources
@@ -109,9 +117,12 @@ configure_file("constants.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/co
 
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/smartview.cpp"
-    "src/utils.color.cpp"
     "src/serializer.glaze.cpp"
 )
+
+if (saucer_modules)
+  target_sources(${PROJECT_NAME} PRIVATE "src/module.cpp")
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Dependencies
