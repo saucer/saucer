@@ -1,6 +1,6 @@
 #pragma once
 #include "data.hpp"
-#include "args.hpp"
+#include "args/args.hpp"
 
 #include <string>
 #include <memory>
@@ -24,14 +24,14 @@ namespace saucer
     struct serializer
     {
         using parse_result = std::unique_ptr<message_data>;
-        using resolver = std::function<void(result_data &)>;
-        using function = std::function<tl::expected<std::string, serializer_error>(function_data &)>;
+        using resolver     = std::function<void(result_data &)>;
+        using function     = std::function<tl::expected<std::string, serializer_error>(function_data &)>;
 
       public:
         virtual ~serializer() = default;
 
       public:
-        [[nodiscard]] virtual std::string script() const = 0;
+        [[nodiscard]] virtual std::string script() const        = 0;
         [[nodiscard]] virtual std::string js_serializer() const = 0;
 
       public:
