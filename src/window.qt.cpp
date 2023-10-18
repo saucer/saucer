@@ -79,7 +79,13 @@ namespace saucer
     color window::background() const
     {
         const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
-        return {color.red(), color.green(), color.blue(), color.alpha()};
+
+        return {
+            static_cast<std::uint8_t>(color.red()),
+            static_cast<std::uint8_t>(color.green()),
+            static_cast<std::uint8_t>(color.blue()),
+            static_cast<std::uint8_t>(color.alpha()),
+        };
     }
 
     bool window::always_on_top() const
@@ -237,7 +243,9 @@ namespace saucer
     void window::set_background(const color &color)
     {
         auto palette = m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window, QColor{color.r, color.g, color.b, color.a});
+
+        auto [r, g, b, a] = color;
+        palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
 
         m_impl->window->setPalette(palette);
     }

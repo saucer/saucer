@@ -1,6 +1,4 @@
 #pragma once
-#include "utils/color.hpp"
-
 #include <memory>
 #include <string>
 #include <filesystem>
@@ -22,7 +20,8 @@ namespace saucer
         std::filesystem::path storage_path;
     };
 
-#include "meta/annotations.hpp"
+    using color = std::array<std::uint8_t, 4>;
+
     class window
     {
         struct impl;
@@ -88,7 +87,6 @@ namespace saucer
         template <bool Blocking = true>
         static void run();
     };
-#include "meta/annotations.hpp" //NOLINT
 
     template <>
     std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
