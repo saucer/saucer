@@ -21,9 +21,9 @@ namespace saucer
 
             // ? Register the window class, later referred to by passing `lpClassName` = "Saucer"
 
-            wnd_class.hInstance = instance;
+            wnd_class.hInstance     = instance;
             wnd_class.lpszClassName = L"Saucer";
-            wnd_class.lpfnWndProc = m_impl->wnd_proc;
+            wnd_class.lpfnWndProc   = m_impl->wnd_proc;
 
             if (!RegisterClassW(&wnd_class))
             {
@@ -81,7 +81,7 @@ namespace saucer
         }
 
         auto title_length = GetWindowTextLengthW(m_impl->hwnd) + 1;
-        auto *title = new WCHAR[title_length];
+        auto *title       = new WCHAR[title_length];
 
         GetWindowTextW(m_impl->hwnd, title, title_length);
         auto rtn = narrow(title);
@@ -189,7 +189,7 @@ namespace saucer
         }
 
         constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-        auto current_style = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        auto current_style   = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
 
         if (enabled)
         {
@@ -221,7 +221,7 @@ namespace saucer
         }
 
         constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-        auto current_style = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        auto current_style   = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
 
         if (enabled)
         {

@@ -74,7 +74,7 @@ namespace saucer
         {
         case load_time::creation:
             script = m_impl->web_view->page()->scripts().findScript("_creation");
-            found = !script.isNull();
+            found  = !script.isNull();
 
             script.setInjectionPoint(QWebEngineScript::DocumentCreation);
             script.setName("_creation");
@@ -82,7 +82,7 @@ namespace saucer
 
         case load_time::ready:
             script = m_impl->web_view->page()->scripts().findScript("_ready");
-            found = !script.isNull();
+            found  = !script.isNull();
 
             script.setInjectionPoint(QWebEngineScript::DocumentReady);
             script.setName("_ready");

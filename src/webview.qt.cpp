@@ -29,7 +29,7 @@ namespace saucer
         m_impl->web_view = new QWebEngineView(window::m_impl->window);
 
         auto profile_name = fmt::format("profile-{}", options.storage_path.string());
-        m_impl->profile = new QWebEngineProfile(QString::fromStdString(profile_name), m_impl->web_view);
+        m_impl->profile   = new QWebEngineProfile(QString::fromStdString(profile_name), m_impl->web_view);
 
         m_impl->page = new QWebEnginePage(m_impl->profile, m_impl->web_view);
 
@@ -117,22 +117,25 @@ namespace saucer
 
         if (!enabled)
         {
-            if (m_impl->dev_view)
+            if (!m_impl->dev_view)
             {
-                m_impl->dev_view->deleteLater();
-                m_impl->dev_view = nullptr;
+                return;
             }
+
+            m_impl->dev_view->deleteLater();
+            m_impl->dev_view = nullptr;
 
             return;
         }
 
-        if (!m_impl->dev_view)
+        if (m_impl->dev_view)
         {
-            m_impl->dev_view = new QWebEngineView;
-            m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
+            m_impl->dev_view->show();
+            return;
         }
 
-        m_impl->dev_view->show();
+        m_impl->dev_view = new QWebEngineView;
+        m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
     }
 
     void webview::set_context_menu(bool enabled)

@@ -15,7 +15,7 @@ namespace saucer
         }
 
         std::array<WCHAR, 1024> buffer{};
-        auto lang_id = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+        auto lang_id             = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
         constexpr DWORD dw_flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
         auto size = FormatMessageW(dw_flags, nullptr, error, lang_id, buffer.data(), buffer.size(), nullptr);
 
@@ -24,7 +24,7 @@ namespace saucer
 
     void set_dpi_awareness()
     {
-        auto *shcore = LoadLibraryW(L"Shcore.dll");
+        auto *shcore                   = LoadLibraryW(L"Shcore.dll");
         auto set_process_dpi_awareness = GetProcAddress(shcore, "SetProcessDpiAwareness");
 
         if (set_process_dpi_awareness)
@@ -33,7 +33,7 @@ namespace saucer
             return;
         }
 
-        auto *user32 = LoadLibraryW(L"user32.dll");
+        auto *user32               = LoadLibraryW(L"user32.dll");
         auto set_process_dpi_aware = GetProcAddress(user32, "SetProcessDPIAware");
 
         if (!set_process_dpi_aware)
@@ -62,7 +62,7 @@ namespace saucer
 
     std::string narrow(const std::wstring &wide)
     {
-        auto len = static_cast<int>(wide.length());
+        auto len  = static_cast<int>(wide.length());
         auto size = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), len, nullptr, 0, nullptr, nullptr);
 
         if (!size)

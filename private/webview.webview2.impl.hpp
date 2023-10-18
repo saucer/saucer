@@ -30,7 +30,7 @@ namespace saucer
 
       public:
         static const std::string inject_script;
-        static constexpr std::string_view scheme_prefix = "https://saucer/";
+        static constexpr std::string_view scheme_prefix    = "https://saucer/";
         static constexpr std::wstring_view scheme_prefix_w = L"https://saucer/";
 
       public:

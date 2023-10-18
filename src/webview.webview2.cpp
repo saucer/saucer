@@ -19,7 +19,8 @@ namespace saucer
     {
         m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
 
-        window::m_impl->change_background = [&]() {
+        window::m_impl->change_background = [&]()
+        {
             if (!m_impl->controller)
             {
                 return;
@@ -93,14 +94,16 @@ namespace saucer
         }
 
         using source_changed = ICoreWebView2SourceChangedEventHandler;
-        auto url_changed = [&](auto...) {
+        auto url_changed     = [&](auto...)
+        {
             on_url_changed(url());
             return S_OK;
         };
         m_impl->web_view->add_SourceChanged(Callback<source_changed>(url_changed).Get(), nullptr);
 
-        using received_event = ICoreWebView2WebMessageReceivedEventHandler;
-        auto message_received = [&](auto, ICoreWebView2WebMessageReceivedEventArgs *args) {
+        using received_event  = ICoreWebView2WebMessageReceivedEventHandler;
+        auto message_received = [&](auto, ICoreWebView2WebMessageReceivedEventArgs *args)
+        {
             LPWSTR message{};
             args->TryGetWebMessageAsString(&message);
 
@@ -109,8 +112,9 @@ namespace saucer
         };
         m_impl->web_view->add_WebMessageReceived(Callback<received_event>(message_received).Get(), nullptr);
 
-        using navigation_event = ICoreWebView2NavigationCompletedEventHandler;
-        auto navigation_completed = [&](auto...) {
+        using navigation_event    = ICoreWebView2NavigationCompletedEventHandler;
+        auto navigation_completed = [&](auto...)
+        {
             for (const auto &script : m_impl->scripts_load)
             {
                 run_java_script(script);
@@ -242,8 +246,8 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe(
-                [this, files = std::move(files)]() mutable { return embed(std::move(files)); });
+            return window::m_impl->post_safe([this, files = std::move(files)]() mutable
+                                             { return embed(std::move(files)); });
         }
 
         m_embedded_files.merge(files);
@@ -327,10 +331,13 @@ namespace saucer
         using InjectionCompleted = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
 
         m_impl->web_view->AddScriptToExecuteOnDocumentCreated(widen(java_script).c_str(),
-                                                              Callback<InjectionCompleted>([this](auto, LPCWSTR id) {
-                                                                  m_impl->injected.emplace_back(id);
-                                                                  return S_OK;
-                                                              }).Get());
+                                                              Callback<InjectionCompleted>(
+                                                                  [this](auto, LPCWSTR id)
+                                                                  {
+                                                                      m_impl->injected.emplace_back(id);
+                                                                      return S_OK;
+                                                                  })
+                                                                  .Get());
     }
 
     void webview::clear(web_event event)

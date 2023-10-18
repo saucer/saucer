@@ -1,4 +1,3 @@
-#include "constants.hpp"
 #include "webview.qt.impl.hpp"
 
 #include <QFile>
@@ -75,7 +74,7 @@ namespace saucer
         auto *buffer = new QBuffer;
         buffer->open(QIODevice::WriteOnly);
 
-        auto size = file.content.size();
+        auto size           = file.content.size();
         const auto *content = file.content.data();
         buffer->write(reinterpret_cast<const char *>(content), static_cast<std::int64_t>(size));
 

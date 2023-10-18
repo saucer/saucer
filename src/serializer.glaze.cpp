@@ -5,7 +5,7 @@
 template <>
 struct glz::meta<saucer::serializers::glaze_function_data>
 {
-    using T = saucer::serializers::glaze_function_data;
+    using T                     = saucer::serializers::glaze_function_data;
     static constexpr auto value = object( //
         "id", &T::id,                     //
         "name", &T::name,                 //
@@ -16,7 +16,7 @@ struct glz::meta<saucer::serializers::glaze_function_data>
 template <>
 struct glz::meta<saucer::serializers::glaze_result_data>
 {
-    using T = saucer::serializers::glaze_result_data;
+    using T                     = saucer::serializers::glaze_result_data;
     static constexpr auto value = object( //
         "id", &T::id,                     //
         "result", &T::result              //

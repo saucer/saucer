@@ -67,7 +67,7 @@ namespace saucer
     void forget(std::future<T> future)
     {
         auto fut = std::make_shared<std::future<void>>();
-        *fut = std::async(std::launch::async, [fut, future = std::move(future)]() mutable { future.get(); });
+        *fut     = std::async(std::launch::async, [fut, future = std::move(future)]() mutable { future.get(); });
     }
 
     struct forget_pipe

@@ -3,6 +3,7 @@
 
 #include <fmt/args.h>
 #include <fmt/format.h>
+
 #include <boost/callable_traits.hpp>
 
 namespace saucer::serializers::detail::glaze
@@ -53,8 +54,8 @@ namespace saucer::serializers
     template <typename Function>
     auto glaze::serialize(const Function &func)
     {
-        using return_t = boost::callable_traits::return_type_t<Function>;
-        using args_t = boost::callable_traits::args_t<Function>;
+        using return_t  = boost::callable_traits::return_type_t<Function>;
+        using args_t    = boost::callable_traits::args_t<Function>;
         using decayed_t = detail::glaze::decay_t<args_t>;
 
         static_assert(detail::glaze::serializable_v<return_t> && detail::glaze::serializable_v<decayed_t>,
@@ -104,7 +105,7 @@ namespace saucer::serializers
 
             const auto serialize = []<typename O>(const O &value)
             {
-                auto json = glz::write_json(value);
+                auto json    = glz::write_json(value);
                 auto escaped = glz::write_json(json);
 
                 return fmt::format("JSON.parse({})", escaped);
@@ -113,7 +114,7 @@ namespace saucer::serializers
             if constexpr (is_arguments<T>)
             {
                 using tuple_t = typename T::tuple_t;
-                auto tuple = static_cast<tuple_t>(value);
+                auto tuple    = static_cast<tuple_t>(value);
 
                 std::vector<std::string> rtn;
                 rtn.reserve(std::tuple_size_v<tuple_t>);
@@ -146,7 +147,7 @@ namespace saucer::serializers
 
                 if (!value.has_value())
                 {
-                    auto error = static_cast<std::uint32_t>(value.error());
+                    auto error     = static_cast<std::uint32_t>(value.error());
                     auto exception = std::runtime_error{std::to_string(error)};
 
                     promise->set_exception(std::make_exception_ptr(exception));

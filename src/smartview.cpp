@@ -17,7 +17,7 @@ namespace saucer
 
     struct smartview_core::impl
     {
-        using id = std::uint64_t;
+        using id             = std::uint64_t;
         using pending_future = std::shared_ptr<std::future<void>>;
 
       public:
@@ -136,7 +136,7 @@ namespace saucer
                 return;
             }
 
-            auto id = m_id_counter++;
+            auto id     = m_id_counter++;
             auto future = std::make_shared<impl::pending_future::element_type>();
 
             m_impl->pending.write()->emplace(id, future);

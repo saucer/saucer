@@ -79,7 +79,7 @@ namespace saucer
     {
         using return_t = typename decltype(std::function(func))::result_type;
 
-        auto result = std::make_shared<std::promise<return_t>>();
+        auto result   = std::make_shared<std::promise<return_t>>();
         auto *message = new safe_message<return_t>(std::function{func}, result);
 
         // ? the WndProc will delete the message after processing.

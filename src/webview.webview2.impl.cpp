@@ -30,16 +30,18 @@ namespace saucer
         // ! Whoever chose to use struct names this long: I will find you and I will slap you.
 
         using controller_completed = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
-        using env_completed = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
+        using env_completed        = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
 
-        auto controller_created = [&](auto, ICoreWebView2Controller *webview_controller) {
+        auto controller_created = [&](auto, ICoreWebView2Controller *webview_controller)
+        {
             controller = webview_controller;
             controller->get_CoreWebView2(&this->web_view);
 
             return S_OK;
         };
 
-        auto environment_created = [&](auto, ICoreWebView2Environment *environment) {
+        auto environment_created = [&](auto, ICoreWebView2Environment *environment)
+        {
             auto handler = Callback<controller_completed>(controller_created);
             return environment->CreateCoreWebView2Controller(hwnd, handler.Get());
         };
@@ -65,7 +67,7 @@ namespace saucer
 
     LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        auto userdata = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+        auto userdata        = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
         const auto *web_view = reinterpret_cast<webview *>(userdata); // NOLINT(performance-no-int-to-ptr)
 
         if (!web_view)
@@ -75,7 +77,8 @@ namespace saucer
 
         const auto &impl = web_view->m_impl;
 
-        auto original = [&]() {
+        auto original = [&]()
+        {
             return CallWindowProcW(impl->original_wnd_proc, hwnd, msg, w_param, l_param);
         };
 
@@ -102,7 +105,8 @@ namespace saucer
         auto uri = fmt::format(L"{}*", scheme_prefix_w);
         web_view->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
-        auto requested_callback = [&](auto, ICoreWebView2WebResourceRequestedEventArgs *args) {
+        auto requested_callback = [&](auto, ICoreWebView2WebResourceRequestedEventArgs *args)
+        {
             wil::com_ptr<ICoreWebView2WebResourceRequest> request;
             args->get_Request(&request);
 
@@ -156,7 +160,7 @@ namespace saucer
         };
 
         using resource_requested = ICoreWebView2WebResourceRequestedEventHandler;
-        auto callback = Callback<resource_requested>(requested_callback);
+        auto callback            = Callback<resource_requested>(requested_callback);
 
         EventRegistrationToken rtn;
         web_view->add_WebResourceRequested(callback.Get(), &rtn);

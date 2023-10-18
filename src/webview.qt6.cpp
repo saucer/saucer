@@ -81,7 +81,7 @@ namespace saucer
                 return;
             }
 
-            found = true;
+            found  = true;
             script = scripts.front();
         };
 
