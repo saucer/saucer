@@ -32,7 +32,13 @@ Checks: "*,
         -*-switch-missing-default-case,
         -*-avoid-endl,
         -cppcoreguidelines-pro-type-static-cast-downcast,
-        -misc-header-include-cycle
+        -misc-header-include-cycle,
+        -cppcoreguidelines-pro-type-vararg,
+        -*-member-init,
+        -bugprone-easily-swappable-parameters,
+        -hicpp-vararg,
+        -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+        -*-dcl21-cpp,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
