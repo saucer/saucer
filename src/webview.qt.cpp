@@ -39,26 +39,27 @@ namespace saucer
         profile->setPersistentCookiesPolicy(options.persistent_cookies ? QWebEngineProfile::AllowPersistentCookies
                                                                        : QWebEngineProfile::NoPersistentCookies);
 
-        m_impl->web_view = new QWebEngineView(window::m_impl->window);
-
-        m_impl->page = new QWebEnginePage(profile, m_impl->web_view);
+        m_impl->web_view    = new QWebEngineView(window::m_impl->window);
+        m_impl->page        = new QWebEnginePage(profile, m_impl->web_view);
+        m_impl->web_channel = new QWebChannel(m_impl->web_view);
 
         m_impl->web_view->setPage(m_impl->page);
-
-        m_impl->web_channel = new QWebChannel(m_impl->web_view);
         m_impl->web_view->page()->setWebChannel(m_impl->web_channel);
 
         m_impl->channel_obj = new impl::web_class(this);
         m_impl->web_channel->registerObject("saucer", m_impl->channel_obj);
 
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted,
-                                  [this]() { m_impl->is_ready = false; });
+                                  [this]() { m_impl->dom_loaded = false; });
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished,
-                                  [this]() { m_impl->is_ready = true; });
+        QWebEngineScript dom_loaded;
+        dom_loaded.setName("dom_loaded");
+        dom_loaded.setRunsOnSubFrames(false);
+        dom_loaded.setWorldId(QWebEngineScript::MainWorld);
+        dom_loaded.setInjectionPoint(QWebEngineScript::DocumentReady);
+        dom_loaded.setSourceCode("window.saucer.on_message('dom_loaded')");
 
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged,
-                                  [this](const QUrl &url) { on_url_changed(url.toString().toStdString()); });
+        m_impl->web_view->page()->scripts().insert(dom_loaded);
 
         window::m_impl->on_closed = [this]
         {
@@ -74,9 +75,22 @@ namespace saucer
     // ? The window destructor will implicitly delete the web_view
     webview::~webview() = default;
 
-    void webview::on_url_changed(const std::string &url)
+    void webview::on_message(const std::string &message)
     {
-        m_events.at<web_event::url_changed>().fire(url);
+        if (message != "dom_loaded")
+        {
+            return;
+        }
+
+        m_impl->dom_loaded = true;
+
+        for (const auto &pending : m_impl->pending)
+        {
+            run_java_script(pending);
+        }
+
+        m_impl->pending.clear();
+        m_events.at<web_event::dom_ready>().fire();
     }
 
     bool webview::dev_tools() const
@@ -116,27 +130,26 @@ namespace saucer
             return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
+        if (!m_impl->dev_view && !enabled)
+        {
+            return;
+        }
+
         if (!enabled)
         {
-            if (!m_impl->dev_view)
-            {
-                return;
-            }
-
             m_impl->dev_view->deleteLater();
             m_impl->dev_view = nullptr;
 
             return;
         }
 
-        if (m_impl->dev_view)
+        if (!m_impl->dev_view)
         {
-            m_impl->dev_view->show();
-            return;
+            m_impl->dev_view = new QWebEngineView;
+            m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
         }
 
-        m_impl->dev_view = new QWebEngineView;
-        m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
+        m_impl->dev_view->show();
     }
 
     void webview::set_context_menu(bool enabled)
@@ -178,6 +191,7 @@ namespace saucer
         m_impl->scheme_handler = new impl::url_scheme_handler(this);
         m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->scheme_handler);
     }
+
     void webview::serve(const std::string &file)
     {
         set_url(fmt::format("{}{}", impl::scheme_prefix, file));
@@ -213,8 +227,36 @@ namespace saucer
         m_impl->scheme_handler = nullptr;
     }
 
+    void webview::run_java_script(const std::string &java_script)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, java_script] { run_java_script(java_script); });
+        }
+
+        if (!m_impl->dom_loaded)
+        {
+            m_impl->pending.emplace_back(java_script);
+            return;
+        }
+
+        m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
+    }
+
     void webview::clear(web_event event)
     {
+        switch (event)
+        {
+        case web_event::load_finished:
+            m_impl->web_view->disconnect(m_impl->load_finished);
+            break;
+        case web_event::url_changed:
+            m_impl->web_view->disconnect(m_impl->url_changed);
+            break;
+        case web_event::dom_ready:
+            break;
+        };
+
         m_events.clear(event);
     }
 
@@ -226,6 +268,51 @@ namespace saucer
     template <>
     std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
     {
-        return m_events.at<web_event::url_changed>().add(std::move(callback));
+        auto rtn = m_events.at<web_event::url_changed>().add(std::move(callback));
+
+        if (m_impl->url_changed)
+        {
+            return rtn;
+        }
+
+        auto handler = [this](const QUrl &url)
+        {
+            m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
+        };
+
+        m_impl->url_changed = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged, handler);
+
+        return rtn;
+    }
+
+    template <>
+    std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&callback)
+    {
+        auto rtn = m_events.at<web_event::load_finished>().add(std::move(callback));
+
+        if (m_impl->load_finished)
+        {
+            return rtn;
+        }
+
+        auto handler = [this](bool success)
+        {
+            if (!success)
+            {
+                return;
+            }
+
+            m_events.at<web_event::load_finished>().fire();
+        };
+
+        m_impl->load_finished = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished, handler);
+
+        return rtn;
+    }
+
+    template <>
+    std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&callback)
+    {
+        return m_events.at<web_event::dom_ready>().add(std::move(callback));
     }
 } // namespace saucer

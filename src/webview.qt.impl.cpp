@@ -6,7 +6,6 @@
 
 namespace saucer
 {
-    // NOLINTNEXTLINE(cert-err58-cpp)
     const std::string webview::impl::inject_script = []()
     {
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
@@ -34,8 +33,6 @@ namespace saucer
                         resolve(channel.objects.saucer); 
                     });
                 });
-
-                window.saucer.on_message("js_ready");
             )js";
     }();
 
@@ -76,9 +73,10 @@ namespace saucer
 
         auto size           = file.content.size();
         const auto *content = file.content.data();
-        buffer->write(reinterpret_cast<const char *>(content), static_cast<std::int64_t>(size));
 
+        buffer->write(reinterpret_cast<const char *>(content), static_cast<std::int64_t>(size));
         buffer->close();
+
         connect(request, &QObject::destroyed, buffer, &QObject::deleteLater);
 
         request->reply(QString::fromStdString(file.mime).toUtf8(), buffer);

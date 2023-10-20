@@ -2,8 +2,10 @@
 #include "webview.hpp"
 
 #include <string>
+#include <vector>
 #include <string_view>
 
+#include <QMetaObject>
 #include <QWebChannel>
 #include <QWebEngineView>
 #include <QWebEngineUrlSchemeHandler>
@@ -33,7 +35,12 @@ namespace saucer
         QWebEngineView *dev_view;
 
       public:
-        bool is_ready{false};
+        bool dom_loaded{false};
+        std::vector<std::string> pending;
+
+      public:
+        QMetaObject::Connection url_changed;
+        QMetaObject::Connection load_finished;
 
       public:
         static const std::string inject_script;

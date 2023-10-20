@@ -5,19 +5,22 @@
 #include <span>
 #include <string>
 #include <memory>
+
 #include <ereignis/manager.hpp>
 
 namespace saucer
 {
     enum class load_time : std::uint8_t
     {
-        ready,
         creation,
+        ready,
     };
 
     enum class web_event : std::uint8_t
     {
-        url_changed
+        load_finished,
+        url_changed,
+        dom_ready,
     };
 
     struct embedded_file
@@ -34,8 +37,10 @@ namespace saucer
         using embedded_files = std::map<std::string, embedded_file>;
 
       private:
-        using events = ereignis::manager<                                      //
-            ereignis::event<web_event::url_changed, void(const std::string &)> //
+        using events = ereignis::manager<                                       //
+            ereignis::event<web_event::load_finished, void()>,                  //
+            ereignis::event<web_event::url_changed, void(const std::string &)>, //
+            ereignis::event<web_event::dom_ready, void()>                       //
             >;
 
       private:
@@ -47,7 +52,6 @@ namespace saucer
 
       protected:
         virtual void on_message(const std::string &);
-        virtual void on_url_changed(const std::string &);
 
       public:
         webview(const options & = {});
@@ -88,5 +92,9 @@ namespace saucer
     };
 
     template <>
+    std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&callback);
+    template <>
     std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback);
+    template <>
+    std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&callback);
 } // namespace saucer
