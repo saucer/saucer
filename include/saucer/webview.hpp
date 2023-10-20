@@ -19,6 +19,7 @@ namespace saucer
     enum class web_event : std::uint8_t
     {
         load_finished,
+        load_started,
         url_changed,
         dom_ready,
     };
@@ -39,6 +40,7 @@ namespace saucer
       private:
         using events = ereignis::manager<                                       //
             ereignis::event<web_event::load_finished, void()>,                  //
+            ereignis::event<web_event::load_started, void()>,                   //
             ereignis::event<web_event::url_changed, void(const std::string &)>, //
             ereignis::event<web_event::dom_ready, void()>                       //
             >;
@@ -93,6 +95,8 @@ namespace saucer
 
     template <>
     std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&callback);
+    template <>
+    std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&callback);
     template <>
     std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback);
     template <>

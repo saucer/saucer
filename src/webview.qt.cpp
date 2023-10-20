@@ -250,6 +250,9 @@ namespace saucer
         case web_event::load_finished:
             m_impl->web_view->disconnect(m_impl->load_finished);
             break;
+        case web_event::load_started:
+            m_impl->web_view->disconnect(m_impl->load_started);
+            break;
         case web_event::url_changed:
             m_impl->web_view->disconnect(m_impl->url_changed);
             break;
@@ -263,26 +266,6 @@ namespace saucer
     void webview::remove(web_event event, std::uint64_t id)
     {
         m_events.remove(event, id);
-    }
-
-    template <>
-    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
-    {
-        auto rtn = m_events.at<web_event::url_changed>().add(std::move(callback));
-
-        if (m_impl->url_changed)
-        {
-            return rtn;
-        }
-
-        auto handler = [this](const QUrl &url)
-        {
-            m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
-        };
-
-        m_impl->url_changed = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged, handler);
-
-        return rtn;
     }
 
     template <>
@@ -306,6 +289,46 @@ namespace saucer
         };
 
         m_impl->load_finished = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadFinished, handler);
+
+        return rtn;
+    }
+
+    template <>
+    std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&callback)
+    {
+        auto rtn = m_events.at<web_event::load_started>().add(std::move(callback));
+
+        if (m_impl->load_started)
+        {
+            return rtn;
+        }
+
+        auto handler = [this]()
+        {
+            m_events.at<web_event::load_started>().fire();
+        };
+
+        m_impl->load_started = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted, handler);
+
+        return rtn;
+    }
+
+    template <>
+    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
+    {
+        auto rtn = m_events.at<web_event::url_changed>().add(std::move(callback));
+
+        if (m_impl->url_changed)
+        {
+            return rtn;
+        }
+
+        auto handler = [this](const QUrl &url)
+        {
+            m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
+        };
+
+        m_impl->url_changed = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::urlChanged, handler);
 
         return rtn;
     }
