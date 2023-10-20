@@ -1,11 +1,17 @@
 #pragma once
+#include <memory>
 #include <string>
+#include <concepts>
 
-namespace saucer
+#include <wrl.h>
+#include <WebView2.h>
+
+namespace saucer::utils
 {
-    std::string last_error();
     void set_dpi_awareness();
 
-    std::string narrow(const std::wstring &wide);
-    std::wstring widen(const std::string &narrow);
-} // namespace saucer
+    [[nodiscard]] std::string error();
+
+    [[nodiscard]] std::string narrow(const std::wstring &wide);
+    [[nodiscard]] std::wstring widen(const std::string &narrow);
+} // namespace saucer::utils

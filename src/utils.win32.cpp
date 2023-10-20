@@ -5,73 +5,72 @@
 
 namespace saucer
 {
-    std::string last_error()
+    void utils::set_dpi_awareness()
+    {
+        auto *shcore = LoadLibraryW(L"Shcore.dll");
+        auto *func   = GetProcAddress(shcore, "SetProcessDpiAwareness");
+
+        if (func)
+        {
+            reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(func)(2);
+            return;
+        }
+
+        auto *user32 = LoadLibraryW(L"user32.dll");
+        func         = GetProcAddress(user32, "SetProcessDPIAware");
+
+        if (!func)
+        {
+            return;
+        }
+
+        reinterpret_cast<bool(CALLBACK *)()>(func)();
+    }
+
+    std::string utils::error()
     {
         auto error = GetLastError();
 
-        if (!error)
-        {
-            return "<No Error>";
-        }
-
-        std::array<WCHAR, 1024> buffer{};
-        auto lang_id             = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-        constexpr DWORD dw_flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-        auto size = FormatMessageW(dw_flags, nullptr, error, lang_id, buffer.data(), buffer.size(), nullptr);
-
-        return narrow(std::wstring{buffer.data(), size});
-    }
-
-    void set_dpi_awareness()
-    {
-        auto *shcore                   = LoadLibraryW(L"Shcore.dll");
-        auto set_process_dpi_awareness = GetProcAddress(shcore, "SetProcessDpiAwareness");
-
-        if (set_process_dpi_awareness)
-        {
-            reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(set_process_dpi_awareness)(2);
-            return;
-        }
-
-        auto *user32               = LoadLibraryW(L"user32.dll");
-        auto set_process_dpi_aware = GetProcAddress(user32, "SetProcessDPIAware");
-
-        if (!set_process_dpi_aware)
-        {
-            return;
-        }
-
-        reinterpret_cast<bool(CALLBACK *)()>(set_process_dpi_aware)();
-    }
-
-    std::wstring widen(const std::string &narrow)
-    {
-        auto size = MultiByteToWideChar(CP_UTF8, 0, narrow.c_str(), -1, nullptr, 0);
-
-        if (!size)
+        if (error == 0)
         {
             return {};
         }
 
-        std::wstring out(size, 0);
-        MultiByteToWideChar(CP_UTF8, 0, narrow.c_str(), -1, out.data(), size);
+        static constexpr auto lang_flags    = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+        static constexpr DWORD format_flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
 
-        out.resize(size - 1);
+        WCHAR buffer[1024] = {};
+        auto size          = FormatMessageW(format_flags, nullptr, error, lang_flags, buffer, 1024, nullptr);
+
+        return narrow(std::wstring{buffer, size});
+    }
+
+    std::wstring utils::widen(const std::string &narrow)
+    {
+        auto size = MultiByteToWideChar(CP_UTF8, 0, narrow.c_str(), narrow.size(), nullptr, 0);
+
+        if (size <= 0)
+        {
+            return {};
+        }
+
+        std::wstring out(size, '\0');
+        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, narrow.c_str(), narrow.size(), out.data(), out.size());
+
         return out;
     }
 
-    std::string narrow(const std::wstring &wide)
+    std::string utils::narrow(const std::wstring &wide)
     {
-        auto len  = static_cast<int>(wide.length());
-        auto size = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), len, nullptr, 0, nullptr, nullptr);
+        auto size = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide.size(), nullptr, 0, nullptr, nullptr);
 
         if (!size)
         {
             return {};
         }
 
-        std::string out(size, 0);
-        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, out.data(), size, nullptr, nullptr);
+        std::string out(size, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide.size(), out.data(), size, nullptr, nullptr);
 
         return out;
     }
