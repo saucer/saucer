@@ -39,6 +39,7 @@ Checks: "*,
         -hicpp-vararg,
         -cppcoreguidelines-pro-bounds-pointer-arithmetic,
         -*-dcl21-cpp,
+        -cert-err58-cpp,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
