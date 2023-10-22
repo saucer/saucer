@@ -10,6 +10,7 @@ int main()
     webview.embed(saucer::embedded::all());
 
     webview.serve("src/index.html");
+    webview.set_dev_tools(true);
     webview.show();
     webview.run();
 
