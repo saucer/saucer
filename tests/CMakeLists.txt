@@ -15,8 +15,6 @@ if (NOT MSVC AND PROJECT_IS_TOP_LEVEL)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
 endif()
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
-
 # --------------------------------------------------------------------------------------------------------
 # Add Sources
 # --------------------------------------------------------------------------------------------------------
