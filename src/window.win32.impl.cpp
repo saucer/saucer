@@ -71,6 +71,7 @@ namespace saucer
                 return 0;
             }
 
+            window->m_events.at<window_event::closed>().fire();
             instances--;
 
             if (instances > 0)

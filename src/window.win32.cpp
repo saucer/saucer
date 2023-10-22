@@ -74,22 +74,6 @@ namespace saucer
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
     }
 
-    std::string window::title() const
-    {
-        if (!m_impl->is_thread_safe())
-        {
-            return m_impl->post_safe([this] { return title(); });
-        }
-
-        auto length = GetWindowTextLengthW(m_impl->hwnd) + 1;
-        std::wstring title(length, '\0');
-
-        GetWindowTextW(m_impl->hwnd, title.data(), length);
-        title.resize(title.size() - 1);
-
-        return utils::narrow(title);
-    }
-
     bool window::decorations() const
     {
         if (!m_impl->is_thread_safe())
@@ -109,6 +93,27 @@ namespace saucer
         }
 
         return GetWindowLong(m_impl->hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST;
+    }
+
+    std::string window::title() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return title(); });
+        }
+
+        auto length = GetWindowTextLengthW(m_impl->hwnd) + 1;
+        std::wstring title(length, '\0');
+
+        GetWindowTextW(m_impl->hwnd, title.data(), length);
+        title.resize(title.size() - 1); // Remove null character otherwise comparisons might fail
+
+        return utils::narrow(title);
+    }
+
+    color window::background() const
+    {
+        return m_impl->background;
     }
 
     std::pair<int, int> window::size() const
@@ -148,11 +153,6 @@ namespace saucer
         const auto height = GetSystemMetrics(SM_CYMINTRACK);
 
         return m_impl->min_size.value_or(std::make_pair(width, height));
-    }
-
-    color window::background() const
-    {
-        return m_impl->background;
     }
 
     void window::hide()
@@ -207,16 +207,6 @@ namespace saucer
         SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
     }
 
-    void window::set_title(const std::string &title)
-    {
-        if (!m_impl->is_thread_safe())
-        {
-            return m_impl->post_safe([this, title] { return set_title(title); });
-        }
-
-        SetWindowTextW(m_impl->hwnd, utils::widen(title).c_str());
-    }
-
     void window::set_decorations(bool enabled)
     {
         if (!m_impl->is_thread_safe())
@@ -249,6 +239,28 @@ namespace saucer
         SetWindowPos(m_impl->hwnd, enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 
+    void window::set_title(const std::string &title)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, title] { return set_title(title); });
+        }
+
+        SetWindowTextW(m_impl->hwnd, utils::widen(title).c_str());
+    }
+
+    void window::set_background(const color &color)
+    {
+        m_impl->background = color;
+
+        if (!m_impl->change_background)
+        {
+            return;
+        }
+
+        m_impl->change_background();
+    }
+
     void window::set_size(int width, int height)
     {
         if (!m_impl->is_thread_safe())
@@ -262,26 +274,14 @@ namespace saucer
                      SWP_NOMOVE | SWP_NOZORDER);
     }
 
-    void window::set_min_size(int width, int height)
-    {
-        m_impl->min_size = {width, height};
-    }
-
     void window::set_max_size(int width, int height)
     {
         m_impl->max_size = {width, height};
     }
 
-    void window::set_background(const color &color)
+    void window::set_min_size(int width, int height)
     {
-        m_impl->background = color;
-
-        if (!m_impl->change_background)
-        {
-            return;
-        }
-
-        m_impl->change_background();
+        m_impl->min_size = {width, height};
     }
 
     void window::clear(window_event event)
@@ -298,6 +298,12 @@ namespace saucer
     std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&callback)
     {
         return m_events.at<window_event::close>().add(std::move(callback));
+    }
+
+    template <>
+    std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&callback)
+    {
+        return m_events.at<window_event::closed>().add(std::move(callback));
     }
 
     template <>
