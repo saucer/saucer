@@ -40,7 +40,6 @@ namespace saucer
 
       public:
         QMetaObject::Connection url_changed;
-        QMetaObject::Connection load_started;
         QMetaObject::Connection load_finished;
 
       public:

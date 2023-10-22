@@ -50,7 +50,11 @@ namespace saucer
         m_impl->web_channel->registerObject("saucer", m_impl->channel_obj);
 
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted,
-                                  [this]() { m_impl->dom_loaded = false; });
+                                  [this]()
+                                  {
+                                      m_impl->dom_loaded = false;
+                                      m_events.at<web_event::load_started>().fire();
+                                  });
 
         window::m_impl->on_closed = [this]
         {
@@ -244,13 +248,10 @@ namespace saucer
         case web_event::load_finished:
             m_impl->web_view->disconnect(m_impl->load_finished);
             break;
-        case web_event::load_started:
-            m_impl->web_view->disconnect(m_impl->load_started);
-            break;
         case web_event::url_changed:
             m_impl->web_view->disconnect(m_impl->url_changed);
             break;
-        case web_event::dom_ready:
+        default:
             break;
         };
 
@@ -290,21 +291,7 @@ namespace saucer
     template <>
     std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&callback)
     {
-        auto rtn = m_events.at<web_event::load_started>().add(std::move(callback));
-
-        if (m_impl->load_started)
-        {
-            return rtn;
-        }
-
-        auto handler = [this]()
-        {
-            m_events.at<web_event::load_started>().fire();
-        };
-
-        m_impl->load_started = m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted, handler);
-
-        return rtn;
+        return m_events.at<web_event::load_started>().add(std::move(callback));
     }
 
     template <>
