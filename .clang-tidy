@@ -40,6 +40,7 @@ Checks: "*,
         -cppcoreguidelines-pro-bounds-pointer-arithmetic,
         -*-dcl21-cpp,
         -cert-err58-cpp,
+        -performance-no-int-to-ptr
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
