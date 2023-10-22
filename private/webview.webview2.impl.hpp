@@ -43,7 +43,7 @@ namespace saucer
 
       public:
         static const std::string inject_script;
-        static constexpr std::string_view scheme_prefix = "saucer://";
+        static constexpr std::string_view scheme_prefix = "saucer://embedded/";
 
       public:
         void overwrite_wnd_proc(HWND hwnd);
