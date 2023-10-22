@@ -20,12 +20,6 @@ namespace saucer
 
     struct webview::impl
     {
-        webview *parent;
-
-      public:
-        impl(webview *);
-
-      public:
         ComPtr<ICoreWebView2> web_view;
         ComPtr<ICoreWebView2Controller> controller;
 
@@ -49,12 +43,12 @@ namespace saucer
 
       public:
         static const std::string inject_script;
-        static constexpr std::string_view scheme_prefix = "https://saucer/";
+        static constexpr std::string_view scheme_prefix = "saucer://";
 
       public:
-        void install_scheme_handler();
         void overwrite_wnd_proc(HWND hwnd);
-        void create_webview(HWND, saucer::options);
+        void install_scheme_handler(webview *);
+        void create_webview(webview *, HWND, saucer::options);
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);

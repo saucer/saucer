@@ -19,9 +19,78 @@ namespace saucer
         };
     )js";
 
-    webview::impl::impl(webview *parent) : parent(parent) {}
+    void webview::impl::install_scheme_handler(webview *parent)
+    {
+        static const auto scheme_prefix_w = utils::widen(std::string{scheme_prefix});
 
-    void webview::impl::create_webview(HWND hwnd, saucer::options options)
+        auto uri    = fmt::format(L"{}*", scheme_prefix_w);
+        auto status = web_view->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+
+        if (!SUCCEEDED(status))
+        {
+            utils::throw_error("Failed to add resource filter");
+        }
+
+        auto handler = [&, parent](auto, auto *args)
+        {
+            ComPtr<ICoreWebView2WebResourceRequest> request;
+            args->get_Request(&request);
+
+            ComPtr<ICoreWebView2_2> webview2_2;
+            web_view->QueryInterface(IID_PPV_ARGS(&webview2_2));
+
+            if (!webview2_2)
+            {
+                return S_FALSE;
+            }
+
+            ComPtr<ICoreWebView2Environment> environment;
+            webview2_2->get_Environment(&environment);
+
+            LPWSTR raw{};
+            request->get_Uri(&raw);
+
+            auto url = utils::narrow(raw);
+            CoTaskMemFree(raw);
+
+            if (!url.starts_with(scheme_prefix))
+            {
+                ComPtr<ICoreWebView2WebResourceResponse> response;
+                environment->CreateWebResourceResponse(nullptr, 500, L"Bad Request", L"", &response);
+
+                args->put_Response(response.Get());
+                return S_OK;
+            }
+
+            url = url.substr(scheme_prefix.size());
+            url = url.substr(0, url.find_first_of('?'));
+
+            if (!parent->m_embedded_files.contains(url))
+            {
+                ComPtr<ICoreWebView2WebResourceResponse> response;
+                environment->CreateWebResourceResponse(nullptr, 404, L"Not Found", L"", &response);
+
+                args->put_Response(response.Get());
+                return S_OK;
+            }
+
+            const auto &file = parent->m_embedded_files.at(url);
+
+            ComPtr<ICoreWebView2WebResourceResponse> response;
+            ComPtr<IStream> data = SHCreateMemStream(file.content.data(), static_cast<UINT>(file.content.size()));
+
+            environment->CreateWebResourceResponse(
+                data.Get(), 200, L"OK", fmt::format(L"Content-Type: {}", utils::widen(file.mime)).c_str(), &response);
+
+            args->put_Response(response.Get());
+            return S_OK;
+        };
+
+        auto callback = mcb{handler};
+        web_view->add_WebResourceRequested(callback, &scheme_handler);
+    }
+
+    void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::options options)
     {
         auto controller_created = mcb{[&](auto, auto *webview_controller)
                                       {
@@ -49,6 +118,23 @@ namespace saucer
                            }};
 
         auto env_options = Make<CoreWebView2EnvironmentOptions>();
+        ComPtr<ICoreWebView2EnvironmentOptions4> env_options4;
+
+        if (!SUCCEEDED(env_options->QueryInterface(IID_PPV_ARGS(&env_options4))))
+        {
+            utils::throw_error("Failed to query ICoreWebView2EnvironmentOptions4");
+        }
+
+        static const WCHAR *allowed_origins[1] = {L"*"};
+        auto scheme                            = Make<CoreWebView2CustomSchemeRegistration>(L"saucer");
+
+        scheme->SetAllowedOrigins(1, allowed_origins);
+        ICoreWebView2CustomSchemeRegistration *registration[1] = {scheme.Get()};
+
+        if (!SUCCEEDED(env_options4->SetCustomSchemeRegistrations(1, registration)))
+        {
+            utils::throw_error("Failed to register custom scheme");
+        }
 
         if (!options.hardware_acceleration)
         {
@@ -117,76 +203,5 @@ namespace saucer
         }
 
         return original();
-    }
-
-    void webview::impl::install_scheme_handler()
-    {
-        static const auto scheme_prefix_w = utils::widen(std::string{scheme_prefix});
-
-        auto uri    = fmt::format(L"{}*", scheme_prefix_w);
-        auto status = web_view->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
-
-        if (!SUCCEEDED(status))
-        {
-            utils::throw_error("Failed to add resource filter");
-        }
-
-        auto handler = [&](auto, auto *args)
-        {
-            ComPtr<ICoreWebView2WebResourceRequest> request;
-            args->get_Request(&request);
-
-            ComPtr<ICoreWebView2_2> webview2_2;
-            web_view->QueryInterface(IID_PPV_ARGS(&webview2_2));
-
-            if (!webview2_2)
-            {
-                return S_FALSE;
-            }
-
-            ComPtr<ICoreWebView2Environment> environment;
-            webview2_2->get_Environment(&environment);
-
-            LPWSTR raw{};
-            request->get_Uri(&raw);
-
-            auto url = utils::narrow(raw);
-            CoTaskMemFree(raw);
-
-            if (!url.starts_with(scheme_prefix))
-            {
-                ComPtr<ICoreWebView2WebResourceResponse> response;
-                environment->CreateWebResourceResponse(nullptr, 500, L"Bad Request", L"", &response);
-
-                args->put_Response(response.Get());
-                return S_OK;
-            }
-
-            url = url.substr(scheme_prefix.size());
-            url = url.substr(0, url.find_first_of('?'));
-
-            if (!parent->m_embedded_files.contains(url))
-            {
-                ComPtr<ICoreWebView2WebResourceResponse> response;
-                environment->CreateWebResourceResponse(nullptr, 404, L"Not Found", L"", &response);
-
-                args->put_Response(response.Get());
-                return S_OK;
-            }
-
-            const auto &file = parent->m_embedded_files.at(url);
-
-            ComPtr<ICoreWebView2WebResourceResponse> response;
-            ComPtr<IStream> data = SHCreateMemStream(file.content.data(), static_cast<UINT>(file.content.size()));
-
-            environment->CreateWebResourceResponse(
-                data.Get(), 200, L"OK", fmt::format(L"Content-Type: {}", utils::widen(file.mime)).c_str(), &response);
-
-            args->put_Response(response.Get());
-            return S_OK;
-        };
-
-        auto callback = mcb{handler};
-        web_view->add_WebResourceRequested(callback, &scheme_handler);
     }
 } // namespace saucer

@@ -13,7 +13,7 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    webview::webview(const options &options) : m_impl(std::make_unique<impl>(this))
+    webview::webview(const options &options) : m_impl(std::make_unique<impl>())
     {
         m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
 
@@ -52,7 +52,7 @@ namespace saucer
             copy.storage_path = fs::path{appdata} / "saucer";
         }
 
-        m_impl->create_webview(window::m_impl->hwnd, std::move(copy));
+        m_impl->create_webview(this, window::m_impl->hwnd, std::move(copy));
 
         // We disable the dev-tools explicitly as they're enabled by default on webview2.
         set_dev_tools(false);
@@ -211,11 +211,6 @@ namespace saucer
         m_impl->web_view->Navigate(utils::widen(url).c_str());
     }
 
-    void webview::serve(const std::string &file)
-    {
-        set_url(std::string{impl::scheme_prefix} + file);
-    }
-
     void webview::embed(embedded_files &&files)
     {
         if (!window::m_impl->is_thread_safe())
@@ -231,7 +226,12 @@ namespace saucer
             return;
         }
 
-        m_impl->install_scheme_handler();
+        m_impl->install_scheme_handler(this);
+    }
+
+    void webview::serve(const std::string &file)
+    {
+        set_url(std::string{impl::scheme_prefix} + file);
     }
 
     void webview::clear_scripts()
@@ -339,27 +339,6 @@ namespace saucer
     }
 
     template <>
-    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
-    {
-        auto rtn = m_events.at<web_event::url_changed>().add(std::move(callback));
-
-        if (m_impl->url_changed.value > 0)
-        {
-            return rtn;
-        }
-
-        auto handler = mcb{[this](auto...)
-                           {
-                               m_events.at<web_event::url_changed>().fire(url());
-                               return S_OK;
-                           }};
-
-        m_impl->web_view->add_SourceChanged(handler, &m_impl->url_changed);
-
-        return rtn;
-    }
-
-    template <>
     std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&callback)
     {
         auto rtn = m_events.at<web_event::load_finished>().add(std::move(callback));
@@ -381,14 +360,35 @@ namespace saucer
     }
 
     template <>
-    std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&callback)
-    {
-        return m_events.at<web_event::dom_ready>().add(std::move(callback));
-    }
-
-    template <>
     std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&callback)
     {
         return m_events.at<web_event::load_started>().add(std::move(callback));
+    }
+
+    template <>
+    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
+    {
+        auto rtn = m_events.at<web_event::url_changed>().add(std::move(callback));
+
+        if (m_impl->url_changed.value > 0)
+        {
+            return rtn;
+        }
+
+        auto handler = mcb{[this](auto...)
+                           {
+                               m_events.at<web_event::url_changed>().fire(url());
+                               return S_OK;
+                           }};
+
+        m_impl->web_view->add_SourceChanged(handler, &m_impl->url_changed);
+
+        return rtn;
+    }
+
+    template <>
+    std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&callback)
+    {
+        return m_events.at<web_event::dom_ready>().add(std::move(callback));
     }
 } // namespace saucer
