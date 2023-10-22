@@ -1,78 +1,97 @@
 #include "utils.win32.hpp"
 #include "webview.webview2.impl.hpp"
 
-#include <wrl.h>
-#include <regex>
-#include <Shlwapi.h>
 #include <fmt/core.h>
 #include <fmt/xchar.h>
-#include <wil/win32_helpers.h>
+
+#include <shlwapi.h>
 #include <WebView2EnvironmentOptions.h>
 
 namespace saucer
 {
-    using Microsoft::WRL::Callback;
-
-    // NOLINTNEXTLINE(cert-err58-cpp)
     const std::string webview::impl::inject_script = R"js(
-        window.saucer = {
+        window.saucer = 
+        {
             async on_message(message)
             {
                 window.chrome.webview.postMessage(message);
             }
         };
-        
-        window.saucer.on_message("js_ready");
     )js";
 
-    void webview::impl::create_webview(HWND hwnd, const std::wstring &user_folder, bool hardware_accel)
+    webview::impl::impl(webview *parent) : parent(parent) {}
+
+    void webview::impl::create_webview(HWND hwnd, saucer::options options)
     {
-        // ! Whoever chose to use struct names this long: I will find you and I will slap you.
+        auto controller_created = mcb{[&](auto, auto *webview_controller)
+                                      {
+                                          controller = webview_controller;
+                                          auto rtn   = controller->get_CoreWebView2(&this->web_view);
 
-        using controller_completed = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
-        using env_completed        = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
+                                          if (!SUCCEEDED(rtn))
+                                          {
+                                              utils::throw_error("Failed to create webview2");
+                                          }
 
-        auto controller_created = [&](auto, ICoreWebView2Controller *webview_controller)
+                                          return rtn;
+                                      }};
+
+        auto created = mcb{[&](auto, auto *env)
+                           {
+                               auto rtn = env->CreateCoreWebView2Controller(hwnd, controller_created);
+
+                               if (!SUCCEEDED(rtn))
+                               {
+                                   utils::throw_error("Failed to create webview2 controller");
+                               }
+
+                               return rtn;
+                           }};
+
+        auto env_options = Make<CoreWebView2EnvironmentOptions>();
+
+        if (!options.hardware_acceleration)
         {
-            controller = webview_controller;
-            controller->get_CoreWebView2(&this->web_view);
-
-            return S_OK;
-        };
-
-        auto environment_created = [&](auto, ICoreWebView2Environment *environment)
-        {
-            auto handler = Callback<controller_completed>(controller_created);
-            return environment->CreateCoreWebView2Controller(hwnd, handler.Get());
-        };
-        auto created_handler = Callback<env_completed>(environment_created);
-
-        auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
-
-        if (!hardware_accel)
-        {
-            options->put_AdditionalBrowserArguments(L"--disable-gpu");
+            env_options->put_AdditionalBrowserArguments(L"--disable-gpu");
         }
 
-        CreateCoreWebView2EnvironmentWithOptions(nullptr, user_folder.c_str(), options.Get(), created_handler.Get());
+        if (options.storage_path.empty())
+        {
+            options.storage_path = std::filesystem::temp_directory_path();
+        }
+
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+        auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, options.storage_path.wstring().c_str(),
+                                                               env_options.Get(), created);
+
+        if (!SUCCEEDED(status))
+        {
+            utils::throw_error("Failed to create webview2");
+        }
+
+        while (!controller)
+        {
+            parent->run<false>();
+        }
+
+        CoUninitialize();
     }
 
     void webview::impl::overwrite_wnd_proc(HWND hwnd)
     {
-        auto wnd_proc_ptr = reinterpret_cast<LONG_PTR>(wnd_proc);
-
-        // NOLINTNEXTLINE(performance-no-int-to-ptr)
-        original_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, wnd_proc_ptr));
+        auto ptr          = reinterpret_cast<LONG_PTR>(wnd_proc);
+        original_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
     }
 
     LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto userdata        = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-        const auto *web_view = reinterpret_cast<webview *>(userdata); // NOLINT(performance-no-int-to-ptr)
+        const auto *web_view = reinterpret_cast<webview *>(userdata);
 
         if (!web_view)
         {
-            return 0;
+            return DefWindowProcW(hwnd, msg, w_param, l_param);
         }
 
         const auto &impl = web_view->m_impl;
@@ -87,84 +106,87 @@ namespace saucer
             return original();
         }
 
-        if (msg == WM_SHOWWINDOW)
+        switch (msg)
         {
+        case WM_SHOWWINDOW:
             impl->controller->put_IsVisible(static_cast<BOOL>(w_param));
-        }
-
-        if (msg == WM_SIZE)
-        {
+            break;
+        case WM_SIZE:
             impl->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
+            break;
         }
 
         return original();
     }
 
-    EventRegistrationToken webview::impl::install_scheme_handler(class webview &parent) const
+    void webview::impl::install_scheme_handler()
     {
-        auto uri = fmt::format(L"{}*", scheme_prefix_w);
-        web_view->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        static const auto scheme_prefix_w = utils::widen(std::string{scheme_prefix});
 
-        auto requested_callback = [&](auto, ICoreWebView2WebResourceRequestedEventArgs *args)
+        auto uri    = fmt::format(L"{}*", scheme_prefix_w);
+        auto status = web_view->AddWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+
+        if (!SUCCEEDED(status))
         {
-            wil::com_ptr<ICoreWebView2WebResourceRequest> request;
+            utils::throw_error("Failed to add resource filter");
+        }
+
+        auto handler = [&](auto, auto *args)
+        {
+            ComPtr<ICoreWebView2WebResourceRequest> request;
             args->get_Request(&request);
 
-            auto webview2 = this->web_view.try_query<ICoreWebView2_2>();
+            ComPtr<ICoreWebView2_2> webview2_2;
+            web_view->QueryInterface(IID_PPV_ARGS(&webview2_2));
 
-            if (!webview2)
+            if (!webview2_2)
             {
+                return S_FALSE;
+            }
+
+            ComPtr<ICoreWebView2Environment> environment;
+            webview2_2->get_Environment(&environment);
+
+            LPWSTR raw{};
+            request->get_Uri(&raw);
+
+            auto url = utils::narrow(raw);
+            CoTaskMemFree(raw);
+
+            if (!url.starts_with(scheme_prefix))
+            {
+                ComPtr<ICoreWebView2WebResourceResponse> response;
+                environment->CreateWebResourceResponse(nullptr, 500, L"Bad Request", L"", &response);
+
+                args->put_Response(response.Get());
                 return S_OK;
             }
 
-            wil::com_ptr<ICoreWebView2Environment> env;
-            webview2->get_Environment(&env);
+            url = url.substr(scheme_prefix.size());
+            url = url.substr(0, url.find_first_of('?'));
 
-            LPWSTR raw_url{};
-            request->get_Uri(&raw_url);
-            auto url = narrow(raw_url);
-
-            if (url.size() < impl::scheme_prefix.size())
+            if (!parent->m_embedded_files.contains(url))
             {
-                wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                env->CreateWebResourceResponse(nullptr, 500, L"Bad request", L"", &response);
+                ComPtr<ICoreWebView2WebResourceResponse> response;
+                environment->CreateWebResourceResponse(nullptr, 404, L"Not Found", L"", &response);
 
-                args->put_Response(response.get());
+                args->put_Response(response.Get());
                 return S_OK;
             }
 
-            std::smatch match;
-            std::regex_search(url, match, std::regex{fmt::format("{}([^?]+)", scheme_prefix)});
+            const auto &file = parent->m_embedded_files.at(url);
 
-            url = match[1];
+            ComPtr<ICoreWebView2WebResourceResponse> response;
+            ComPtr<IStream> data = SHCreateMemStream(file.content.data(), static_cast<UINT>(file.content.size()));
 
-            if (!parent.m_embedded_files.contains(url))
-            {
-                wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-                env->CreateWebResourceResponse(nullptr, 404, L"Not found", L"", &response);
+            environment->CreateWebResourceResponse(
+                data.Get(), 200, L"OK", fmt::format(L"Content-Type: {}", utils::widen(file.mime)).c_str(), &response);
 
-                args->put_Response(response.get());
-                return S_OK;
-            }
-
-            const auto &file = parent.m_embedded_files.at(url);
-
-            wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-            wil::com_ptr<IStream> data = SHCreateMemStream(file.data, static_cast<UINT>(file.size));
-
-            env->CreateWebResourceResponse(data.get(), 200, L"OK",
-                                           fmt::format(L"Content-Type: {}", widen(file.mime)).c_str(), &response);
-
-            args->put_Response(response.get());
+            args->put_Response(response.Get());
             return S_OK;
         };
 
-        using resource_requested = ICoreWebView2WebResourceRequestedEventHandler;
-        auto callback            = Callback<resource_requested>(requested_callback);
-
-        EventRegistrationToken rtn;
-        web_view->add_WebResourceRequested(callback.Get(), &rtn);
-
-        return rtn;
+        auto callback = mcb{handler};
+        web_view->add_WebResourceRequested(callback, &scheme_handler);
     }
 } // namespace saucer

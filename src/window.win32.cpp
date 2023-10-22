@@ -3,8 +3,9 @@
 #include "window.win32.impl.hpp"
 
 #include <winuser.h>
+#include <versionhelpers.h>
+
 #include <fmt/core.h>
-#include <VersionHelpers.h>
 
 namespace saucer
 {
@@ -19,7 +20,7 @@ namespace saucer
         {
             instance = GetModuleHandleW(nullptr);
 
-            // ? Register the window class, later referred to by passing `lpClassName` = "Saucer"
+            //? Register the window class, later referred to by passing `lpClassName` = "Saucer"
 
             wnd_class.hInstance     = instance;
             wnd_class.lpszClassName = L"Saucer";
@@ -27,7 +28,7 @@ namespace saucer
 
             if (!RegisterClassW(&wnd_class))
             {
-                throw std::runtime_error(fmt::format("RegisterClassW() failed: {}", last_error()));
+                utils::throw_error("RegisterClassW() failed");
             }
         }
 
@@ -48,13 +49,13 @@ namespace saucer
 
         if (!m_impl->hwnd)
         {
-            throw std::runtime_error(fmt::format("CreateWindowExW() failed: {}", last_error()));
+            utils::throw_error("CreateWindowExW() failed");
         }
 
-        set_dpi_awareness();
+        utils::set_dpi_awareness();
 
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-        impl::open_windows++;
+        impl::instances++;
     }
 
     window::~window()
@@ -80,14 +81,13 @@ namespace saucer
             return m_impl->post_safe([this] { return title(); });
         }
 
-        auto title_length = GetWindowTextLengthW(m_impl->hwnd) + 1;
-        auto *title       = new WCHAR[title_length];
+        auto length = GetWindowTextLengthW(m_impl->hwnd) + 1;
+        std::wstring title(length, '\0');
 
-        GetWindowTextW(m_impl->hwnd, title, title_length);
-        auto rtn = narrow(title);
+        GetWindowTextW(m_impl->hwnd, title.data(), length);
+        title.resize(title.size() - 1);
 
-        delete[] title;
-        return rtn;
+        return utils::narrow(title);
     }
 
     bool window::decorations() const
@@ -120,7 +120,8 @@ namespace saucer
 
         RECT rect;
         GetClientRect(m_impl->hwnd, &rect);
-        return std::pair<int, int>{rect.right - rect.left, rect.bottom - rect.top};
+
+        return {rect.right - rect.left, rect.bottom - rect.top};
     }
 
     std::pair<int, int> window::max_size() const
@@ -130,8 +131,10 @@ namespace saucer
             return m_impl->post_safe([this] { return max_size(); });
         }
 
-        const auto max_track = GetSystemMetrics(SM_CXMAXTRACK);
-        return m_impl->max_size.value_or(std::pair<int, int>{max_track, max_track});
+        const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
+        const auto height = GetSystemMetrics(SM_CYMAXTRACK);
+
+        return m_impl->max_size.value_or(std::make_pair(width, height));
     }
 
     std::pair<int, int> window::min_size() const
@@ -141,13 +144,15 @@ namespace saucer
             return m_impl->post_safe([this] { return min_size(); });
         }
 
-        const auto min_track = GetSystemMetrics(SM_CXMINTRACK);
-        return m_impl->min_size.value_or(std::pair<int, int>{min_track, min_track});
+        const auto width  = GetSystemMetrics(SM_CXMINTRACK);
+        const auto height = GetSystemMetrics(SM_CYMINTRACK);
+
+        return m_impl->min_size.value_or(std::make_pair(width, height));
     }
 
     color window::background() const
     {
-        return m_impl->background_color;
+        return m_impl->background;
     }
 
     void window::hide()
@@ -177,8 +182,7 @@ namespace saucer
             return m_impl->post_safe([this] { close(); });
         }
 
-        ShowWindow(m_impl->hwnd, SW_HIDE);
-        PostQuitMessage(0);
+        DestroyWindow(m_impl->hwnd);
     }
 
     void window::set_resizable(bool enabled)
@@ -188,8 +192,8 @@ namespace saucer
             return m_impl->post_safe([this, enabled] { set_resizable(enabled); });
         }
 
-        constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-        auto current_style   = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        static constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+        auto current_style          = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
 
         if (enabled)
         {
@@ -210,7 +214,7 @@ namespace saucer
             return m_impl->post_safe([this, title] { return set_title(title); });
         }
 
-        SetWindowTextW(m_impl->hwnd, widen(title).c_str());
+        SetWindowTextW(m_impl->hwnd, utils::widen(title).c_str());
     }
 
     void window::set_decorations(bool enabled)
@@ -220,8 +224,8 @@ namespace saucer
             return m_impl->post_safe([this, enabled] { set_decorations(enabled); });
         }
 
-        constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-        auto current_style   = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        static constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
+        auto current_style          = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
 
         if (enabled)
         {
@@ -252,7 +256,10 @@ namespace saucer
             return m_impl->post_safe([this, width, height] { set_size(width, height); });
         }
 
-        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+        auto offset = m_impl->window_offset();
+
+        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width + offset.first, height + offset.second,
+                     SWP_NOMOVE | SWP_NOZORDER);
     }
 
     void window::set_min_size(int width, int height)
@@ -267,7 +274,14 @@ namespace saucer
 
     void window::set_background(const color &color)
     {
-        m_impl->set_background_color(color);
+        m_impl->background = color;
+
+        if (!m_impl->change_background)
+        {
+            return;
+        }
+
+        m_impl->change_background();
     }
 
     void window::clear(window_event event)

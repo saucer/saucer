@@ -1,30 +1,33 @@
 #include "window.win32.impl.hpp"
 
+#include <ranges>
+
 namespace saucer
 {
-    const UINT window::impl::WM_SAFE_CALL = RegisterWindowMessageW(L"safe_call"); // NOLINT(cert-err58-cpp)
-    std::atomic<std::size_t> window::impl::open_windows = 0;
-
-    void window::impl::set_background_color(const color &color)
-    {
-        background_color = color;
-
-        if (!change_background)
-        {
-            return;
-        }
-
-        change_background();
-    }
+    const UINT window::impl::WM_SAFE_CALL            = RegisterWindowMessageW(L"safe_call");
+    std::atomic<std::size_t> window::impl::instances = 0;
 
     bool window::impl::is_thread_safe() const
     {
         return creation_thread == std::this_thread::get_id();
     }
 
+    std::pair<int, int> window::impl::window_offset() const
+    {
+        RECT window_rect;
+        RECT client_rect;
+
+        GetWindowRect(hwnd, &window_rect);
+        GetClientRect(hwnd, &client_rect);
+
+        int width  = window_rect.right - window_rect.left - client_rect.right;
+        int height = window_rect.bottom - window_rect.top - client_rect.bottom;
+
+        return {width, height};
+    }
+
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        // NOLINTNEXTLINE(performance-no-int-to-ptr)
         auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
         if (!window)
@@ -32,9 +35,15 @@ namespace saucer
             return DefWindowProcW(hwnd, msg, w_param, l_param);
         }
 
-        if (msg == WM_GETMINMAXINFO)
+        if (msg == window->window::m_impl->WM_SAFE_CALL)
         {
-            auto *info = reinterpret_cast<MINMAXINFO *>(l_param); // NOLINT(performance-no-int-to-ptr)
+            delete reinterpret_cast<message *>(l_param);
+        }
+
+        switch (msg)
+        {
+        case WM_GETMINMAXINFO: {
+            auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
 
             auto [min_x, min_y] = window->min_size();
             auto [max_x, max_y] = window->max_size();
@@ -44,34 +53,34 @@ namespace saucer
 
             info->ptMinTrackSize.x = min_x;
             info->ptMinTrackSize.y = min_y;
-        }
 
-        if (msg == WM_SIZE)
-        {
-            window->m_events.at<window_event::resize>().fire(LOWORD(l_param), HIWORD(l_param));
+            break;
         }
+        case WM_SIZE: {
+            auto [width, height] = window->size();
+            window->m_events.at<window_event::resize>().fire(width, height);
+            break;
+        }
+        case WM_DESTROY:
+        case WM_CLOSE: {
+            auto results = window->m_events.at<window_event::close>().fire();
+            auto prevent = std::ranges::any_of(results, [](auto res) { return res; });
 
-        if (msg == WM_DESTROY || msg == WM_CLOSE)
-        {
-            for (const auto &result : window->m_events.at<window_event::close>().fire())
+            if (prevent)
             {
-                if (result)
-                {
-                    return 0;
-                }
+                return 0;
             }
 
-            open_windows--;
+            instances--;
 
-            if (!open_windows)
+            if (instances > 0)
             {
-                PostQuitMessage(0);
+                break;
             }
-        }
 
-        if (msg == window->window::m_impl->WM_SAFE_CALL)
-        {
-            delete reinterpret_cast<message *>(l_param); // NOLINT(performance-no-int-to-ptr)
+            PostQuitMessage(0);
+            break;
+        }
         }
 
         return DefWindowProcW(hwnd, msg, w_param, l_param);

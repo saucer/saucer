@@ -34,6 +34,7 @@ CPMFindPackage(
   NAME           ut
   VERSION        2.0.0
   GIT_REPOSITORY "https://github.com/boost-ext/ut"
+  OPTIONS        "BOOST_UT_DISABLE_MODULE ON"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Boost::ut saucer::saucer)

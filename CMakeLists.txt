@@ -211,15 +211,7 @@ if (saucer_backend STREQUAL "WebView2")
   target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
 
   include("cmake/webview2.cmake")
-
-  CPMFindPackage(
-    NAME           wil
-    GIT_TAG        master
-    GIT_REPOSITORY "https://github.com/microsoft/wil"
-    OPTIONS        "WIL_BUILD_TESTS OFF" "WIL_BUILD_PACKAGING OFF"
-  )    
-
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} WIL::WIL Shlwapi webview2::webview2)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Shlwapi webview2::webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
