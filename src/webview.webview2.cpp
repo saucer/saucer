@@ -3,6 +3,7 @@
 #include "window.win32.impl.hpp"
 #include "webview.webview2.impl.hpp"
 
+#include <cassert>
 #include <filesystem>
 
 #include <shlobj.h>
@@ -284,7 +285,10 @@ namespace saucer
             return;
         }
 
-        m_impl->web_view->ExecuteScript(utils::widen(java_script).c_str(), nullptr);
+        if (!SUCCEEDED(m_impl->web_view->ExecuteScript(utils::widen(java_script).c_str(), nullptr)))
+        {
+            assert("Failed to execute script" && false);
+        }
     }
 
     void webview::inject(const std::string &java_script, const load_time &load_time)
@@ -305,13 +309,18 @@ namespace saucer
             return;
         }
 
-        auto completed = mcb{[this](auto, LPCWSTR id)
-                             {
-                                 m_impl->injected.emplace_back(id);
-                                 return S_OK;
-                             }};
+        auto cb = mcb{[this](auto, LPCWSTR id)
+                      {
+                          m_impl->injected.emplace_back(id);
+                          return S_OK;
+                      }};
 
-        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(java_script).c_str(), completed);
+        auto status = m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(java_script).c_str(), cb);
+
+        if (!SUCCEEDED(status))
+        {
+            assert("Failed to inject script" && false);
+        }
     }
 
     void webview::clear(web_event event)
