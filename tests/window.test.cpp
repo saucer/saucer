@@ -48,6 +48,12 @@ suite window_suite = []
         {
             window.set_title("Test!");
             expect(window.title() == "Test!");
+
+            window.set_title("Заголовок!");
+            expect(window.title() == "Заголовок!");
+
+            window.set_title("標題!");
+            expect(window.title() == "標題!");
         };
 
         "always_on_top"_test = [&]
