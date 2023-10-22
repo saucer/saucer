@@ -20,7 +20,8 @@ namespace saucer
 
         return content +
                R"js(
-                window.saucer = {
+                window.saucer = 
+                {
                     async on_message(message)
                     {
                         (await window._saucer).on_message(message);
