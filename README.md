@@ -16,7 +16,7 @@
 Our documentation can be found [here](https://saucer.github.io/).
 
 ### Examples
-Examples can be found [here](https://github.com/saucer/saucer/tree/dev/examples).
+Examples can be found [here](./examples).
 
 ### Getting started
 Learn how to create your first _saucer_ app [here](https://saucer.github.io/docs/getting-started).
