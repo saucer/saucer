@@ -1,7 +1,13 @@
 #pragma once
-#include <memory>
 #include <string>
+#include <memory>
+
+#include <array>
+#include <utility>
+
+#include <cstdint>
 #include <filesystem>
+
 #include <ereignis/manager.hpp>
 
 namespace saucer
