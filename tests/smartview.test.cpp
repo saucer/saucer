@@ -16,13 +16,12 @@ struct custom_type
 template <>
 struct glz::meta<custom_type>
 {
-    using T = custom_type;
+    using T                     = custom_type;
     static constexpr auto value = object( //
         "field", &T::field                //
     );
 };
 
-// NOLINTNEXTLINE
 suite smartview_suite = []
 {
     saucer::smartview smartview({.hardware_acceleration = false});

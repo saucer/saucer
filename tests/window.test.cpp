@@ -6,7 +6,6 @@
 using namespace boost::ut;
 using namespace boost::ut::literals;
 
-// NOLINTNEXTLINE
 suite window_suite = []
 {
     struct dummy_window : public saucer::window
@@ -26,14 +25,14 @@ suite window_suite = []
             window.set_resizable(true);
             expect(window.resizable());
 
-            window.set_size(5, 5);
-            expect(window.size() == std::make_pair(5, 5));
+            window.set_min_size(250, 250);
+            expect(window.min_size() == std::make_pair(250, 250));
 
-            window.set_max_size(50, 50);
-            expect(window.max_size() == std::make_pair(50, 50));
+            window.set_size(300, 300);
+            expect(window.size() == std::make_pair(300, 300));
 
-            window.set_min_size(25, 25);
-            expect(window.min_size() == std::make_pair(25, 25));
+            window.set_max_size(500, 500);
+            expect(window.max_size() == std::make_pair(500, 500));
         };
 
         "decorations"_test = [&]
@@ -64,13 +63,13 @@ suite window_suite = []
         {
             auto callback = [&](int width, int height)
             {
-                if (width != 45)
+                if (width != 450)
                 {
                     return;
                 }
 
-                expect(eq(width, 45));
-                expect(eq(height, 45));
+                expect(eq(width, 450));
+                expect(eq(height, 450));
 
                 window.clear(saucer::window_event::resize);
                 window.close();
@@ -81,7 +80,7 @@ suite window_suite = []
             auto fn = [fut, &window]
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                window.set_size(45, 45);
+                window.set_size(450, 450);
             };
 
             *fut = std::async(std::launch::async, std::move(fn));

@@ -2,14 +2,25 @@
 
 #include <saucer/webview.hpp>
 
+#ifdef _WIN32
+#include <thread>
+#include <chrono>
+#endif
+
 using namespace boost::ut;
 using namespace boost::ut::literals;
 
-// NOLINTNEXTLINE
 suite webview_suite = []
 {
     "webview"_test = [&]
     {
+#ifdef _WIN32
+        //? Creating the WebView on windows seems to sometimes not fire the created callback when they're created
+        //? rapidly (seems to be a WebView2 issue)
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+#endif
+
         saucer::webview webview({.hardware_acceleration = false});
         std::uint64_t id{};
 
@@ -89,6 +100,9 @@ suite webview_suite = []
 
     "embedding"_test = [&]
     {
+#ifdef _WIN32
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+#endif
         saucer::webview webview;
 
         std::array<std::uint8_t, 97> data{
@@ -102,7 +116,7 @@ suite webview_suite = []
 
         auto callback = [&](const std::string &url)
         {
-            if (url.starts_with("saucer"))
+            if (url.find("saucer") != std::string::npos)
             {
                 return;
             }

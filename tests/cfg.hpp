@@ -18,4 +18,4 @@ namespace cfg
 } // namespace cfg
 
 template <class... Ts>
-inline auto boost::ut::cfg<boost::ut::override, Ts...> = cfg::runner{}; // NOLINT(cert-err58-cpp)
+inline auto boost::ut::cfg<boost::ut::override, Ts...> = cfg::runner{};
