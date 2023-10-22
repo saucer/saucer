@@ -52,20 +52,12 @@ namespace saucer
         m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted,
                                   [this]() { m_impl->dom_loaded = false; });
 
-        QWebEngineScript dom_loaded;
-        dom_loaded.setName("dom_loaded");
-        dom_loaded.setRunsOnSubFrames(false);
-        dom_loaded.setWorldId(QWebEngineScript::MainWorld);
-        dom_loaded.setInjectionPoint(QWebEngineScript::DocumentReady);
-        dom_loaded.setSourceCode("window.saucer.on_message('dom_loaded')");
-
-        m_impl->web_view->page()->scripts().insert(dom_loaded);
-
         window::m_impl->on_closed = [this]
         {
             set_dev_tools(false);
         };
 
+        inject(impl::ready_script, load_time::ready);
         inject(impl::inject_script, load_time::creation);
 
         window::m_impl->window->setCentralWidget(m_impl->web_view);
@@ -205,6 +197,8 @@ namespace saucer
         }
 
         m_impl->web_view->page()->scripts().clear();
+
+        inject(impl::ready_script, load_time::ready);
         inject(impl::inject_script, load_time::creation);
     }
 

@@ -6,6 +6,8 @@
 
 namespace saucer
 {
+    const std::string webview::impl::ready_script = "window.saucer.on_message('dom_loaded')";
+
     const std::string webview::impl::inject_script = []()
     {
         QFile web_channel_api(":/qtwebchannel/qwebchannel.js");

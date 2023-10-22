@@ -41,7 +41,7 @@ namespace saucer
         case load_time::ready:
             check_previous("_ready");
             script.setName("_ready");
-            script.setInjectionPoint(QWebEngineScript::DocumentCreation);
+            script.setInjectionPoint(QWebEngineScript::DocumentReady);
             break;
         }
 
