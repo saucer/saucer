@@ -84,4 +84,51 @@ namespace saucer
 
         request->reply(QString::fromStdString(file.mime).toUtf8(), buffer);
     }
+
+    template <>
+    void webview::impl::setup<web_event::load_finished>(webview *self)
+    {
+        if (load_finished)
+        {
+            return;
+        }
+
+        auto handler = [self](bool success)
+        {
+            if (!success)
+            {
+                return;
+            }
+
+            self->m_events.at<web_event::load_finished>().fire();
+        };
+
+        load_finished = web_view->connect(web_view, &QWebEngineView::loadFinished, handler);
+    }
+
+    template <>
+    void webview::impl::setup<web_event::url_changed>(webview *self)
+    {
+        if (url_changed)
+        {
+            return;
+        }
+
+        auto handler = [self](const QUrl &url)
+        {
+            self->m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
+        };
+
+        url_changed = web_view->connect(web_view, &QWebEngineView::urlChanged, handler);
+    }
+
+    template <>
+    void webview::impl::setup<web_event::load_started>(webview *)
+    {
+    }
+
+    template <>
+    void webview::impl::setup<web_event::dom_ready>(webview *)
+    {
+    }
 } // namespace saucer

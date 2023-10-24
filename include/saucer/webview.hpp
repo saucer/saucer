@@ -88,17 +88,12 @@ namespace saucer
         using window::remove;
         [[sc::thread_safe]] void remove(web_event event, std::uint64_t id);
 
+        using window::once;
+        template <web_event Event>
+        [[sc::thread_safe]] void once(events::type_t<Event> &&callback);
+
         using window::on;
         template <web_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&callback) = delete;
+        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&callback);
     };
-
-    template <>
-    std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&callback);
-    template <>
-    std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&callback);
-    template <>
-    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback);
-    template <>
-    std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&callback);
 } // namespace saucer

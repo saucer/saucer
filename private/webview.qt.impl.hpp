@@ -43,6 +43,10 @@ namespace saucer
         QMetaObject::Connection load_finished;
 
       public:
+        template <web_event>
+        void setup(webview *);
+
+      public:
         static const std::string ready_script;
         static const std::string inject_script;
         static constexpr std::string_view scheme_prefix = "saucer:/";

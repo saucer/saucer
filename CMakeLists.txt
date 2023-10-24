@@ -152,7 +152,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        2.1
+  VERSION        2.3
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
 )
 
