@@ -294,22 +294,24 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <>
-    std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&callback)
+    template void window::once<window_event::close>(events::type_t<window_event::close> &&);
+    template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
+    template void window::once<window_event::resize>(events::type_t<window_event::resize> &&);
+
+    template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
+    template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
+    template std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
+
+    template <window_event Event>
+    void window::once(events::type_t<Event> &&callback)
     {
-        return m_events.at<window_event::close>().add(std::move(callback));
+        m_events.at<Event>().once(std::move(callback));
     }
 
-    template <>
-    std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&callback)
+    template <window_event Event>
+    std::uint64_t window::on(events::type_t<Event> &&callback)
     {
-        return m_events.at<window_event::closed>().add(std::move(callback));
-    }
-
-    template <>
-    std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&callback)
-    {
-        return m_events.at<window_event::resize>().add(std::move(callback));
+        return m_events.at<Event>().add(std::move(callback));
     }
 
     template <>

@@ -87,17 +87,13 @@ namespace saucer
         [[sc::thread_safe]] void remove(window_event event, std::uint64_t id);
 
         template <window_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&) = delete;
+        [[sc::thread_safe]] void once(events::type_t<Event> &&);
+
+        template <window_event Event>
+        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&);
 
       public:
         template <bool Blocking = true>
         static void run();
     };
-
-    template <>
-    std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
-    template <>
-    std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
-    template <>
-    std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
 } // namespace saucer
