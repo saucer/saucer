@@ -9,7 +9,7 @@ int main()
     webview.embed(saucer::embedded::all());
     webview.set_size(500, 600);
 
-    webview.run_java_script(R"js(
+    webview.execute(R"js(
         const text = document.createElement('p');
         text.innerText = "來自 C++ 和 Unicode 的問候！";
 

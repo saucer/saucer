@@ -181,7 +181,7 @@ namespace saucer
         auto id = m_id_counter++;
         m_impl->evaluations.write()->emplace(id, std::move(resolve));
 
-        run_java_script(fmt::format(
+        execute(fmt::format(
             R"(
                 (async () =>
                     window.saucer._resolve({}, {})
@@ -194,7 +194,7 @@ namespace saucer
     {
         using underlying = std::underlying_type_t<serializer_error>;
 
-        run_java_script(fmt::format(
+        execute(fmt::format(
             R"(
                 window.saucer._rpc[{0}].reject("{1}");
                 delete window.saucer._rpc[{0}];
@@ -204,7 +204,7 @@ namespace saucer
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
     {
-        run_java_script(fmt::format(
+        execute(fmt::format(
             R"(
                 window.saucer._rpc[{0}].resolve({1});
                 delete window.saucer._rpc[{0}];

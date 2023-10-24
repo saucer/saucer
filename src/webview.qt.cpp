@@ -82,7 +82,7 @@ namespace saucer
 
         for (const auto &pending : m_impl->pending)
         {
-            run_java_script(pending);
+            execute(pending);
         }
 
         m_impl->pending.clear();
@@ -225,11 +225,11 @@ namespace saucer
         m_impl->scheme_handler = nullptr;
     }
 
-    void webview::run_java_script(const std::string &java_script)
+    void webview::execute(const std::string &java_script)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, java_script] { run_java_script(java_script); });
+            return window::m_impl->post_safe([this, java_script] { execute(java_script); });
         }
 
         if (!m_impl->dom_loaded)

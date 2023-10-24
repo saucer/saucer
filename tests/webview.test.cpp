@@ -80,7 +80,7 @@ suite webview_suite = []
 
                     first = true;
                     webview.clear_scripts();
-                    webview.run_java_script("window.location = 'https://www.google.com'");
+                    webview.execute("window.location = 'https://www.google.com'");
 
                     return;
                 }
