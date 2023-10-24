@@ -14,7 +14,7 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    webview::webview(const options &options) : m_impl(std::make_unique<impl>())
+    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
 
