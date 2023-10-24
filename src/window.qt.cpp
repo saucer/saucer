@@ -259,13 +259,13 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template void window::once<window_event::close>(events::type_t<window_event::close> &&);
-    template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
     template void window::once<window_event::resize>(events::type_t<window_event::resize> &&);
+    template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
+    template void window::once<window_event::close>(events::type_t<window_event::close> &&);
 
-    template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
-    template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
     template std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
+    template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
+    template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
 
     template <window_event Event>
     void window::once(events::type_t<Event> &&callback)
