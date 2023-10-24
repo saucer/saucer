@@ -87,6 +87,18 @@ namespace saucer
                                                      }},
                                                  nullptr);
 
+        // TODO: This is currently done to match the QWebEngineView behavior.
+        // TODO: However we should eventually add an event to make it possible to handle this on your own (i.e. also
+        // TODO: implement new-windows in the Qt backend).
+
+        m_impl->web_view->add_NewWindowRequested(mcb{[](auto, auto *args)
+                                                     {
+                                                         args->put_Handled(true);
+
+                                                         return S_OK;
+                                                     }},
+                                                 nullptr);
+
         ComPtr<ICoreWebView2_2> webview2_2;
         m_impl->web_view->QueryInterface(IID_PPV_ARGS(&webview2_2));
 
