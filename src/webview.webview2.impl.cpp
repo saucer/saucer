@@ -204,4 +204,48 @@ namespace saucer
 
         return original();
     }
+
+    template <>
+    void webview::impl::setup<web_event::load_finished>(webview *self)
+    {
+        if (load_finished.value > 0)
+        {
+            return;
+        }
+
+        auto handler = mcb{[self](auto...)
+                           {
+                               self->m_events.at<web_event::load_finished>().fire();
+                               return S_OK;
+                           }};
+
+        web_view->add_NavigationCompleted(handler, &load_finished);
+    }
+
+    template <>
+    void webview::impl::setup<web_event::load_started>(webview *self)
+    {
+    }
+
+    template <>
+    void webview::impl::setup<web_event::url_changed>(webview *self)
+    {
+        if (url_changed.value > 0)
+        {
+            return;
+        }
+
+        auto handler = mcb{[self](auto...)
+                           {
+                               self->m_events.at<web_event::url_changed>().fire(self->url());
+                               return S_OK;
+                           }};
+
+        web_view->add_SourceChanged(handler, &url_changed);
+    }
+
+    template <>
+    void webview::impl::setup<web_event::dom_ready>(webview *self)
+    {
+    }
 } // namespace saucer

@@ -347,57 +347,27 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template <>
-    std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&callback)
+    template void webview::once<web_event::load_finished>(events::type_t<web_event::load_finished> &&);
+    template void webview::once<web_event::load_started>(events::type_t<web_event::load_started> &&);
+    template void webview::once<web_event::url_changed>(events::type_t<web_event::url_changed> &&);
+    template void webview::once<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&);
+
+    template std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&);
+    template std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&);
+    template std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&);
+    template std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&);
+
+    template <web_event Event>
+    void webview::once(events::type_t<Event> &&callback)
     {
-        auto rtn = m_events.at<web_event::load_finished>().add(std::move(callback));
-
-        if (m_impl->load_finished.value > 0)
-        {
-            return rtn;
-        }
-
-        auto handler = mcb{[this](auto...)
-                           {
-                               m_events.at<web_event::load_finished>().fire();
-                               return S_OK;
-                           }};
-
-        m_impl->web_view->add_NavigationCompleted(handler, &m_impl->load_finished);
-
-        return rtn;
+        m_impl->setup<Event>(this);
+        m_events.at<Event>().once(std::move(callback));
     }
 
-    template <>
-    std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&callback)
+    template <web_event Event>
+    std::uint64_t webview::on(events::type_t<Event> &&callback)
     {
-        return m_events.at<web_event::load_started>().add(std::move(callback));
-    }
-
-    template <>
-    std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&callback)
-    {
-        auto rtn = m_events.at<web_event::url_changed>().add(std::move(callback));
-
-        if (m_impl->url_changed.value > 0)
-        {
-            return rtn;
-        }
-
-        auto handler = mcb{[this](auto...)
-                           {
-                               m_events.at<web_event::url_changed>().fire(url());
-                               return S_OK;
-                           }};
-
-        m_impl->web_view->add_SourceChanged(handler, &m_impl->url_changed);
-
-        return rtn;
-    }
-
-    template <>
-    std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&callback)
-    {
-        return m_events.at<web_event::dom_ready>().add(std::move(callback));
+        m_impl->setup<Event>(this);
+        return m_events.at<Event>().add(std::move(callback));
     }
 } // namespace saucer

@@ -52,6 +52,10 @@ namespace saucer
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+
+      public:
+        template <web_event>
+        void setup(webview *);
     };
 
     /*
