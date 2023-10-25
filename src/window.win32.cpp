@@ -64,6 +64,41 @@ namespace saucer
         DestroyWindow(m_impl->hwnd);
     }
 
+    bool window::focused() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return focused(); });
+        }
+
+        return m_impl->hwnd == GetForegroundWindow();
+    }
+
+    bool window::minimized() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return minimized(); });
+        }
+
+        return IsIconic(m_impl->hwnd);
+    }
+
+    bool window::maximized() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return maximized(); });
+        }
+
+        WINDOWPLACEMENT placement;
+        placement.length = sizeof(WINDOWPLACEMENT);
+
+        GetWindowPlacement(m_impl->hwnd, &placement);
+
+        return placement.showCmd == SW_SHOWMAXIMIZED;
+    }
+
     bool window::resizable() const
     {
         if (!m_impl->is_thread_safe())
@@ -175,6 +210,16 @@ namespace saucer
         ShowWindow(m_impl->hwnd, SW_SHOW);
     }
 
+    void window::focus()
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { focus(); });
+        }
+
+        SetForegroundWindow(m_impl->hwnd);
+    }
+
     void window::close()
     {
         if (!m_impl->is_thread_safe())
@@ -183,6 +228,16 @@ namespace saucer
         }
 
         DestroyWindow(m_impl->hwnd);
+    }
+
+    void window::set_minimized(bool enabled)
+    {
+        ShowWindow(m_impl->hwnd, enabled ? SW_MINIMIZE : SW_RESTORE);
+    }
+
+    void window::set_maximized(bool enabled)
+    {
+        ShowWindow(m_impl->hwnd, enabled ? SW_MAXIMIZE : SW_RESTORE);
     }
 
     void window::set_resizable(bool enabled)
@@ -294,13 +349,19 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template void window::once<window_event::close>(events::type_t<window_event::close> &&);
-    template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
+    template void window::once<window_event::minimize>(events::type_t<window_event::minimize> &&);
+    template void window::once<window_event::maximize>(events::type_t<window_event::maximize> &&);
     template void window::once<window_event::resize>(events::type_t<window_event::resize> &&);
+    template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
+    template void window::once<window_event::focus>(events::type_t<window_event::focus> &&);
+    template void window::once<window_event::close>(events::type_t<window_event::close> &&);
 
-    template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
-    template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
+    template std::uint64_t window::on<window_event::minimize>(events::type_t<window_event::minimize> &&);
+    template std::uint64_t window::on<window_event::maximize>(events::type_t<window_event::maximize> &&);
     template std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
+    template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
+    template std::uint64_t window::on<window_event::focus>(events::type_t<window_event::focus> &&);
+    template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
 
     template <window_event Event>
     void window::once(events::type_t<Event> &&callback)

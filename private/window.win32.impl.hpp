@@ -16,6 +16,7 @@ namespace saucer
         std::thread::id creation_thread;
 
       public:
+        UINT last_state;
         color background;
         std::function<void()> change_background;
 

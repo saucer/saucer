@@ -30,14 +30,20 @@ namespace saucer
     {
         auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
-        if (!window)
+        auto original = [&]()
         {
             return DefWindowProcW(hwnd, msg, w_param, l_param);
+        };
+
+        if (!window)
+        {
+            return original();
         }
 
         if (msg == window->window::m_impl->WM_SAFE_CALL)
         {
             delete reinterpret_cast<message *>(l_param);
+            return original();
         }
 
         switch (msg)
@@ -56,9 +62,38 @@ namespace saucer
 
             break;
         }
+        case WM_NCACTIVATE:
+            window->m_events.at<window_event::focus>().fire(w_param);
+            break;
         case WM_SIZE: {
+            switch (w_param)
+            {
+            case SIZE_MAXIMIZED:
+                window->m_impl->last_state = SIZE_MAXIMIZED;
+                window->m_events.at<window_event::maximize>().fire(true);
+                break;
+            case SIZE_MINIMIZED:
+                window->m_impl->last_state = SIZE_MINIMIZED;
+                window->m_events.at<window_event::minimize>().fire(true);
+                break;
+            case SIZE_RESTORED:
+                switch (window->m_impl->last_state)
+                {
+                case SIZE_MAXIMIZED:
+                    window->m_events.at<window_event::maximize>().fire(false);
+                    break;
+                case SIZE_MINIMIZED:
+                    window->m_events.at<window_event::minimize>().fire(false);
+                    break;
+                }
+
+                window->m_impl->last_state = SIZE_RESTORED;
+                break;
+            }
+
             auto [width, height] = window->size();
             window->m_events.at<window_event::resize>().fire(width, height);
+
             break;
         }
         case WM_DESTROY:
@@ -84,6 +119,6 @@ namespace saucer
         }
         }
 
-        return DefWindowProcW(hwnd, msg, w_param, l_param);
+        return original();
     }
 } // namespace saucer
