@@ -133,7 +133,7 @@ include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        2.4
+  VERSION        2.5
   GIT_REPOSITORY "https://github.com/Soundux/lockpp"
 )
 
