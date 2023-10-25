@@ -48,4 +48,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Pre-Built
-          path: build/saucer-artifact
+          path: saucer-artifact
