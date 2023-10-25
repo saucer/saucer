@@ -41,6 +41,9 @@ namespace saucer
         main_window(class window *parent);
 
       public:
+        void changeEvent(QEvent *event) override;
+
+      public:
         void closeEvent(QCloseEvent *event) override;
 
       public:

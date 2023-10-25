@@ -14,8 +14,11 @@ namespace saucer
 {
     enum class window_event : std::uint8_t
     {
+        maximize,
+        minimize,
         closed,
         resize,
+        focus,
         close,
     };
 
@@ -35,6 +38,9 @@ namespace saucer
       private:
         using events = ereignis::manager<                          //
             ereignis::event<window_event::resize, void(int, int)>, //
+            ereignis::event<window_event::maximize, void(bool)>,   //
+            ereignis::event<window_event::minimize, void(bool)>,   //
+            ereignis::event<window_event::focus, void(bool)>,      //
             ereignis::event<window_event::closed, void()>,         //
             ereignis::event<window_event::close, bool()>           //
             >;
@@ -48,6 +54,11 @@ namespace saucer
 
       public:
         virtual ~window();
+
+      public:
+        [[sc::thread_safe]] [[nodiscard]] bool focused() const;
+        [[sc::thread_safe]] [[nodiscard]] bool minimized() const;
+        [[sc::thread_safe]] [[nodiscard]] bool maximized() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool resizable() const;
@@ -66,7 +77,12 @@ namespace saucer
       public:
         [[sc::thread_safe]] void hide();
         [[sc::thread_safe]] void show();
+        [[sc::thread_safe]] void focus();
         [[sc::thread_safe]] void close();
+
+      public:
+        [[sc::thread_safe]] void set_minimized(bool enabled);
+        [[sc::thread_safe]] void set_maximized(bool enabled);
 
       public:
         [[sc::thread_safe]] void set_resizable(bool enabled);

@@ -45,6 +45,36 @@ namespace saucer
         m_impl->window->deleteLater();
     }
 
+    bool window::focused() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return focused(); });
+        }
+
+        return m_impl->window->isActiveWindow();
+    }
+
+    bool window::minimized() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return minimized(); });
+        }
+
+        return m_impl->window->isMinimized();
+    }
+
+    bool window::maximized() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return maximized(); });
+        }
+
+        return m_impl->window->isMaximized();
+    }
+
     bool window::resizable() const
     {
         if (!m_impl->is_thread_safe())
@@ -147,6 +177,16 @@ namespace saucer
         m_impl->window->show();
     }
 
+    void window::focus()
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return focus(); });
+        }
+
+        m_impl->window->activateWindow();
+    }
+
     void window::close()
     {
         if (!m_impl->is_thread_safe())
@@ -155,6 +195,48 @@ namespace saucer
         }
 
         m_impl->window->close();
+    }
+
+    void window::set_minimized(bool enabled)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([enabled, this] { return set_minimized(enabled); });
+        }
+
+        auto state = m_impl->window->windowState();
+
+        if (enabled)
+        {
+            state |= Qt::WindowState::WindowMinimized;
+        }
+        else
+        {
+            state &= ~Qt::WindowState::WindowMinimized;
+        }
+
+        m_impl->window->setWindowState(state);
+    }
+
+    void window::set_maximized(bool enabled)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([enabled, this] { return set_maximized(enabled); });
+        }
+
+        auto state = m_impl->window->windowState();
+
+        if (enabled)
+        {
+            state |= Qt::WindowState::WindowMaximized;
+        }
+        else
+        {
+            state &= ~Qt::WindowState::WindowMaximized;
+        }
+
+        m_impl->window->setWindowState(state);
     }
 
     void window::set_resizable(bool enabled)
@@ -259,12 +341,18 @@ namespace saucer
         m_events.remove(event, id);
     }
 
+    template void window::once<window_event::minimize>(events::type_t<window_event::minimize> &&);
+    template void window::once<window_event::maximize>(events::type_t<window_event::maximize> &&);
     template void window::once<window_event::resize>(events::type_t<window_event::resize> &&);
     template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
+    template void window::once<window_event::focus>(events::type_t<window_event::focus> &&);
     template void window::once<window_event::close>(events::type_t<window_event::close> &&);
 
+    template std::uint64_t window::on<window_event::minimize>(events::type_t<window_event::minimize> &&);
+    template std::uint64_t window::on<window_event::maximize>(events::type_t<window_event::maximize> &&);
     template std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
     template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
+    template std::uint64_t window::on<window_event::focus>(events::type_t<window_event::focus> &&);
     template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
 
     template <window_event Event>

@@ -6,6 +6,34 @@ namespace saucer
 {
     window::impl::main_window::main_window(class window *parent) : m_parent(parent) {}
 
+    void window::impl::main_window::changeEvent(QEvent *event)
+    {
+        QMainWindow::changeEvent(event);
+
+        if (event->type() == QEvent::ActivationChange)
+        {
+            m_parent->m_events.at<window_event::focus>().fire(isActiveWindow());
+            return;
+        }
+
+        if (event->type() != QEvent::WindowStateChange)
+        {
+            return;
+        }
+
+        auto *old = static_cast<QWindowStateChangeEvent *>(event);
+
+        if (old->oldState().testFlag(Qt::WindowState::WindowMaximized) != isMaximized())
+        {
+            m_parent->m_events.at<window_event::maximize>().fire(isMaximized());
+        }
+
+        if (old->oldState().testFlag(Qt::WindowState::WindowMinimized) != isMinimized())
+        {
+            m_parent->m_events.at<window_event::minimize>().fire(isMinimized());
+        }
+    }
+
     void window::impl::main_window::closeEvent(QCloseEvent *event)
     {
         for (const auto &result : m_parent->m_events.at<window_event::close>().fire())
