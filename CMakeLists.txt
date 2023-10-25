@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(saucer LANGUAGES CXX VERSION 2.0)
+project(saucer LANGUAGES CXX VERSION 2.0.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
@@ -139,7 +139,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_callable_traits
-  GIT_TAG        2a56a3a
+  GIT_TAG        boost-1.83.0
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
 )
 
