@@ -239,18 +239,18 @@ endif()
 #   of our dependencies and link against our static-lib.
 # --------------------------------------------------------------------------------------------------------
 
-install(TARGETS  ${PROJECT_NAME} 
-        EXPORT   ${PROJECT_NAME}-artifact
-        INCLUDES DESTINATION include
-        LIBRARY  DESTINATION lib
-        ARCHIVE  DESTINATION lib
-        RUNTIME  DESTINATION bin
+install(TARGETS ${PROJECT_NAME} 
+        EXPORT  ${PROJECT_NAME}-artifact
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
 )
 
 if (saucer_prefer_remote AND saucer_backend STREQUAL "WebView2")
   install(FILES ${webview2_lib_path} DESTINATION lib)
 endif()
 
+install(DIRECTORY "include/saucer" TYPE INCLUDE)
 install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
 install(DIRECTORY "$<TARGET_PROPERTY:glaze_glaze,INTERFACE_INCLUDE_DIRECTORIES>/glaze" TYPE INCLUDE)
 install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
