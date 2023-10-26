@@ -86,12 +86,12 @@ namespace saucer
 
     smartview_core::~smartview_core()
     {
-        auto finished = m_impl->pending.read()->empty();
+        auto finished = m_impl->pending.copy().empty();
 
         while (!finished)
         {
             run<false>();
-            finished = m_impl->pending.read()->empty();
+            finished = m_impl->pending.copy().empty();
         }
     }
 
@@ -139,14 +139,17 @@ namespace saucer
             auto id     = m_id_counter++;
             auto future = std::make_shared<impl::pending_future::element_type>();
 
-            m_impl->pending.write()->emplace(id, future);
+            auto locked = m_impl->pending.write();
+            locked->emplace(id, future);
 
             auto fn = [this, future, id, callback, parsed = std::move(parsed)]()
             {
                 auto *message = static_cast<function_data *>(parsed.get());
 
                 call(*message, callback);
-                m_impl->pending.write()->erase(id);
+
+                auto locked = m_impl->pending.write();
+                locked->erase(id);
             };
 
             *future = std::async(std::launch::async, std::move(fn));
@@ -179,7 +182,11 @@ namespace saucer
     void smartview_core::add_evaluation(serializer::resolver &&resolve, const std::string &code)
     {
         auto id = m_id_counter++;
-        m_impl->evaluations.write()->emplace(id, std::move(resolve));
+
+        {
+            auto locked = m_impl->evaluations.write();
+            locked->emplace(id, std::move(resolve));
+        }
 
         execute(fmt::format(
             R"(
