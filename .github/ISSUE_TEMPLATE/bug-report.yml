@@ -1,0 +1,72 @@
+name: 🐛 Bug Report
+description: Report a bug in the current version of saucer
+labels: ["bug"]
+assignees: Curve
+
+body:
+  - type: textarea
+    attributes:
+      label: ✍️ Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 🔁 Steps to reproduce
+      description: Steps to reproduce the behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: ❔ Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: 👀 Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: 🛸 Saucer Version
+      description: Please state the version of saucer this bug occurs on here.
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: 🖥️ Operating System
+      description: The operating system the problem occurred on.
+      options:
+        - Linux
+        - Windows 10
+        - Windows 11
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: 🖥️ Distribution
+      description: "If you're using linux or a special windows version please state it here"
+    validations:
+      required: false
+
+  - type: checkboxes
+    attributes:
+      label: ✅ I confirm that...
+      description: Please confirm these things by clicking the checkboxes
+      options:
+        - label: I have collected all the required information and read all the comments in this document
+          required: true
+        - label: I searched for an existing bug report for this issue
+          required: true
+        - label: the problem does occur with the reproduction steps I provided
+          required: true
+        - label: what I described is indeed a problem
+          required: true
