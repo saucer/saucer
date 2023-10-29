@@ -168,7 +168,14 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC lockpp boost_callable_traits tl::expected glaze::glaze ereignis fmt)
+CPMFindPackage(
+  NAME           flagpp
+  VERSION        2.0
+  GIT_REPOSITORY "https://github.com/Curve/flagpp"
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE cr::flagpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC  lockpp boost_callable_traits tl::expected glaze::glaze ereignis fmt)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Linkage

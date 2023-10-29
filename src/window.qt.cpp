@@ -2,6 +2,10 @@
 #include "window.qt.impl.hpp"
 
 #include <QWindow>
+#include <flagpp/flags.hpp>
+
+template <>
+static inline constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
@@ -207,6 +211,35 @@ namespace saucer
         }
 
         m_impl->window->windowHandle()->startSystemMove();
+    }
+
+    void window::start_resize(window_edge edge)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([edge, this] { return start_resize(edge); });
+        }
+
+        Qt::Edges translated;
+
+        if (edge & window_edge::top)
+        {
+            translated |= Qt::Edge::TopEdge;
+        }
+        if (edge & window_edge::bottom)
+        {
+            translated |= Qt::Edge::BottomEdge;
+        }
+        if (edge & window_edge::left)
+        {
+            translated |= Qt::Edge::LeftEdge;
+        }
+        if (edge & window_edge::right)
+        {
+            translated |= Qt::Edge::RightEdge;
+        }
+
+        m_impl->window->windowHandle()->startSystemResize(translated);
     }
 
     void window::set_minimized(bool enabled)

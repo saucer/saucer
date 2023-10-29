@@ -1,4 +1,6 @@
 #include "webview.hpp"
+
+#include "requests.hpp"
 #include "window.qt.impl.hpp"
 #include "webview.qt.impl.hpp"
 
@@ -88,7 +90,24 @@ namespace saucer
             return true;
         }
 
-        if (message == "start_drag")
+        static constexpr auto opts = glz::opts{.error_on_unknown_keys = true, .error_on_missing_keys = true};
+
+        request req;
+
+        if (glz::read<opts>(req, message) != glz::error_code::none)
+        {
+            return false;
+        }
+
+        if (std::holds_alternative<resize_request>(req))
+        {
+            auto data = std::get<resize_request>(req);
+            start_resize(static_cast<window_edge>(data.edge));
+
+            return true;
+        }
+
+        if (std::holds_alternative<drag_request>(req))
         {
             start_drag();
             return true;

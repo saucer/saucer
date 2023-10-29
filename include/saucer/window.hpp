@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <memory>
 
@@ -20,6 +21,14 @@ namespace saucer
         resize,
         focus,
         close,
+    };
+
+    enum class window_edge : std::uint8_t
+    {
+        top    = 1 << 0,
+        bottom = 1 << 1,
+        left   = 1 << 2,
+        right  = 1 << 3,
     };
 
     struct options
@@ -81,7 +90,10 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void focus();
+
+      public:
         [[sc::thread_safe]] void start_drag();
+        [[sc::thread_safe]] void start_resize(window_edge edge);
 
       public:
         [[sc::thread_safe]] void set_minimized(bool enabled);

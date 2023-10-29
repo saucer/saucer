@@ -22,15 +22,32 @@ namespace saucer
 
         return content +
                R"js(
+
                 window.saucer = 
                 {
+                    window_edge:
+                    {
+                        top:    1,
+                        bottom: 2,
+                        left:   4,
+                        right:  8,
+                    },
                     on_message: async (message) =>
                     {
                         (await window._saucer).on_message(message);
                     },
                     start_drag: async () =>
                     {
-                        await window.saucer.on_message('start_drag');
+                        await window.saucer.on_message(JSON.stringify({
+                            ["saucer:drag"]: true
+                        }));
+                    },
+                    start_resize: async (edge) =>
+                    {
+                        await window.saucer.on_message(JSON.stringify({
+                            ["saucer:resize"]: true,
+                            edge,
+                        }));
                     }
                 };
 
