@@ -42,6 +42,9 @@ Checks: "*,
         -cert-err58-cpp,
         -performance-no-int-to-ptr,
         -cppcoreguidelines-interfaces-global-init,
+        -*-avoid-c-arrays,
+        -hicpp-no-array-decay
+        -*-array-to-pointer-decay
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
