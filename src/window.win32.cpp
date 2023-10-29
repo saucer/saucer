@@ -9,7 +9,7 @@
 #include <flagpp/flags.hpp>
 
 template <>
-static inline constexpr bool flagpp::enabled<saucer::window_edge> = true;
+constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
