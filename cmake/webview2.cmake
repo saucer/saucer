@@ -1,7 +1,7 @@
 include("cmake/nuget.cmake")
 
 if (NOT saucer_prefer_remote)
-    find_package(webview CONFIG REQUIRED)
+    find_package(webview2 CONFIG REQUIRED)
     return()
 endif()
 
