@@ -66,8 +66,8 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
 
       public:
-        [[sc::thread_safe]] [[nodiscard]] std::string title() const;
         [[sc::thread_safe]] [[nodiscard]] color background() const;
+        [[sc::thread_safe]] [[nodiscard]] std::string title() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] std::pair<int, int> size() const;
@@ -77,8 +77,11 @@ namespace saucer
       public:
         [[sc::thread_safe]] void hide();
         [[sc::thread_safe]] void show();
-        [[sc::thread_safe]] void focus();
         [[sc::thread_safe]] void close();
+
+      public:
+        [[sc::thread_safe]] void focus();
+        [[sc::thread_safe]] void start_drag();
 
       public:
         [[sc::thread_safe]] void set_minimized(bool enabled);

@@ -1,6 +1,8 @@
 #include "window.hpp"
 #include "window.qt.impl.hpp"
 
+#include <QWindow>
+
 namespace saucer
 {
     window::window(const options &options) : m_impl(std::make_unique<impl>())
@@ -95,16 +97,6 @@ namespace saucer
         return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
     }
 
-    std::string window::title() const
-    {
-        if (!m_impl->is_thread_safe())
-        {
-            return m_impl->post_safe([this] { return title(); });
-        }
-
-        return m_impl->window->windowTitle().toStdString();
-    }
-
     color window::background() const
     {
         const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
@@ -115,6 +107,16 @@ namespace saucer
             static_cast<std::uint8_t>(color.blue()),
             static_cast<std::uint8_t>(color.alpha()),
         };
+    }
+
+    std::string window::title() const
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return title(); });
+        }
+
+        return m_impl->window->windowTitle().toStdString();
     }
 
     bool window::always_on_top() const
@@ -177,6 +179,16 @@ namespace saucer
         m_impl->window->show();
     }
 
+    void window::close()
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return close(); });
+        }
+
+        m_impl->window->close();
+    }
+
     void window::focus()
     {
         if (!m_impl->is_thread_safe())
@@ -187,14 +199,14 @@ namespace saucer
         m_impl->window->activateWindow();
     }
 
-    void window::close()
+    void window::start_drag()
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this] { return close(); });
+            return m_impl->post_safe([this] { return start_drag(); });
         }
 
-        m_impl->window->close();
+        m_impl->window->windowHandle()->startSystemMove();
     }
 
     void window::set_minimized(bool enabled)

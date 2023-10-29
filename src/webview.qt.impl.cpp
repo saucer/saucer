@@ -24,9 +24,13 @@ namespace saucer
                R"js(
                 window.saucer = 
                 {
-                    async on_message(message)
+                    on_message: async (message) =>
                     {
                         (await window._saucer).on_message(message);
+                    },
+                    start_drag: async () =>
+                    {
+                        await window.saucer.on_message('start_drag');
                     }
                 };
 

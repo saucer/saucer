@@ -71,22 +71,30 @@ namespace saucer
     // ? The window destructor will implicitly delete the web_view
     webview::~webview() = default;
 
-    void webview::on_message(const std::string &message)
+    bool webview::on_message(const std::string &message)
     {
-        if (message != "dom_loaded")
+        if (message == "dom_loaded")
         {
-            return;
+            m_impl->dom_loaded = true;
+
+            for (const auto &pending : m_impl->pending)
+            {
+                execute(pending);
+            }
+
+            m_impl->pending.clear();
+            m_events.at<web_event::dom_ready>().fire();
+
+            return true;
         }
 
-        m_impl->dom_loaded = true;
-
-        for (const auto &pending : m_impl->pending)
+        if (message == "start_drag")
         {
-            execute(pending);
+            start_drag();
+            return true;
         }
 
-        m_impl->pending.clear();
-        m_events.at<web_event::dom_ready>().fire();
+        return false;
     }
 
     bool webview::dev_tools() const
