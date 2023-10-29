@@ -1,4 +1,5 @@
 #pragma once
+
 #include "future.hpp"
 
 namespace saucer

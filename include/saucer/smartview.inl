@@ -1,4 +1,5 @@
 #pragma once
+
 #include "smartview.hpp"
 
 namespace saucer

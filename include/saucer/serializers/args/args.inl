@@ -1,4 +1,5 @@
 #pragma once
+
 #include "args.hpp"
 
 namespace saucer
