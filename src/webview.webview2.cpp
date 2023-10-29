@@ -1,7 +1,9 @@
 #include "webview.hpp"
+#include "webview.webview2.impl.hpp"
+
+#include "requests.hpp"
 #include "utils.win32.hpp"
 #include "window.win32.impl.hpp"
-#include "webview.webview2.impl.hpp"
 
 #include <cassert>
 #include <filesystem>
@@ -130,13 +132,30 @@ namespace saucer
 
     bool webview::on_message(const std::string &message)
     {
-        if (message != "start_drag")
+        static constexpr auto opts = glz::opts{.error_on_unknown_keys = true, .error_on_missing_keys = true};
+
+        request req;
+
+        if (glz::read<opts>(req, message) != glz::error_code::none)
         {
             return false;
         }
 
-        start_drag();
-        return true;
+        if (std::holds_alternative<resize_request>(req))
+        {
+            auto data = std::get<resize_request>(req);
+            start_resize(static_cast<window_edge>(data.edge));
+
+            return true;
+        }
+
+        if (std::holds_alternative<drag_request>(req))
+        {
+            start_drag();
+            return true;
+        }
+
+        return false;
     }
 
     bool webview::dev_tools() const

@@ -170,7 +170,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           flagpp
-  VERSION        2.0
+  VERSION        2.1
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
 )
 
@@ -215,7 +215,7 @@ if (saucer_backend STREQUAL "WebView2")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
-  target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1 NOMINMAX=1)
 
   include("cmake/webview2.cmake")
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Shlwapi webview2::webview2)

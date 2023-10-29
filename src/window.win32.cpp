@@ -6,6 +6,10 @@
 #include <versionhelpers.h>
 
 #include <fmt/core.h>
+#include <flagpp/flags.hpp>
+
+template <>
+static inline constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
@@ -232,12 +236,54 @@ namespace saucer
         SetForegroundWindow(m_impl->hwnd);
     }
 
+    // The next two methods were fairly simply to implement thanks to Qt!
+    // https://github.com/qt/qtbase/blob/37b6f941ee210e0bc4d65e8e700b6e19eb89c414/src/plugins/platforms/windows/qwindowswindow.cpp#L3028
+
     void window::start_drag()
     {
-        // https://github.com/qt/qtbase/blob/37b6f941ee210e0bc4d65e8e700b6e19eb89c414/src/plugins/platforms/windows/qwindowswindow.cpp#L3028
-
         ReleaseCapture();
         PostMessage(m_impl->hwnd, WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
+    }
+
+    void window::start_resize(saucer::window_edge edge)
+    {
+        DWORD translated{};
+
+        if (edge == window_edge::left)
+        {
+            translated = 0xf001; // SC_SIZELEFT;
+        }
+        else if (edge == window_edge::right)
+        {
+            translated = 0xf002; // SC_SIZERIGHT
+        }
+        else if (edge == window_edge::top)
+        {
+            translated = 0xf003; // SC_SIZETOP
+        }
+        else if (edge == (window_edge::top | window_edge::left))
+        {
+            translated = 0xf004; // SC_SIZETOPLEFT
+        }
+        else if (edge == (window_edge::top | window_edge::right))
+        {
+            translated = 0xf005; // SC_SIZETOPRIGHT
+        }
+        else if (edge == window_edge::bottom)
+        {
+            translated = 0xf006; // SC_SIZEBOTTOM
+        }
+        else if (edge == (window_edge::bottom | window_edge::left))
+        {
+            translated = 0xf007; // SC_SIZEBOTTOMLEFT
+        }
+        else if (edge == (window_edge::bottom | window_edge::right))
+        {
+            translated = 0xf008; // SC_SIZEBOTTOMRIGHT
+        }
+
+        ReleaseCapture();
+        PostMessage(m_impl->hwnd, WM_SYSCOMMAND, translated, 0);
     }
 
     void window::set_minimized(bool enabled)
