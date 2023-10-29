@@ -44,12 +44,12 @@ namespace saucer
         {
             if (!Array.isArray(params))
             {
-                throw "Bad Arguments, expected array";
+                throw 'Bad Arguments, expected array';
             }
 
             if (typeof name !== 'string' && !(name instanceof String))
             {
-                throw "Bad Name, expected string";
+                throw 'Bad Name, expected string';
             }
 
             const id = ++window.saucer._idc;
@@ -108,14 +108,18 @@ namespace saucer
         reject(data.id, result.error());
     }
 
-    void smartview_core::on_message(const std::string &message)
+    bool smartview_core::on_message(const std::string &message)
     {
+        if (webview::on_message(message))
+        {
+            return true;
+        }
+
         auto parsed = m_impl->serializer->parse(message);
 
         if (!parsed)
         {
-            webview::on_message(message);
-            return;
+            return false;
         }
 
         if (auto *message = dynamic_cast<function_data *>(parsed.get()); message)
@@ -125,7 +129,7 @@ namespace saucer
             if (!functions.contains(message->name))
             {
                 reject(message->id, serializer_error::invalid_function);
-                return;
+                return false;
             }
 
             const auto &[async, callback] = functions.at(message->name);
@@ -133,7 +137,7 @@ namespace saucer
             if (!async)
             {
                 call(*message, callback);
-                return;
+                return true;
             }
 
             auto id     = m_id_counter++;
@@ -153,7 +157,7 @@ namespace saucer
             };
 
             *future = std::async(std::launch::async, std::move(fn));
-            return;
+            return true;
         }
 
         if (auto *message = dynamic_cast<result_data *>(parsed.get()); message)
@@ -162,15 +166,17 @@ namespace saucer
 
             if (!evals->contains(message->id))
             {
-                return;
+                return false;
             }
 
             const auto &resolve = evals->at(message->id);
             resolve(*message);
 
             evals->erase(message->id);
-            return;
+            return true;
         }
+
+        return false;
     }
 
     void smartview_core::add_function(std::string name, serializer::function &&resolve, bool async)

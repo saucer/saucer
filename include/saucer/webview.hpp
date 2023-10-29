@@ -53,7 +53,7 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
-        virtual void on_message(const std::string &);
+        virtual bool on_message(const std::string &);
 
       public:
         webview(const options & = {});

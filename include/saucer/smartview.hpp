@@ -30,7 +30,7 @@ namespace saucer
         ~smartview_core() override;
 
       protected:
-        void on_message(const std::string &) override;
+        bool on_message(const std::string &) override;
 
       protected:
         [[sc::thread_safe]] void call(function_data &, const serializer::function &);
