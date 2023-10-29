@@ -48,7 +48,7 @@ namespace saucer
         if (options.persistent_cookies && options.storage_path.empty())
         {
             WCHAR appdata[MAX_PATH];
-            SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, 0, appdata);
+            SHGetFolderPathW(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, appdata);
 
             copy.storage_path = fs::path{appdata} / "saucer";
         }
@@ -128,9 +128,15 @@ namespace saucer
 
     webview::~webview() = default;
 
-    void webview::on_message(const std::string &message)
+    bool webview::on_message(const std::string &message)
     {
-        // Nothing to do
+        if (message != "start_drag")
+        {
+            return false;
+        }
+
+        start_drag();
+        return true;
     }
 
     bool webview::dev_tools() const
@@ -156,7 +162,7 @@ namespace saucer
             return window::m_impl->post_safe([this] { return url(); });
         }
 
-        LPWSTR url;
+        LPWSTR url{};
         m_impl->web_view->get_Source(&url);
 
         auto rtn = utils::narrow(url);

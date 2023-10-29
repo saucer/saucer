@@ -12,9 +12,13 @@ namespace saucer
     const std::string webview::impl::inject_script = R"js(
         window.saucer = 
         {
-            async on_message(message)
+            on_message: async (message) =>
             {
                 window.chrome.webview.postMessage(message);
+            },
+            start_drag: async () =>
+            {
+                await window.saucer.on_message('start_drag');
             }
         };
     )js";

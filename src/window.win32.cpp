@@ -130,6 +130,11 @@ namespace saucer
         return GetWindowLong(m_impl->hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST;
     }
 
+    color window::background() const
+    {
+        return m_impl->background;
+    }
+
     std::string window::title() const
     {
         if (!m_impl->is_thread_safe())
@@ -141,14 +146,11 @@ namespace saucer
         std::wstring title(length, '\0');
 
         GetWindowTextW(m_impl->hwnd, title.data(), length);
-        title.resize(title.size() - 1); // Remove null character otherwise comparisons might fail
+
+        // Remove null character otherwise comparisons might fail
+        title.resize(title.size() - 1);
 
         return utils::narrow(title);
-    }
-
-    color window::background() const
-    {
-        return m_impl->background;
     }
 
     std::pair<int, int> window::size() const
@@ -210,6 +212,16 @@ namespace saucer
         ShowWindow(m_impl->hwnd, SW_SHOW);
     }
 
+    void window::close()
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { close(); });
+        }
+
+        DestroyWindow(m_impl->hwnd);
+    }
+
     void window::focus()
     {
         if (!m_impl->is_thread_safe())
@@ -220,14 +232,12 @@ namespace saucer
         SetForegroundWindow(m_impl->hwnd);
     }
 
-    void window::close()
+    void window::start_drag()
     {
-        if (!m_impl->is_thread_safe())
-        {
-            return m_impl->post_safe([this] { close(); });
-        }
+        // https://github.com/qt/qtbase/blob/37b6f941ee210e0bc4d65e8e700b6e19eb89c414/src/plugins/platforms/windows/qwindowswindow.cpp#L3028
 
-        DestroyWindow(m_impl->hwnd);
+        ReleaseCapture();
+        PostMessage(m_impl->hwnd, WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
     }
 
     void window::set_minimized(bool enabled)
