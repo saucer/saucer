@@ -2,6 +2,8 @@
 #include "webview.webview2.impl.hpp"
 
 #include "requests.hpp"
+#include "instantiate.hpp"
+
 #include "utils.win32.hpp"
 #include "window.win32.impl.hpp"
 
@@ -384,16 +386,6 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template void webview::once<web_event::load_finished>(events::type_t<web_event::load_finished> &&);
-    template void webview::once<web_event::load_started>(events::type_t<web_event::load_started> &&);
-    template void webview::once<web_event::url_changed>(events::type_t<web_event::url_changed> &&);
-    template void webview::once<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&);
-
-    template std::uint64_t webview::on<web_event::load_finished>(events::type_t<web_event::load_finished> &&);
-    template std::uint64_t webview::on<web_event::load_started>(events::type_t<web_event::load_started> &&);
-    template std::uint64_t webview::on<web_event::url_changed>(events::type_t<web_event::url_changed> &&);
-    template std::uint64_t webview::on<web_event::dom_ready>(events::type_t<web_event::dom_ready> &&);
-
     template <web_event Event>
     void webview::once(events::type_t<Event> &&callback)
     {
@@ -407,4 +399,6 @@ namespace saucer
         m_impl->setup<Event>(this);
         return m_events.at<Event>().add(std::move(callback));
     }
+
+    INSTANTIATE_EVENTS(webview, 4, web_event)
 } // namespace saucer

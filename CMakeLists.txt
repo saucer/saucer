@@ -174,7 +174,13 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE cr::flagpp)
+CPMFindPackage(
+  NAME           boost_preprocessor
+  GIT_TAG        boost-1.83.0
+  GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC  lockpp boost_callable_traits tl::expected glaze::glaze ereignis fmt)
 
 # --------------------------------------------------------------------------------------------------------

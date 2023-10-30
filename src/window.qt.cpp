@@ -1,6 +1,8 @@
 #include "window.hpp"
 #include "window.qt.impl.hpp"
 
+#include "instantiate.hpp"
+
 #include <QWindow>
 #include <flagpp/flags.hpp>
 
@@ -386,20 +388,6 @@ namespace saucer
         m_events.remove(event, id);
     }
 
-    template void window::once<window_event::minimize>(events::type_t<window_event::minimize> &&);
-    template void window::once<window_event::maximize>(events::type_t<window_event::maximize> &&);
-    template void window::once<window_event::resize>(events::type_t<window_event::resize> &&);
-    template void window::once<window_event::closed>(events::type_t<window_event::closed> &&);
-    template void window::once<window_event::focus>(events::type_t<window_event::focus> &&);
-    template void window::once<window_event::close>(events::type_t<window_event::close> &&);
-
-    template std::uint64_t window::on<window_event::minimize>(events::type_t<window_event::minimize> &&);
-    template std::uint64_t window::on<window_event::maximize>(events::type_t<window_event::maximize> &&);
-    template std::uint64_t window::on<window_event::resize>(events::type_t<window_event::resize> &&);
-    template std::uint64_t window::on<window_event::closed>(events::type_t<window_event::closed> &&);
-    template std::uint64_t window::on<window_event::focus>(events::type_t<window_event::focus> &&);
-    template std::uint64_t window::on<window_event::close>(events::type_t<window_event::close> &&);
-
     template <window_event Event>
     void window::once(events::type_t<Event> &&callback)
     {
@@ -423,4 +411,6 @@ namespace saucer
     {
         QApplication::processEvents();
     }
+
+    INSTANTIATE_EVENTS(window, 6, window_event)
 } // namespace saucer
