@@ -48,6 +48,8 @@ namespace saucer::serializers::detail::glaze
 
     template <class T>
     inline constexpr bool serializable_v = serializable<T>::value;
+
+    static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
 } // namespace saucer::serializers::detail::glaze
 
 namespace saucer::serializers
@@ -64,33 +66,39 @@ namespace saucer::serializers
 
         return [func](function_data &data) -> function::result_type
         {
-            auto &message = static_cast<glaze_function_data &>(data);
+            const auto &message = static_cast<glaze_function_data &>(data);
 
-            decayed_t params;
-            glz::parse_error error;
+            decayed_t params{};
 
             if constexpr (std::tuple_size_v<decayed_t> > 0)
             {
-                error = glz::read_json<decayed_t>(params, message.params.str);
-            }
+                const auto error = glz::read<detail::glaze::opts, decayed_t>(params, message.params.str);
 
-            if (error)
-            {
-                return tl::make_unexpected(serializer_error::type_mismatch);
+                switch (error.ec)
+                {
+                case glz::error_code::missing_key:
+                    return tl::make_unexpected(serializer_error::argument_count_mismatch);
+                case glz::error_code::none:
+                    break;
+                default:
+                    return tl::make_unexpected(serializer_error::type_mismatch);
+                }
             }
 
             std::string result{"null"};
 
             if constexpr (!std::is_void_v<return_t>)
             {
-                result = glz::write_json(std::apply(func, params));
+                glz::write<detail::glaze::opts>(std::apply(func, params), result);
             }
             else
             {
                 std::apply(func, params);
             }
 
-            auto escaped = glz::write_json(result);
+            std::string escaped(result.size() + 2, '\0');
+            glz::write<detail::glaze::opts>(result, escaped);
+
             return fmt::format("JSON.parse({})", escaped);
         };
     }
@@ -106,8 +114,11 @@ namespace saucer::serializers
 
             const auto serialize = []<typename O>(const O &value)
             {
-                auto json    = glz::write_json(value);
-                auto escaped = glz::write_json(json);
+                std::string json{};
+                glz::write<detail::glaze::opts>(value, json);
+
+                std::string escaped(json.size() + 2, '\0');
+                glz::write<detail::glaze::opts>(json, escaped);
 
                 return fmt::format("JSON.parse({})", escaped);
             };
@@ -117,7 +128,7 @@ namespace saucer::serializers
                 using tuple_t = typename T::tuple_t;
                 auto tuple    = static_cast<tuple_t>(value);
 
-                std::vector<std::string> rtn;
+                std::vector<std::string> rtn{};
                 rtn.reserve(std::tuple_size_v<tuple_t>);
 
                 std::apply([&](const auto &...args) { (rtn.emplace_back(serialize(args)), ...); }, tuple);
@@ -140,22 +151,24 @@ namespace saucer::serializers
 
         return [promise](result_data &data) mutable
         {
-            auto &result = static_cast<glaze_result_data &>(data);
+            const auto &result = static_cast<glaze_result_data &>(data);
 
             if constexpr (!std::is_void_v<T>)
             {
-                auto value = glz::read_json<T>(result.result.str);
+                T value{};
 
-                if (!value.has_value())
+                const auto error = glz::read<detail::glaze::opts>(value, result.result.str);
+
+                if (error)
                 {
-                    auto error     = static_cast<std::uint32_t>(value.error());
-                    auto exception = std::runtime_error{std::to_string(error)};
+                    auto code      = static_cast<std::uint32_t>(error);
+                    auto exception = std::runtime_error{std::to_string(code)};
 
                     promise->set_exception(std::make_exception_ptr(exception));
                     return;
                 }
 
-                promise->set_value(value.value());
+                promise->set_value(value);
             }
             else
             {

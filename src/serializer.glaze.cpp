@@ -6,10 +6,10 @@ template <>
 struct glz::meta<saucer::serializers::glaze_function_data>
 {
     using T                     = saucer::serializers::glaze_function_data;
-    static constexpr auto value = object( //
-        "id", &T::id,                     //
-        "name", &T::name,                 //
-        "params", &T::params              //
+    static constexpr auto value = object(  //
+        "id", &T::id,                      //
+        "name", &T::name,                  //
+        "params", glz::escaped<&T::params> //
     );
 };
 
@@ -17,9 +17,9 @@ template <>
 struct glz::meta<saucer::serializers::glaze_result_data>
 {
     using T                     = saucer::serializers::glaze_result_data;
-    static constexpr auto value = object( //
-        "id", &T::id,                     //
-        "result", &T::result              //
+    static constexpr auto value = object(  //
+        "id", &T::id,                      //
+        "result", glz::escaped<&T::result> //
     );
 };
 
@@ -40,9 +40,9 @@ namespace saucer::serializers
     template <typename T>
     tl::expected<T, glz::parse_error> parse_as(const std::string &buffer)
     {
-        static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
+        static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
 
-        T value;
+        T value{};
         auto error = glz::read<opts>(value, buffer);
 
         if (error)
