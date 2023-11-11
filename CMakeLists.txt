@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(saucer LANGUAGES CXX VERSION 2.1.0)
+project(saucer LANGUAGES CXX VERSION 2.1.1)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
