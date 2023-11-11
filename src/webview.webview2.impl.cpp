@@ -148,7 +148,10 @@ namespace saucer
         static const WCHAR *allowed_origins[1] = {L"*"};
         auto scheme                            = Make<CoreWebView2CustomSchemeRegistration>(L"saucer");
 
+        scheme->put_TreatAsSecure(true);
+        scheme->put_HasAuthorityComponent(true);
         scheme->SetAllowedOrigins(1, allowed_origins);
+
         ICoreWebView2CustomSchemeRegistration *registration[1] = {scheme.Get()};
 
         if (!SUCCEEDED(env_options4->SetCustomSchemeRegistrations(1, registration)))
