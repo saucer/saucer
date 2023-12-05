@@ -13,7 +13,7 @@ endif()
 # Library switches
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_modules           "Enable modules"                                    ON)
+option(saucer_modules           "Enable smartview modules"                          ON)
 
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
@@ -133,7 +133,7 @@ include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        2.6
+  VERSION        2.7
   GIT_REPOSITORY "https://github.com/Soundux/lockpp"
 )
 
@@ -164,7 +164,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        1.5.7
+  VERSION        1.8.4
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 

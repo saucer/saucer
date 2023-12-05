@@ -96,9 +96,7 @@ namespace saucer::serializers
                 std::apply(func, params);
             }
 
-            std::string escaped(result.size() + 2, '\0');
-            glz::write<detail::glaze::opts>(result, escaped);
-
+            auto escaped = glz::write<detail::glaze::opts>(result);
             return fmt::format("JSON.parse({})", escaped);
         };
     }
@@ -114,11 +112,8 @@ namespace saucer::serializers
 
             const auto serialize = []<typename O>(const O &value)
             {
-                std::string json{};
-                glz::write<detail::glaze::opts>(value, json);
-
-                std::string escaped(json.size() + 2, '\0');
-                glz::write<detail::glaze::opts>(json, escaped);
+                auto json    = glz::write<detail::glaze::opts>(value);
+                auto escaped = glz::write<detail::glaze::opts>(json);
 
                 return fmt::format("JSON.parse({})", escaped);
             };
