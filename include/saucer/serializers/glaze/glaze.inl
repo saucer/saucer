@@ -2,8 +2,12 @@
 
 #include "glaze.hpp"
 
+#include "../errors/unknown.hpp"
+#include "../errors/bad_type.hpp"
+
 #include <fmt/args.h>
 #include <fmt/format.h>
+#include <source_location>
 
 #include <boost/callable_traits.hpp>
 
@@ -50,6 +54,59 @@ namespace saucer::serializers::detail::glaze
     inline constexpr bool serializable_v = serializable<T>::value;
 
     static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
+
+    template <typename T>
+    consteval auto type_name()
+    {
+        const std::string_view name = std::source_location::current().function_name();
+
+#ifdef _MSC_VER
+        const auto start = name.find("type_name<") + 11;
+        const auto end   = name.find_last_of('>') - start;
+#else
+        const auto start = name.find("T = ") + 4;
+        const auto end = name.find_last_of(']') - start;
+#endif
+
+        return name.substr(start, end);
+    }
+
+    template <typename T>
+    serializer::error mismatch(T &tuple, const std::string &params)
+    {
+        glz::json_t json{};
+
+        if (glz::read_json(json, params))
+        {
+            return std::make_unique<errors::serialize>();
+        }
+
+        serializer::error rtn{};
+
+        auto match = [&]<typename O>(O &value, std::size_t index)
+        {
+            if (rtn)
+            {
+                return;
+            }
+
+            auto current = glz::write<opts>(json[std::size_t{index}]);
+
+            if (!glz::read<opts>(value, current))
+            {
+                return;
+            }
+
+            static constexpr auto expected = type_name<O>();
+
+            rtn = std::make_unique<errors::bad_type>(index, std::string{expected});
+        };
+
+        auto index = 0u;
+        std::apply([&]<typename... O>(O &...args) { (match(args, index++), ...); }, tuple);
+
+        return rtn;
+    }
 } // namespace saucer::serializers::detail::glaze
 
 namespace saucer::serializers
@@ -72,16 +129,14 @@ namespace saucer::serializers
 
             if constexpr (std::tuple_size_v<decayed_t> > 0)
             {
-                const auto error = glz::read<detail::glaze::opts, decayed_t>(params, message.params.str);
+                const auto error = glz::read<detail::glaze::opts>(params, message.params.str);
 
                 switch (error.ec)
                 {
-                case glz::error_code::missing_key:
-                    return tl::make_unexpected(serializer_error::argument_count_mismatch);
                 case glz::error_code::none:
                     break;
                 default:
-                    return tl::make_unexpected(serializer_error::type_mismatch);
+                    return tl::make_unexpected(detail::glaze::mismatch(params, message.params.str));
                 }
             }
 
