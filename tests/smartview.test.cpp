@@ -2,6 +2,7 @@
 
 #include <array>
 #include <thread>
+
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
 
