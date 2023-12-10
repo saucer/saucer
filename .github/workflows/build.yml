@@ -17,12 +17,12 @@ jobs:
 
       - name: 🔨 Build (Debug)
         run: |
-          cmake -B debug -Dsaucer_backend=WebView2 -Dsaucer_examples=ON
+          cmake -B debug -Dsaucer_backend=WebView2 -Dsaucer_examples=ON -Dsaucer_tests=ON
           cmake --build debug --config Debug
 
       - name: 🔨 Build (Release)
         run: |
-          cmake -B release -Dsaucer_backend=WebView2 -Dsaucer_examples=ON
+          cmake -B release -Dsaucer_backend=WebView2 -Dsaucer_examples=ON -Dsaucer_tests=ON
           cmake --build release --config Release
 
       - name: 📦 Upload Artifact

@@ -118,6 +118,9 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/smartview.cpp"
     "src/serializer.glaze.cpp"
+    "src/error.bad_type.cpp"
+    "src/error.serialize.cpp"
+    "src/error.bad_function.cpp"
 )
 
 if (saucer_modules)

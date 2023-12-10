@@ -1,6 +1,8 @@
 #include "smartview.hpp"
+
 #include "serializers/data.hpp"
 #include "serializers/serializer.hpp"
+#include "serializers/errors/bad_function.hpp"
 
 #include <regex>
 #include <fmt/core.h>
@@ -105,7 +107,7 @@ namespace saucer
             return;
         }
 
-        reject(data.id, result.error());
+        reject(data.id, std::move(result.error()));
     }
 
     bool smartview_core::on_message(const std::string &message)
@@ -128,7 +130,7 @@ namespace saucer
 
             if (!functions.contains(message->name))
             {
-                reject(message->id, serializer_error::invalid_function);
+                reject(message->id, std::make_unique<errors::bad_function>(message->name));
                 return false;
             }
 
@@ -203,16 +205,17 @@ namespace saucer
             id, code));
     }
 
-    void smartview_core::reject(std::uint64_t id, serializer_error error)
+    void smartview_core::reject(std::uint64_t id, serializer::error error)
     {
-        using underlying = std::underlying_type_t<serializer_error>;
+        auto what = error->what();
+        std::replace(what.begin(), what.end(), '"', '\'');
 
         execute(fmt::format(
             R"(
                 window.saucer._rpc[{0}].reject("{1}");
                 delete window.saucer._rpc[{0}];
             )",
-            id, static_cast<underlying>(error)));
+            id, what));
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)

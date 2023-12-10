@@ -41,7 +41,7 @@ namespace saucer
         [[sc::thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
 
       protected:
-        [[sc::thread_safe]] void reject(std::uint64_t, serializer_error);
+        [[sc::thread_safe]] void reject(std::uint64_t, serializer::error);
         [[sc::thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 

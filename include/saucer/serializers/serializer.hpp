@@ -2,6 +2,7 @@
 
 #include "data.hpp"
 #include "args/args.hpp"
+#include "errors/error.hpp"
 
 #include <string>
 #include <memory>
@@ -15,18 +16,12 @@
 
 namespace saucer
 {
-    enum class serializer_error : std::uint8_t
-    {
-        type_mismatch,
-        invalid_function,
-        argument_count_mismatch,
-    };
-
     struct serializer
     {
         using parse_result = std::unique_ptr<message_data>;
+        using error        = std::unique_ptr<saucer::error>;
         using resolver     = std::function<void(result_data &)>;
-        using function     = std::function<tl::expected<std::string, serializer_error>(function_data &)>;
+        using function     = std::function<tl::expected<std::string, error>(function_data &)>;
 
       public:
         virtual ~serializer() = default;
@@ -46,13 +41,13 @@ namespace saucer
         {
             T::serialize([](int) { return 5; })
         } -> std::convertible_to<serializer::function>;
-        {
+        { //
             T::serialize_args(10, 15, 20)
         } -> std::convertible_to<fmt::dynamic_format_arg_store<fmt::format_context>>;
         {
             T::serialize_args(make_args(10, 15, 20))
         } -> std::convertible_to<fmt::dynamic_format_arg_store<fmt::format_context>>;
-        {
+        { //
             T::resolve(std::declval<std::shared_ptr<std::promise<int>>>())
         } -> std::convertible_to<serializer::resolver>;
     };
