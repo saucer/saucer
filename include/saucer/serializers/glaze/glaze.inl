@@ -2,8 +2,8 @@
 
 #include "glaze.hpp"
 
-#include "../errors/unknown.hpp"
 #include "../errors/bad_type.hpp"
+#include "../errors/serialize.hpp"
 
 #include <fmt/args.h>
 #include <fmt/format.h>

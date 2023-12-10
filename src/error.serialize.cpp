@@ -1,4 +1,4 @@
-#include "serializers/errors/unknown.hpp"
+#include "serializers/errors/serialize.hpp"
 
 namespace saucer::errors
 {
