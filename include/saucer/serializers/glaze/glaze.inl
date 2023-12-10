@@ -58,10 +58,12 @@ namespace saucer::serializers::detail::glaze
     template <typename T>
     consteval auto type_name()
     {
+        // TODO: std::source_location::current().function_name() is currently broken on old msvc and arch' gcc 13.2.1-3
+
 #if defined(_MSC_VER) && _MSVC_VER < 1936
         constexpr std::string_view name = __FUNCSIG__;
 #else
-        constexpr std::string_view name = std::source_location::current().function_name();
+        constexpr std::string_view name = __PRETTY_FUNCTION__;
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
