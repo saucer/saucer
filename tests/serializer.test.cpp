@@ -13,7 +13,7 @@ suite serializer_suite = []
 {
     namespace detail = saucer::serializers::detail::glaze;
 
-    expect(detail::type_name<int>() == "int");
-    expect(detail::type_name<float>() == "float");
-    expect(detail::type_name<a_struct>().ends_with("a_struct"));
+    static_assert(detail::type_name<int>() == "int");
+    static_assert(detail::type_name<float>() == "float");
+    static_assert(detail::type_name<a_struct>().ends_with("a_struct"));
 };

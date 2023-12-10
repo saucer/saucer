@@ -58,14 +58,18 @@ namespace saucer::serializers::detail::glaze
     template <typename T>
     consteval auto type_name()
     {
-        const std::string_view name = std::source_location::current().function_name();
-
-#ifdef _MSC_VER
-        const auto start = name.find("type_name<") + 11;
-        const auto end   = name.find_last_of('>') - start;
+#if defined(_MSC_VER) && _MSVC_VER < 1936
+        constexpr std::string_view name = __FUNCSIG__;
 #else
-        const auto start = name.find("T = ") + 4;
-        const auto end = name.find_last_of(']') - start;
+        constexpr std::string_view name = std::source_location::current().function_name();
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+        constexpr auto start = name.find("type_name<") + 10;
+        constexpr auto end   = name.find_last_of('>') - start;
+#else
+        constexpr auto start            = name.find("T = ") + 4;
+        constexpr auto end              = name.find_last_of(']') - start;
 #endif
 
         return name.substr(start, end);
@@ -97,9 +101,7 @@ namespace saucer::serializers::detail::glaze
                 return;
             }
 
-            static constexpr auto expected = type_name<O>();
-
-            rtn = std::make_unique<errors::bad_type>(index, std::string{expected});
+            rtn = std::make_unique<errors::bad_type>(index, std::string{type_name<O>()});
         };
 
         auto index = 0u;
