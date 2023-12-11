@@ -58,7 +58,7 @@ namespace saucer::serializers::detail::glaze
     template <typename T>
     consteval auto type_name()
     {
-#if defined(_MSC_VER) && _MSVC_VER < 1936
+#if defined(_MSC_VER) && _MSC_VER < 1936
         const std::string_view name = __FUNCSIG__;
 #else
         const std::string_view name = std::source_location::current().function_name();
