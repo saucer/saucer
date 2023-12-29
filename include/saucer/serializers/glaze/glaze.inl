@@ -68,8 +68,8 @@ namespace saucer::serializers::detail::glaze
         const auto start = name.find("type_name<") + 10;
         const auto end   = name.find_last_of('>') - start;
 #else
-        const auto start            = name.find("T = ") + 4;
-        const auto end              = name.find_last_of(']') - start;
+        const auto start = name.find("T = ") + 4;
+        const auto end   = name.find_last_of(']') - start;
 #endif
 
         return name.substr(start, end);
@@ -80,14 +80,14 @@ namespace saucer::serializers::detail::glaze
     {
         glz::json_t json{};
 
-        if (glz::read_json(json, params))
+        if (glz::read<opts>(json, params))
         {
             return std::make_unique<errors::serialize>();
         }
 
         serializer::error rtn{};
 
-        auto match = [&]<typename O>(O &value, std::size_t index)
+        auto match = [&]<typename O>(O &value, auto index)
         {
             if (rtn)
             {
@@ -101,7 +101,8 @@ namespace saucer::serializers::detail::glaze
                 return;
             }
 
-            rtn = std::make_unique<errors::bad_type>(index, std::string{type_name<O>()});
+            auto name = std::string{type_name<O>()};
+            rtn       = std::make_unique<errors::bad_type>(index, std::move(name));
         };
 
         auto index = 0u;
