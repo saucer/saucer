@@ -112,31 +112,6 @@ namespace saucer
 
     void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::options options)
     {
-        auto controller_created = mcb{[&](auto, auto *webview_controller)
-                                      {
-                                          controller = webview_controller;
-                                          auto rtn   = controller->get_CoreWebView2(&this->web_view);
-
-                                          if (!SUCCEEDED(rtn))
-                                          {
-                                              utils::throw_error("Failed to create webview2");
-                                          }
-
-                                          return rtn;
-                                      }};
-
-        auto created = mcb{[&](auto, auto *env)
-                           {
-                               auto rtn = env->CreateCoreWebView2Controller(hwnd, controller_created);
-
-                               if (!SUCCEEDED(rtn))
-                               {
-                                   utils::throw_error("Failed to create webview2 controller");
-                               }
-
-                               return rtn;
-                           }};
-
         auto env_options = Make<CoreWebView2EnvironmentOptions>();
         ComPtr<ICoreWebView2EnvironmentOptions4> env_options4;
 
@@ -170,6 +145,31 @@ namespace saucer
         }
 
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+        auto controller_created = mcb{[&](auto, auto *webview_controller)
+                                      {
+                                          controller = webview_controller;
+                                          auto rtn   = controller->get_CoreWebView2(&this->web_view);
+
+                                          if (!SUCCEEDED(rtn))
+                                          {
+                                              utils::throw_error("Failed to create webview2");
+                                          }
+
+                                          return rtn;
+                                      }};
+
+        auto created = mcb{[&](auto, auto *env)
+                           {
+                               auto rtn = env->CreateCoreWebView2Controller(hwnd, controller_created);
+
+                               if (!SUCCEEDED(rtn))
+                               {
+                                   utils::throw_error("Failed to create webview2 controller");
+                               }
+
+                               return rtn;
+                           }};
 
         auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, options.storage_path.wstring().c_str(),
                                                                env_options.Get(), created);
