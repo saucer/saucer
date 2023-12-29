@@ -142,7 +142,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_callable_traits
-  GIT_TAG        boost-1.83.0
+  GIT_TAG        boost-1.84.0
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
 )
 
@@ -167,7 +167,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        1.8.4
+  VERSION        1.9.9
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -179,7 +179,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_preprocessor
-  GIT_TAG        boost-1.83.0
+  GIT_TAG        boost-1.84.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
