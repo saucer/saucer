@@ -16,7 +16,7 @@ namespace saucer
         std::wstring error(1024, '\0');
         FormatMessageW(format, nullptr, GetLastError(), lang, error.data(), error.size(), nullptr);
 
-        throw std::runtime_error(fmt::format("An error occured: {} (LastError: \"{}\")", msg, utils::narrow(error)));
+        throw std::runtime_error(fmt::format("An error occurred: {} (LastError: \"{}\")", msg, utils::narrow(error)));
     }
 
     void utils::set_dpi_awareness()
