@@ -134,10 +134,15 @@ namespace saucer
             utils::throw_error("Failed to register custom scheme");
         }
 
+        auto flags = options.chrome_flags;
+
         if (!options.hardware_acceleration)
         {
-            env_options->put_AdditionalBrowserArguments(L"--disable-gpu");
+            flags.emplace_back("--disable-gpu");
         }
+
+        const auto args = fmt::format("{}", fmt::join(flags, " "));
+        env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
 
         if (options.storage_path.empty())
         {
