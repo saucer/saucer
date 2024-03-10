@@ -27,18 +27,19 @@ namespace saucer
             qputenv("QT_LOGGING_RULES", "*=false");
 #endif
 
-            auto args = options.chrome_flags;
+            auto flags = options.chrome_flags;
 
             if (options.hardware_acceleration)
             {
-                args.emplace_back("--enable-oop-rasterization");
-                args.emplace_back("--enable-gpu-rasterization");
+                flags.emplace_back("--enable-oop-rasterization");
+                flags.emplace_back("--enable-gpu-rasterization");
 
-                args.emplace_back("--use-gl=desktop");
-                args.emplace_back("--enable-native-gpu-memory-buffers");
+                flags.emplace_back("--use-gl=desktop");
+                flags.emplace_back("--enable-native-gpu-memory-buffers");
             }
 
-            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", fmt::format("{}", fmt::join(args, " ")));
+            const auto args = fmt::format("{}", fmt::join(flags, " "));
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
 
 #ifdef SAUCER_QT5
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
