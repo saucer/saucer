@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <array>
+#include <vector>
 #include <utility>
 
 #include <cstdint>
@@ -36,6 +37,7 @@ namespace saucer
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
         std::filesystem::path storage_path;
+        std::vector<std::string> chrome_flags;
     };
 
     using color = std::array<std::uint8_t, 4>;

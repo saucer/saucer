@@ -4,6 +4,9 @@
 #include "instantiate.hpp"
 
 #include <QWindow>
+
+#include <fmt/core.h>
+#include <fmt/xchar.h>
 #include <flagpp/flags.hpp>
 
 template <>
@@ -24,12 +27,18 @@ namespace saucer
             qputenv("QT_LOGGING_RULES", "*=false");
 #endif
 
+            auto args = options.chrome_flags;
+
             if (options.hardware_acceleration)
             {
-                qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-                        "--enable-oop-rasterization --enable-gpu-rasterization --enable-native-gpu-memory-buffers "
-                        "--use-gl=desktop");
+                args.emplace_back("--enable-oop-rasterization");
+                args.emplace_back("--enable-gpu-rasterization");
+
+                args.emplace_back("--use-gl=desktop");
+                args.emplace_back("--enable-native-gpu-memory-buffers");
             }
+
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", fmt::format("{}", fmt::join(args, " ")));
 
 #ifdef SAUCER_QT5
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
