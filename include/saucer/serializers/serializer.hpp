@@ -38,8 +38,8 @@ namespace saucer
     concept Serializer = requires {
         requires std::movable<T>;
         requires std::derived_from<T, serializer>;
-        {
-            T::serialize([](int) { return 5; })
+        { // TODO: Use lambda when https://github.com/microsoft/vscode-cpptools/issues/11624 is resolved.
+            T::serialize(std::function<int()>{})
         } -> std::convertible_to<serializer::function>;
         { //
             T::serialize_args(10, 15, 20)
