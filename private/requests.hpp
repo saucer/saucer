@@ -15,6 +15,8 @@ namespace saucer
     };
 
     using request = std::variant<resize_request, drag_request>;
+
+    // TODO: Add parsing method here, to prevent re-implementation in different backends.
 } // namespace saucer
 
 template <>
