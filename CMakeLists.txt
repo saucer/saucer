@@ -20,6 +20,7 @@ option(saucer_prefer_remote     "Prefer remote packages over local packages"    
 
 option(saucer_tests             "Build tests"                                      OFF)
 option(saucer_examples          "Build examples"                                   OFF)
+option(saucer_bindings          "Build C-Bindings"                                 OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Library options
@@ -61,6 +62,14 @@ if (saucer_backend STREQUAL "Default")
   endif()
 
   message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Global CMake Configuration
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_bindings)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -247,6 +256,15 @@ if (saucer_examples)
   message(STATUS "[saucer] Building Examples")
   add_subdirectory("examples/json-bridge")
   add_subdirectory("examples/embedding")
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Bindings
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_bindings)
+  message(STATUS "[saucer] Building Bindings")
+  add_subdirectory(bindings)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
