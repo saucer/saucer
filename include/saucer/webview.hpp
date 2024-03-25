@@ -35,7 +35,7 @@ namespace saucer
     {
         struct impl;
 
-      private:
+      public:
         using embedded_files = std::map<std::string, embedded_file>;
 
       private:
