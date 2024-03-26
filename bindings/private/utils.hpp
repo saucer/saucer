@@ -2,7 +2,11 @@
 
 #include "color.h"
 #include "embed.h"
+
 #include "common.h"
+#include "options.h"
+
+#include "serializer.h"
 
 #include <saucer/smartview.hpp>
 
@@ -44,6 +48,17 @@ inline auto *cast(saucer_message_data *handle)
     return reinterpret_cast<saucer::message_data *>(handle);
 }
 
+template <>
+inline auto *cast(saucer::options *handle)
+{
+    return reinterpret_cast<saucer_options *>(handle);
+}
+
+template <>
+inline auto *cast(saucer_options *handle)
+{
+    return reinterpret_cast<saucer::options *>(handle);
+}
 
 template <>
 inline auto *cast(saucer::color *handle)
