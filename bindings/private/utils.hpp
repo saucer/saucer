@@ -39,6 +39,13 @@ inline auto *cast(saucer_embedded_files *handle)
 }
 
 template <>
+inline auto *cast(saucer_message_data *handle)
+{
+    return reinterpret_cast<saucer::message_data *>(handle);
+}
+
+
+template <>
 inline auto *cast(saucer::color *handle)
 {
     return reinterpret_cast<saucer_color *>(handle);
