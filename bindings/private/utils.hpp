@@ -1,6 +1,8 @@
 #pragma once
 
+#include "embed.h"
 #include "common.h"
+
 #include <saucer/smartview.hpp>
 
 struct cast_callback
@@ -21,7 +23,16 @@ struct cast_callback
 };
 
 template <typename T>
-saucer::smartview_core &cast(T *handle)
+auto *cast(T *handle) = delete;
+
+template <>
+inline auto *cast(saucer::webview::embedded_files *handle)
 {
-    return *reinterpret_cast<saucer::smartview_core *>(handle);
+    return reinterpret_cast<saucer_embedded_files *>(handle);
+}
+
+template <>
+inline auto *cast(saucer_embedded_files *handle)
+{
+    return reinterpret_cast<saucer::webview::embedded_files *>(handle);
 }
