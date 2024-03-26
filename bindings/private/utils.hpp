@@ -1,5 +1,6 @@
 #pragma once
 
+#include "color.h"
 #include "embed.h"
 #include "common.h"
 
@@ -35,4 +36,16 @@ template <>
 inline auto *cast(saucer_embedded_files *handle)
 {
     return reinterpret_cast<saucer::webview::embedded_files *>(handle);
+}
+
+template <>
+inline auto *cast(saucer::color *handle)
+{
+    return reinterpret_cast<saucer_color *>(handle);
+}
+
+template <>
+inline auto *cast(saucer_color *handle)
+{
+    return reinterpret_cast<saucer::color *>(handle);
 }

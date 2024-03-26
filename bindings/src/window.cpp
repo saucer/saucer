@@ -40,15 +40,7 @@ extern "C"
 
     saucer_color *saucer_window_background(saucer_handle *handle)
     {
-        auto *rtn         = saucer_color_new();
-        auto [r, g, b, a] = handle->background();
-
-        rtn->r = r;
-        rtn->g = g;
-        rtn->b = b;
-        rtn->a = a;
-
-        return rtn;
+        return cast(new saucer::color{handle->background()});
     }
 
     char *saucer_window_title(saucer_handle *handle)
@@ -138,8 +130,7 @@ extern "C"
 
     void saucer_window_set_background(saucer_handle *handle, saucer_color *color)
     {
-        auto [r, g, b, a] = *color;
-        handle->set_background({r, g, b, a});
+        handle->set_background(*cast(color));
     }
 
     void saucer_window_set_size(saucer_handle *handle, int width, int height)

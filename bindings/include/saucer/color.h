@@ -11,13 +11,7 @@ extern "C"
 {
 #endif
 
-    struct saucer_color
-    {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-        uint8_t a;
-    };
+    struct saucer_color;
 
     saucer_color *saucer_color_new();
     void saucer_color_free(saucer_color *);
