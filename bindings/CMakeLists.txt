@@ -21,13 +21,21 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PUBLIC  "include")
-target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
+target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 
 # --------------------------------------------------------------------------------------------------------
 # Add Sources
 # --------------------------------------------------------------------------------------------------------
 
-target_sources(${PROJECT_NAME} PRIVATE "src/color.cpp" "src/common.cpp" "src/options.cpp" "src/window.cpp")
+target_sources(${PROJECT_NAME} PRIVATE 
+    "src/color.cpp" 
+    "src/embed.cpp" 
+    "src/common.cpp" 
+    "src/options.cpp"
+     
+    "src/window.cpp"
+    "src/webview.cpp"
+)
 
 # --------------------------------------------------------------------------------------------------------
 # Link Dependencies 
