@@ -146,7 +146,7 @@ include("cmake/nuget.cmake")
 CPMFindPackage(
   NAME           lockpp
   VERSION        2.7
-  GIT_REPOSITORY "https://github.com/Soundux/lockpp"
+  GIT_REPOSITORY "https://github.com/Curve/lockpp"
 )
 
 CPMFindPackage(
@@ -165,18 +165,18 @@ CPMFindPackage(
 CPMFindPackage(
   NAME           ereignis
   VERSION        2.3
-  GIT_REPOSITORY "https://github.com/Soundux/ereignis"
+  GIT_REPOSITORY "https://github.com/Curve/ereignis"
 )
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        10.1.1
+  GIT_TAG        10.2.1
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        1.9.9
+  VERSION        2.4.0
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
