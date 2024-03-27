@@ -4,7 +4,6 @@
 #include "serializers/serializer.hpp"
 #include "serializers/errors/bad_function.hpp"
 
-#include <regex>
 #include <fmt/core.h>
 
 namespace saucer
@@ -38,49 +37,49 @@ namespace saucer
     {
         m_impl->serializer = std::move(serializer);
 
-        inject(std::regex_replace(R"js(
+        inject(fmt::format(R"js(
         window.saucer._idc = 0;
         window.saucer._rpc = [];
         
         window.saucer.call = async (name, params) =>
-        {
+        {{
             if (!Array.isArray(params))
-            {
+            {{
                 throw 'Bad Arguments, expected array';
-            }
+            }}
 
             if (typeof name !== 'string' && !(name instanceof String))
-            {
+            {{
                 throw 'Bad Name, expected string';
-            }
+            }}
 
             const id = ++window.saucer._idc;
             
-            const rtn = new Promise((resolve, reject) => {
-                window.saucer._rpc[id] = {
+            const rtn = new Promise((resolve, reject) => {{
+                window.saucer._rpc[id] = {{
                     reject,
                     resolve,
-                };
-            });
+                }};
+            }});
 
-            await window.saucer.on_message(<serializer>({
+            await window.saucer.on_message(<serializer>({{
                     id,
                     name,
                     params,
-            }));
+            }}));
 
             return rtn;
-        }
+        }}
 
         window.saucer._resolve = async (id, value) =>
-        {
-            await window.saucer.on_message(<serializer>({
+        {{
+            await window.saucer.on_message({}({{
                     id,
                     result: value === undefined ? null : value,
-            }));
-        }
+            }}));
+        }}
         )js",
-                                  std::regex{"<serializer>"}, m_impl->serializer->js_serializer()),
+                           m_impl->serializer->js_serializer()),
                load_time::creation);
 
         inject(m_impl->serializer->script(), load_time::creation);
