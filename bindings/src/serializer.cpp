@@ -1,5 +1,8 @@
 #include "serializer.impl.hpp"
 
+#include <saucer/serializers/errors/bad_type.hpp>
+#include <saucer/serializers/errors/serialize.hpp>
+
 extern "C"
 {
     saucer_serializer *saucer_serializer_new()
@@ -32,7 +35,7 @@ extern "C"
         return rtn;
     }
 
-    saucer_function_data *saucer_result_function_new(uint64_t id, const char *name, void *user_data)
+    saucer_function_data *saucer_function_data_new(uint64_t id, const char *name, void *user_data)
     {
         auto *rtn = new saucer_function_data;
 
@@ -41,5 +44,49 @@ extern "C"
         rtn->user_data = user_data;
 
         return rtn;
+    }
+
+    void *saucer_result_data_get_user_data(saucer_result_data *handle)
+    {
+        return handle->user_data;
+    }
+
+    void *saucer_function_data_get_user_data(saucer_function_data *handle)
+    {
+        return handle->user_data;
+    }
+
+    saucer_parse_result_expected *saucer_parse_result_ok(const char *code)
+    {
+        auto *rtn = new saucer_parse_result_expected;
+        rtn->code = code;
+
+        return rtn;
+    }
+
+    saucer_parse_result_unexpected *saucer_parse_result_error_serialize()
+    {
+        auto *rtn  = new saucer_parse_result_unexpected;
+        rtn->error = std::make_unique<saucer::errors::serialize>();
+
+        return rtn;
+    }
+
+    saucer_parse_result_unexpected *saucer_parse_result_error_bad_type(size_t index, const char *expected)
+    {
+        auto *rtn  = new saucer_parse_result_unexpected;
+        rtn->error = std::make_unique<saucer::errors::bad_type>(index, expected);
+
+        return rtn;
+    }
+
+    void saucer_serializer_set_function(saucer_serializer *handle, saucer_serializer_function function)
+    {
+        handle->m_function = function;
+    }
+
+    void saucer_serializer_set_resolver(saucer_serializer *handle, saucer_serializer_resolver resolver)
+    {
+        handle->m_resolver = resolver;
     }
 }
