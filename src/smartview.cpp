@@ -181,13 +181,13 @@ namespace saucer
         return false;
     }
 
-    void smartview_core::add_function(std::string name, serializer::function &&resolve, bool async)
+    void smartview_core::add_function(std::string name, serializer::function resolve, bool async)
     {
         auto functions = m_impl->functions.write();
         functions->emplace(std::move(name), exposed_function{async, std::move(resolve)});
     }
 
-    void smartview_core::add_evaluation(serializer::resolver &&resolve, const std::string &code)
+    void smartview_core::add_evaluation(serializer::resolver resolve, const std::string &code)
     {
         auto id = m_id_counter++;
 
