@@ -62,7 +62,7 @@ namespace saucer
                 }};
             }});
 
-            await window.saucer.on_message(<serializer>({{
+            await window.saucer.on_message({0}({{
                     id,
                     name,
                     params,
@@ -73,7 +73,7 @@ namespace saucer
 
         window.saucer._resolve = async (id, value) =>
         {{
-            await window.saucer.on_message({}({{
+            await window.saucer.on_message({0}({{
                     id,
                     result: value === undefined ? null : value,
             }}));
