@@ -30,11 +30,16 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/color.cpp" 
     "src/embed.cpp" 
-    "src/common.cpp" 
+    "src/memory.cpp" 
     "src/options.cpp"
+    
+    "src/smartview.impl.cpp"
+    "src/serializer.impl.cpp"
      
     "src/window.cpp"
     "src/webview.cpp"
+    "src/smartview.cpp"
+    "src/serializer.cpp"
 )
 
 # --------------------------------------------------------------------------------------------------------
