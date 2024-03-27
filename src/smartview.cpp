@@ -207,7 +207,7 @@ namespace saucer
     void smartview_core::reject(std::uint64_t id, serializer::error error)
     {
         auto what = error->what();
-        std::replace(what.begin(), what.end(), '"', '\'');
+        std::ranges::replace(what, '"', '\'');
 
         execute(fmt::format(
             R"(
