@@ -11,9 +11,7 @@ extern "C"
 {
 #endif
 
-    struct saucer_handle;
-
-    void saucer_free(void *);
+    void saucer_alloc_free(void *);
     void *saucer_alloc(size_t size);
 
 #ifdef __cplusplus
