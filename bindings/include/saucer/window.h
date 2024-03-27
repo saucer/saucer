@@ -1,7 +1,7 @@
 #pragma once
 
 #include "color.h"
-#include "common.h"
+#include "smartview.h"
 
 #ifndef __cplusplus
 #include <stdbool.h>

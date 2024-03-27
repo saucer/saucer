@@ -1,7 +1,7 @@
 #pragma once
 
 #include "embed.h"
-#include "common.h"
+#include "smartview.h"
 
 #ifdef __cplusplus
 #include <cstdint>

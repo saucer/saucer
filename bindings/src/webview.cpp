@@ -1,7 +1,9 @@
 #include "webview.h"
 
+#include "memory.h"
+
 #include "utils.hpp"
-#include "common.impl.hpp"
+#include "smartview.impl.hpp"
 
 #include <cstring>
 #include <saucer/smartview.hpp>

@@ -2,10 +2,9 @@
 
 #include "color.h"
 #include "embed.h"
-
-#include "common.h"
 #include "options.h"
 
+#include "smartview.h"
 #include "serializer.h"
 
 #include <saucer/smartview.hpp>
