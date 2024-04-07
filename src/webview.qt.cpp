@@ -8,6 +8,7 @@
 #include <fmt/core.h>
 #include <QWebEngineScript>
 #include <QWebEngineProfile>
+#include <QWebEngineSettings>
 #include <QWebEngineUrlScheme>
 #include <QWebEngineScriptCollection>
 
