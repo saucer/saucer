@@ -42,6 +42,8 @@ namespace saucer
         profile->setPersistentCookiesPolicy(options.persistent_cookies ? QWebEngineProfile::AllowPersistentCookies
                                                                        : QWebEngineProfile::NoPersistentCookies);
 
+        profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+
         m_impl->web_view    = new QWebEngineView(window::m_impl->window);
         m_impl->page        = new QWebEnginePage(profile, m_impl->web_view);
         m_impl->web_channel = new QWebChannel(m_impl->web_view);
