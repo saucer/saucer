@@ -5,10 +5,10 @@
 namespace saucer
 {
     template <typename... T>
-    struct arguments : public std::tuple<T...>
+    struct arguments : std::tuple<T...>
     {
         using std::tuple<T...>::tuple;
-        using tuple_t = std::tuple<T...>;
+        using underlying = std::tuple<T...>;
     };
 
     template <typename T>

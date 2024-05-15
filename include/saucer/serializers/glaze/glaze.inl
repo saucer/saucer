@@ -178,11 +178,11 @@ namespace saucer::serializers
 
             if constexpr (is_arguments<T>)
             {
-                using tuple_t = typename T::tuple_t;
-                auto tuple    = static_cast<tuple_t>(value);
+                using underlying = typename T::underlying;
+                auto tuple       = static_cast<underlying>(value);
 
                 std::vector<std::string> rtn{};
-                rtn.reserve(std::tuple_size_v<tuple_t>);
+                rtn.reserve(std::tuple_size_v<underlying>);
 
                 std::apply([&](const auto &...args) { (rtn.emplace_back(serialize(args)), ...); }, tuple);
                 return fmt::format("{}", fmt::join(rtn, ", "));
