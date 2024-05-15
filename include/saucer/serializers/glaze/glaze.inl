@@ -13,6 +13,8 @@
 
 namespace saucer::serializers::detail::glaze
 {
+    static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
+
     template <typename... T>
     constexpr auto decay(const std::tuple<T...> &) -> std::tuple<std::decay_t<T>...>;
 
@@ -20,40 +22,38 @@ namespace saucer::serializers::detail::glaze
     using decay_t = decltype(decay(std::declval<T>()));
 
     template <typename T>
-    concept GlzSerializable = requires(T &value) { glz::read_json(value, ""); };
+    concept GlzSerializable = requires(T &value) {
+        { glz::read<opts>(value, "") };
+    };
 
     template <typename T>
-    struct serializable : public std::false_type
+    struct serializable : std::false_type
     {
     };
 
     template <>
-    struct serializable<void> : public std::true_type
+    struct serializable<void> : std::true_type
+    {
+    };
+
+    template <>
+    struct serializable<std::tuple<>> : std::true_type
+    {
+    };
+
+    template <typename... T>
+    struct serializable<saucer::arguments<T...>> : serializable<typename saucer::arguments<T...>::underlying>
     {
     };
 
     template <typename T>
         requires GlzSerializable<T>
-    struct serializable<T> : public std::true_type
-    {
-    };
-
-    template <typename... T>
-        requires(GlzSerializable<T> && ...)
-    struct serializable<std::tuple<T...>> : public std::true_type
-    {
-    };
-
-    template <typename... T>
-        requires(GlzSerializable<T> && ...)
-    struct serializable<saucer::arguments<T...>> : public std::true_type
+    struct serializable<T> : std::true_type
     {
     };
 
     template <class T>
     inline constexpr bool serializable_v = serializable<T>::value;
-
-    static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
 
     template <typename T>
     consteval auto type_name()
