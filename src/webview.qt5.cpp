@@ -3,6 +3,7 @@
 #include "webview.qt.impl.hpp"
 
 #include <QWebEngineScript>
+#include <QWebEngineProfile>
 #include <QWebEngineScriptCollection>
 
 namespace saucer
@@ -20,7 +21,7 @@ namespace saucer
         switch (load_time)
         {
         case load_time::creation:
-            script = m_impl->web_view->page()->scripts().findScript("_creation");
+            script = m_impl->web_view->page()->profile()->scripts()->findScript("_creation");
             found  = !script.isNull();
 
             script.setInjectionPoint(QWebEngineScript::DocumentCreation);
@@ -28,7 +29,7 @@ namespace saucer
             break;
 
         case load_time::ready:
-            script = m_impl->web_view->page()->scripts().findScript("_ready");
+            script = m_impl->web_view->page()->profile()->scripts()->findScript("_ready");
             found  = !script.isNull();
 
             script.setInjectionPoint(QWebEngineScript::DocumentReady);
@@ -44,10 +45,10 @@ namespace saucer
         }
         else
         {
-            m_impl->web_view->page()->scripts().remove(script);
+            m_impl->web_view->page()->profile()->scripts()->remove(script);
             script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(java_script));
         }
 
-        m_impl->web_view->page()->scripts().insert(script);
+        m_impl->web_view->page()->profile()->scripts()->insert(script);
     }
 } // namespace saucer

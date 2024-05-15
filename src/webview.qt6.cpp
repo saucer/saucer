@@ -3,6 +3,7 @@
 #include "webview.qt.impl.hpp"
 
 #include <QWebEngineScript>
+#include <QWebEngineProfile>
 #include <QWebEngineScriptCollection>
 
 namespace saucer
@@ -19,7 +20,7 @@ namespace saucer
 
         auto check_previous = [&](const char *name)
         {
-            auto scripts = m_impl->web_view->page()->scripts().find(name);
+            auto scripts = m_impl->web_view->page()->profile()->scripts()->find(name);
 
             if (scripts.empty())
             {
@@ -53,10 +54,10 @@ namespace saucer
         }
         else
         {
-            m_impl->web_view->page()->scripts().remove(script);
+            m_impl->web_view->page()->profile()->scripts()->remove(script);
             script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(java_script));
         }
 
-        m_impl->web_view->page()->scripts().insert(script);
+        m_impl->web_view->page()->profile()->scripts()->insert(script);
     }
 } // namespace saucer

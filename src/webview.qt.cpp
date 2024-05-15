@@ -231,7 +231,7 @@ namespace saucer
             return window::m_impl->post_safe([this] { return clear_scripts(); });
         }
 
-        m_impl->web_view->page()->scripts().clear();
+        m_impl->web_view->page()->profile()->scripts()->clear();
 
         inject(impl::ready_script, load_time::ready);
         inject(impl::inject_script, load_time::creation);
