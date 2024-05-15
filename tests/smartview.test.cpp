@@ -110,7 +110,7 @@ suite smartview_suite = []
             saucer::forget();
     };
 
-    smartview.set_url("https://www.github.com");
+    smartview.set_url("https://saucer.github.io");
     smartview.show();
     smartview.run();
 };

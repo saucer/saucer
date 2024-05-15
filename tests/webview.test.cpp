@@ -44,7 +44,7 @@ suite webview_suite = []
 
         "navigation"_test = [&]
         {
-            webview.set_url("https://www.youtube.com");
+            webview.set_url("https://www.wikipedia.com");
 
             auto callback = [&](const std::string &url)
             {
@@ -58,9 +58,9 @@ suite webview_suite = []
         "scripting"_test = [&]
         {
             webview.inject(R"js(
-                if (!window.location.href.includes("github"))
+                if (!window.location.href.includes("kernel"))
                 {
-                    window.location = 'https://www.github.com';
+                    window.location = 'https://kernel.org/';
                 }
             )js",
                            saucer::load_time::ready);
@@ -69,23 +69,23 @@ suite webview_suite = []
             {
                 static bool first = false;
 
-                if (url.find("youtube") != std::string::npos)
+                if (url.find("wikipedia") != std::string::npos)
                 {
                     return;
                 }
 
                 if (!first)
                 {
-                    expect(url.find("github") != std::string::npos) << url;
+                    expect(url.find("kernel") != std::string::npos) << url;
 
                     first = true;
                     webview.clear_scripts();
-                    webview.execute("window.location = 'https://www.google.com'");
+                    webview.execute("window.location = 'https://isocpp.org/'");
 
                     return;
                 }
 
-                expect(url.find("google") != std::string::npos) << url;
+                expect(url.find("isocpp") != std::string::npos) << url;
 
                 webview.clear(saucer::web_event::url_changed);
                 webview.close();
