@@ -136,13 +136,13 @@ include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        2.7
-  GIT_REPOSITORY "https://github.com/Soundux/lockpp"
+  VERSION        2.8
+  GIT_REPOSITORY "https://github.com/Curve/lockpp"
 )
 
 CPMFindPackage(
   NAME           boost_callable_traits
-  GIT_TAG        boost-1.84.0
+  GIT_TAG        boost-1.85.0
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
 )
 
@@ -155,19 +155,19 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        2.3
+  VERSION        3.1
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
 )
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        10.1.1
+  GIT_TAG        10.2.1
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        1.9.9
+  VERSION        2.6.2
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -179,12 +179,12 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_preprocessor
-  GIT_TAG        boost-1.84.0
+  GIT_TAG        boost-1.85.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  lockpp boost_callable_traits tl::expected glaze::glaze ereignis fmt)
+target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits cr::lockpp tl::expected glaze::glaze cr::ereignis fmt::fmt)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Linkage

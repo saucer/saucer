@@ -36,13 +36,8 @@ namespace saucer
 
     void window::impl::main_window::closeEvent(QCloseEvent *event)
     {
-        for (const auto &result : m_parent->m_events.at<window_event::close>().fire())
+        if (m_parent->m_events.at<window_event::close>().until(true))
         {
-            if (!result)
-            {
-                continue;
-            }
-
             event->ignore();
             return;
         }

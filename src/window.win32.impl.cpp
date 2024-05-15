@@ -98,10 +98,7 @@ namespace saucer
         }
         case WM_DESTROY:
         case WM_CLOSE: {
-            auto results = window->m_events.at<window_event::close>().fire();
-            auto prevent = std::ranges::any_of(results, [](auto res) { return res; });
-
-            if (prevent)
+            if (window->m_events.at<window_event::close>().until(true))
             {
                 return 0;
             }
