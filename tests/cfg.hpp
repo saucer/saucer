@@ -4,7 +4,7 @@
 
 namespace cfg
 {
-    struct runner : public boost::ut::runner<>
+    struct runner : boost::ut::runner<>
     {
         using boost::ut::runner<>::on;
         using boost::ut::runner<>::run;

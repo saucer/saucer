@@ -10,13 +10,13 @@ namespace saucer
         virtual ~message_data() = default;
     };
 
-    struct function_data : public message_data
+    struct function_data : message_data
     {
         std::uint64_t id;
         std::string name;
     };
 
-    struct result_data : public message_data
+    struct result_data : message_data
     {
         std::uint64_t id;
     };

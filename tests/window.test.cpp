@@ -8,7 +8,7 @@ using namespace boost::ut::literals;
 
 suite window_suite = []
 {
-    struct dummy_window : public saucer::window
+    struct dummy_window : saucer::window
     {
         dummy_window(const saucer::options &opts) : saucer::window(opts) {}
     };

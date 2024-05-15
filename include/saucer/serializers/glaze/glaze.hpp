@@ -6,17 +6,17 @@
 
 namespace saucer::serializers
 {
-    struct glaze_function_data : public function_data
+    struct glaze_function_data : function_data
     {
         glz::raw_json params;
     };
 
-    struct glaze_result_data : public result_data
+    struct glaze_result_data : result_data
     {
         glz::raw_json result;
     };
 
-    struct glaze : public serializer
+    struct glaze : serializer
     {
         ~glaze() override;
 
