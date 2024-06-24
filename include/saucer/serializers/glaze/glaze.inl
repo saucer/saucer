@@ -96,7 +96,7 @@ namespace saucer::serializers::detail::glaze
 
             auto current = glz::write<opts>(json[std::size_t{index}]);
 
-            if (!glz::read<opts>(value, current))
+            if (current && !glz::read<opts>(value, current.value()))
             {
                 return;
             }
@@ -132,13 +132,8 @@ namespace saucer::serializers
 
             if constexpr (std::tuple_size_v<decayed_t> > 0)
             {
-                const auto error = glz::read<detail::glaze::opts>(params, message.params.str);
-
-                switch (error.ec)
+                if (glz::read<detail::glaze::opts>(params, message.params.str))
                 {
-                case glz::error_code::none:
-                    break;
-                default:
                     return tl::make_unexpected(detail::glaze::mismatch(params, message.params.str));
                 }
             }
@@ -147,7 +142,14 @@ namespace saucer::serializers
 
             if constexpr (!std::is_void_v<return_t>)
             {
-                glz::write<detail::glaze::opts>(std::apply(func, params), result);
+                auto serialized = glz::write<detail::glaze::opts>(std::apply(func, params));
+
+                if (!serialized)
+                {
+                    return tl::make_unexpected(std::make_unique<errors::serialize>());
+                }
+
+                result = std::move(serialized.value());
             }
             else
             {
@@ -155,7 +157,13 @@ namespace saucer::serializers
             }
 
             auto escaped = glz::write<detail::glaze::opts>(result);
-            return fmt::format("JSON.parse({})", escaped);
+
+            if (!escaped)
+            {
+                return tl::make_unexpected(std::make_unique<errors::serialize>());
+            }
+
+            return fmt::format("JSON.parse({})", escaped.value());
         };
     }
 
@@ -170,8 +178,8 @@ namespace saucer::serializers
 
             const auto serialize = []<typename O>(const O &value)
             {
-                auto json    = glz::write<detail::glaze::opts>(value);
-                auto escaped = glz::write<detail::glaze::opts>(json);
+                auto json    = glz::write<detail::glaze::opts>(value).value_or("null");
+                auto escaped = glz::write<detail::glaze::opts>(json).value_or("null");
 
                 return fmt::format("JSON.parse({})", escaped);
             };
@@ -194,6 +202,7 @@ namespace saucer::serializers
         };
 
         (rtn.push_back(unpack(params)), ...);
+
         return rtn;
     }
 

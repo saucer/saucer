@@ -38,7 +38,7 @@ namespace saucer::serializers
     }
 
     template <typename T>
-    auto parse_as(const std::string &buffer)
+    tl::expected<T, glz::error_ctx> parse_as(const std::string &buffer)
     {
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
 
