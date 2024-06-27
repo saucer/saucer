@@ -227,6 +227,7 @@ namespace saucer
             break;
         case WM_SIZE:
             impl->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
+            impl->controller->put_IsVisible(w_param == SIZE_MAXIMIZED || w_param == SIZE_RESTORED);
             break;
         }
 
