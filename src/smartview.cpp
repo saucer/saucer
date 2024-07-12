@@ -45,12 +45,12 @@ namespace saucer
         {{
             if (!Array.isArray(params))
             {{
-                throw 'Bad Arguments, expected array';
+                throw 'Bad arguments, expected array';
             }}
 
             if (typeof name !== 'string' && !(name instanceof String))
             {{
-                throw 'Bad Name, expected string';
+                throw 'Bad name, expected string';
             }}
 
             const id = ++window.saucer._idc;
@@ -62,7 +62,7 @@ namespace saucer
                 }};
             }});
 
-            await window.saucer.on_message(<serializer>({{
+            await window.saucer.on_message({serializer}({{
                     id,
                     name,
                     params,
@@ -71,15 +71,19 @@ namespace saucer
             return rtn;
         }}
 
+        window.saucer.exported = new Proxy({{}}, {{
+            get: (_, prop) => (...args) => window.saucer.call(prop, args),
+        }})
+
         window.saucer._resolve = async (id, value) =>
         {{
-            await window.saucer.on_message({}({{
+            await window.saucer.on_message({serializer}({{
                     id,
                     result: value === undefined ? null : value,
             }}));
         }}
         )js",
-                           m_impl->serializer->js_serializer()),
+                           fmt::arg("serializer", m_impl->serializer->js_serializer())),
                load_time::creation);
 
         inject(m_impl->serializer->script(), load_time::creation);
