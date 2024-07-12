@@ -4,9 +4,21 @@
 
 namespace saucer
 {
-    template <typename... T>
-    auto make_args(T &&...args)
+    template <typename... Ts>
+    std::size_t arguments<Ts...>::size() const
     {
-        return arguments<T...>(std::forward<T>(args)...);
+        return std::tuple_size_v<underlying>;
+    }
+
+    template <typename... Ts>
+    const arguments<Ts...>::underlying &arguments<Ts...>::as_tuple() const
+    {
+        return static_cast<const underlying &>(*this);
+    }
+
+    template <typename... Ts>
+    auto make_args(Ts &&...args)
+    {
+        return arguments<Ts...>{std::forward<Ts>(args)...};
     }
 } // namespace saucer

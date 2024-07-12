@@ -9,11 +9,11 @@
 #include <memory>
 #include <future>
 
-#include <concepts>
 #include <functional>
+#include <concepts>
 
-#include <fmt/core.h>
 #include <tl/expected.hpp>
+#include <fmt/core.h>
 
 namespace saucer
 {
@@ -21,6 +21,7 @@ namespace saucer
     {
         using parse_result = std::unique_ptr<message_data>;
         using resolver     = std::function<void(result_data &)>;
+        using args         = fmt::dynamic_format_arg_store<fmt::format_context>;
         using function     = std::function<tl::expected<std::string, error>(function_data &)>;
 
       public:
@@ -43,10 +44,10 @@ namespace saucer
         } -> std::convertible_to<serializer::function>;
         { //
             T::serialize_args(10, 15, 20)
-        } -> std::convertible_to<fmt::dynamic_format_arg_store<fmt::format_context>>;
-        {
+        } -> std::convertible_to<serializer::args>;
+        { //
             T::serialize_args(make_args(10, 15, 20))
-        } -> std::convertible_to<fmt::dynamic_format_arg_store<fmt::format_context>>;
+        } -> std::convertible_to<serializer::args>;
         { //
             T::resolve(std::declval<std::shared_ptr<std::promise<int>>>())
         } -> std::convertible_to<serializer::resolver>;

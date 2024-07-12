@@ -13,7 +13,7 @@ namespace saucer
 
     struct error
     {
-        error_code error;
+        error_code ec;
         std::string message;
     };
 } // namespace saucer

@@ -43,7 +43,7 @@ namespace saucer
         [[sc::thread_safe]] void resolve(std::uint64_t, const std::string &);
     };
 
-    using default_serializer = serializers::glaze;
+    using default_serializer = serializers::glaze::serializer;
 
     template <Serializer Serializer = default_serializer, Module... Modules>
     struct smartview : public smartview_core, public Modules...

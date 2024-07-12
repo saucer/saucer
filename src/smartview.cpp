@@ -4,6 +4,8 @@
 #include "serializers/serializer.hpp"
 
 #include <fmt/core.h>
+
+#include <rebind/enum.hpp>
 #include <lockpp/lock.hpp>
 
 namespace saucer
@@ -71,7 +73,7 @@ namespace saucer
             return rtn;
         }}
 
-        window.saucer.exported = new Proxy({{}}, {{
+        window.saucer.exposed = new Proxy({{}}, {{
             get: (_, prop) => (...args) => window.saucer.call(prop, args),
         }})
 
@@ -135,7 +137,7 @@ namespace saucer
             {
                 reject(message->id, error{
                                         error_code::unknown_function,
-                                        fmt::format("Unknown function '{}', was it exported?", message->name),
+                                        fmt::format("No exposed function '{}'", message->name),
                                     });
 
                 return false;
@@ -214,14 +216,22 @@ namespace saucer
 
     void smartview_core::reject(std::uint64_t id, error error)
     {
-        std::ranges::replace(error.message, '"', '\'');
+        const auto meta = rebind::enum_value(error.ec);
+        auto message    = fmt::format("Error {}", meta ? meta->name : "<Unknown>");
+
+        if (!error.message.empty())
+        {
+            message = fmt::format("{}: {}", message, error.message);
+        }
+
+        std::ranges::replace(message, '"', '\'');
 
         execute(fmt::format(
             R"(
                 window.saucer._rpc[{0}].reject("{1}");
                 delete window.saucer._rpc[{0}];
             )",
-            id, error.message));
+            id, message));
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
