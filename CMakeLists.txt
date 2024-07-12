@@ -118,9 +118,6 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/smartview.cpp"
     "src/serializer.glaze.cpp"
-    "src/error.bad_type.cpp"
-    "src/error.serialize.cpp"
-    "src/error.bad_function.cpp"
 )
 
 if (saucer_modules)
@@ -147,10 +144,11 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           tl-expected
-  VERSION        1.1.0
-  GIT_REPOSITORY "https://github.com/TartanLlama/expected"
-  OPTIONS        "EXPECTED_BUILD_TESTS OFF"
+  NAME             tl-expected
+  VERSION          1.1.0
+  GIT_REPOSITORY   "https://github.com/TartanLlama/expected"
+  OPTIONS          "EXPECTED_BUILD_TESTS OFF"
+  EXCLUDE_FROM_ALL ON
 )
 
 CPMFindPackage(
@@ -161,13 +159,13 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        10.2.1
+  GIT_TAG        11.0.1
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        2.9.0
+  VERSION        2.9.5
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -178,13 +176,19 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
+  NAME           rebind
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/Curve/rebind"
+)
+
+CPMFindPackage(
   NAME           boost_preprocessor
   GIT_TAG        boost-1.85.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits cr::lockpp tl::expected glaze::glaze cr::ereignis fmt::fmt)
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp cr::lockpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits tl::expected glaze::glaze cr::ereignis fmt::fmt cr::rebind)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Linkage
