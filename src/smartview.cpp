@@ -2,9 +2,9 @@
 
 #include "serializers/data.hpp"
 #include "serializers/serializer.hpp"
-#include "serializers/errors/bad_function.hpp"
 
 #include <fmt/core.h>
+#include <lockpp/lock.hpp>
 
 namespace saucer
 {
@@ -133,7 +133,11 @@ namespace saucer
 
             if (!functions.contains(message->name))
             {
-                reject(message->id, std::make_unique<errors::bad_function>(message->name));
+                reject(message->id, error{
+                                        error_code::unknown_function,
+                                        fmt::format("Unknown function '{}', was it exported?", message->name),
+                                    });
+
                 return false;
             }
 
@@ -208,17 +212,16 @@ namespace saucer
             id, code));
     }
 
-    void smartview_core::reject(std::uint64_t id, serializer::error error)
+    void smartview_core::reject(std::uint64_t id, error error)
     {
-        auto what = error->what();
-        std::replace(what.begin(), what.end(), '"', '\'');
+        std::ranges::replace(error.message, '"', '\'');
 
         execute(fmt::format(
             R"(
                 window.saucer._rpc[{0}].reject("{1}");
                 delete window.saucer._rpc[{0}];
             )",
-            id, what));
+            id, error.message));
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
