@@ -23,11 +23,12 @@ struct glz::meta<custom_type>
 
 suite smartview_suite = []
 {
+    using saucer::launch;
+
     saucer::smartview smartview({.hardware_acceleration = false});
 
     std::size_t i{0};
     std::array<std::promise<bool>, 6> called{};
-    auto thread_id = std::this_thread::get_id();
 
     "evaluate"_test = [&]
     {
@@ -62,29 +63,34 @@ suite smartview_suite = []
                              expect(b == "hello!") << b;
                          });
 
-        smartview.expose(
-            "f3",
-            [&](custom_type custom)
-            {
-                std::cout << "f3 called" << std::endl;
-                called[4].set_value(true);
+        smartview.expose("f3",
+                         [&](custom_type custom)
+                         {
+                             std::cout << "f3 called" << std::endl;
 
-                expect(eq(custom.field, 1337));
-                expect(neq(std::this_thread::get_id(), thread_id));
-            },
-            true);
+                             called[4].set_value(true);
+                             expect(eq(custom.field, 1337));
+                         });
 
-        smartview.expose(
+        smartview.expose<launch::manual>(
             "f4",
-            [&](const std::string &utf8)
+            [&](const std::string &utf8, const saucer::executor<void> &exec)
             {
-                std::cout << "f4 called" << std::endl;
-                called[5].set_value(true);
+                const auto &[resolve, _] = exec;
 
-                expect(utf8 == "測試-тест");
-                expect(smartview.evaluate<std::string>("'測試-тест'").get() == "測試-тест");
-            },
-            true);
+                std::thread{[&smartview, &called, utf8, resolve]()
+                            {
+                                std::cout << "f4 called" << std::endl;
+
+                                expect(utf8 == "測試-тест");
+                                expect(smartview.evaluate<std::string>("'測試-тест'").get() == "測試-тест");
+
+                                resolve();
+
+                                called[5].set_value(true);
+                            }}
+                    .detach();
+            });
 
         std::async(std::launch::deferred,
                    [&]
