@@ -12,14 +12,17 @@ namespace saucer
 {
     using lockpp::lock;
 
+    using resolver = saucer::serializer::resolver;
+    using function = saucer::serializer::function;
+
     struct smartview_core::impl
     {
         using id             = std::uint64_t;
         using pending_future = std::shared_ptr<std::future<void>>;
 
       public:
-        lock<std::map<id, saucer::serializer::resolver>> evaluations;
-        lock<std::map<std::string, saucer::serializer::function>> functions;
+        lock<std::map<id, resolver>> evaluations;
+        lock<std::map<std::string, function>> functions;
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
@@ -138,13 +141,13 @@ namespace saucer
         return false;
     }
 
-    void smartview_core::add_function(std::string name, serializer::function &&resolve)
+    void smartview_core::add_function(std::string name, function &&resolve)
     {
         auto functions = m_impl->functions.write();
         functions->emplace(std::move(name), std::move(resolve));
     }
 
-    void smartview_core::add_evaluation(serializer::resolver &&resolve, const std::string &code)
+    void smartview_core::add_evaluation(resolver &&resolve, const std::string &code)
     {
         auto id = m_id_counter++;
 
