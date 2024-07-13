@@ -18,8 +18,8 @@ namespace saucer
         using pending_future = std::shared_ptr<std::future<void>>;
 
       public:
-        lock<std::map<std::string, serializer::function>> functions;
         lock<std::map<id, saucer::serializer::resolver>> evaluations;
+        lock<std::map<std::string, saucer::serializer::function>> functions;
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
