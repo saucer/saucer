@@ -98,13 +98,12 @@ suite smartview_suite = []
                        expect(called[0].get_future().get());
                        expect(called[1].get_future().get());
 
-                       saucer::all(
-                           smartview.evaluate<void>("window.saucer.call({}, [])", "f1"),
-                           smartview.evaluate<void>("window.saucer.call({})",
-                                                    saucer::make_args("f2", std::make_tuple(10, "hello!"))),
-                           smartview.evaluate<void>("window.saucer.call({}, {})", "f3",
-                                                    std::make_tuple(custom_type{.field = 1337})),
-                           smartview.evaluate<void>("window.saucer.call({}, {})", "f4", std::make_tuple("測試-тест")));
+                       saucer::all(smartview.evaluate<void>("window.saucer.call({}, [])", "f1"),
+                                   smartview.evaluate<void>("window.saucer.call({})",
+                                                            saucer::make_args("f2", std::make_tuple(10, "hello!"))),
+                                   smartview.evaluate<void>("window.saucer.call({}, {})", "f3",
+                                                            std::make_tuple(custom_type{.field = 1337})),
+                                   smartview.evaluate<void>("window.saucer.exposed.f4({})", "測試-тест"));
 
                        expect(called[2].get_future().get());
                        expect(called[3].get_future().get());
