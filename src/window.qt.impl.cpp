@@ -46,7 +46,7 @@ namespace saucer
 
         if (m_parent->m_impl->on_closed)
         {
-            m_parent->m_impl->on_closed();
+            std::invoke(m_parent->m_impl->on_closed);
         }
 
         QMainWindow::closeEvent(event);

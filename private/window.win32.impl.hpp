@@ -45,28 +45,28 @@ namespace saucer
         virtual ~message() = default;
     };
 
-    template <typename Return>
+    template <typename T>
     class safe_message : public message
     {
-        using callback_t = std::function<Return()>;
+        using callback_t = std::function<T()>;
 
       private:
         callback_t m_func;
-        std::promise<Return> *m_result;
+        std::promise<T> *m_result;
 
       public:
-        safe_message(callback_t &&func, std::promise<Return> *result) : m_func(std::move(func)), m_result(result) {}
+        safe_message(callback_t &&func, std::promise<T> *result) : m_func(std::move(func)), m_result(result) {}
 
       public:
         ~safe_message() override
         {
-            if constexpr (!std::is_same_v<Return, void>)
+            if constexpr (!std::is_void_v<T>)
             {
-                m_result->set_value(m_func());
+                m_result->set_value(std::invoke(m_func));
             }
             else
             {
-                m_func();
+                std::invoke(m_func);
                 m_result->set_value();
             }
         }

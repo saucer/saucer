@@ -28,11 +28,11 @@ namespace saucer::serializers::glaze
         [[nodiscard]] parse_result parse(const std::string &data) const override;
 
       public:
-        template <typename Function>
+        template <launch Policy, typename Function>
         static auto serialize(const Function &func);
 
-        template <typename... Params>
-        static auto serialize_args(const Params &...params);
+        template <typename... Ts>
+        static auto serialize_args(const Ts &...params);
 
       public:
         template <typename T>

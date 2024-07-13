@@ -5,8 +5,10 @@
 #include <fmt/xchar.h>
 #include <fmt/format.h>
 
-#include <rebind/name.hpp>
 #include <boost/callable_traits.hpp>
+
+#include <tl/expected.hpp>
+#include <rebind/name.hpp>
 
 namespace saucer::serializers::glaze
 {
@@ -19,6 +21,64 @@ namespace saucer::serializers::glaze
 
         template <typename T>
         using decay_tuple_t = decltype(decay_tuple_impl(std::declval<T>()));
+
+        template <typename... Ts>
+        consteval auto drop_last_impl(const std::tuple<Ts...> &tuple)
+        {
+            auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
+            {
+                return std::make_tuple(std::get<Is>(tuple)...);
+            };
+
+            return unpack(std::make_index_sequence<sizeof...(Ts) - 1>());
+        }
+
+        template <typename T>
+        using drop_last_t = decltype(drop_last_impl(std::declval<T>()));
+
+        template <typename... Ts>
+        consteval auto last_impl(const std::tuple<Ts...> &tuple)
+        {
+            if constexpr (sizeof...(Ts) > 0)
+            {
+                return std::get<sizeof...(Ts) - 1>(tuple);
+            }
+        }
+
+        template <typename T>
+        using last_t = decltype(last_impl(std::declval<T>()));
+
+        template <launch Policy, typename T>
+        struct args_impl
+        {
+            using type = decay_tuple_t<boost::callable_traits::args_t<T>>;
+        };
+
+        template <typename T>
+        struct args_impl<launch::manual, T>
+        {
+            using args = decay_tuple_t<boost::callable_traits::args_t<T>>;
+            using type = drop_last_t<args>;
+        };
+
+        template <launch Policy, typename T>
+        using args_t = args_impl<Policy, T>::type;
+
+        template <launch Policy, typename T>
+        struct return_impl
+        {
+            using type = boost::callable_traits::return_type_t<T>;
+        };
+
+        template <typename T>
+        struct return_impl<launch::manual, T>
+        {
+            using executor = last_t<boost::callable_traits::args_t<T>>;
+            using type     = executor::type;
+        };
+
+        template <launch Policy, typename T>
+        using return_t = return_impl<Policy, T>::type;
 
         template <typename T>
         struct serializable_impl : std::false_type
@@ -77,33 +137,6 @@ namespace saucer::serializers::glaze
         }
 
         template <typename T>
-        auto serialize(const T &value)
-        {
-            static_assert(serializable<T>, "Given type is not serializable");
-
-            auto json    = glz::write<opts>(value).value_or("null");
-            auto escaped = glz::write<opts>(json).value_or("null");
-
-            return fmt::format("JSON.parse({})", escaped);
-        }
-
-        template <typename T>
-            requires is_arguments<T>
-        auto serialize(const T &value)
-        {
-            std::vector<std::string> rtn;
-            rtn.reserve(value.size());
-
-            auto unpack = [&]<typename... Ts>(Ts &&...args)
-            {
-                (rtn.emplace_back(serialize(std::forward<Ts>(args))), ...);
-            };
-            std::apply(unpack, value.as_tuple());
-
-            return fmt::format("{}", fmt::join(rtn, ", "));
-        }
-
-        template <typename T>
             requires(std::tuple_size_v<T> != 0)
         tl::expected<T, error> parse(const std::string &data)
         {
@@ -131,40 +164,96 @@ namespace saucer::serializers::glaze
         {
             return {};
         }
+
+        template <typename T>
+        auto serialize_arg(const T &value)
+        {
+            static_assert(serializable<T>, "Given type is not serializable");
+
+            auto json    = glz::write<opts>(value).value_or("null");
+            auto escaped = glz::write<opts>(json).value_or("null");
+
+            return fmt::format("JSON.parse({})", escaped);
+        }
+
+        template <typename T>
+            requires is_arguments<T>
+        auto serialize_arg(const T &value)
+        {
+            std::vector<std::string> rtn;
+            rtn.reserve(value.size());
+
+            auto unpack = [&]<typename... Ts>(Ts &&...args)
+            {
+                (rtn.emplace_back(serialize_arg(std::forward<Ts>(args))), ...);
+            };
+            std::apply(unpack, value.as_tuple());
+
+            return fmt::format("{}", fmt::join(rtn, ", "));
+        }
+
+        template <typename T>
+        auto serialize_res(T &&callback)
+        {
+            std::string result{"undefined"};
+
+            if constexpr (!std::is_void_v<std::invoke_result_t<T>>)
+            {
+                result = impl::serialize_arg(callback());
+            }
+            else
+            {
+                std::invoke(std::forward<T>(callback));
+            }
+
+            return result;
+        }
     } // namespace impl
 
-    template <typename Function>
+    template <launch Policy, typename Function>
     auto serializer::serialize(const Function &func)
     {
-        using return_t = boost::callable_traits::return_type_t<Function>;
-        using tuple_t  = boost::callable_traits::args_t<Function>;
-        using args_t   = impl::decay_tuple_t<tuple_t>;
+        using result_t = impl::return_t<Policy, Function>;
+        using args_t   = impl::args_t<Policy, Function>;
 
-        static_assert(impl::serializable<return_t> && impl::serializable<args_t>,
-                      "All arguments as well as the return type must be serializable");
+        static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
+                      "All arguments as well as the result type must be serializable");
 
-        return [func](saucer::function_data &data) -> function::result_type
+        static_assert(!is_executor<impl::last_t<args_t>>, "Usage of executor requires launch::manual");
+
+        return [func](saucer::function_data &data, const executor &exec)
         {
+            const auto &[resolve, reject] = exec;
+
             const auto &message = static_cast<function_data &>(data);
             const auto params   = impl::parse<args_t>(message.params.str);
 
             if (!params)
             {
-                return tl::make_unexpected(params.error());
+                return std::invoke(reject, params.error());
             }
 
-            std::string result{"null"};
-
-            if constexpr (!std::is_void_v<return_t>)
+            if constexpr (Policy == launch::manual)
             {
-                result = impl::serialize(std::apply(func, params.value()));
+                auto exec_resolve = [resolve]<typename... Ts>(Ts &&...value)
+                {
+                    std::invoke(resolve, impl::serialize_res([&value...]() { return (value, ...); }));
+                };
+
+                auto exec_reject = [reject](std::string reason)
+                {
+                    std::invoke(reject, error{error_code::rejected, std::move(reason)});
+                };
+
+                auto exec_param = saucer::executor<result_t>{exec_resolve, exec_reject};
+                auto all_params = std::tuple_cat(params.value(), std::make_tuple(std::move(exec_param)));
+
+                std::apply(func, all_params);
             }
             else
             {
-                std::apply(func, params.value());
+                std::invoke(resolve, impl::serialize_res([&]() { return std::apply(func, params.value()); }));
             }
-
-            return result;
         };
     }
 
@@ -174,7 +263,7 @@ namespace saucer::serializers::glaze
         serializer::args rtn;
 
         rtn.reserve(sizeof...(params), 0);
-        (rtn.push_back(impl::serialize(params)), ...);
+        (rtn.push_back(impl::serialize_arg(params)), ...);
 
         return rtn;
     }

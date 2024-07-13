@@ -7,6 +7,7 @@ namespace saucer
     enum class error_code
     {
         unknown,
+        rejected,
         type_mismatch,
         unknown_function,
     };

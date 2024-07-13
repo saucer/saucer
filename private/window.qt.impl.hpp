@@ -51,17 +51,17 @@ namespace saucer
         void resizeEvent(QResizeEvent *event) override;
     };
 
-    template <typename Return>
+    template <typename T>
     class event_callback : public QEvent
     {
-        using callback_t = std::function<Return()>;
+        using callback_t = std::function<T()>;
 
       private:
         callback_t m_func;
-        std::promise<Return> *m_result;
+        std::promise<T> *m_result;
 
       public:
-        event_callback(callback_t &&func, std::promise<Return> *result)
+        event_callback(callback_t &&func, std::promise<T> *result)
             : QEvent(QEvent::None), m_func(std::move(func)), m_result(result)
         {
         }
@@ -69,13 +69,13 @@ namespace saucer
       public:
         ~event_callback() override
         {
-            if constexpr (!std::is_same_v<Return, void>)
+            if constexpr (!std::is_void_v<T>)
             {
-                m_result->set_value(m_func());
+                m_result->set_value(std::invoke(m_func));
             }
             else
             {
-                m_func();
+                std::invoke(m_func);
                 m_result->set_value();
             }
         }

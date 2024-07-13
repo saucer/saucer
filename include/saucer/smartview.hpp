@@ -35,7 +35,7 @@ namespace saucer
         [[sc::thread_safe]] void call(function_data &, const serializer::function &);
 
       protected:
-        [[sc::thread_safe]] void add_function(std::string, serializer::function &&, bool);
+        [[sc::thread_safe]] void add_function(std::string, serializer::function &&);
         [[sc::thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
 
       protected:
@@ -51,8 +51,8 @@ namespace saucer
         smartview(const options & = {});
 
       public:
-        template <typename Function>
-        [[sc::thread_safe]] void expose(std::string name, const Function &func, bool async = false);
+        template <launch Policy = launch::sync, typename Function>
+        [[sc::thread_safe]] void expose(std::string name, Function &&func);
 
       public:
         template <typename Return, typename... Params>
