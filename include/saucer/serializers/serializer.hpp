@@ -5,15 +5,15 @@
 #include "data.hpp"
 #include "args/args.hpp"
 
+#include <concepts>
+#include <functional>
+
+#include <fmt/args.h>
+#include <tl/expected.hpp>
+
 #include <string>
 #include <memory>
 #include <future>
-
-#include <functional>
-#include <concepts>
-
-#include <tl/expected.hpp>
-#include <fmt/core.h>
 
 namespace saucer
 {

@@ -79,6 +79,8 @@ namespace saucer
       public:
         [[sc::thread_safe]] void clear_scripts();
         [[sc::thread_safe]] void clear_embedded();
+
+      public:
         [[sc::thread_safe]] void execute(const std::string &java_script);
         [[sc::thread_safe]] void inject(const std::string &java_script, const load_time &load_time);
 
