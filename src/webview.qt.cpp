@@ -6,6 +6,7 @@
 #include "window.qt.impl.hpp"
 
 #include <fmt/core.h>
+
 #include <QWebEngineScript>
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
@@ -94,24 +95,22 @@ namespace saucer
             return true;
         }
 
-        static constexpr auto opts = glz::opts{.error_on_unknown_keys = true, .error_on_missing_keys = true};
+        auto request = requests::parse(message);
 
-        request req;
-
-        if (glz::read<opts>(req, message) != glz::error_code::none)
+        if (!request)
         {
             return false;
         }
 
-        if (std::holds_alternative<resize_request>(req))
+        if (std::holds_alternative<requests::resize>(request.value()))
         {
-            auto data = std::get<resize_request>(req);
+            const auto data = std::get<requests::resize>(request.value());
             start_resize(static_cast<window_edge>(data.edge));
 
             return true;
         }
 
-        if (std::holds_alternative<drag_request>(req))
+        if (std::holds_alternative<requests::drag>(request.value()))
         {
             start_drag();
             return true;

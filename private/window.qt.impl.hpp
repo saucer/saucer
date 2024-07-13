@@ -84,7 +84,7 @@ namespace saucer
     template <typename Func>
     auto window::impl::post_safe(Func &&func)
     {
-        using return_t = typename decltype(std::function(func))::result_type;
+        using return_t = typename decltype(std::function{func})::result_type;
 
         std::promise<return_t> result;
         auto *event = new event_callback<return_t>(std::forward<Func>(func), &result);

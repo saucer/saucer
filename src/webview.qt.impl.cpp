@@ -22,7 +22,6 @@ namespace saucer
 
         return content +
                R"js(
-
                 window.saucer = 
                 {
                     window_edge:
