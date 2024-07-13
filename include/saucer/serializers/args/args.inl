@@ -7,13 +7,13 @@ namespace saucer
     template <typename... Ts>
     std::size_t arguments<Ts...>::size() const
     {
-        return std::tuple_size_v<underlying>;
+        return sizeof...(Ts);
     }
 
     template <typename... Ts>
-    const arguments<Ts...>::underlying &arguments<Ts...>::as_tuple() const
+    const std::tuple<Ts...> &arguments<Ts...>::as_tuple() const
     {
-        return static_cast<const underlying &>(*this);
+        return static_cast<const std::tuple<Ts...> &>(*this);
     }
 
     template <typename... Ts>

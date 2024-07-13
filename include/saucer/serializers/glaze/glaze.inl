@@ -2,7 +2,6 @@
 
 #include "glaze.hpp"
 
-#include <fmt/args.h>
 #include <fmt/xchar.h>
 #include <fmt/format.h>
 
@@ -15,8 +14,8 @@ namespace saucer::serializers::glaze
     {
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
-        template <typename... T>
-        consteval auto decay_tuple_impl(const std::tuple<T...> &) -> std::tuple<std::decay_t<T>...>;
+        template <typename... Ts>
+        consteval auto decay_tuple_impl(const std::tuple<Ts...> &) -> std::tuple<std::decay_t<Ts>...>;
 
         template <typename T>
         using decay_tuple_t = decltype(decay_tuple_impl(std::declval<T>()));
@@ -56,11 +55,7 @@ namespace saucer::serializers::glaze
         {
             static constexpr auto N = std::tuple_size_v<T>;
 
-            if constexpr (I >= N)
-            {
-                return {error_code::unknown};
-            }
-            else
+            if constexpr (I < N)
             {
                 using current_t = std::tuple_element_t<I, T>;
                 auto serialized = glz::write<opts>(json[I]).value_or("");
@@ -74,6 +69,10 @@ namespace saucer::serializers::glaze
                     error_code::type_mismatch,
                     fmt::format("Expected parameter {} to be '{}'", I, rebind::type_name<current_t>),
                 };
+            }
+            else
+            {
+                return {error_code::unknown};
             }
         }
 
@@ -119,10 +118,8 @@ namespace saucer::serializers::glaze
 
             if (auto err = glz::read<opts>(json, data); err)
             {
-                return tl::make_unexpected(error{
-                    error_code::unknown,
-                    std::string{glz::nameof(err.ec)},
-                });
+                auto name = std::string{glz::nameof(err.ec)};
+                return tl::make_unexpected(error{error_code::unknown, name});
             }
 
             return tl::make_unexpected(mismatch<T>(rtn, json));
