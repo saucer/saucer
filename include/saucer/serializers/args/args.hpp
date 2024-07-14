@@ -11,6 +11,9 @@ namespace saucer
     template <typename... Ts>
     struct arguments : std::tuple<Ts...>
     {
+        using tuple = std::tuple<Ts...>;
+
+      public:
         template <typename... Fs>
         explicit arguments(Fs &&...args) : std::tuple<Ts...>{std::forward<Fs>(args)...}
         {
@@ -18,7 +21,7 @@ namespace saucer
 
       public:
         [[nodiscard]] std::size_t size() const;
-        [[nodiscard]] const std::tuple<Ts...> &as_tuple() const;
+        [[nodiscard]] const tuple &as_tuple() const;
     };
 
     namespace impl

@@ -2,6 +2,8 @@
 
 #include "future.hpp"
 
+#include <functional>
+
 namespace saucer
 {
     template <typename... T>
@@ -36,7 +38,7 @@ namespace saucer
 
         auto fn = [fut, future = std::move(future), callback = std::move(callback)]() mutable
         {
-            callback(future.get());
+            std::invoke(callback, future.get());
         };
 
         *fut = std::async(std::launch::async, std::move(fn));

@@ -11,7 +11,7 @@ namespace saucer
     }
 
     template <typename... Ts>
-    const std::tuple<Ts...> &arguments<Ts...>::as_tuple() const
+    const arguments<Ts...>::tuple &arguments<Ts...>::as_tuple() const
     {
         return static_cast<const std::tuple<Ts...> &>(*this);
     }

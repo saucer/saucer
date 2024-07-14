@@ -78,7 +78,7 @@ namespace saucer::serializers::glaze
         };
 
         template <launch Policy, typename T>
-        using return_t = return_impl<Policy, T>::type;
+        using result_t = return_impl<Policy, T>::type;
 
         template <typename T>
         struct serializable_impl : std::false_type
@@ -103,14 +103,45 @@ namespace saucer::serializers::glaze
 
         template <typename T>
             requires saucer::is_arguments<T>
-        struct serializable_impl<T> : std::true_type
+        struct serializable_impl<T> : serializable_impl<typename T::tuple>
         {
         };
 
         template <typename T>
         inline constexpr bool serializable = serializable_impl<T>::value;
 
+        template <typename T>
+        struct is_tuple_impl : std::false_type
+        {
+        };
+
+        template <typename... Ts>
+        struct is_tuple_impl<std::tuple<Ts...>> : std::true_type
+        {
+        };
+
+        template <typename T>
+        inline constexpr bool is_tuple = is_tuple_impl<T>::value;
+
+        template <typename T>
+            requires(not is_tuple<T>)
+        error mismatch(T &value, const glz::json_t &json)
+        {
+            auto serialized = glz::write<opts>(json).value_or("");
+
+            if (auto err = glz::read<opts>(value, serialized); !err)
+            {
+                return {error_code::unknown};
+            }
+
+            return {
+                error_code::type_mismatch,
+                fmt::format("Expected value to be '{}'", rebind::type_name<T>),
+            };
+        }
+
         template <typename T, std::size_t I = 0>
+            requires is_tuple<T>
         error mismatch(T &tuple, const glz::json_t &json)
         {
             static constexpr auto N = std::tuple_size_v<T>;
@@ -118,9 +149,9 @@ namespace saucer::serializers::glaze
             if constexpr (I < N)
             {
                 using current_t = std::tuple_element_t<I, T>;
-                auto serialized = glz::write<opts>(json[I]).value_or("");
+                auto err        = mismatch(std::get<I>(tuple), json[I]);
 
-                if (auto err = glz::read<opts>(std::get<I>(tuple), serialized); !err)
+                if (err.ec != error_code::type_mismatch)
                 {
                     return mismatch<T, I + 1>(tuple, json);
                 }
@@ -137,7 +168,6 @@ namespace saucer::serializers::glaze
         }
 
         template <typename T>
-            requires(std::tuple_size_v<T> != 0)
         tl::expected<T, error> parse(const std::string &data)
         {
             T rtn{};
@@ -159,7 +189,7 @@ namespace saucer::serializers::glaze
         }
 
         template <typename T>
-            requires(std::tuple_size_v<T> == 0)
+            requires(is_tuple<T> and std::tuple_size_v<T> == 0)
         tl::expected<T, error> parse(const std::string &)
         {
             return {};
@@ -199,7 +229,7 @@ namespace saucer::serializers::glaze
 
             if constexpr (!std::is_void_v<std::invoke_result_t<T>>)
             {
-                result = impl::serialize_arg(callback());
+                result = impl::serialize_arg(std::invoke(std::forward<T>(callback)));
             }
             else
             {
@@ -213,7 +243,7 @@ namespace saucer::serializers::glaze
     template <launch Policy, typename Function>
     auto serializer::serialize(const Function &func)
     {
-        using result_t = impl::return_t<Policy, Function>;
+        using result_t = impl::result_t<Policy, Function>;
         using args_t   = impl::args_t<Policy, Function>;
 
         static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
@@ -279,16 +309,18 @@ namespace saucer::serializers::glaze
 
             if constexpr (!std::is_void_v<T>)
             {
-                T value{};
+                auto parsed = impl::parse<T>(result.result.str);
 
-                if (auto error = glz::read<impl::opts>(value, result.result.str); error)
+                if (!parsed)
                 {
-                    auto exception = std::runtime_error{std::string{glz::nameof(error.ec)}};
-                    promise->set_exception(std::make_exception_ptr(exception));
+                    auto exception = std::runtime_error{parsed.error().message};
+                    auto ptr       = std::make_exception_ptr(exception);
+
+                    promise->set_exception(ptr);
                     return;
                 }
 
-                promise->set_value(value);
+                promise->set_value(parsed.value());
             }
             else
             {
