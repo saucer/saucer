@@ -47,7 +47,7 @@ namespace saucer::serializers::glaze
 
         if (error)
         {
-            return tl::make_unexpected(error);
+            return tl::unexpected{error};
         }
 
         return value;
