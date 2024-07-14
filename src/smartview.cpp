@@ -59,6 +59,7 @@ namespace saucer
             }});
 
             await window.saucer.on_message({serializer}({{
+                    ["saucer:call"]: true,
                     id,
                     name,
                     params,
@@ -74,6 +75,7 @@ namespace saucer
         window.saucer._resolve = async (id, value) =>
         {{
             await window.saucer.on_message({serializer}({{
+                    ["saucer:resolve"]: true,
                     id,
                     result: value === undefined ? null : value,
             }}));
@@ -103,42 +105,50 @@ namespace saucer
 
         if (auto *message = dynamic_cast<function_data *>(parsed.get()); message)
         {
-            auto functions = m_impl->functions.copy();
-
-            if (!functions.contains(message->name))
-            {
-                reject(message->id, error{
-                                        error_code::unknown_function,
-                                        fmt::format("No exposed function '{}'", message->name),
-                                    });
-
-                return false;
-            }
-
-            auto executor = serializer::executor{
-                [this, id = message->id](const auto &result) { resolve(id, result); },
-                [this, id = message->id](const auto &error) { reject(id, std::move(error)); },
-            };
-
-            std::invoke(functions.at(message->name), *message, executor);
+            call(*message);
+            return true;
         }
 
         if (auto *message = dynamic_cast<result_data *>(parsed.get()); message)
         {
-            auto evals = m_impl->evaluations.write();
-
-            if (!evals->contains(message->id))
-            {
-                return false;
-            }
-
-            std::invoke(evals->at(message->id), *message);
-            evals->erase(message->id);
-
+            resolve(*message);
             return true;
         }
 
         return false;
+    }
+
+    void smartview_core::call(function_data &message)
+    {
+        auto functions = m_impl->functions.copy();
+
+        if (!functions.contains(message.name))
+        {
+            return reject(message.id, error{
+                                          error_code::unknown_function,
+                                          fmt::format("No exposed function '{}'", message.name),
+                                      });
+        }
+
+        auto executor = serializer::executor{
+            [this, id = message.id](const auto &result) { resolve(id, result); },
+            [this, id = message.id](const auto &error) { reject(id, std::move(error)); },
+        };
+
+        std::invoke(functions.at(message.name), message, executor);
+    }
+
+    void smartview_core::resolve(result_data &message)
+    {
+        auto evals = m_impl->evaluations.write();
+
+        if (!evals->contains(message.id))
+        {
+            return;
+        }
+
+        std::invoke(evals->at(message.id), message);
+        evals->erase(message.id);
     }
 
     void smartview_core::add_function(std::string name, function &&resolve)
