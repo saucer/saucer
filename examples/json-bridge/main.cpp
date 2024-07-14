@@ -50,7 +50,7 @@ int main()
 
     webview.expose("some_func", [](int param) { return param * 10; });
 
-    webview.evaluate<int>("await window.saucer.call({})", saucer::make_args("some_func", std::make_tuple(10))) |
+    webview.evaluate<int>("await window.saucer.exposed.some_func({})", saucer::make_args(10)) |
         then([](auto result) { //
             std::cout << "some_func: " << result << std::endl;
         });
