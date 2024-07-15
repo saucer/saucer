@@ -31,6 +31,9 @@ namespace saucer
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
+
+      public:
+        impl(std::size_t threads) : pool(threads) {}
     };
 
     smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
