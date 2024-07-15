@@ -184,7 +184,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           poolparty
-  VERSION        1.0.0
+  VERSION        1.0.1
   GIT_REPOSITORY "https://github.com/Curve/poolparty"
 )
 
