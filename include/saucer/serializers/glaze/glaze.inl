@@ -57,7 +57,7 @@ namespace saucer::serializers::glaze
         template <typename T, typename Last = last_t<args_t<T>>>
         struct meta
         {
-            using args_t   = args_t<T>;
+            using args_t   = impl::args_t<T>;
             using result_t = return_t<T>;
 
           public:
@@ -67,7 +67,7 @@ namespace saucer::serializers::glaze
         template <typename T, typename R>
         struct meta<T, executor<R>>
         {
-            using args_t   = drop_last_t<args_t<T>>;
+            using args_t   = drop_last_t<impl::args_t<T>>;
             using result_t = R;
 
           public:
