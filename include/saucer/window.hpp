@@ -7,6 +7,7 @@
 #include <vector>
 #include <utility>
 
+#include <thread>
 #include <cstdint>
 #include <filesystem>
 
@@ -36,8 +37,13 @@ namespace saucer
     {
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
+
+      public:
         std::filesystem::path storage_path;
         std::vector<std::string> chrome_flags;
+
+      public:
+        std::size_t threads = std::thread::hardware_concurrency();
     };
 
     using color = std::array<std::uint8_t, 4>;

@@ -8,6 +8,8 @@
 #include <rebind/enum.hpp>
 #include <lockpp/lock.hpp>
 
+#include <poolparty/pool.hpp>
+
 namespace saucer
 {
     using lockpp::lock;
@@ -21,6 +23,9 @@ namespace saucer
         using pending_future = std::shared_ptr<std::future<void>>;
 
       public:
+        poolparty::pool<> pool;
+
+      public:
         lock<std::map<id, resolver>> evaluations;
         lock<std::map<std::string, std::pair<function, launch>>> functions;
 
@@ -29,7 +34,7 @@ namespace saucer
     };
 
     smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
-        : webview(options), m_impl(std::make_unique<impl>())
+        : webview(options), m_impl(std::make_unique<impl>(options.threads))
     {
         m_impl->serializer = std::move(serializer);
 
@@ -118,7 +123,7 @@ namespace saucer
         return false;
     }
 
-    void smartview_core::call(function_data &message)
+    void smartview_core::call(std::unique_ptr<message_data> data)
     {
         const auto &message = *static_cast<function_data *>(data.get());
         auto functions      = m_impl->functions.copy();
@@ -136,7 +141,15 @@ namespace saucer
             [this, id = message.id](const auto &error) { reject(id, std::move(error)); },
         };
 
+        auto &[func, policy] = functions.at(message.name);
+
+        if (policy == launch::sync)
+        {
             return std::invoke(func, std::move(data), executor);
+        }
+
+        m_impl->pool.emplace([func, released = data.release(), executor = std::move(executor)]()
+                             { std::invoke(func, std::unique_ptr<message_data>{released}, executor); });
     }
 
     void smartview_core::resolve(std::unique_ptr<message_data> data)

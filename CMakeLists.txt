@@ -183,12 +183,18 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
+  NAME           poolparty
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/Curve/poolparty"
+)
+
+CPMFindPackage(
   NAME           boost_preprocessor
   GIT_TAG        boost-1.85.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp cr::lockpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp cr::lockpp cr::poolparty)
 target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits tl::expected glaze::glaze cr::ereignis fmt::fmt cr::rebind)
 
 # --------------------------------------------------------------------------------------------------------
