@@ -22,7 +22,7 @@ namespace saucer
 
       public:
         lock<std::map<id, resolver>> evaluations;
-        lock<std::map<std::string, function>> functions;
+        lock<std::map<std::string, std::pair<function, launch>>> functions;
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
@@ -105,13 +105,13 @@ namespace saucer
 
         if (auto *message = dynamic_cast<function_data *>(parsed.get()); message)
         {
-            call(*message);
+            call(std::move(parsed));
             return true;
         }
 
         if (auto *message = dynamic_cast<result_data *>(parsed.get()); message)
         {
-            resolve(*message);
+            resolve(std::move(parsed));
             return true;
         }
 
@@ -120,7 +120,8 @@ namespace saucer
 
     void smartview_core::call(function_data &message)
     {
-        auto functions = m_impl->functions.copy();
+        const auto &message = *static_cast<function_data *>(data.get());
+        auto functions      = m_impl->functions.copy();
 
         if (!functions.contains(message.name))
         {
@@ -135,26 +136,27 @@ namespace saucer
             [this, id = message.id](const auto &error) { reject(id, std::move(error)); },
         };
 
-        std::invoke(functions.at(message.name), message, executor);
+            return std::invoke(func, std::move(data), executor);
     }
 
-    void smartview_core::resolve(result_data &message)
+    void smartview_core::resolve(std::unique_ptr<message_data> data)
     {
-        auto evals = m_impl->evaluations.write();
+        const auto &message = *static_cast<result_data *>(data.get());
+        auto evals          = m_impl->evaluations.write();
 
         if (!evals->contains(message.id))
         {
             return;
         }
 
-        std::invoke(evals->at(message.id), message);
+        std::invoke(evals->at(message.id), std::move(data));
         evals->erase(message.id);
     }
 
-    void smartview_core::add_function(std::string name, function &&resolve)
+    void smartview_core::add_function(std::string name, function &&resolve, launch policy)
     {
         auto functions = m_impl->functions.write();
-        functions->emplace(std::move(name), std::move(resolve));
+        functions->emplace(std::move(name), std::make_pair(std::move(resolve), policy));
     }
 
     void smartview_core::add_evaluation(resolver &&resolve, const std::string &code)

@@ -48,37 +48,31 @@ namespace saucer::serializers::glaze
         template <typename T>
         using last_t = decltype(last_impl(std::declval<T>()));
 
-        template <launch Policy, typename T>
-        struct args_impl
-        {
-            using type = decay_tuple_t<boost::callable_traits::args_t<T>>;
-        };
+        template <typename T>
+        using args_t = decay_tuple_t<boost::callable_traits::args_t<T>>;
 
         template <typename T>
-        struct args_impl<launch::manual, T>
+        using return_t = boost::callable_traits::return_type_t<T>;
+
+        template <typename T, typename Last = last_t<args_t<T>>>
+        struct meta
         {
-            using args = decay_tuple_t<boost::callable_traits::args_t<T>>;
-            using type = drop_last_t<args>;
+            using args_t   = args_t<T>;
+            using result_t = return_t<T>;
+
+          public:
+            static constexpr bool is_manual = false;
         };
 
-        template <launch Policy, typename T>
-        using args_t = args_impl<Policy, T>::type;
-
-        template <launch Policy, typename T>
-        struct return_impl
+        template <typename T, typename R>
+        struct meta<T, executor<R>>
         {
-            using type = boost::callable_traits::return_type_t<T>;
-        };
+            using args_t   = drop_last_t<args_t<T>>;
+            using result_t = R;
 
-        template <typename T>
-        struct return_impl<launch::manual, T>
-        {
-            using executor = last_t<boost::callable_traits::args_t<T>>;
-            using type     = executor::type;
+          public:
+            static constexpr bool is_manual = true;
         };
-
-        template <launch Policy, typename T>
-        using result_t = return_impl<Policy, T>::type;
 
         template <typename T>
         struct serializable_impl : std::false_type
@@ -240,22 +234,21 @@ namespace saucer::serializers::glaze
         }
     } // namespace impl
 
-    template <launch Policy, typename Function>
+    template <typename Function>
     auto serializer::serialize(const Function &func)
     {
-        using result_t = impl::result_t<Policy, Function>;
-        using args_t   = impl::args_t<Policy, Function>;
+        using meta     = impl::meta<Function>;
+        using result_t = meta::result_t;
+        using args_t   = meta::args_t;
 
         static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
                       "All arguments as well as the result type must be serializable");
 
-        static_assert(!is_executor<impl::last_t<args_t>>, "Usage of executor requires launch::manual");
-
-        return [func](saucer::function_data &data, const executor &exec)
+        return [func](std::unique_ptr<saucer::message_data> data, const executor &exec)
         {
             const auto &[resolve, reject] = exec;
 
-            const auto &message = static_cast<function_data &>(data);
+            const auto &message = *static_cast<function_data *>(data.get());
             const auto params   = impl::parse<args_t>(message.params.str);
 
             if (!params)
@@ -263,7 +256,7 @@ namespace saucer::serializers::glaze
                 return std::invoke(reject, params.error());
             }
 
-            if constexpr (Policy == launch::manual)
+            if constexpr (meta::is_manual)
             {
                 auto exec_resolve = [resolve]<typename... Ts>(Ts &&...value)
                 {
@@ -303,9 +296,9 @@ namespace saucer::serializers::glaze
     {
         static_assert(impl::serializable<T>, "The promise result must be serializable");
 
-        return [promise](saucer::result_data &data) mutable
+        return [promise](std::unique_ptr<saucer::message_data> data) mutable
         {
-            const auto &result = static_cast<result_data &>(data);
+            const auto &result = *static_cast<result_data *>(data.get());
 
             if constexpr (!std::is_void_v<T>)
             {

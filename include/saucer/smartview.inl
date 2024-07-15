@@ -29,10 +29,10 @@ namespace saucer
     }
 
     template <Serializer Serializer, Module... Modules>
-    template <launch Policy, typename Function>
-    void smartview<Serializer, Modules...>::expose(std::string name, Function &&func)
+    template <typename Function>
+    void smartview<Serializer, Modules...>::expose(std::string name, Function &&func, launch policy)
     {
-        auto resolve = Serializer::template serialize<Policy>(std::forward<Function>(func));
-        add_function(std::move(name), std::move(resolve));
+        auto resolve = Serializer::serialize(std::forward<Function>(func));
+        add_function(std::move(name), std::move(resolve), policy);
     }
 } // namespace saucer

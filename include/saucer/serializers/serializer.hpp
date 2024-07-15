@@ -21,11 +21,11 @@ namespace saucer
     {
         using parse_result = std::unique_ptr<message_data>;
         using executor     = impl::executor<std::string, error>;
+        using args         = fmt::dynamic_format_arg_store<fmt::format_context>;
 
       public:
-        using resolver = std::function<void(result_data &)>;
-        using args     = fmt::dynamic_format_arg_store<fmt::format_context>;
-        using function = std::function<void(function_data &, const executor &)>;
+        using resolver = std::function<void(std::unique_ptr<message_data>)>;
+        using function = std::function<void(std::unique_ptr<message_data>, const executor &)>;
 
       public:
         virtual ~serializer() = default;
@@ -43,10 +43,10 @@ namespace saucer
         requires std::movable<T>;
         requires std::derived_from<T, serializer>;
         { //
-            T::template serialize<launch::sync>(std::function<int()>{})
+            T::serialize(std::function<int()>{})
         } -> std::convertible_to<serializer::function>;
         { //
-            T::template serialize<launch::manual>(std::function<void(int, executor<int>)>{})
+            T::serialize(std::function<void(executor<int>)>{})
         } -> std::convertible_to<serializer::function>;
         { //
             T::serialize_args(10, 15, 20)

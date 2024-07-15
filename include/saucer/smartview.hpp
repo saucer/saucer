@@ -12,6 +12,12 @@
 
 namespace saucer
 {
+    enum class launch
+    {
+        sync,
+        async,
+    };
+
     class smartview_core : public webview
     {
         struct impl;
@@ -32,11 +38,11 @@ namespace saucer
         bool on_message(const std::string &) override;
 
       protected:
-        [[sc::thread_safe]] void call(function_data &);
-        [[sc::thread_safe]] void resolve(result_data &);
+        [[sc::thread_safe]] void call(std::unique_ptr<message_data>);
+        [[sc::thread_safe]] void resolve(std::unique_ptr<message_data>);
 
       protected:
-        [[sc::thread_safe]] void add_function(std::string, serializer::function &&);
+        [[sc::thread_safe]] void add_function(std::string, serializer::function &&, launch);
         [[sc::thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
 
       protected:
@@ -52,8 +58,8 @@ namespace saucer
         smartview(const options & = {});
 
       public:
-        template <launch Policy = launch::sync, typename Function>
-        [[sc::thread_safe]] void expose(std::string name, Function &&func);
+        template <typename Function>
+        [[sc::thread_safe]] void expose(std::string name, Function &&func, launch policy = launch::sync);
 
       public:
         template <typename Return, typename... Params>
