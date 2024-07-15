@@ -1,7 +1,6 @@
 #include "cfg.hpp"
 
 #include <array>
-#include <thread>
 
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
@@ -28,7 +27,7 @@ suite smartview_suite = []
     saucer::smartview smartview({.hardware_acceleration = false});
 
     std::size_t i{0};
-    std::array<std::promise<bool>, 6> called{};
+    std::array<std::promise<bool>, 7> called{};
 
     "evaluate"_test = [&]
     {
@@ -72,25 +71,33 @@ suite smartview_suite = []
                              expect(eq(custom.field, 1337));
                          });
 
-        smartview.expose<launch::manual>(
+        smartview.expose(
             "f4",
-            [&](const std::string &utf8, const saucer::executor<void> &exec)
+            [&](const std::string &utf8)
             {
-                const auto &[resolve, _] = exec;
+                std::cout << "f4 called" << std::endl;
 
-                std::thread{[&smartview, &called, utf8, resolve]()
-                            {
-                                std::cout << "f4 called" << std::endl;
+                expect(utf8 == "測試-тест");
+                expect(smartview.evaluate<std::string>("'測試-тест'").get() == "測試-тест");
 
-                                expect(utf8 == "測試-тест");
-                                expect(smartview.evaluate<std::string>("'測試-тест'").get() == "測試-тест");
+                called[5].set_value(true);
 
-                                resolve();
+                return custom_type{.field = 1337};
+            },
+            launch::async);
 
-                                called[5].set_value(true);
-                            }}
-                    .detach();
-            });
+        smartview.expose("f5",
+                         [&](int param, const saucer::executor<int> &exec)
+                         {
+                             const auto &[resolve, reject] = exec;
+
+                             std::cout << "f5 called" << std::endl;
+
+                             called[6].set_value(true);
+                             expect(eq(param, 100));
+
+                             resolve(500);
+                         });
 
         std::async(std::launch::deferred,
                    [&]
@@ -98,17 +105,23 @@ suite smartview_suite = []
                        expect(called[0].get_future().get());
                        expect(called[1].get_future().get());
 
-                       saucer::all(smartview.evaluate<void>("window.saucer.call({}, [])", "f1"),
-                                   smartview.evaluate<void>("window.saucer.call({})",
-                                                            saucer::make_args("f2", std::make_tuple(10, "hello!"))),
-                                   smartview.evaluate<void>("window.saucer.call({}, {})", "f3",
-                                                            std::make_tuple(custom_type{.field = 1337})),
-                                   smartview.evaluate<void>("window.saucer.exposed.f4({})", "測試-тест"));
+                       auto all = saucer::all(
+                           smartview.evaluate<void>("window.saucer.call({}, [])", "f1"),
+                           smartview.evaluate<void>("window.saucer.call({})",
+                                                    saucer::make_args("f2", std::make_tuple(10, "hello!"))),
+                           smartview.evaluate<void>("window.saucer.call({}, {})", "f3",
+                                                    std::make_tuple(custom_type{.field = 1337})),
+                           smartview.evaluate<custom_type>("await window.saucer.exposed.f4({})", "測試-тест"),
+                           smartview.evaluate<int>("await window.saucer.exposed.f5({})", 100));
 
                        expect(called[2].get_future().get());
                        expect(called[3].get_future().get());
                        expect(called[4].get_future().get());
                        expect(called[5].get_future().get());
+                       expect(called[6].get_future().get());
+
+                       expect(std::get<0>(all).field == 1337);
+                       expect(std::get<1>(all) == 500);
 
                        smartview.close();
                    }) |

@@ -1,7 +1,7 @@
 #include "cfg.hpp"
 
-#include <future>
 #include <saucer/window.hpp>
+#include <saucer/utils/future.hpp>
 
 using namespace boost::ut;
 using namespace boost::ut::literals;
@@ -81,15 +81,12 @@ suite window_suite = []
                 window.close();
             };
 
-            auto fut = std::make_shared<std::future<void>>();
-
-            auto fn = [fut, &window]
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                window.set_size(450, 450);
-            };
-
-            *fut = std::async(std::launch::async, std::move(fn));
+            saucer::forget(std::async(std::launch::deferred,
+                                      [&window]()
+                                      {
+                                          std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                                          window.set_size(450, 450);
+                                      }));
 
             window.on<saucer::window_event::resize>(callback);
         };

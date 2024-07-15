@@ -48,30 +48,49 @@ int main()
         std::cout << "Pow(5,2): " << result << std::endl;
     });
 
-    webview.expose("some_func", [](int param) { return param * 10; });
-
-    webview.evaluate<int>("await window.saucer.exposed.some_func({})", saucer::make_args(10)) |
-        then([](auto result) { //
-            std::cout << "some_func: " << result << std::endl;
-        });
-
     std::cout << "Main thread: " << std::this_thread::get_id() << std::endl;
 
-    webview.expose<launch::manual>("another_func",
-                                   [](const custom_data &data, const saucer::executor<custom_data> &exec)
-                                   {
-                                       const auto &[resolve, reject] = exec;
+    webview.expose("sync_func", [](int param) { return param * 10; });
+    webview.expose("async_func", another_func, saucer::launch::async);
 
-                                       std::thread{[resolve, data]()
-                                                   {
-                                                       resolve(another_func(data));
-                                                   }}
-                                           .detach();
-                                   });
+    webview.expose("sync_manual_func",
+                   [](const custom_data &param, const saucer::executor<int> &exec)
+                   {
+                       const auto &[resolve, reject] = exec;
 
-    webview.evaluate<custom_data>("await window.saucer.call({}, [{}])", "another_func", custom_data{500}) |
+                       if (param.field == 1337)
+                       {
+                           return reject("intruder alert!");
+                       }
+
+                       resolve(param.field * 5);
+                   });
+
+    webview.expose(
+        "async_manual_func",
+        [&](const custom_data &param, const saucer::executor<int> &exec)
+        {
+            const auto &[resolve, reject] = exec;
+
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+
+            if (param.field != 10)
+            {
+                return reject("expected magic number");
+            }
+
+            resolve(webview.evaluate<int>("{} * 1337", param.field).get());
+        },
+        saucer::launch::async);
+
+    webview.evaluate<int>("await window.saucer.exposed.sync_func({})", saucer::make_args(10)) |
         then([](auto result) { //
-            std::cout << "another_func: " << result.field << std::endl;
+            std::cout << "sync_func: " << result << std::endl;
+        });
+
+    webview.evaluate<custom_data>("await window.saucer.call({}, [{}])", "async_func", custom_data{500}) |
+        then([](auto result) { //
+            std::cout << "async_func: " << result.field << std::endl;
         });
 
     webview.set_url("https://github.com/saucer/saucer");
