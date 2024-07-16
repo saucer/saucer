@@ -19,7 +19,7 @@ namespace saucer
         static QApplication *application;
 
         static int argc{1};
-        static std::vector<char *> argv{strdup("saucer")};
+        static std::vector<const char *> argv{"saucer"};
 
         if (!application)
         {
@@ -31,11 +31,11 @@ namespace saucer
 
             if (options.hardware_acceleration)
             {
-                flags.emplace_back("--enable-oop-rasterization");
-                flags.emplace_back("--enable-gpu-rasterization");
+                flags.emplace("--enable-oop-rasterization");
+                flags.emplace("--enable-gpu-rasterization");
 
-                flags.emplace_back("--use-gl=desktop");
-                flags.emplace_back("--enable-native-gpu-memory-buffers");
+                flags.emplace("--use-gl=desktop");
+                flags.emplace("--enable-native-gpu-memory-buffers");
             }
 
             const auto args = fmt::format("{}", fmt::join(flags, " "));
@@ -45,10 +45,11 @@ namespace saucer
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-            application = new QApplication(argc, argv.data());
+            auto *punned = static_cast<void *>(argv.data());
+            application  = new QApplication{argc, static_cast<char **>(punned)};
         }
 
-        m_impl->window = new impl::main_window(this);
+        m_impl->window = new impl::main_window{this};
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
