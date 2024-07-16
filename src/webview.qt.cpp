@@ -163,7 +163,11 @@ namespace saucer
 
         if (!enabled)
         {
+            m_impl->web_view->page()->setDevToolsPage(nullptr);
+
+            m_impl->dev_view->close();
             m_impl->dev_view->deleteLater();
+
             m_impl->dev_view = nullptr;
 
             return;
