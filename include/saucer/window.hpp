@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 
+#include <set>
 #include <array>
-#include <vector>
 #include <utility>
 
 #include <thread>
@@ -40,7 +40,7 @@ namespace saucer
 
       public:
         std::filesystem::path storage_path;
-        std::vector<std::string> chrome_flags;
+        std::set<std::string> chrome_flags;
 
       public:
         std::size_t threads = std::thread::hardware_concurrency();
