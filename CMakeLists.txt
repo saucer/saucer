@@ -166,7 +166,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        2.9.5
+  VERSION        3.0.0
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -178,7 +178,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        1.1.0
+  VERSION        1.2.0
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
