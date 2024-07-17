@@ -176,7 +176,7 @@ namespace saucer::serializers::glaze
             if (auto err = glz::read<opts>(json, data); err)
             {
                 auto name = std::string{glz::nameof(err.ec)};
-                return tl::unexpected<error>{error_code::unknown, name};
+                return tl::unexpected<error>{{error_code::unknown, name}};
             }
 
             return tl::unexpected{mismatch<T>(rtn, json)};
