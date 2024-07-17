@@ -41,6 +41,7 @@ We follow a specific coding-style throughout the project:
     - Includes should be sorted by length where applicable
     - Project/Internal Headers always come first
     - System and Project Headers should be separated by a line break
+    - If applicable, separate includes into reasonable groups
 
 - Naming Convention
   - We use a "standard library-ish" naming convention
@@ -60,4 +61,4 @@ We follow a specific coding-style throughout the project:
   - Before you commit your changes make sure that there are no clang-tidy warnings and format your code with our `.clang-format` config
 
 - Annotations
-  - All functions exposed to the user should be annotated accordingly _(only if applicable)_ _[see [annotations.hpp](include/saucer/annotations.hpp), for an example see [webview.hpp](include/saucer/webview.hpp)]_
+  - All functions exposed to the user should be annotated accordingly _(only if applicable)_ _[for an example see [webview.hpp](include/saucer/webview.hpp)]_
