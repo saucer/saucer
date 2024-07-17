@@ -5,10 +5,11 @@ on:
 name: 🏗️ Build Windows
 
 # Linux builds are tested in `test.yml`, we don't build them separately here.
-# The Windows builds are "special" in this regard because they don't properly run in GitHub Workflows.
+# The Windows builds are "special" in this regard because they don't properly run in GitHub Workflows and because
+# we provide pre-built libs for those that don't use CMake.
 
 jobs:
-  build-examples:
+  windows-examples:
     strategy:
       fail-fast: false
 
@@ -19,6 +20,7 @@ jobs:
           - Debug
 
     runs-on: windows-latest
+    name: windows-examples-${{ matrix.config }}
 
     steps:
       - name: 📥 Checkout
@@ -40,7 +42,7 @@ jobs:
           name: Examples (${{ matrix.config }})
           path: release
 
-  build-prebuilt:
+  windows-prebuilt:
     strategy:
       fail-fast: false
 
@@ -51,6 +53,7 @@ jobs:
           - Debug
 
     runs-on: windows-latest
+    name: windows-prebuilt-${{ matrix.config }}
 
     steps:
       - name: 📥 Checkout
