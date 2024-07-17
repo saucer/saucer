@@ -2,6 +2,8 @@
 
 #include "glaze.hpp"
 
+#include <optional>
+
 #include <fmt/xchar.h>
 #include <fmt/format.h>
 
@@ -64,11 +66,12 @@ namespace saucer::serializers::glaze
             static constexpr bool is_manual = false;
         };
 
-        template <typename T, typename R>
-        struct meta<T, executor<R>>
+        template <typename T, typename R, typename E>
+        struct meta<T, executor<R, E>>
         {
-            using args_t   = drop_last_t<impl::args_t<T>>;
-            using result_t = R;
+            using args_t     = drop_last_t<impl::args_t<T>>;
+            using result_t   = R;
+            using executor_t = executor<R, E>;
 
           public:
             static constexpr bool is_manual = true;
@@ -119,24 +122,21 @@ namespace saucer::serializers::glaze
 
         template <typename T>
             requires(not is_tuple<T>)
-        error mismatch(T &value, const glz::json_t &json)
+        std::optional<std::string> mismatch(T &value, const glz::json_t &json)
         {
             auto serialized = glz::write<opts>(json).value_or("");
 
             if (auto err = glz::read<opts>(value, serialized); !err)
             {
-                return {error_code::unknown};
+                return std::nullopt;
             }
 
-            return {
-                error_code::type_mismatch,
-                fmt::format("Expected value to be '{}'", rebind::type_name<T>),
-            };
+            return fmt::format("Expected value to be '{}'", rebind::type_name<T>);
         }
 
         template <typename T, std::size_t I = 0>
             requires is_tuple<T>
-        error mismatch(T &tuple, const glz::json_t &json)
+        std::optional<std::string> mismatch(T &tuple, const glz::json_t &json)
         {
             static constexpr auto N = std::tuple_size_v<T>;
 
@@ -145,24 +145,21 @@ namespace saucer::serializers::glaze
                 using current_t = std::tuple_element_t<I, T>;
                 auto err        = mismatch(std::get<I>(tuple), json[I]);
 
-                if (err.ec != error_code::type_mismatch)
+                if (!err.has_value())
                 {
                     return mismatch<T, I + 1>(tuple, json);
                 }
 
-                return {
-                    error_code::type_mismatch,
-                    fmt::format("Expected parameter {} to be '{}'", I, rebind::type_name<current_t>),
-                };
+                return fmt::format("Expected parameter {} to be '{}'", I, rebind::type_name<current_t>);
             }
             else
             {
-                return {error_code::unknown};
+                return std::nullopt;
             }
         }
 
         template <typename T>
-        tl::expected<T, error> parse(const std::string &data)
+        tl::expected<T, std::string> parse(const std::string &data)
         {
             T rtn{};
 
@@ -175,16 +172,15 @@ namespace saucer::serializers::glaze
 
             if (auto err = glz::read<opts>(json, data); err)
             {
-                auto name = std::string{glz::nameof(err.ec)};
-                return tl::unexpected<error>{{error_code::unknown, name}};
+                return tl::unexpected{std::string{glz::nameof(err.ec)}};
             }
 
-            return tl::unexpected{mismatch<T>(rtn, json)};
+            return tl::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};
         }
 
         template <typename T>
             requires(is_tuple<T> and std::tuple_size_v<T> == 0)
-        tl::expected<T, error> parse(const std::string &)
+        tl::expected<T, std::string> parse(const std::string &)
         {
             return {};
         }
@@ -253,22 +249,24 @@ namespace saucer::serializers::glaze
 
             if (!params)
             {
-                return std::invoke(reject, params.error());
+                return std::invoke(reject, impl::serialize_arg(params.error()));
             }
 
             if constexpr (meta::is_manual)
             {
+                using executor_t = meta::executor_t;
+
                 auto exec_resolve = [resolve]<typename... Ts>(Ts &&...value)
                 {
                     std::invoke(resolve, impl::serialize_res([&value...]() { return (value, ...); }));
                 };
 
-                auto exec_reject = [reject](std::string reason)
+                auto exec_reject = [reject]<typename... Ts>(Ts &&...value)
                 {
-                    std::invoke(reject, error{error_code::rejected, std::move(reason)});
+                    std::invoke(reject, impl::serialize_res([&value...]() { return (value, ...); }));
                 };
 
-                auto exec_param = saucer::executor<result_t>{exec_resolve, exec_reject};
+                auto exec_param = executor_t{exec_resolve, exec_reject};
                 auto all_params = std::tuple_cat(params.value(), std::make_tuple(std::move(exec_param)));
 
                 std::apply(func, all_params);
@@ -306,7 +304,7 @@ namespace saucer::serializers::glaze
 
                 if (!parsed)
                 {
-                    auto exception = std::runtime_error{parsed.error().message};
+                    auto exception = std::runtime_error{parsed.error()};
                     auto ptr       = std::make_exception_ptr(exception);
 
                     promise->set_exception(ptr);

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../error.hpp"
-#include "../executor.hpp"
-
 #include "data.hpp"
+
 #include "args/args.hpp"
+#include "../executor.hpp"
 
 #include <concepts>
 #include <functional>
@@ -20,7 +19,7 @@ namespace saucer
     struct serializer
     {
         using parse_result = std::unique_ptr<message_data>;
-        using executor     = impl::executor<std::string, error>;
+        using executor     = saucer::executor<std::string>;
         using args         = fmt::dynamic_format_arg_store<fmt::format_context>;
 
       public:

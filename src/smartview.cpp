@@ -133,10 +133,7 @@ namespace saucer
 
         if (!functions.contains(message.name))
         {
-            return reject(message.id, error{
-                                          error_code::unknown_function,
-                                          fmt::format("No exposed function '{}'", message.name),
-                                      });
+            return reject(message.id, fmt::format("No exposed function '{}'", message.name));
         }
 
         auto executor = serializer::executor{
@@ -193,24 +190,14 @@ namespace saucer
             id, code));
     }
 
-    void smartview_core::reject(std::uint64_t id, error error)
+    void smartview_core::reject(std::uint64_t id, const std::string &reason)
     {
-        const auto meta = rebind::enum_value(error.ec);
-        auto message    = fmt::format("{}", meta ? meta->name : "<Unknown>");
-
-        if (!error.message.empty())
-        {
-            message = fmt::format("{}: {}", message, error.message);
-        }
-
-        std::ranges::replace(message, '"', '\'');
-
         execute(fmt::format(
             R"(
-                window.saucer._rpc[{0}].reject("{1}");
+                window.saucer._rpc[{0}].reject({1});
                 delete window.saucer._rpc[{0}];
             )",
-            id, message));
+            id, reason));
     }
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
