@@ -133,6 +133,6 @@ namespace saucer
 
       public:
         template <bool Blocking = true>
-        static void run();
+        [[sc::may_block]] static void run();
     };
 } // namespace saucer
