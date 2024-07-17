@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🔨 Build (${{ matrix.config }})
         run: |
@@ -37,7 +37,7 @@ jobs:
           cmake --build release --config ${{ matrix.config }}
 
       - name: 📦 Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Examples (${{ matrix.config }})
           path: release
@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🔨 Build
         run: |
@@ -67,7 +67,7 @@ jobs:
           cmake --install build --prefix 'saucer-artifact' --config ${{ matrix.config }}
 
       - name: 📦 Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Pre-Built (${{ matrix.config }})
           path: saucer-artifact

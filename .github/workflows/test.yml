@@ -5,92 +5,33 @@ on:
 name: 🧪 Tests
 
 jobs:
-  qt5-debug:
+  run-tests:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        backend:
+          - Qt5
+          - Qt6
+        config:
+          - Release
+          - Debug
+
+    name: ${{ matrix.backend }}-${{ matrix.config }}
+
     runs-on: ubuntu-latest
     container: archlinux:base-devel
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🛸 Setup Saucer
         uses: ./.github/actions/setup
         with:
-          backend: Qt5
+          backend: ${{ matrix.backend }}
           platform: Linux
-          build-type: Debug
-          cmake-args: -Dsaucer_tests=ON
-
-      - name: 🧪 Test
-        timeout-minutes: 10
-        uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
-
-  qt5-release:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 🛸 Setup Saucer
-        uses: ./.github/actions/setup
-        with:
-          backend: Qt5
-          platform: Linux
-          build-type: Release
-          cmake-args: -Dsaucer_tests=ON
-
-      - name: 🧪 Test
-        timeout-minutes: 10
-        uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
-
-  qt6-debug:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 🛸 Setup Saucer
-        uses: ./.github/actions/setup
-        with:
-          backend: Qt6
-          platform: Linux
-          build-type: Debug
-          cmake-args: -Dsaucer_tests=ON
-
-      - name: 🧪 Test
-        timeout-minutes: 10
-        uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
-
-  qt6-release:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 🛸 Setup Saucer
-        uses: ./.github/actions/setup
-        with:
-          backend: Qt6
-          platform: Linux
-          build-type: Release
+          build-type: ${{ matrix.config }}
           cmake-args: -Dsaucer_tests=ON
 
       - name: 🧪 Test
