@@ -138,7 +138,7 @@ namespace saucer
 
         if (!options.hardware_acceleration)
         {
-            flags.emplace_back("--disable-gpu");
+            flags.emplace("--disable-gpu");
         }
 
         const auto args = fmt::format("{}", fmt::join(flags, " "));
