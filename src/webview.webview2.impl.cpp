@@ -9,7 +9,7 @@
 
 namespace saucer
 {
-    const std::string webview::impl::inject_script = R"js(
+    constinit std::string_view webview::impl::inject_script = R"js(
         window.saucer = 
         {
             window_edge:

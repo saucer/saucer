@@ -43,7 +43,7 @@ namespace saucer
         bool dom_loaded{false};
 
       public:
-        static const std::string inject_script;
+        static constinit std::string_view inject_script;
         static constexpr std::string_view scheme_prefix = "saucer://embedded/";
 
       public:

@@ -127,7 +127,7 @@ namespace saucer
                                              }},
                                          nullptr);
 
-        inject(impl::inject_script, load_time::creation);
+        inject(impl::inject_script.data(), load_time::creation);
     }
 
     webview::~webview() = default;
