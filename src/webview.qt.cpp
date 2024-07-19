@@ -1,4 +1,5 @@
 #include "webview.hpp"
+#include "scheme.hpp"
 #include "webview.qt.impl.hpp"
 
 #include "requests.hpp"
@@ -18,21 +19,10 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    const auto register_scheme = []
-    {
-        using Flags = QWebEngineUrlScheme::Flag;
-        auto scheme = QWebEngineUrlScheme("saucer");
-
-        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
-        scheme.setFlags(Flags::LocalScheme | Flags::LocalAccessAllowed | Flags::SecureScheme);
-
-        QWebEngineUrlScheme::registerScheme(scheme);
-    };
-
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-        std::call_once(flag, register_scheme);
+        std::call_once(flag, []() { register_scheme("saucer"); });
 
         auto *profile = new QWebEngineProfile("saucer");
 
@@ -227,18 +217,29 @@ namespace saucer
 
         m_embedded_files.merge(files);
 
-        if (m_impl->scheme_handler)
-        {
-            return;
-        }
+        handle_scheme("saucer",
+                      [this](const auto &request) -> scheme_handler::result_type
+                      {
+                          auto url  = QUrl{QString::fromStdString(request.url())};
+                          auto file = url.toString(QUrl::RemoveQuery | QUrl::RemoveScheme).toStdString().substr(1);
 
-        m_impl->scheme_handler = new impl::url_scheme_handler(this);
-        m_impl->web_view->page()->profile()->installUrlSchemeHandler("saucer", m_impl->scheme_handler);
+                          if (!m_embedded_files.contains(file))
+                          {
+                              return tl::unexpected{request_error::not_found};
+                          }
+
+                          const auto &data = m_embedded_files.at(file);
+
+                          return response{
+                              .mime = data.mime,
+                              .data = stash<const std::uint8_t>::view(data.content),
+                          };
+                      });
     }
 
-    void webview::serve(const std::string &file)
+    void webview::serve(const std::string &file, const std::string &scheme)
     {
-        set_url(fmt::format("{}{}", impl::scheme_prefix, file));
+        set_url(fmt::format("{}:/{}", scheme, file));
     }
 
     void webview::clear_scripts()
@@ -262,15 +263,7 @@ namespace saucer
         }
 
         m_embedded_files.clear();
-
-        if (!m_impl->scheme_handler)
-        {
-            return;
-        }
-
-        m_impl->web_view->page()->profile()->removeUrlSchemeHandler(m_impl->scheme_handler);
-        m_impl->scheme_handler->deleteLater();
-        m_impl->scheme_handler = nullptr;
+        remove_scheme("saucer");
     }
 
     void webview::execute(const std::string &java_script)
@@ -287,6 +280,35 @@ namespace saucer
         }
 
         m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
+    }
+
+    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, name, handler] { return handle_scheme(name, handler); });
+        }
+
+        auto &scheme_handler = m_impl->schemes.emplace(name, std::move(handler)).first->second;
+        m_impl->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme_handler);
+    }
+
+    void webview::remove_scheme(const std::string &name)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, name] { return remove_scheme(name); });
+        }
+
+        auto it = m_impl->schemes.find(name);
+
+        if (it == m_impl->schemes.end())
+        {
+            return;
+        }
+
+        m_impl->web_view->page()->profile()->removeUrlSchemeHandler(&it->second);
+        m_impl->schemes.erase(it);
     }
 
     void webview::clear(web_event event)
@@ -326,4 +348,15 @@ namespace saucer
     }
 
     INSTANTIATE_EVENTS(webview, 4, web_event)
+
+    void webview::register_scheme(const std::string &name)
+    {
+        auto scheme = QWebEngineUrlScheme(name.c_str());
+        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
+
+        using Flags = QWebEngineUrlScheme::Flag;
+        scheme.setFlags(Flags::LocalScheme | Flags::LocalAccessAllowed | Flags::SecureScheme);
+
+        QWebEngineUrlScheme::registerScheme(scheme);
+    }
 } // namespace saucer

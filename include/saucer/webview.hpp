@@ -1,6 +1,7 @@
 #pragma once
 
 #include "window.hpp"
+#include "scheme.hpp"
 
 #include <map>
 #include <span>
@@ -75,7 +76,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void embed(embedded_files &&files);
-        [[sc::thread_safe]] void serve(const std::string &file);
+        [[sc::thread_safe]] void serve(const std::string &file, const std::string &scheme = "saucer");
 
       public:
         [[sc::thread_safe]] void clear_scripts();
@@ -84,6 +85,10 @@ namespace saucer
       public:
         [[sc::thread_safe]] void execute(const std::string &java_script);
         [[sc::thread_safe]] void inject(const std::string &java_script, const load_time &load_time);
+
+      public:
+        [[sc::thread_safe]] void handle_scheme(const std::string &name, scheme_handler handler);
+        [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:
         using window::clear;
@@ -99,5 +104,8 @@ namespace saucer
         using window::on;
         template <web_event Event>
         [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&callback);
+
+      public:
+        static void register_scheme(const std::string &name);
     };
 } // namespace saucer
