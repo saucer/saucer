@@ -39,7 +39,11 @@ namespace saucer
 
     void url_scheme_handler::requestStarted(QWebEngineUrlRequestJob *request)
     {
+#ifdef SAUCER_QT6
         auto req = saucer::request{{request, request->requestBody()->readAll()}};
+#else
+        auto req = saucer::request{{request}};
+#endif
 
         if (!m_callback)
         {
@@ -66,6 +70,7 @@ namespace saucer
             }
         }
 
+#ifdef SAUCER_QT6
         auto to_array = [](auto &item)
         {
             return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
@@ -73,6 +78,7 @@ namespace saucer
 
         auto headers = std::views::transform(result->headers, to_array);
         request->setAdditionalResponseHeaders(QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}});
+#endif
 
         auto data    = result->data;
         auto *buffer = new QBuffer{};
