@@ -16,12 +16,10 @@ namespace saucer
 {
     window::window(const options &options) : m_impl(std::make_unique<impl>())
     {
-        static QApplication *application;
-
         static int argc{1};
         static std::vector<const char *> argv{"saucer"};
 
-        if (!application)
+        if (!impl::application)
         {
 #ifndef SAUCER_TESTS
             qputenv("QT_LOGGING_RULES", "*=false");
@@ -46,7 +44,7 @@ namespace saucer
 #endif
 
             auto *punned = static_cast<void *>(argv.data());
-            application  = new QApplication{argc, static_cast<char **>(punned)};
+            impl::application.emplace(argc, static_cast<char **>(punned));
         }
 
         m_impl->window = new impl::main_window{this};

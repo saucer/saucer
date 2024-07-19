@@ -34,7 +34,7 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, register_scheme);
 
-        auto *profile = QWebEngineProfile::defaultProfile();
+        auto *profile = new QWebEngineProfile("saucer");
 
         if (!options.storage_path.empty())
         {
@@ -44,7 +44,7 @@ namespace saucer
             profile->setPersistentStoragePath(path);
         }
 
-        profile->setPersistentCookiesPolicy(options.persistent_cookies ? QWebEngineProfile::AllowPersistentCookies
+        profile->setPersistentCookiesPolicy(options.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
                                                                        : QWebEngineProfile::NoPersistentCookies);
 
         profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
