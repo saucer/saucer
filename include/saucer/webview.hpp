@@ -4,7 +4,6 @@
 #include "scheme.hpp"
 
 #include <map>
-#include <span>
 #include <string>
 #include <memory>
 
@@ -29,7 +28,7 @@ namespace saucer
     struct embedded_file
     {
         std::string mime;
-        std::span<const std::uint8_t> content;
+        stash<const std::uint8_t> content;
     };
 
     class webview : public window

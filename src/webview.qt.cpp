@@ -232,7 +232,7 @@ namespace saucer
 
                           return response{
                               .mime = data.mime,
-                              .data = stash<const std::uint8_t>::view(data.content),
+                              .data = data.content,
                           };
                       });
     }

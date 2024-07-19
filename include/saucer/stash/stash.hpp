@@ -2,6 +2,8 @@
 
 #include <span>
 #include <vector>
+
+#include <future>
 #include <variant>
 
 namespace saucer
@@ -11,7 +13,11 @@ namespace saucer
     {
         using owning_t  = std::vector<std::remove_const_t<T>>;
         using viewing_t = std::span<T>;
-        using variant_t = std::variant<viewing_t, owning_t>;
+
+      public:
+        using data_t    = std::variant<viewing_t, owning_t>;
+        using lazy_t    = std::shared_future<data_t>;
+        using variant_t = std::variant<data_t, lazy_t>;
 
       private:
         variant_t m_data;
@@ -26,6 +32,11 @@ namespace saucer
       public:
         [[nodiscard]] static stash from(owning_t data);
         [[nodiscard]] static stash view(viewing_t data);
+
+      public:
+        [[nodiscard]] static stash lazy(lazy_t data);
+        template <typename Callback>
+        [[nodiscard]] static stash lazy(Callback &&);
     };
 } // namespace saucer
 
