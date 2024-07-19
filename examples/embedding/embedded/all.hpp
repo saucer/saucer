@@ -1,4 +1,5 @@
 #pragma once
+
 #include <map>
 #include <string>
 #include <saucer/webview.hpp>
@@ -14,10 +15,10 @@ namespace saucer::embedded
     {
         std::map<std::string, embedded_file> rtn;
 
-        rtn.emplace("assets/logo.png", embedded_file{"image/png", assets_logo_png});
-        rtn.emplace("src/index.html", embedded_file{"text/html", src_index_html});
-        rtn.emplace("src/index.js", embedded_file{"application/javascript", src_index_js});
-        rtn.emplace("style/style.css", embedded_file{"text/css", style_style_css});
+        rtn.emplace("assets/logo.png", embedded_file{"image/png", stash<const std::uint8_t>::view(assets_logo_png)});
+        rtn.emplace("src/index.html", embedded_file{"text/html", stash<const std::uint8_t>::view(src_index_html)});
+        rtn.emplace("src/index.js", embedded_file{"application/javascript", stash<const std::uint8_t>::view(src_index_js)});
+        rtn.emplace("style/style.css", embedded_file{"text/css", stash<const std::uint8_t>::view(style_style_css)});
 
         return rtn;
     }
