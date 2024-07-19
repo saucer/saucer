@@ -4,6 +4,7 @@
 
 #include <QMap>
 #include <QBuffer>
+#include <QtGlobal>
 #include <QIODevice>
 
 namespace saucer
@@ -39,7 +40,7 @@ namespace saucer
 
     void url_scheme_handler::requestStarted(QWebEngineUrlRequestJob *request)
     {
-#ifdef SAUCER_QT6
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         auto req = saucer::request{{request, request->requestBody()->readAll()}};
 #else
         auto req = saucer::request{{request}};
@@ -70,7 +71,7 @@ namespace saucer
             }
         }
 
-#ifdef SAUCER_QT6
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
         auto to_array = [](auto &item)
         {
             return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
