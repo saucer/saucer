@@ -6,6 +6,7 @@
 #include "window.qt.impl.hpp"
 
 #include <fmt/core.h>
+#include <filesystem>
 
 #include <QWebEngineScript>
 #include <QWebEngineProfile>
@@ -15,6 +16,8 @@
 
 namespace saucer
 {
+    namespace fs = std::filesystem;
+
     const auto register_scheme = []
     {
         using Flags = QWebEngineUrlScheme::Flag;
@@ -201,6 +204,17 @@ namespace saucer
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
+    }
+
+    void webview::set_file(const std::string &file)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, file] { return set_file(file); });
+        }
+
+        auto path = fs::canonical(file).string();
+        m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(path)));
     }
 
     void webview::embed(embedded_files &&files)

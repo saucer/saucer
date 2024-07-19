@@ -71,6 +71,7 @@ namespace saucer
         [[sc::thread_safe]] void set_dev_tools(bool enabled);
         [[sc::thread_safe]] void set_context_menu(bool enabled);
         [[sc::thread_safe]] void set_url(const std::string &url);
+        [[sc::thread_safe]] void set_file(const std::string &file);
 
       public:
         [[sc::thread_safe]] void embed(embedded_files &&files);

@@ -249,6 +249,17 @@ namespace saucer
         m_impl->web_view->Navigate(utils::widen(url).c_str());
     }
 
+    void webview::set_file(const std::string &file)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, file] { return set_file(file); });
+        }
+
+        auto path = fmt::format("file://{}", fs::canonical(file).string());
+        m_impl->web_view->Navigate(utils::widen(path).c_str());
+    }
+
     void webview::embed(embedded_files &&files)
     {
         if (!window::m_impl->is_thread_safe())
