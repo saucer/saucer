@@ -7,6 +7,8 @@
 #include "utils.win32.hpp"
 #include "window.win32.impl.hpp"
 
+#include <WebView2EnvironmentOptions.h>
+
 #include <cassert>
 #include <filesystem>
 
@@ -278,9 +280,9 @@ namespace saucer
         m_impl->install_scheme_handler(this);
     }
 
-    void webview::serve(const std::string &file)
+    void webview::serve(const std::string &file, const std::string &scheme)
     {
-        set_url(std::string{impl::scheme_prefix} + file);
+        set_url(fmt::format("{}:/{}", scheme, file));
     }
 
     void webview::clear_scripts()
@@ -306,7 +308,7 @@ namespace saucer
         }
 
         m_embedded_files.clear();
-
+        
         if (m_impl->scheme_handler.value <= 0)
         {
             return;
@@ -410,4 +412,35 @@ namespace saucer
     }
 
     INSTANTIATE_EVENTS(webview, 4, web_event)
+
+    void webview::register_scheme(const std::string &name)
+    {
+        auto options = Make<CoreWebView2EnvironmentOptions>();
+        ComPtr<ICoreWebView2EnvironmentOptions4> options_new;
+
+        if (!SUCCEEDED(options->QueryInterface(IID_PPV_ARGS(&options_new))))
+        {
+            utils::throw_error("Failed to query ICoreWebView2EnvironmentOptions4");
+            return;
+        }
+
+        static LPCWSTR allowed_origins = L"*";
+        auto scheme                    = Make<CoreWebView2CustomSchemeRegistration>(utils::widen(name).c_str());
+
+        scheme->put_TreatAsSecure(true);
+        scheme->put_HasAuthorityComponent(true);
+        scheme->SetAllowedOrigins(1, &allowed_origins);
+
+        impl::schemes.emplace(name, std::move(scheme));
+
+        auto mapped = std::views::transform(impl::schemes, [](const auto &item) { return item.second.Get(); });
+        std::vector<ICoreWebView2CustomSchemeRegistration *> schemes{mapped.begin(), mapped.end()};
+
+        if (SUCCEEDED(options_new->SetCustomSchemeRegistrations(schemes.size(), schemes.data())))
+        {
+            return;
+        }
+
+        utils::throw_error("Failed to register schemes");
+    }
 } // namespace saucer

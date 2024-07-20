@@ -5,7 +5,6 @@
 #include <any>
 #include <optional>
 #include <concepts>
-#include <string_view>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -29,22 +28,19 @@ namespace saucer
 
       public:
         std::vector<LPCWSTR> injected;
-
-      public:
-        std::vector<std::string> pending;
         std::vector<std::string> scripts;
 
       public:
         EventRegistrationToken url_changed{};
         EventRegistrationToken load_finished{};
-        EventRegistrationToken scheme_handler{};
 
       public:
         bool dom_loaded{false};
+        std::vector<std::string> pending;
 
       public:
         static const std::string inject_script;
-        static constexpr std::string_view scheme_prefix = "saucer://embedded/";
+        static std::map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
 
       public:
         void overwrite_wnd_proc(HWND hwnd);
