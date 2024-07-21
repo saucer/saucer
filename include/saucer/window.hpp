@@ -126,10 +126,10 @@ namespace saucer
         [[sc::thread_safe]] void remove(window_event event, std::uint64_t id);
 
         template <window_event Event>
-        [[sc::thread_safe]] void once(events::type_t<Event> &&);
+        [[sc::thread_safe]] void once(events::type_t<Event>);
 
         template <window_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&);
+        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event>);
 
       public:
         template <bool Blocking = true>

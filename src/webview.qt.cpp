@@ -329,14 +329,14 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type_t<Event> &&callback)
+    void webview::once(events::type_t<Event> callback)
     {
         m_impl->setup<Event>(this);
         m_events.at<Event>().once(std::move(callback));
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type_t<Event> &&callback)
+    std::uint64_t webview::on(events::type_t<Event> callback)
     {
         m_impl->setup<Event>(this);
         return m_events.at<Event>().add(std::move(callback));

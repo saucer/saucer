@@ -405,13 +405,13 @@ namespace saucer
     }
 
     template <window_event Event>
-    void window::once(events::type_t<Event> &&callback)
+    void window::once(events::type_t<Event> callback)
     {
         m_events.at<Event>().once(std::move(callback));
     }
 
     template <window_event Event>
-    std::uint64_t window::on(events::type_t<Event> &&callback)
+    std::uint64_t window::on(events::type_t<Event> callback)
     {
         return m_events.at<Event>().add(std::move(callback));
     }
