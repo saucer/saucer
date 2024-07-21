@@ -59,7 +59,7 @@ namespace saucer
             )js";
     }();
 
-    webview::impl::web_class::web_class(webview *parent) : QObject(parent->m_impl->web_view), m_parent(parent) {}
+    webview::impl::web_class::web_class(webview *parent) : m_parent(parent) {}
 
     void webview::impl::web_class::on_message(const QString &message)
     {
@@ -84,7 +84,7 @@ namespace saucer
             self->m_events.at<web_event::load_finished>().fire();
         };
 
-        load_finished = web_view->connect(web_view, &QWebEngineView::loadFinished, handler);
+        load_finished = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
     }
 
     template <>
@@ -100,7 +100,7 @@ namespace saucer
             self->m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
         };
 
-        url_changed = web_view->connect(web_view, &QWebEngineView::urlChanged, handler);
+        url_changed = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
     }
 
     template <>

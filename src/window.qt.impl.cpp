@@ -4,8 +4,6 @@
 
 namespace saucer
 {
-    thread_local std::optional<QApplication> window::impl::application;
-
     window::impl::main_window::main_window(class window *parent) : m_parent(parent) {}
 
     void window::impl::main_window::changeEvent(QEvent *event)

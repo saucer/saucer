@@ -13,25 +13,21 @@
 
 namespace saucer
 {
-    //! The web_view should be the first member of the impl struct, as it should
-    //! be easily accessible for modules.
-
     struct webview::impl
     {
         class web_class;
 
       public:
-        QWebEngineView *web_view;
+        std::unique_ptr<QWebEngineProfile> profile;
 
       public:
-        QWebEnginePage *page;
+        std::unique_ptr<QWebEngineView> web_view;
+        std::unique_ptr<QWebEngineView> dev_page;
+        std::unique_ptr<QWebEnginePage> web_page;
 
       public:
-        QObject *channel_obj;
-        QWebChannel *web_channel;
-
-      public:
-        QWebEngineView *dev_view;
+        std::unique_ptr<QWebChannel> channel;
+        std::unique_ptr<QObject> channel_obj;
 
       public:
         bool dom_loaded{false};

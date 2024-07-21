@@ -24,32 +24,32 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, []() { register_scheme("saucer"); });
 
-        auto *profile = new QWebEngineProfile("saucer");
+        m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
         if (!options.storage_path.empty())
         {
-            auto path = QString::fromStdString(options.storage_path.string());
+            const auto path = QString::fromStdString(options.storage_path.string());
 
-            profile->setCachePath(path);
-            profile->setPersistentStoragePath(path);
+            m_impl->profile->setCachePath(path);
+            m_impl->profile->setPersistentStoragePath(path);
         }
 
-        profile->setPersistentCookiesPolicy(options.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
-                                                                       : QWebEngineProfile::NoPersistentCookies);
+        m_impl->profile->setPersistentCookiesPolicy(options.persistent_cookies
+                                                        ? QWebEngineProfile::ForcePersistentCookies
+                                                        : QWebEngineProfile::NoPersistentCookies);
 
-        profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        m_impl->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
-        m_impl->web_view    = new QWebEngineView(window::m_impl->window);
-        m_impl->page        = new QWebEnginePage(profile, m_impl->web_view);
-        m_impl->web_channel = new QWebChannel(m_impl->web_view);
+        m_impl->web_view    = std::make_unique<QWebEngineView>();
+        m_impl->web_page    = std::make_unique<QWebEnginePage>(m_impl->profile.get());
+        m_impl->channel     = std::make_unique<QWebChannel>();
+        m_impl->channel_obj = std::make_unique<impl::web_class>(this);
 
-        m_impl->web_view->setPage(m_impl->page);
-        m_impl->web_view->page()->setWebChannel(m_impl->web_channel);
+        m_impl->web_view->setPage(m_impl->web_page.get());
+        m_impl->web_page->setWebChannel(m_impl->channel.get());
+        m_impl->channel->registerObject("saucer", m_impl->channel_obj.get());
 
-        m_impl->channel_obj = new impl::web_class(this);
-        m_impl->web_channel->registerObject("saucer", m_impl->channel_obj);
-
-        m_impl->web_view->connect(m_impl->web_view, &QWebEngineView::loadStarted,
+        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::loadStarted,
                                   [this]()
                                   {
                                       m_impl->dom_loaded = false;
@@ -64,11 +64,10 @@ namespace saucer
         inject(impl::ready_script, load_time::ready);
         inject(impl::inject_script, load_time::creation);
 
-        window::m_impl->window->setCentralWidget(m_impl->web_view);
+        window::m_impl->window->setCentralWidget(m_impl->web_view.get());
         m_impl->web_view->show();
     }
 
-    // ? The window destructor will implicitly delete the web_view
     webview::~webview() = default;
 
     bool webview::on_message(const std::string &message)
@@ -119,7 +118,7 @@ namespace saucer
             return window::m_impl->post_safe([this] { return dev_tools(); });
         }
 
-        return static_cast<bool>(m_impl->dev_view);
+        return static_cast<bool>(m_impl->dev_page);
     }
 
     std::string webview::url() const
@@ -149,30 +148,26 @@ namespace saucer
             return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        if (!m_impl->dev_view && !enabled)
+        if (!m_impl->dev_page && !enabled)
         {
             return;
         }
 
         if (!enabled)
         {
-            m_impl->web_view->page()->setDevToolsPage(nullptr);
-
-            m_impl->dev_view->close();
-            m_impl->dev_view->deleteLater();
-
-            m_impl->dev_view = nullptr;
+            m_impl->web_page->setDevToolsPage(nullptr);
+            m_impl->dev_page.reset();
 
             return;
         }
 
-        if (!m_impl->dev_view)
+        if (!m_impl->dev_page)
         {
-            m_impl->dev_view = new QWebEngineView;
-            m_impl->web_view->page()->setDevToolsPage(m_impl->dev_view->page());
+            m_impl->dev_page = std::make_unique<QWebEngineView>();
+            m_impl->web_page->setDevToolsPage(m_impl->dev_page->page());
         }
 
-        m_impl->dev_view->show();
+        m_impl->dev_page->show();
     }
 
     void webview::set_context_menu(bool enabled)

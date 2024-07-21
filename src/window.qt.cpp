@@ -43,11 +43,11 @@ namespace saucer
             QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-            auto *punned = static_cast<void *>(argv.data());
-            impl::application.emplace(argc, static_cast<char **>(punned));
+            auto *punned      = static_cast<void *>(argv.data());
+            impl::application = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
         }
 
-        m_impl->window = new impl::main_window{this};
+        m_impl->window = std::make_unique<impl::main_window>(this);
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
@@ -57,10 +57,7 @@ namespace saucer
         m_impl->window->setPalette(palette);
     }
 
-    window::~window()
-    {
-        m_impl->window->deleteLater();
-    }
+    window::~window() = default;
 
     bool window::focused() const
     {
@@ -114,6 +111,11 @@ namespace saucer
 
     color window::background() const
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return background(); });
+        }
+
         const auto color = m_impl->window->palette().color(QPalette::ColorRole::Window);
 
         return {
@@ -228,7 +230,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([edge, this] { return start_resize(edge); });
+            return m_impl->post_safe([this, edge] { return start_resize(edge); });
         }
 
         Qt::Edges translated;
@@ -257,7 +259,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([enabled, this] { return set_minimized(enabled); });
+            return m_impl->post_safe([this, enabled] { return set_minimized(enabled); });
         }
 
         auto state = m_impl->window->windowState();
@@ -278,7 +280,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([enabled, this] { return set_maximized(enabled); });
+            return m_impl->post_safe([this, enabled] { return set_maximized(enabled); });
         }
 
         auto state = m_impl->window->windowState();
@@ -299,7 +301,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([enabled, this] { return set_resizable(enabled); });
+            return m_impl->post_safe([this, enabled] { return set_resizable(enabled); });
         }
 
         if (!enabled)
@@ -319,7 +321,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([enabled, this] { return set_decorations(enabled); });
+            return m_impl->post_safe([this, enabled] { return set_decorations(enabled); });
         }
 
         m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
@@ -329,7 +331,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([title, this] { return set_title(title); });
+            return m_impl->post_safe([this, title] { return set_title(title); });
         }
 
         m_impl->window->setWindowTitle(QString::fromStdString(title));
@@ -339,7 +341,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([enabled, this] { return set_always_on_top(enabled); });
+            return m_impl->post_safe([this, enabled] { return set_always_on_top(enabled); });
         }
 
         m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
@@ -349,7 +351,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([width, height, this] { return set_size(width, height); });
+            return m_impl->post_safe([this, width, height] { return set_size(width, height); });
         }
 
         m_impl->window->resize(width, height);
@@ -359,7 +361,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([width, height, this] { return set_max_size(width, height); });
+            return m_impl->post_safe([this, width, height] { return set_max_size(width, height); });
         }
 
         m_impl->window->setMaximumSize(width, height);
@@ -370,7 +372,7 @@ namespace saucer
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([width, height, this] { return set_min_size(width, height); });
+            return m_impl->post_safe([this, width, height] { return set_min_size(width, height); });
         }
 
         m_impl->window->setMinimumSize(width, height);
@@ -379,9 +381,14 @@ namespace saucer
 
     void window::set_background(const color &color)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, color] { return set_background(color); });
+        }
+
         auto palette = m_impl->window->palette();
 
-        auto [r, g, b, a] = color;
+        const auto [r, g, b, a] = color;
         palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
 
         m_impl->window->setPalette(palette);

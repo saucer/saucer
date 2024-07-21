@@ -20,7 +20,7 @@ namespace saucer
         class main_window;
 
       public:
-        QMainWindow *window;
+        std::unique_ptr<QMainWindow> window;
 
       public:
         std::function<void()> on_closed;
@@ -34,15 +34,15 @@ namespace saucer
         auto post_safe(Func &&);
 
       public:
-        static thread_local std::optional<QApplication> application;
+        static thread_local inline std::unique_ptr<QApplication> application;
     };
 
     class window::impl::main_window : public QMainWindow
     {
-        class window *m_parent;
+        saucer::window *m_parent;
 
       public:
-        main_window(class window *parent);
+        main_window(saucer::window *parent);
 
       public:
         void changeEvent(QEvent *event) override;
@@ -65,7 +65,7 @@ namespace saucer
 
       public:
         event_callback(callback_t &&func, std::promise<T> *result)
-            : QEvent(QEvent::None), m_func(std::move(func)), m_result(result)
+            : QEvent(QEvent::User), m_func(std::move(func)), m_result(result)
         {
         }
 
@@ -93,7 +93,7 @@ namespace saucer
         auto *event = new event_callback<return_t>(std::forward<Func>(func), &result);
 
         // ? postEvent will automatically delete the event after processing.
-        QApplication::postEvent(window, event);
+        QApplication::postEvent(window.get(), event);
 
         return result.get_future().get();
     }

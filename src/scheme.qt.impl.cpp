@@ -2,9 +2,10 @@
 
 #include <ranges>
 
+#include <QtGlobal>
+
 #include <QMap>
 #include <QBuffer>
-#include <QtGlobal>
 #include <QIODevice>
 
 namespace saucer
@@ -41,7 +42,8 @@ namespace saucer
     void url_scheme_handler::requestStarted(QWebEngineUrlRequestJob *request)
     {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-        auto req = saucer::request{{request, request->requestBody()->readAll()}};
+        auto *body = request->requestBody();
+        auto req   = saucer::request{{request, body->isReadable() ? body->readAll() : QByteArray{}}};
 #else
         auto req = saucer::request{{request}};
 #endif
