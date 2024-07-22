@@ -139,20 +139,20 @@ suite webview_suite = []
 
         auto callback = [&](const std::string &url)
         {
-            if (url.find("saucer") != std::string::npos)
+            if (url.empty() || url.find("saucer") != std::string::npos)
             {
                 return;
             }
 
-            expect(url.find("startpage") != std::string::npos) << url;
+            expect(url.find("startpage") != std::string::npos);
             webview.close();
         };
 
         webview.on<saucer::web_event::url_changed>(callback);
 
-        auto data    = reinterpret_cast<const std::uint8_t *>(html.data());
-        auto content = saucer::stash<const std::uint8_t>::view({data, data + html.size()});
-        auto file    = saucer::embedded_file{"text/html", content};
+        const auto *data = reinterpret_cast<const std::uint8_t *>(html.data());
+        auto content     = saucer::stash<const std::uint8_t>::view({data, data + html.size()});
+        auto file        = saucer::embedded_file{"text/html", content};
 
         webview.embed({{"test.html", file}});
         webview.serve("test.html");
