@@ -189,11 +189,7 @@ namespace saucer::serializers::glaze
         auto serialize_arg(const T &value)
         {
             static_assert(serializable<T>, "Given type is not serializable");
-
-            auto json    = glz::write<opts>(value).value_or("null");
-            auto escaped = glz::write<opts>(json).value_or("null");
-
-            return fmt::format("JSON.parse({})", escaped);
+            return glz::write<opts>(value).value_or("null");
         }
 
         template <typename T>
@@ -215,7 +211,7 @@ namespace saucer::serializers::glaze
         template <typename T>
         auto serialize_res(T &&callback)
         {
-            std::string result{"undefined"};
+            std::string result;
 
             if constexpr (!std::is_void_v<std::invoke_result_t<T>>)
             {
