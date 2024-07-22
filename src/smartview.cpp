@@ -111,13 +111,13 @@ namespace saucer
             return false;
         }
 
-        if (auto *message = dynamic_cast<function_data *>(parsed.get()); message)
+        if (auto *data = dynamic_cast<function_data *>(parsed.get()); data)
         {
             call(std::move(parsed));
             return true;
         }
 
-        if (auto *message = dynamic_cast<result_data *>(parsed.get()); message)
+        if (auto *data = dynamic_cast<result_data *>(parsed.get()); data)
         {
             resolve(std::move(parsed));
             return true;

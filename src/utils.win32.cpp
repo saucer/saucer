@@ -1,9 +1,8 @@
 #include "utils.win32.hpp"
 
-#include <array>
-#include <stdexcept>
-
 #include <windows.h>
+
+#include <stdexcept>
 #include <fmt/core.h>
 
 namespace saucer
@@ -14,7 +13,7 @@ namespace saucer
         static constexpr DWORD format = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
 
         std::wstring error(1024, '\0');
-        FormatMessageW(format, nullptr, GetLastError(), lang, error.data(), error.size(), nullptr);
+        FormatMessageW(format, nullptr, GetLastError(), lang, error.data(), static_cast<DWORD>(error.size()), nullptr);
 
         throw std::runtime_error(fmt::format("An error occurred: {} (LastError: \"{}\")", msg, utils::narrow(error)));
     }
@@ -46,7 +45,7 @@ namespace saucer
         auto narrow_size = static_cast<int>(narrow.size());
         auto size        = MultiByteToWideChar(CP_UTF8, 0, narrow.c_str(), narrow_size, nullptr, 0);
 
-        if (size <= 0)
+        if (!size)
         {
             return {};
         }

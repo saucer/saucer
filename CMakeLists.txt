@@ -85,6 +85,9 @@ if (NOT MSVC)
   endif()
 
   target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
+else()
+  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX /external:anglebrackets /external:W0)
+  target_compile_options(${PROJECT_NAME} PUBLIC  /wd5030)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
