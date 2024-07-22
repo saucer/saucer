@@ -1,6 +1,7 @@
 #include "window.qt.impl.hpp"
 
 #include <QThread>
+#include <QCloseEvent>
 
 namespace saucer
 {

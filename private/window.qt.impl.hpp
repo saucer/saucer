@@ -2,12 +2,12 @@
 
 #include "window.hpp"
 
-#include <future>
 #include <optional>
+
+#include <future>
 #include <functional>
 
 #include <QMainWindow>
-#include <QCloseEvent>
 #include <QApplication>
 
 namespace saucer
@@ -64,7 +64,7 @@ namespace saucer
         std::promise<T> *m_result;
 
       public:
-        event_callback(callback_t &&func, std::promise<T> *result)
+        event_callback(callback_t func, std::promise<T> *result)
             : QEvent(QEvent::User), m_func(std::move(func)), m_result(result)
         {
         }
