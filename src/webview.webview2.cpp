@@ -22,112 +22,90 @@ namespace saucer
 
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
-        m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
-
-        window::m_impl->change_background = [&]()
-        {
-            if (!m_impl->controller)
-            {
-                return;
-            }
-
-            ComPtr<ICoreWebView2Controller2> controller;
-            m_impl->controller->QueryInterface(IID_PPV_ARGS(&controller));
-
-            if (!controller)
-            {
-                return;
-            }
-
-            auto [r, g, b, a] = window::m_impl->background;
-
-            controller->put_DefaultBackgroundColor(COREWEBVIEW2_COLOR{
-                static_cast<std::uint8_t>(a), //
-                static_cast<std::uint8_t>(r), //
-                static_cast<std::uint8_t>(g), //
-                static_cast<std::uint8_t>(b)  //
-            });
-        };
+        static std::once_flag flag;
+        std::call_once(flag, []() { register_scheme("saucer"); });
 
         auto copy = options;
 
         if (options.persistent_cookies && options.storage_path.empty())
         {
-            WCHAR appdata[MAX_PATH];
-            SHGetFolderPathW(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, appdata);
-
-            copy.storage_path = fs::path{appdata} / "saucer";
+            copy.storage_path = fs::current_path() / ".saucer";
+            SetFileAttributesW(utils::widen(copy.storage_path.string()).c_str(), FILE_ATTRIBUTE_HIDDEN);
         }
 
+        m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
         m_impl->create_webview(this, window::m_impl->hwnd, std::move(copy));
 
-        // We disable the dev-tools explicitly as they're enabled by default on webview2.
-        set_dev_tools(false);
+        m_impl->web_view->get_Settings(&m_impl->settings);
 
-        // We disable the Accelerator-Keys because they should be disabled by default.
-        ComPtr<ICoreWebView2Settings> settings;
-        m_impl->web_view->get_Settings(&settings);
+        auto receive_message = [this](auto, auto *args)
+        {
+            LPWSTR message{};
+            args->TryGetWebMessageAsString(&message);
 
-        ComPtr<ICoreWebView2Settings3> settings3;
-        settings->QueryInterface(IID_PPV_ARGS(&settings3));
-        settings3->put_AreBrowserAcceleratorKeysEnabled(false);
+            on_message(utils::narrow(message));
+            CoTaskMemFree(message);
 
-        m_impl->web_view->add_WebMessageReceived(mcb{[this](auto, auto *args)
-                                                     {
-                                                         LPWSTR message{};
-                                                         args->TryGetWebMessageAsString(&message);
+            return S_OK;
+        };
 
-                                                         on_message(utils::narrow(message));
-                                                         CoTaskMemFree(message);
+        m_impl->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(receive_message).Get(), nullptr);
 
-                                                         return S_OK;
-                                                     }},
-                                                 nullptr);
+        auto navigation_start = [this](auto...)
+        {
+            m_impl->dom_loaded = false;
+            m_events.at<web_event::load_started>().fire();
 
-        m_impl->web_view->add_NavigationStarting(mcb{[this](auto...)
-                                                     {
-                                                         m_impl->dom_loaded = false;
-                                                         m_events.at<web_event::load_started>().fire();
+            return S_OK;
+        };
 
-                                                         return S_OK;
-                                                     }},
-                                                 nullptr);
+        m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigation_start).Get(), nullptr);
+
+        if (ComPtr<ICoreWebView2_2> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
+        {
+            auto on_loaded = [this](auto...)
+            {
+                m_impl->dom_loaded = true;
+
+                for (const auto &script : m_impl->scripts)
+                {
+                    execute(script);
+                }
+
+                for (const auto &pending : m_impl->pending)
+                {
+                    execute(pending);
+                }
+
+                m_impl->pending.clear();
+                m_events.at<web_event::dom_ready>().fire();
+
+                return S_OK;
+            };
+
+            webview->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
+        }
 
         // TODO: This is currently done to match the QWebEngineView behavior.
         // TODO: However we should eventually add an event to make it possible to handle this on your own (i.e. also
         // TODO: implement new-windows in the Qt backend).
 
-        m_impl->web_view->add_NewWindowRequested(mcb{[](auto, auto *args)
-                                                     {
-                                                         args->put_Handled(true);
+        auto window_request = [](auto, auto *args)
+        {
+            args->put_Handled(true);
+            return S_OK;
+        };
 
-                                                         return S_OK;
-                                                     }},
-                                                 nullptr);
+        m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(window_request).Get(), nullptr);
 
-        ComPtr<ICoreWebView2_2> webview2_2;
-        m_impl->web_view->QueryInterface(IID_PPV_ARGS(&webview2_2));
+        //? We disable the dev-tools explicitly as they're enabled by default on webview2.
+        set_dev_tools(false);
 
-        webview2_2->add_DOMContentLoaded(mcb{[this](auto...)
-                                             {
-                                                 m_impl->dom_loaded = true;
-
-                                                 for (const auto &script : m_impl->scripts)
-                                                 {
-                                                     execute(script);
-                                                 }
-
-                                                 for (const auto &pending : m_impl->pending)
-                                                 {
-                                                     execute(pending);
-                                                 }
-
-                                                 m_impl->pending.clear();
-                                                 m_events.at<web_event::dom_ready>().fire();
-
-                                                 return S_OK;
-                                             }},
-                                         nullptr);
+        //? We disable the Accelerator-Keys because they should be disabled by default.
+        if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
+        {
+            settings->put_AreBrowserAcceleratorKeysEnabled(false);
+        }
 
         inject(impl::inject_script, load_time::creation);
     }
@@ -167,11 +145,8 @@ namespace saucer
             return window::m_impl->post_safe([this] { return dev_tools(); });
         }
 
-        ComPtr<ICoreWebView2Settings> settings;
-        m_impl->web_view->get_Settings(&settings);
-
         BOOL rtn{false};
-        settings->get_AreDevToolsEnabled(&rtn);
+        m_impl->settings->get_AreDevToolsEnabled(&rtn);
 
         return static_cast<bool>(rtn);
     }
@@ -199,11 +174,8 @@ namespace saucer
             return window::m_impl->post_safe([this] { return context_menu(); });
         }
 
-        ComPtr<ICoreWebView2Settings> settings;
-        m_impl->web_view->get_Settings(&settings);
-
         BOOL rtn{false};
-        settings->get_AreDefaultContextMenusEnabled(&rtn);
+        m_impl->settings->get_AreDefaultContextMenusEnabled(&rtn);
 
         return static_cast<bool>(rtn);
     }
@@ -215,10 +187,7 @@ namespace saucer
             return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        ComPtr<ICoreWebView2Settings> settings;
-        m_impl->web_view->get_Settings(&settings);
-
-        settings->put_AreDevToolsEnabled(enabled);
+        m_impl->settings->put_AreDevToolsEnabled(enabled);
 
         if (!enabled)
         {
@@ -235,10 +204,7 @@ namespace saucer
             return window::m_impl->post_safe([this, enabled] { return set_context_menu(enabled); });
         }
 
-        ComPtr<ICoreWebView2Settings> settings;
-        m_impl->web_view->get_Settings(&settings);
-
-        settings->put_AreDefaultContextMenusEnabled(enabled);
+        m_impl->settings->put_AreDefaultContextMenusEnabled(enabled);
     }
 
     void webview::set_url(const std::string &url)
@@ -262,24 +228,6 @@ namespace saucer
         m_impl->web_view->Navigate(utils::widen(path).c_str());
     }
 
-    void webview::embed(embedded_files &&files)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this, files = std::move(files)]() mutable
-                                             { return embed(std::move(files)); });
-        }
-
-        m_embedded_files.merge(files);
-
-        if (m_impl->scheme_handler.value > 0)
-        {
-            return;
-        }
-
-        m_impl->install_scheme_handler(this);
-    }
-
     void webview::serve(const std::string &file, const std::string &scheme)
     {
         set_url(fmt::format("{}:/{}", scheme, file));
@@ -297,29 +245,8 @@ namespace saucer
             m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(script);
         }
 
+        m_impl->scripts.clear();
         m_impl->injected.clear();
-    }
-
-    void webview::clear_embedded()
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this] { return clear_embedded(); });
-        }
-
-        m_embedded_files.clear();
-        
-        if (m_impl->scheme_handler.value <= 0)
-        {
-            return;
-        }
-
-        m_impl->web_view->remove_WebResourceRequested(m_impl->scheme_handler);
-
-        static const auto uri = fmt::format(L"{}*", utils::widen(std::string{impl::scheme_prefix}));
-        m_impl->web_view->RemoveWebResourceRequestedFilter(uri.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
-
-        m_impl->scheme_handler = {};
     }
 
     void webview::execute(const std::string &java_script)
@@ -335,19 +262,11 @@ namespace saucer
             return;
         }
 
-        if (!SUCCEEDED(m_impl->web_view->ExecuteScript(utils::widen(java_script).c_str(), nullptr)))
-        {
-            assert("Failed to execute script" && false);
-        }
+        m_impl->web_view->ExecuteScript(utils::widen(java_script).c_str(), nullptr);
     }
 
     void webview::inject(const std::string &java_script, const load_time &load_time)
     {
-        if (java_script.empty())
-        {
-            return;
-        }
-
         if (!window::m_impl->is_thread_safe())
         {
             return window::m_impl->post_safe([this, java_script, load_time] { return inject(java_script, load_time); });
@@ -359,18 +278,47 @@ namespace saucer
             return;
         }
 
-        auto cb = mcb{[this](auto, LPCWSTR id)
-                      {
-                          m_impl->injected.emplace_back(id);
-                          return S_OK;
-                      }};
-
-        auto status = m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(java_script).c_str(), cb);
-
-        if (!SUCCEEDED(status))
+        auto callback = [this](auto, LPCWSTR id)
         {
-            assert("Failed to inject script" && false);
+            m_impl->injected.emplace_back(id);
+            return S_OK;
+        };
+
+        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(java_script).c_str(),
+                                                              Callback<ScriptInjected>(callback).Get());
+    }
+
+    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, name, handler] { return handle_scheme(name, handler); });
         }
+
+        m_impl->schemes.emplace(name, std::move(handler));
+
+        auto pattern = utils::widen(fmt::format("{}*", name));
+        m_impl->web_view->AddWebResourceRequestedFilter(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+    }
+
+    void webview::remove_scheme(const std::string &name)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, name] { return remove_scheme(name); });
+        }
+
+        auto it = m_impl->schemes.find(name);
+
+        if (it == m_impl->schemes.end())
+        {
+            return;
+        }
+
+        auto pattern = utils::widen(fmt::format("{}*", name));
+        m_impl->web_view->RemoveWebResourceRequestedFilter(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+
+        m_impl->schemes.erase(it);
     }
 
     void webview::clear(web_event event)
@@ -378,12 +326,12 @@ namespace saucer
         switch (event)
         {
         case web_event::load_finished:
-            m_impl->web_view->remove_NavigationCompleted(m_impl->load_finished);
-            m_impl->load_finished = {};
+            m_impl->web_view->remove_NavigationCompleted(m_impl->load_token.value_or(EventRegistrationToken{}));
+            m_impl->load_token.reset();
             break;
         case web_event::url_changed:
-            m_impl->web_view->remove_SourceChanged(m_impl->url_changed);
-            m_impl->url_changed = {};
+            m_impl->web_view->remove_SourceChanged(m_impl->navigation_token.value_or(EventRegistrationToken{}));
+            m_impl->navigation_token.reset();
             break;
         default:
             break;
@@ -398,14 +346,14 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type_t<Event> &&callback)
+    void webview::once(events::type_t<Event> callback)
     {
         m_impl->setup<Event>(this);
         m_events.at<Event>().once(std::move(callback));
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type_t<Event> &&callback)
+    std::uint64_t webview::on(events::type_t<Event> callback)
     {
         m_impl->setup<Event>(this);
         return m_events.at<Event>().add(std::move(callback));
@@ -415,32 +363,31 @@ namespace saucer
 
     void webview::register_scheme(const std::string &name)
     {
-        auto options = Make<CoreWebView2EnvironmentOptions>();
-        ComPtr<ICoreWebView2EnvironmentOptions4> options_new;
+        static std::map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
 
-        if (!SUCCEEDED(options->QueryInterface(IID_PPV_ARGS(&options_new))))
+        ComPtr<ICoreWebView2EnvironmentOptions4> options;
+
+        if (!SUCCEEDED(impl::env_options.As(&options)))
         {
             utils::throw_error("Failed to query ICoreWebView2EnvironmentOptions4");
-            return;
         }
 
         static LPCWSTR allowed_origins = L"*";
         auto scheme                    = Make<CoreWebView2CustomSchemeRegistration>(utils::widen(name).c_str());
 
         scheme->put_TreatAsSecure(true);
-        scheme->put_HasAuthorityComponent(true);
         scheme->SetAllowedOrigins(1, &allowed_origins);
 
-        impl::schemes.emplace(name, std::move(scheme));
+        schemes.emplace(name, std::move(scheme));
 
-        auto mapped = std::views::transform(impl::schemes, [](const auto &item) { return item.second.Get(); });
-        std::vector<ICoreWebView2CustomSchemeRegistration *> schemes{mapped.begin(), mapped.end()};
+        auto mapped = std::views::transform(schemes, [](const auto &item) { return item.second.Get(); });
+        std::vector<ICoreWebView2CustomSchemeRegistration *> raw{mapped.begin(), mapped.end()};
 
-        if (SUCCEEDED(options_new->SetCustomSchemeRegistrations(schemes.size(), schemes.data())))
+        if (SUCCEEDED(options->SetCustomSchemeRegistrations(static_cast<UINT32>(schemes.size()), raw.data())))
         {
             return;
         }
 
-        utils::throw_error("Failed to register schemes");
+        utils::throw_error("Failed to register scheme(s)");
     }
 } // namespace saucer

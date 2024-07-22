@@ -116,6 +116,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_sources(${PROJECT_NAME} PRIVATE 
+    "src/webview.cpp"
     "src/smartview.cpp"
     "src/serializer.glaze.cpp"
     "src/requests.cpp"
@@ -194,8 +195,8 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp cr::lockpp cr::poolparty)
-target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits tl::expected glaze::glaze cr::ereignis fmt::fmt cr::rebind)
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp cr::poolparty)
+target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits tl::expected glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::lockpp)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Linkage

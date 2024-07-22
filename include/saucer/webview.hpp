@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 
+#include <lockpp/lock.hpp>
 #include <ereignis/manager.hpp>
 
 namespace saucer
@@ -48,7 +49,7 @@ namespace saucer
 
       private:
         events m_events;
-        embedded_files m_embedded_files;
+        lockpp::lock<embedded_files> m_embedded_files;
 
       protected:
         std::unique_ptr<impl> m_impl;

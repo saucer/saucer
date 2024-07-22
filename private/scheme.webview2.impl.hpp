@@ -13,5 +13,6 @@ namespace saucer
     {
         ICoreWebView2WebResourceRequestedEventArgs *args;
         ComPtr<ICoreWebView2WebResourceRequest> request;
+        ComPtr<IStream> body;
     };
 } // namespace saucer

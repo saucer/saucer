@@ -2,26 +2,35 @@
 
 #include "webview.hpp"
 
-#include <any>
 #include <optional>
-#include <concepts>
 
 #include <wrl.h>
 #include <WebView2.h>
+#include <WebView2EnvironmentOptions.h>
 
 namespace saucer
 {
-    //! The webview and controller should be the first members of the impl struct, as they should
-    //! be easily accessible for modules.
-
     using Microsoft::WRL::Callback;
     using Microsoft::WRL::ComPtr;
     using Microsoft::WRL::Make;
 
+    // These type-names are straight from hell. Thanks microsoft!
+    using ScriptInjected       = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
+    using EnvironmentCompleted = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
+    using ControllerCompleted  = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
+    using ResourceRequested    = ICoreWebView2WebResourceRequestedEventHandler;
+    using NavigationComplete   = ICoreWebView2NavigationCompletedEventHandler;
+    using WebMessageHandler    = ICoreWebView2WebMessageReceivedEventHandler;
+    using NavigationStarting   = ICoreWebView2NavigationStartingEventHandler;
+    using NewWindowRequest     = ICoreWebView2NewWindowRequestedEventHandler;
+    using DOMLoaded            = ICoreWebView2DOMContentLoadedEventHandler;
+    using SourceChanged        = ICoreWebView2SourceChangedEventHandler;
+
     struct webview::impl
     {
-        ComPtr<ICoreWebView2> web_view;
         ComPtr<ICoreWebView2Controller> controller;
+        ComPtr<ICoreWebView2Settings> settings;
+        ComPtr<ICoreWebView2> web_view;
 
       public:
         WNDPROC original_wnd_proc;
@@ -31,21 +40,24 @@ namespace saucer
         std::vector<std::string> scripts;
 
       public:
-        EventRegistrationToken url_changed{};
-        EventRegistrationToken load_finished{};
+        std::optional<EventRegistrationToken> load_token;
+        std::optional<EventRegistrationToken> scheme_token;
+        std::optional<EventRegistrationToken> navigation_token;
 
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
+        std::map<std::string, scheme_handler> schemes;
 
       public:
         static const std::string inject_script;
-        static std::map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
 
       public:
         void overwrite_wnd_proc(HWND hwnd);
-        void install_scheme_handler(webview *);
+
+      public:
         void create_webview(webview *, HWND, saucer::options);
+        HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
@@ -53,34 +65,8 @@ namespace saucer
       public:
         template <web_event>
         void setup(webview *);
-    };
-
-    /*
-     * Is this kind of dumb? Yes.
-     * Are these interface names also dumb? "ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler" - Yes.
-     * => So I'll use this "Magic Callback" class to keep me sane while writing webview2 code...
-     */
-    template <typename Func>
-    class mcb
-    {
-        Func m_func;
-        std::any m_value;
 
       public:
-        mcb(Func func) : m_func(std::move(func)) {}
-
-      public:
-        template <typename T>
-        operator T *()
-        {
-            using callback_t = decltype(Callback<T>(nullptr));
-
-            if (!m_value.has_value())
-            {
-                m_value = Callback<T>(m_func);
-            }
-
-            return std::any_cast<callback_t>(m_value).Get();
-        }
+        static inline auto env_options = Make<CoreWebView2EnvironmentOptions>();
     };
 } // namespace saucer

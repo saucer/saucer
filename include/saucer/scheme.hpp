@@ -47,7 +47,7 @@ namespace saucer
         [[nodiscard]] std::string method() const;
 
       public:
-        [[nodiscard]] std::span<std::uint8_t> content() const;
+        [[nodiscard]] stash<const std::uint8_t> content() const;
         [[nodiscard]] std::map<std::string, std::string> headers() const;
     };
 

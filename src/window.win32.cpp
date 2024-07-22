@@ -70,6 +70,12 @@ namespace saucer
         DestroyWindow(m_impl->hwnd);
     }
 
+    template <>
+    void window::run<false>();
+
+    template <>
+    void window::run<true>();
+
     bool window::focused() const
     {
         if (!m_impl->is_thread_safe())
@@ -138,7 +144,22 @@ namespace saucer
 
     color window::background() const
     {
-        return m_impl->background;
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { return background(); });
+        }
+
+        std::promise<color> promise;
+        auto result = promise.get_future();
+
+        m_impl->post(new get_background_message{&promise}, impl::WM_GET_BACKGROUND);
+
+        while (result.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+        {
+            run<false>();
+        }
+
+        return result.get();
     }
 
     std::string window::title() const
@@ -364,14 +385,22 @@ namespace saucer
 
     void window::set_background(const color &color)
     {
-        m_impl->background = color;
-
-        if (!m_impl->change_background)
+        if (!m_impl->is_thread_safe())
         {
-            return;
+            return m_impl->post_safe([this, color] { return set_background(color); });
         }
 
-        m_impl->change_background();
+        std::promise<void> promise;
+        auto result = promise.get_future();
+
+        m_impl->post(new set_background_message{color, &promise}, impl::WM_SET_BACKGROUND);
+
+        while (result.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+        {
+            run<false>();
+        }
+
+        return result.get();
     }
 
     void window::set_size(int width, int height)
@@ -381,10 +410,8 @@ namespace saucer
             return m_impl->post_safe([this, width, height] { set_size(width, height); });
         }
 
-        auto offset = m_impl->window_offset();
-
-        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width + offset.first, height + offset.second,
-                     SWP_NOMOVE | SWP_NOZORDER);
+        auto [off_x, off_y] = m_impl->window_offset();
+        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width + off_x, height + off_y, SWP_NOMOVE | SWP_NOZORDER);
     }
 
     void window::set_max_size(int width, int height)
@@ -408,13 +435,13 @@ namespace saucer
     }
 
     template <window_event Event>
-    void window::once(events::type_t<Event> &&callback)
+    void window::once(events::type_t<Event> callback)
     {
         m_events.at<Event>().once(std::move(callback));
     }
 
     template <window_event Event>
-    std::uint64_t window::on(events::type_t<Event> &&callback)
+    std::uint64_t window::on(events::type_t<Event> callback)
     {
         return m_events.at<Event>().add(std::move(callback));
     }
@@ -436,11 +463,13 @@ namespace saucer
     {
         MSG msg;
 
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        if (!PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            return;
         }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 
     INSTANTIATE_EVENTS(window, 6, window_event)

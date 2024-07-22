@@ -10,7 +10,7 @@ namespace saucer
 
     std::string request::url() const
     {
-        LPWSTR raw;
+        LPWSTR raw{};
         m_impl->request->get_Uri(&raw);
 
         auto rtn = utils::narrow(raw);
@@ -21,7 +21,7 @@ namespace saucer
 
     std::string request::method() const
     {
-        LPWSTR raw;
+        LPWSTR raw{};
         m_impl->request->get_Method(&raw);
 
         auto rtn = utils::narrow(raw);
@@ -30,18 +30,31 @@ namespace saucer
         return rtn;
     }
 
-    std::span<std::uint8_t> request::content() const
+    stash<const std::uint8_t> request::content() const
     {
-        // TODO: Implement
-        return {};
+        if (!m_impl->body)
+        {
+            return stash<const std::uint8_t>::from({});
+        }
+
+        STATSTG stats;
+        m_impl->body->Stat(&stats, STATFLAG_DEFAULT);
+
+        std::vector<std::uint8_t> data;
+        data.resize(stats.cbSize.QuadPart);
+
+        ULONG read{};
+        m_impl->body->Read(data.data(), static_cast<ULONG>(data.size()), &read);
+
+        return stash<const std::uint8_t>::from(std::move(data));
     }
 
     std::map<std::string, std::string> request::headers() const
     {
-        ICoreWebView2HttpRequestHeaders *headers;
+        ComPtr<ICoreWebView2HttpRequestHeaders> headers;
         m_impl->request->get_Headers(&headers);
 
-        ICoreWebView2HttpHeadersCollectionIterator *it;
+        ComPtr<ICoreWebView2HttpHeadersCollectionIterator> it;
         headers->GetIterator(&it);
 
         std::map<std::string, std::string> rtn;
@@ -49,11 +62,10 @@ namespace saucer
 
         while ((it->get_HasCurrentHeader(&empty), empty))
         {
-            LPWSTR header;
-            LPWSTR value;
+            LPWSTR header{};
+            LPWSTR value{};
 
             it->GetCurrentHeader(&header, &value);
-
             rtn[utils::narrow(header)] = utils::narrow(value);
 
             CoTaskMemFree(header);

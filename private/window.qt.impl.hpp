@@ -87,10 +87,10 @@ namespace saucer
     template <typename Func>
     auto window::impl::post_safe(Func &&func)
     {
-        using return_t = typename decltype(std::function{func})::result_type;
+        using result_t = std::invoke_result_t<Func>;
 
-        std::promise<return_t> result;
-        auto *event = new event_callback<return_t>(std::forward<Func>(func), &result);
+        std::promise<result_t> result;
+        auto *event = new event_callback<result_t>{std::forward<Func>(func), &result};
 
         // ? postEvent will automatically delete the event after processing.
         QApplication::postEvent(window.get(), event);

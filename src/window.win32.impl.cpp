@@ -1,10 +1,11 @@
 #include "window.win32.impl.hpp"
 
-#include <ranges>
-
 namespace saucer
 {
-    const UINT window::impl::WM_SAFE_CALL            = RegisterWindowMessageW(L"safe_call");
+    const UINT window::impl::WM_SAFE_CALL      = RegisterWindowMessageW(L"safe_call");
+    const UINT window::impl::WM_GET_BACKGROUND = RegisterWindowMessageW(L"get_background");
+    const UINT window::impl::WM_SET_BACKGROUND = RegisterWindowMessageW(L"set_background");
+
     std::atomic<std::size_t> window::impl::instances = 0;
 
     bool window::impl::is_thread_safe() const
@@ -104,6 +105,8 @@ namespace saucer
             }
 
             window->m_events.at<window_event::closed>().fire();
+            window->m_impl->hwnd = nullptr;
+
             instances--;
 
             if (instances > 0)

@@ -202,36 +202,6 @@ namespace saucer
         m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(path)));
     }
 
-    void webview::embed(embedded_files &&files)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this, files = std::move(files)]() mutable
-                                             { return embed(std::move(files)); });
-        }
-
-        m_embedded_files.merge(files);
-
-        handle_scheme("saucer",
-                      [this](const auto &request) -> scheme_handler::result_type
-                      {
-                          auto url  = QUrl{QString::fromStdString(request.url())};
-                          auto file = url.toString(QUrl::RemoveQuery | QUrl::RemoveScheme).toStdString().substr(1);
-
-                          if (!m_embedded_files.contains(file))
-                          {
-                              return tl::unexpected{request_error::not_found};
-                          }
-
-                          const auto &data = m_embedded_files.at(file);
-
-                          return response{
-                              .mime = data.mime,
-                              .data = data.content,
-                          };
-                      });
-    }
-
     void webview::serve(const std::string &file, const std::string &scheme)
     {
         set_url(fmt::format("{}:/{}", scheme, file));
@@ -248,17 +218,6 @@ namespace saucer
 
         inject(impl::ready_script, load_time::ready);
         inject(impl::inject_script, load_time::creation);
-    }
-
-    void webview::clear_embedded()
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this] { return clear_embedded(); });
-        }
-
-        m_embedded_files.clear();
-        remove_scheme("saucer");
     }
 
     void webview::execute(const std::string &java_script)

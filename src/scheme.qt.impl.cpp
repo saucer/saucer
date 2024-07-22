@@ -24,10 +24,10 @@ namespace saucer
         return m_impl->request->requestMethod().toStdString();
     }
 
-    std::span<std::uint8_t> request::content() const
+    stash<const std::uint8_t> request::content() const
     {
-        auto *data = reinterpret_cast<std::uint8_t *>(m_impl->body.data());
-        return {data, data + m_impl->body.size()};
+        auto *data = reinterpret_cast<const std::uint8_t *>(m_impl->body.data());
+        return stash<const std::uint8_t>::view({data, data + m_impl->body.size()});
     }
 
     std::map<std::string, std::string> request::headers() const

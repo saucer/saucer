@@ -2,6 +2,8 @@
 
 #include "window.hpp"
 
+#include <optional>
+
 #include <thread>
 #include <future>
 
@@ -18,10 +20,6 @@ namespace saucer
 
       public:
         UINT last_state;
-        color background;
-        std::function<void()> change_background;
-
-      public:
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:
@@ -30,14 +28,33 @@ namespace saucer
 
       public:
         static const UINT WM_SAFE_CALL;
+        static const UINT WM_GET_BACKGROUND;
+        static const UINT WM_SET_BACKGROUND;
+
+      public:
         static std::atomic<std::size_t> instances;
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
 
       public:
-        template <typename Func>
-        auto post_safe(Func &&);
+        template <typename T>
+        auto post(T *, UINT);
+
+      public:
+        template <typename Func, typename Result = std::invoke_result_t<Func>>
+        Result post_safe(Func &&);
+    };
+
+    struct set_background_message
+    {
+        color data;
+        std::promise<void> *result;
+    };
+
+    struct get_background_message
+    {
+        std::promise<color> *result;
     };
 
     struct message
@@ -55,7 +72,7 @@ namespace saucer
         std::promise<T> *m_result;
 
       public:
-        safe_message(callback_t &&func, std::promise<T> *result) : m_func(std::move(func)), m_result(result) {}
+        safe_message(callback_t func, std::promise<T> *result) : m_func(std::move(func)), m_result(result) {}
 
       public:
         ~safe_message() override
@@ -72,16 +89,22 @@ namespace saucer
         }
     };
 
-    template <typename Func>
-    auto window::impl::post_safe(Func &&func)
+    template <typename T>
+    auto window::impl::post(T *data, UINT msg)
     {
-        using return_t = typename decltype(std::function(func))::result_type;
+        PostMessage(hwnd, msg, 0, reinterpret_cast<LPARAM>(data));
+    }
 
-        std::promise<return_t> result;
-        auto *message = new safe_message<return_t>(std::forward<Func>(func), &result);
+    template <typename Func, typename Result>
+    Result window::impl::post_safe(Func &&func)
+    {
+        if (!hwnd)
+        {
+            return Result{};
+        }
 
-        // ? the WndProc will delete the message after processing.
-        PostMessage(hwnd, WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
+        std::promise<Result> result;
+        post(new safe_message<Result>{std::forward<Func>(func), &result}, WM_SAFE_CALL);
 
         return result.get_future().get();
     }
