@@ -24,6 +24,24 @@ suite webview_suite = []
         saucer::webview webview({.hardware_acceleration = false});
         std::uint64_t id{};
 
+        "background"_test = [&]
+        {
+            auto color = webview.background();
+
+            expect(eq(color.at(0), 255));
+            expect(eq(color.at(1), 255));
+            expect(eq(color.at(2), 255));
+            expect(eq(color.at(3), 255));
+
+            webview.set_background({255, 0, 0, 255});
+            color = webview.background();
+
+            expect(eq(color.at(0), 255));
+            expect(eq(color.at(1), 0));
+            expect(eq(color.at(2), 0));
+            expect(eq(color.at(3), 255));
+        };
+
         "dev_tools"_test = [&]
         {
             webview.set_dev_tools(true);
@@ -105,14 +123,19 @@ suite webview_suite = []
 #endif
         saucer::webview webview;
 
-        std::array<std::uint8_t, 97> data{
-            0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0x20, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0x0a, 0x3c,
-            0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x3e, 0x0a, 0x20, 0x20, 0x20, 0x20, 0x77, 0x69, 0x6e, 0x64, 0x6f,
-            0x77, 0x2e, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x68, 0x72, 0x65, 0x66, 0x20, 0x3d,
-            0x20, 0x22, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f, 0x2f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x70, 0x61,
-            0x67, 0x65, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x22, 0x3b, 0x0a, 0x3c, 0x2f, 0x73, 0x63, 0x72, 0x69, 0x70,
-            0x74, 0x3e, 0x0a, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0x20, 0x0a //
-        };
+        std::string html = R"html(
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Redirect</title>
+            </head>
+            <body>
+                <script>
+                    window.location.href = "https://startpage.com/";
+                </script>
+            </body>
+        </html> 
+        )html";
 
         auto callback = [&](const std::string &url)
         {
@@ -127,7 +150,10 @@ suite webview_suite = []
 
         webview.on<saucer::web_event::url_changed>(callback);
 
-        auto file = saucer::embedded_file{"text/html", data};
+        auto data    = reinterpret_cast<const std::uint8_t *>(html.data());
+        auto content = saucer::stash<const std::uint8_t>::view({data, data + html.size()});
+        auto file    = saucer::embedded_file{"text/html", content};
+
         webview.embed({{"test.html", file}});
         webview.serve("test.html");
 
