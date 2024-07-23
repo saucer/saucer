@@ -104,6 +104,8 @@ namespace saucer
         }
 
         std::promise<Result> result;
+
+        // ? The WndProc will delete the message.
         post(new safe_message<Result>{std::forward<Func>(func), &result}, WM_SAFE_CALL);
 
         return result.get_future().get();

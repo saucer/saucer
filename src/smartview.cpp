@@ -133,7 +133,7 @@ namespace saucer
 
         if (!functions.contains(message.name))
         {
-            return reject(message.id, fmt::format("No exposed function '{}'", message.name));
+            return reject(message.id, fmt::format("\"No exposed function '{}'\"", message.name));
         }
 
         auto executor = serializer::executor{

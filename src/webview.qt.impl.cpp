@@ -6,22 +6,29 @@
 
 namespace saucer
 {
-    const std::string webview::impl::ready_script = "window.saucer.on_message('dom_loaded')";
+    constinit std::string_view webview::impl::ready_script = "window.saucer.on_message('dom_loaded')";
 
-    const std::string webview::impl::inject_script = []()
+    const std::string &webview::impl::inject_script()
     {
-        QFile web_channel_api(":/qtwebchannel/qwebchannel.js");
+        static std::unique_ptr<std::string> instance;
 
-        if (!web_channel_api.open(QIODevice::ReadOnly))
+        if (instance)
+        {
+            return *instance;
+        }
+
+        QFile qwebchannel{":/qtwebchannel/qwebchannel.js"};
+
+        if (!qwebchannel.open(QIODevice::ReadOnly))
         {
             throw std::runtime_error("Failed to open required qwebchannel.js");
         }
 
-        auto content = web_channel_api.readAll().toStdString();
-        web_channel_api.close();
+        auto content = qwebchannel.readAll().toStdString();
+        qwebchannel.close();
 
-        return content +
-               R"js(
+        instance = std::make_unique<std::string>(content +
+                                                 R"js(
                 window.saucer = 
                 {
                     window_edge:
@@ -56,8 +63,10 @@ namespace saucer
                         resolve(channel.objects.saucer); 
                     });
                 });
-            )js";
-    }();
+            )js");
+
+        return *instance;
+    }
 
     webview::impl::web_class::web_class(webview *parent) : m_parent(parent) {}
 

@@ -49,10 +49,13 @@ namespace saucer
 
         m_impl->window = std::make_unique<impl::main_window>(this);
 
+        m_impl->max_size = m_impl->window->maximumSize();
+        m_impl->min_size = m_impl->window->minimumSize();
+
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
         auto palette = m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window, QColor(255, 255, 255));
+        palette.setColor(QPalette::ColorRole::Window, {255, 255, 255});
 
         m_impl->window->setPalette(palette);
     }
@@ -310,11 +313,8 @@ namespace saucer
             return;
         }
 
-        auto max_size = m_impl->max_size.value_or(QSize{QWIDGETSIZE_MAX, QWIDGETSIZE_MAX});
-        m_impl->window->setMaximumSize(max_size);
-
-        auto min_size = m_impl->min_size.value_or(QSize{0, 0});
-        m_impl->window->setMinimumSize(min_size);
+        m_impl->window->setMaximumSize(m_impl->max_size);
+        m_impl->window->setMinimumSize(m_impl->min_size);
     }
 
     void window::set_decorations(bool enabled)

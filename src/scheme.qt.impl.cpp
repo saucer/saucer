@@ -26,7 +26,7 @@ namespace saucer
 
     stash<const std::uint8_t> request::content() const
     {
-        auto *data = reinterpret_cast<const std::uint8_t *>(m_impl->body.data());
+        const auto *data = reinterpret_cast<const std::uint8_t *>(m_impl->body.data());
         return stash<const std::uint8_t>::view({data, data + m_impl->body.size()});
     }
 

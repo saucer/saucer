@@ -55,8 +55,8 @@ namespace saucer
 
     void window::impl::main_window::resizeEvent(QResizeEvent *event)
     {
-        m_parent->m_events.at<window_event::resize>().fire(width(), height());
         QMainWindow::resizeEvent(event);
+        m_parent->m_events.at<window_event::resize>().fire(width(), height());
     }
 
     bool window::impl::is_thread_safe() const

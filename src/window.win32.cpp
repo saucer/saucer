@@ -169,13 +169,9 @@ namespace saucer
             return m_impl->post_safe([this] { return title(); });
         }
 
-        auto length = GetWindowTextLengthW(m_impl->hwnd) + 1;
-        std::wstring title(length, '\0');
-
-        GetWindowTextW(m_impl->hwnd, title.data(), length);
-
-        // Remove null character otherwise comparisons might fail
-        title.resize(title.size() - 1);
+        std::wstring title;
+        title.reserve(GetWindowTextLengthW(m_impl->hwnd) + 1);
+        GetWindowTextW(m_impl->hwnd, title.data(), title.capacity());
 
         return utils::narrow(title);
     }
@@ -274,35 +270,35 @@ namespace saucer
 
         if (edge == window_edge::left)
         {
-            translated = 0xf001; // SC_SIZELEFT;
+            translated = 0xF001; // SC_SIZELEFT;
         }
         else if (edge == window_edge::right)
         {
-            translated = 0xf002; // SC_SIZERIGHT
+            translated = 0xF002; // SC_SIZERIGHT
         }
         else if (edge == window_edge::top)
         {
-            translated = 0xf003; // SC_SIZETOP
+            translated = 0xF003; // SC_SIZETOP
         }
         else if (edge == (window_edge::top | window_edge::left))
         {
-            translated = 0xf004; // SC_SIZETOPLEFT
+            translated = 0xF004; // SC_SIZETOPLEFT
         }
         else if (edge == (window_edge::top | window_edge::right))
         {
-            translated = 0xf005; // SC_SIZETOPRIGHT
+            translated = 0xF005; // SC_SIZETOPRIGHT
         }
         else if (edge == window_edge::bottom)
         {
-            translated = 0xf006; // SC_SIZEBOTTOM
+            translated = 0xF006; // SC_SIZEBOTTOM
         }
         else if (edge == (window_edge::bottom | window_edge::left))
         {
-            translated = 0xf007; // SC_SIZEBOTTOMLEFT
+            translated = 0xF007; // SC_SIZEBOTTOMLEFT
         }
         else if (edge == (window_edge::bottom | window_edge::right))
         {
-            translated = 0xf008; // SC_SIZEBOTTOMRIGHT
+            translated = 0xF008; // SC_SIZEBOTTOMRIGHT
         }
 
         ReleaseCapture();

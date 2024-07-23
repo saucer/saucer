@@ -107,7 +107,7 @@ namespace saucer
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
-        inject(impl::inject_script, load_time::creation);
+        inject(std::string{impl::inject_script}, load_time::creation);
     }
 
     webview::~webview() = default;
@@ -228,11 +228,6 @@ namespace saucer
         m_impl->web_view->Navigate(utils::widen(path).c_str());
     }
 
-    void webview::serve(const std::string &file, const std::string &scheme)
-    {
-        set_url(fmt::format("{}:/{}", scheme, file));
-    }
-
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())
@@ -292,7 +287,8 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, name, handler] { return handle_scheme(name, handler); });
+            return window::m_impl->post_safe([this, name, handler = std::move(handler)]
+                                             { return handle_scheme(name, handler); });
         }
 
         m_impl->schemes.emplace(name, std::move(handler));

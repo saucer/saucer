@@ -106,6 +106,6 @@ namespace saucer
         [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> callback);
 
       public:
-        static void register_scheme(const std::string &name);
+        [[sc::before_init]] static void register_scheme(const std::string &name);
     };
 } // namespace saucer

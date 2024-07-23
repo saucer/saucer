@@ -3,6 +3,7 @@
 #include "webview.hpp"
 
 #include <optional>
+#include <string_view>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -50,12 +51,10 @@ namespace saucer
         std::map<std::string, scheme_handler> schemes;
 
       public:
-        static const std::string inject_script;
+        static constinit std::string_view inject_script;
 
       public:
         void overwrite_wnd_proc(HWND hwnd);
-
-      public:
         void create_webview(webview *, HWND, saucer::options);
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);
 

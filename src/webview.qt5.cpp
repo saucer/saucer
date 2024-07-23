@@ -11,7 +11,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([java_script, load_time, this] { inject(java_script, load_time); });
+            return window::m_impl->post_safe([this, java_script, load_time] { inject(java_script, load_time); });
         }
 
         QWebEngineScript script;

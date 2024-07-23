@@ -61,8 +61,8 @@ namespace saucer
             set_dev_tools(false);
         };
 
-        inject(impl::ready_script, load_time::ready);
-        inject(impl::inject_script, load_time::creation);
+        inject(std::string{impl::ready_script}, load_time::ready);
+        inject(impl::inject_script(), load_time::creation);
 
         window::m_impl->window->setCentralWidget(m_impl->web_view.get());
         m_impl->web_view->show();
@@ -202,11 +202,6 @@ namespace saucer
         m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(path)));
     }
 
-    void webview::serve(const std::string &file, const std::string &scheme)
-    {
-        set_url(fmt::format("{}:/{}", scheme, file));
-    }
-
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())
@@ -216,8 +211,8 @@ namespace saucer
 
         m_impl->web_view->page()->scripts().clear();
 
-        inject(impl::ready_script, load_time::ready);
-        inject(impl::inject_script, load_time::creation);
+        inject(std::string{impl::ready_script}, load_time::ready);
+        inject(impl::inject_script(), load_time::creation);
     }
 
     void webview::execute(const std::string &java_script)
@@ -240,7 +235,8 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, name, handler] { return handle_scheme(name, handler); });
+            return window::m_impl->post_safe([this, name, handler = std::move(handler)]
+                                             { return handle_scheme(name, handler); });
         }
 
         auto &scheme_handler = m_impl->schemes.emplace(name, std::move(handler)).first->second;
@@ -305,7 +301,7 @@ namespace saucer
 
     void webview::register_scheme(const std::string &name)
     {
-        auto scheme = QWebEngineUrlScheme(name.c_str());
+        auto scheme = QWebEngineUrlScheme{name.c_str()};
         scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
 
         using Flags = QWebEngineUrlScheme::Flag;

@@ -1,18 +1,27 @@
 #include "webview.hpp"
 
+#include <fmt/core.h>
+
 namespace saucer
 {
+    void webview::serve(const std::string &file, const std::string &scheme)
+    {
+        set_url(fmt::format("{}:/{}", scheme, file));
+    }
+
     void webview::embed(embedded_files &&files)
     {
-        auto locked = m_embedded_files.write();
-        locked->merge(files);
+        {
+            auto locked = m_embedded_files.write();
+            locked->merge(files);
+        }
 
         auto handler = [this](const auto &request) -> scheme_handler::result_type
         {
             auto url   = request.url();
             auto start = url.find('/') + 1;
 
-            if (start == std::string::npos)
+            if (start >= url.size())
             {
                 return tl::unexpected{request_error::bad_url};
             }
@@ -38,9 +47,10 @@ namespace saucer
 
     void webview::clear_embedded()
     {
-        auto locked = m_embedded_files.write();
-
-        locked->clear();
+        {
+            auto locked = m_embedded_files.write();
+            locked->clear();
+        }
         remove_scheme("saucer");
     }
 } // namespace saucer
