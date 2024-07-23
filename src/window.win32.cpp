@@ -171,7 +171,7 @@ namespace saucer
 
         std::wstring title;
         title.reserve(GetWindowTextLengthW(m_impl->hwnd) + 1);
-        GetWindowTextW(m_impl->hwnd, title.data(), title.capacity());
+        GetWindowTextW(m_impl->hwnd, title.data(), static_cast<int>(title.capacity()));
 
         return utils::narrow(title);
     }
