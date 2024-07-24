@@ -1,13 +1,12 @@
-#include "window.hpp"
 #include "window.qt.impl.hpp"
 
 #include "instantiate.hpp"
 
-#include <QWindow>
-
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 #include <flagpp/flags.hpp>
+
+#include <QWindow>
 
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;

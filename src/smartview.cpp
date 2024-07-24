@@ -4,11 +4,10 @@
 #include "serializers/data.hpp"
 #include "serializers/serializer.hpp"
 
-#include <fmt/core.h>
-
 #include <rebind/enum.hpp>
 #include <lockpp/lock.hpp>
 
+#include <fmt/core.h>
 #include <poolparty/pool.hpp>
 
 namespace saucer

@@ -1,14 +1,13 @@
-#include "window.hpp"
 #include "window.win32.impl.hpp"
 
 #include "utils.win32.hpp"
 #include "instantiate.hpp"
 
-#include <winuser.h>
-#include <versionhelpers.h>
-
 #include <fmt/core.h>
 #include <flagpp/flags.hpp>
+
+#include <winuser.h>
+#include <versionhelpers.h>
 
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;

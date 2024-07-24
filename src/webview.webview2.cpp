@@ -1,4 +1,3 @@
-#include "webview.hpp"
 #include "webview.webview2.impl.hpp"
 
 #include "requests.hpp"
@@ -7,14 +6,13 @@
 #include "utils.win32.hpp"
 #include "window.win32.impl.hpp"
 
-#include <WebView2EnvironmentOptions.h>
-
-#include <cassert>
 #include <filesystem>
 
-#include <shlobj.h>
 #include <fmt/core.h>
 #include <fmt/xchar.h>
+
+#include <shlobj.h>
+#include <WebView2EnvironmentOptions.h>
 
 namespace saucer
 {

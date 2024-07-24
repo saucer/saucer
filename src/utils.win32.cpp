@@ -1,9 +1,9 @@
 #include "utils.win32.hpp"
 
-#include <windows.h>
-
 #include <stdexcept>
 #include <fmt/core.h>
+
+#include <windows.h>
 
 namespace saucer
 {
