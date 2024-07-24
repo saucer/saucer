@@ -1,13 +1,14 @@
 #include "webview.qt.impl.hpp"
 
 #include "instantiate.hpp"
+
+#include "icon.qt.impl.hpp"
 #include "window.qt.impl.hpp"
 
 #include "scheme.hpp"
 #include "requests.hpp"
 
 #include <fmt/core.h>
-#include <filesystem>
 
 #include <QWebEngineScriptCollection>
 
@@ -17,8 +18,6 @@
 
 namespace saucer
 {
-    namespace fs = std::filesystem;
-
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
@@ -55,6 +54,12 @@ namespace saucer
                                       m_impl->dom_loaded = false;
                                       m_events.at<web_event::load_started>().fire();
                                   });
+
+        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::titleChanged, [this](const auto &title)
+                                  { m_events.at<web_event::title_changed>().fire(title.toStdString()); });
+
+        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::iconChanged, [this](const auto &favicon)
+                                  { m_events.at<web_event::icon_changed>().fire(icon{{favicon}}); });
 
         window::m_impl->on_closed = [this]
         {
@@ -109,6 +114,26 @@ namespace saucer
         }
 
         return false;
+    }
+
+    icon webview::favicon() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this] { return favicon(); });
+        }
+
+        return {{m_impl->web_view->icon()}};
+    }
+
+    std::string webview::page_title() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this] { return page_title(); });
+        }
+
+        return m_impl->web_view->title().toStdString();
     }
 
     bool webview::dev_tools() const
@@ -181,6 +206,16 @@ namespace saucer
                                                        : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
+    void webview::set_file(const fs::path &file)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, file] { return set_file(file); });
+        }
+
+        m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(file.string())));
+    }
+
     void webview::set_url(const std::string &url)
     {
         if (!window::m_impl->is_thread_safe())
@@ -189,17 +224,6 @@ namespace saucer
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
-    }
-
-    void webview::set_file(const std::string &file)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this, file] { return set_file(file); });
-        }
-
-        auto path = fs::canonical(file).string();
-        m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(path)));
     }
 
     void webview::clear_scripts()
@@ -302,7 +326,7 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    INSTANTIATE_EVENTS(webview, 4, web_event)
+    INSTANTIATE_EVENTS(webview, 6, web_event)
 
     void webview::register_scheme(const std::string &name)
     {

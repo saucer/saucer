@@ -1,6 +1,7 @@
 #include "window.qt.impl.hpp"
 
 #include "instantiate.hpp"
+#include "icon.qt.impl.hpp"
 
 #include <fmt/core.h>
 #include <fmt/xchar.h>
@@ -326,6 +327,26 @@ namespace saucer
         m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
     }
 
+    void window::set_always_on_top(bool enabled)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, enabled] { return set_always_on_top(enabled); });
+        }
+
+        m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
+    }
+
+    void window::set_icon(const icon &icon)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, icon] { return set_icon(icon); });
+        }
+
+        m_impl->window->setWindowIcon(icon.m_impl->icon);
+    }
+
     void window::set_title(const std::string &title)
     {
         if (!m_impl->is_thread_safe())
@@ -336,14 +357,19 @@ namespace saucer
         m_impl->window->setWindowTitle(QString::fromStdString(title));
     }
 
-    void window::set_always_on_top(bool enabled)
+    void window::set_background(const color &background)
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this, enabled] { return set_always_on_top(enabled); });
+            return m_impl->post_safe([this, background] { return set_background(background); });
         }
 
-        m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
+        auto palette = m_impl->window->palette();
+
+        const auto [r, g, b, a] = background;
+        palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
+
+        m_impl->window->setPalette(palette);
     }
 
     void window::set_size(int width, int height)
@@ -376,21 +402,6 @@ namespace saucer
 
         m_impl->window->setMinimumSize(width, height);
         m_impl->min_size = m_impl->window->minimumSize();
-    }
-
-    void window::set_background(const color &color)
-    {
-        if (!m_impl->is_thread_safe())
-        {
-            return m_impl->post_safe([this, color] { return set_background(color); });
-        }
-
-        auto palette = m_impl->window->palette();
-
-        const auto [r, g, b, a] = color;
-        palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
-
-        m_impl->window->setPalette(palette);
     }
 
     void window::clear(window_event event)

@@ -1,9 +1,12 @@
 #pragma once
 
+#include "icon.hpp"
 #include "window.hpp"
 #include "scheme.hpp"
 
 #include <map>
+#include <filesystem>
+
 #include <string>
 #include <memory>
 
@@ -12,6 +15,8 @@
 
 namespace saucer
 {
+    namespace fs = std::filesystem;
+
     enum class load_time : std::uint8_t
     {
         creation,
@@ -20,7 +25,9 @@ namespace saucer
 
     enum class web_event : std::uint8_t
     {
+        title_changed,
         load_finished,
+        icon_changed,
         load_started,
         url_changed,
         dom_ready,
@@ -40,11 +47,13 @@ namespace saucer
         using embedded_files = std::map<std::string, embedded_file>;
 
       private:
-        using events = ereignis::manager<                                       //
-            ereignis::event<web_event::load_finished, void()>,                  //
-            ereignis::event<web_event::load_started, void()>,                   //
-            ereignis::event<web_event::url_changed, void(const std::string &)>, //
-            ereignis::event<web_event::dom_ready, void()>                       //
+        using events = ereignis::manager<                                         //
+            ereignis::event<web_event::title_changed, void(const std::string &)>, //
+            ereignis::event<web_event::load_finished, void()>,                    //
+            ereignis::event<web_event::icon_changed, void(const icon &)>,         //
+            ereignis::event<web_event::load_started, void()>,                     //
+            ereignis::event<web_event::url_changed, void(const std::string &)>,   //
+            ereignis::event<web_event::dom_ready, void()>                         //
             >;
 
       private:
@@ -64,6 +73,10 @@ namespace saucer
         ~webview() override;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] icon favicon() const;
+        [[sc::thread_safe]] [[nodiscard]] std::string page_title() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] bool dev_tools() const;
         [[sc::thread_safe]] [[nodiscard]] std::string url() const;
         [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
@@ -71,8 +84,8 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_dev_tools(bool enabled);
         [[sc::thread_safe]] void set_context_menu(bool enabled);
+        [[sc::thread_safe]] void set_file(const fs::path &file);
         [[sc::thread_safe]] void set_url(const std::string &url);
-        [[sc::thread_safe]] void set_file(const std::string &file);
 
       public:
         [[sc::thread_safe]] void embed(embedded_files files);

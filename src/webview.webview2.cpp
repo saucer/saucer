@@ -17,8 +17,6 @@
 
 namespace saucer
 {
-    namespace fs = std::filesystem;
-
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
@@ -203,17 +201,7 @@ namespace saucer
         m_impl->settings->put_AreDefaultContextMenusEnabled(enabled);
     }
 
-    void webview::set_url(const std::string &url)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return window::m_impl->post_safe([this, url] { return set_url(url); });
-        }
-
-        m_impl->web_view->Navigate(utils::widen(url).c_str());
-    }
-
-    void webview::set_file(const std::string &file)
+    void webview::set_file(const fs::path &file)
     {
         if (!window::m_impl->is_thread_safe())
         {
@@ -222,6 +210,16 @@ namespace saucer
 
         auto path = fmt::format("file://{}", fs::canonical(file).string());
         m_impl->web_view->Navigate(utils::widen(path).c_str());
+    }
+
+    void webview::set_url(const std::string &url)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this, url] { return set_url(url); });
+        }
+
+        m_impl->web_view->Navigate(utils::widen(url).c_str());
     }
 
     void webview::clear_scripts()

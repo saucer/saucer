@@ -56,6 +56,11 @@ namespace saucer
     }
 
     template <>
+    void webview::impl::setup<web_event::title_changed>(webview *)
+    {
+    }
+
+    template <>
     void webview::impl::setup<web_event::load_finished>(webview *self)
     {
         if (load_finished)
@@ -77,6 +82,16 @@ namespace saucer
     }
 
     template <>
+    void webview::impl::setup<web_event::icon_changed>(webview *)
+    {
+    }
+
+    template <>
+    void webview::impl::setup<web_event::load_started>(webview *)
+    {
+    }
+
+    template <>
     void webview::impl::setup<web_event::url_changed>(webview *self)
     {
         if (url_changed)
@@ -95,11 +110,6 @@ namespace saucer
         };
 
         url_changed = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
-    }
-
-    template <>
-    void webview::impl::setup<web_event::load_started>(webview *)
-    {
     }
 
     template <>

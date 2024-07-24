@@ -1,5 +1,7 @@
 #pragma once
 
+#include "icon.hpp"
+
 #include <string>
 #include <memory>
 
@@ -113,8 +115,9 @@ namespace saucer
         [[sc::thread_safe]] void set_always_on_top(bool enabled);
 
       public:
-        [[sc::thread_safe]] void set_title(const std::string &);
-        [[sc::thread_safe]] void set_background(const color &color);
+        [[sc::thread_safe]] void set_icon(const icon &icon);
+        [[sc::thread_safe]] void set_title(const std::string &title);
+        [[sc::thread_safe]] void set_background(const color &background);
 
       public:
         [[sc::thread_safe]] void set_size(int width, int height);

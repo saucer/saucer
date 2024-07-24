@@ -32,68 +32,10 @@ int main()
     webview.set_min_size(400, 500);
     webview.set_max_size(1000, 1200);
 
-    webview.on<saucer::web_event::url_changed>([](const auto &url) { //
-        std::cout << "New url:" << url << std::endl;
-    });
+    webview.expose("close_sync", [&]() { webview.close(); });
+    webview.expose("close_async", [&]() { webview.close(); }, saucer::launch::async);
 
-    webview.on<saucer::window_event::resize>([](auto width, auto height) { //
-        std::cout << width << ":" << height << std::endl;
-    });
-
-    webview.evaluate<float>("Math.random()") | then([](auto result) { //
-        std::cout << "Random: " << result << std::endl;
-    });
-
-    webview.evaluate<int>("Math.pow({},{})", 5, 2) | then([](auto result) { //
-        std::cout << "Pow(5,2): " << result << std::endl;
-    });
-
-    std::cout << "Main thread: " << std::this_thread::get_id() << std::endl;
-
-    webview.expose("sync_func", [](int param) { return param * 10; });
-    webview.expose("async_func", another_func, saucer::launch::async);
-
-    webview.expose("sync_manual_func",
-                   [](const custom_data &param, const saucer::executor<int> &exec)
-                   {
-                       const auto &[resolve, reject] = exec;
-
-                       if (param.field == 1337)
-                       {
-                           return reject("intruder alert!");
-                       }
-
-                       resolve(param.field * 5);
-                   });
-
-    webview.expose(
-        "async_manual_func",
-        [&](const custom_data &param, const saucer::executor<int> &exec)
-        {
-            const auto &[resolve, reject] = exec;
-
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-
-            if (param.field != 10)
-            {
-                return reject("expected magic number");
-            }
-
-            resolve(webview.evaluate<int>("{} * 1337", param.field).get());
-        },
-        saucer::launch::async);
-
-    webview.evaluate<int>("await window.saucer.exposed.sync_func({})", saucer::make_args(10)) |
-        then([](auto result) { //
-            std::cout << "sync_func: " << result << std::endl;
-        });
-
-    webview.evaluate<custom_data>("await window.saucer.call({}, [{}])", "async_func", custom_data{500}) |
-        then([](auto result) { //
-            std::cout << "async_func: " << result.field << std::endl;
-        });
-
-    webview.set_url("https://github.com/saucer/saucer");
+    webview.set_url("https://github.com");
     webview.set_dev_tools(true);
 
     webview.show();
