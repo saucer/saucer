@@ -291,6 +291,11 @@ namespace saucer
                                              { return handle_scheme(name, handler); });
         }
 
+        if (m_impl->schemes.contains(name))
+        {
+            return;
+        }
+
         m_impl->schemes.emplace(name, std::move(handler));
 
         auto pattern = utils::widen(fmt::format("{}*", name));

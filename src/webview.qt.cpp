@@ -239,6 +239,11 @@ namespace saucer
                                              { return handle_scheme(name, handler); });
         }
 
+        if (m_impl->schemes.contains(name))
+        {
+            return;
+        }
+
         auto &scheme_handler = m_impl->schemes.emplace(name, std::move(handler)).first->second;
         m_impl->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme_handler);
     }
