@@ -6,6 +6,8 @@
 
 namespace saucer::native
 {
+    using Microsoft::WRL::ComPtr;
+
     struct window
     {
         HWND hwnd;
@@ -13,7 +15,8 @@ namespace saucer::native
 
     struct webview
     {
-        Microsoft::WRL::ComPtr<ICoreWebView2> web_view;
-        Microsoft::WRL::ComPtr<ICoreWebView2Controller> controller;
+        ComPtr<ICoreWebView2Controller> controller;
+        ComPtr<ICoreWebView2Settings> settings;
+        ComPtr<ICoreWebView2> web_view;
     };
 } // namespace saucer::native
