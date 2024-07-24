@@ -1,5 +1,6 @@
 #include "webview.webview2.impl.hpp"
 
+#include "scripts.hpp"
 #include "utils.win32.hpp"
 
 #include "window.win32.impl.hpp"
@@ -13,35 +14,24 @@
 
 namespace saucer
 {
-    constinit std::string_view webview::impl::inject_script = R"js(
-        window.saucer = 
+    const std::string &webview::impl::inject_script()
+    {
+        static std::optional<std::string> instance;
+
+        if (instance)
         {
-            window_edge:
-            {
-                top:    1,
-                bottom: 2,
-                left:   4,
-                right:  8,
-            },
-            on_message: async (message) =>
-            {
-                window.chrome.webview.postMessage(message);
-            },
-            start_drag: async () =>
-            {
-                await window.saucer.on_message(JSON.stringify({
-                    ["saucer:drag"]: true
-                }));
-            },
-            start_resize: async (edge) =>
-            {
-                await window.saucer.on_message(JSON.stringify({
-                    ["saucer:resize"]: true,
-                    edge,
-                }));
-            }
-        };
-    )js";
+            return instance.value();
+        }
+
+        instance.emplace(fmt::format(scripts::webview_script, fmt::arg("internal", R"js(
+        send_message: async (message) =>
+        {
+            window.chrome.webview.postMessage(message);
+        }
+        )js")));
+
+        return instance.value();
+    }
 
     void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::options options)
     {

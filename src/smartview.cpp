@@ -1,5 +1,6 @@
 #include "smartview.hpp"
 
+#include "scripts.hpp"
 #include "serializers/data.hpp"
 #include "serializers/serializer.hpp"
 
@@ -41,55 +42,7 @@ namespace saucer
     {
         m_impl->serializer = std::move(serializer);
 
-        inject(fmt::format(R"js(
-        window.saucer._idc = 0;
-        window.saucer._rpc = [];
-        
-        window.saucer.call = async (name, params) =>
-        {{
-            if (!Array.isArray(params))
-            {{
-                throw 'Bad arguments, expected array';
-            }}
-
-            if (typeof name !== 'string' && !(name instanceof String))
-            {{
-                throw 'Bad name, expected string';
-            }}
-
-            const id = ++window.saucer._idc;
-            
-            const rtn = new Promise((resolve, reject) => {{
-                window.saucer._rpc[id] = {{
-                    reject,
-                    resolve,
-                }};
-            }});
-
-            await window.saucer.on_message({serializer}({{
-                    ["saucer:call"]: true,
-                    id,
-                    name,
-                    params,
-            }}));
-
-            return rtn;
-        }}
-
-        window.saucer.exposed = new Proxy({{}}, {{
-            get: (_, prop) => (...args) => window.saucer.call(prop, args),
-        }})
-
-        window.saucer._resolve = async (id, value) =>
-        {{
-            await window.saucer.on_message({serializer}({{
-                    ["saucer:resolve"]: true,
-                    id,
-                    result: value === undefined ? null : value,
-            }}));
-        }}
-        )js",
-                           fmt::arg("serializer", m_impl->serializer->js_serializer())),
+        inject(fmt::format(scripts::smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer())),
                load_time::creation);
 
         inject(m_impl->serializer->script(), load_time::creation);
@@ -184,7 +137,7 @@ namespace saucer
         execute(fmt::format(
             R"(
                 (async () =>
-                    window.saucer._resolve({}, {})
+                    window.saucer.internal.resolve({}, {})
                 )();
             )",
             id, code));
@@ -194,8 +147,8 @@ namespace saucer
     {
         execute(fmt::format(
             R"(
-                window.saucer._rpc[{0}].reject({1});
-                delete window.saucer._rpc[{0}];
+                window.saucer.internal.rpc[{0}].reject({1});
+                delete window.saucer.internal.rpc[{0}];
             )",
             id, reason));
     }
@@ -204,8 +157,8 @@ namespace saucer
     {
         execute(fmt::format(
             R"(
-                window.saucer._rpc[{0}].resolve({1});
-                delete window.saucer._rpc[{0}];
+                window.saucer.internal.rpc[{0}].resolve({1});
+                delete window.saucer.internal.rpc[{0}];
             )",
             id, result));
     }

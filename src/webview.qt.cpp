@@ -61,8 +61,8 @@ namespace saucer
             set_dev_tools(false);
         };
 
-        inject(std::string{impl::ready_script}, load_time::ready);
         inject(impl::inject_script(), load_time::creation);
+        inject(std::string{impl::ready_script}, load_time::ready);
 
         window::m_impl->window->setCentralWidget(m_impl->web_view.get());
         m_impl->web_view->show();

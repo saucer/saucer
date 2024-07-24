@@ -2,8 +2,8 @@
 
 #include "webview.hpp"
 
+#include <string>
 #include <optional>
-#include <string_view>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -51,7 +51,7 @@ namespace saucer
         std::map<std::string, scheme_handler> schemes;
 
       public:
-        static constinit std::string_view inject_script;
+        static const std::string &inject_script();
 
       public:
         void overwrite_wnd_proc(HWND hwnd);

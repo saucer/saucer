@@ -46,8 +46,8 @@ namespace saucer
         void setup(webview *);
 
       public:
-        static constinit std::string_view ready_script;
         static const std::string &inject_script();
+        static constinit std::string_view ready_script;
     };
 
     class webview::impl::web_class : public QObject

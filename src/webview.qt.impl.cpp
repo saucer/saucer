@@ -1,72 +1,52 @@
 #include "webview.qt.impl.hpp"
 
+#include "scripts.hpp"
+
+#include <optional>
+#include <fmt/core.h>
+
 #include <QFile>
 #include <QBuffer>
 #include <QWebEngineUrlRequestJob>
 
 namespace saucer
 {
-    constinit std::string_view webview::impl::ready_script = "window.saucer.on_message('dom_loaded')";
-
     const std::string &webview::impl::inject_script()
     {
-        static std::unique_ptr<std::string> instance;
+        static std::optional<std::string> instance;
 
         if (instance)
         {
-            return *instance;
+            return instance.value();
         }
 
         QFile qwebchannel{":/qtwebchannel/qwebchannel.js"};
 
         if (!qwebchannel.open(QIODevice::ReadOnly))
         {
-            throw std::runtime_error("Failed to open required qwebchannel.js");
+            throw std::runtime_error{"Failed to open required qwebchannel.js"};
         }
 
         auto content = qwebchannel.readAll().toStdString();
         qwebchannel.close();
 
-        instance = std::make_unique<std::string>(content +
-                                                 R"js(
-                window.saucer = 
-                {
-                    window_edge:
-                    {
-                        top:    1,
-                        bottom: 2,
-                        left:   4,
-                        right:  8,
-                    },
-                    on_message: async (message) =>
-                    {
-                        (await window._saucer).on_message(message);
-                    },
-                    start_drag: async () =>
-                    {
-                        await window.saucer.on_message(JSON.stringify({
-                            ["saucer:drag"]: true
-                        }));
-                    },
-                    start_resize: async (edge) =>
-                    {
-                        await window.saucer.on_message(JSON.stringify({
-                            ["saucer:resize"]: true,
-                            edge,
-                        }));
-                    }
-                };
+        instance.emplace(content + fmt::format(scripts::webview_script, fmt::arg("internal", R"js(
+        channel: new Promise((resolve) =>
+        {
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                resolve(channel.objects.saucer);
+            });
+        }),
+        send_message: async (message) =>
+        {
+            (await window.saucer.internal.channel).on_message(message);
+        }
+        )js")));
 
-                window._saucer = new Promise((resolve) =>
-                {
-                    new QWebChannel(qt.webChannelTransport, function(channel) { 
-                        resolve(channel.objects.saucer); 
-                    });
-                });
-            )js");
-
-        return *instance;
+        return instance.value();
     }
+
+    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.send_message('dom_loaded')";
 
     webview::impl::web_class::web_class(webview *parent) : m_parent(parent) {}
 
@@ -106,6 +86,11 @@ namespace saucer
 
         auto handler = [self](const QUrl &url)
         {
+            if (url.isEmpty())
+            {
+                return;
+            }
+
             self->m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
         };
 

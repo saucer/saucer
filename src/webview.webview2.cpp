@@ -107,7 +107,7 @@ namespace saucer
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
-        inject(std::string{impl::inject_script}, load_time::creation);
+        inject(impl::inject_script(), load_time::creation);
     }
 
     webview::~webview() = default;
