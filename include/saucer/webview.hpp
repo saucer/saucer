@@ -80,7 +80,10 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void clear_scripts();
+
+      public:
         [[sc::thread_safe]] void clear_embedded();
+        [[sc::thread_safe]] void clear_embedded(const std::string &file);
 
       public:
         [[sc::thread_safe]] void execute(const std::string &java_script);

@@ -48,6 +48,10 @@ namespace saucer
       protected:
         [[sc::thread_safe]] void reject(std::uint64_t, const std::string &);
         [[sc::thread_safe]] void resolve(std::uint64_t, const std::string &);
+
+      public:
+        [[sc::thread_safe]] void clear_exposed();
+        [[sc::thread_safe]] void clear_exposed(const std::string &name);
     };
 
     using default_serializer = serializers::glaze::serializer;

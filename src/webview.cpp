@@ -53,4 +53,10 @@ namespace saucer
         }
         remove_scheme("saucer");
     }
+
+    void webview::clear_embedded(const std::string &file)
+    {
+        auto locked = m_embedded_files.write();
+        locked->erase(file);
+    }
 } // namespace saucer

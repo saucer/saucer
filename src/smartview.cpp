@@ -162,4 +162,16 @@ namespace saucer
             )",
             id, result));
     }
+
+    void smartview_core::clear_exposed()
+    {
+        auto locked = m_impl->functions.write();
+        locked->clear();
+    }
+
+    void smartview_core::clear_exposed(const std::string &name)
+    {
+        auto locked = m_impl->functions.write();
+        locked->erase(name);
+    }
 } // namespace saucer
