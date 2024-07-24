@@ -9,11 +9,11 @@ namespace saucer
         set_url(fmt::format("{}:/{}", scheme, file));
     }
 
-    void webview::embed(embedded_files &&files)
+    void webview::embed(embedded_files files)
     {
         {
             auto locked = m_embedded_files.write();
-            locked->merge(files);
+            locked->merge(std::move(files));
         }
 
         auto handler = [this](const auto &request) -> scheme_handler::result_type
