@@ -86,9 +86,8 @@ namespace saucer
             webview->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
         }
 
-        // TODO: This is currently done to match the QWebEngineView behavior.
-        // TODO: However we should eventually add an event to make it possible to handle this on your own (i.e. also
-        // TODO: implement new-windows in the Qt backend).
+        // Ensure consistent behavior with other platforms.
+        // TODO: Window-Request Event.
 
         auto window_request = [](auto, auto *args)
         {
@@ -98,16 +97,15 @@ namespace saucer
 
         m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(window_request).Get(), nullptr);
 
-        //? We disable the dev-tools explicitly as they're enabled by default on webview2.
         set_dev_tools(false);
 
-        //? We disable the Accelerator-Keys because they should be disabled by default.
         if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
         {
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
         inject(impl::inject_script(), load_time::creation);
+        m_impl->injected.clear(); // Prevent init script from being cleared
     }
 
     webview::~webview() = default;
