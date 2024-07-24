@@ -33,6 +33,12 @@ namespace saucer
         return instance.value();
     }
 
+    void webview::impl::set_wnd_proc(HWND hwnd)
+    {
+        auto ptr   = reinterpret_cast<LONG_PTR>(wnd_proc);
+        o_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
+    }
+
     void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::options options)
     {
         auto flags = options.chrome_flags;
@@ -187,12 +193,6 @@ namespace saucer
         return S_OK;
     }
 
-    void webview::impl::overwrite_wnd_proc(HWND hwnd)
-    {
-        auto ptr          = reinterpret_cast<LONG_PTR>(wnd_proc);
-        original_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
-    }
-
     LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto userdata        = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
@@ -207,7 +207,7 @@ namespace saucer
 
         auto original = [&]()
         {
-            return CallWindowProcW(impl->original_wnd_proc, hwnd, msg, w_param, l_param);
+            return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
         };
 
         if (!impl->controller)

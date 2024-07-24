@@ -34,9 +34,6 @@ namespace saucer
         ComPtr<ICoreWebView2> web_view;
 
       public:
-        WNDPROC original_wnd_proc;
-
-      public:
         std::vector<LPCWSTR> injected;
         std::vector<std::string> scripts;
 
@@ -51,11 +48,13 @@ namespace saucer
         std::map<std::string, scheme_handler> schemes;
 
       public:
-        static const std::string &inject_script();
+        WNDPROC o_wnd_proc;
 
       public:
-        void overwrite_wnd_proc(HWND hwnd);
+        void set_wnd_proc(HWND hwnd);
         void create_webview(webview *, HWND, saucer::options);
+
+      public:
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);
 
       public:
@@ -66,6 +65,7 @@ namespace saucer
         void setup(webview *);
 
       public:
+        static const std::string &inject_script();
         static inline auto env_options = Make<CoreWebView2EnvironmentOptions>();
     };
 } // namespace saucer

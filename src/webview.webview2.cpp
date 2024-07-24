@@ -6,6 +6,7 @@
 #include "utils.win32.hpp"
 #include "window.win32.impl.hpp"
 
+#include <ranges>
 #include <filesystem>
 
 #include <fmt/core.h>
@@ -31,7 +32,7 @@ namespace saucer
             SetFileAttributesW(utils::widen(copy.storage_path.string()).c_str(), FILE_ATTRIBUTE_HIDDEN);
         }
 
-        m_impl->overwrite_wnd_proc(window::m_impl->hwnd);
+        m_impl->set_wnd_proc(window::m_impl->hwnd);
         m_impl->create_webview(this, window::m_impl->hwnd, std::move(copy));
 
         m_impl->web_view->get_Settings(&m_impl->settings);
@@ -103,7 +104,6 @@ namespace saucer
         }
 
         inject(impl::inject_script(), load_time::creation);
-        m_impl->injected.clear(); // Prevent init script from being cleared
     }
 
     webview::~webview() = default;
@@ -231,13 +231,17 @@ namespace saucer
             return window::m_impl->post_safe([this] { return clear_scripts(); });
         }
 
-        for (const auto &script : m_impl->injected)
+        for (const auto &script : m_impl->injected | std::views::drop(1))
         {
             m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(script);
         }
 
+        if (!m_impl->injected.empty())
+        {
+            m_impl->injected.resize(1);
+        }
+
         m_impl->scripts.clear();
-        m_impl->injected.clear();
     }
 
     void webview::execute(const std::string &java_script)
