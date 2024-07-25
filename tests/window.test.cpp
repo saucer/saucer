@@ -12,6 +12,8 @@ struct window : saucer::window
 
 void tests(window &window)
 {
+    window.show();
+
     // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
 
     bool was_minimized{false};
@@ -59,7 +61,9 @@ void tests(window &window)
         expect(not window.resizable());
 
         window.set_size(size.first + 10, size.second + 10);
-        expect(window.size() == size);
+
+        auto [width, height] = window.size();
+        expect(window.size() == size) << size.first << ":" << size.second << " -> " << width << ":" << height;
     };
 
 #ifndef SAUCER_QT6
@@ -69,6 +73,9 @@ void tests(window &window)
 
         window.set_decorations(false);
         expect(not window.decorations());
+
+        window.set_decorations(true);
+        expect(window.decorations());
     };
 
     "always_on_top"_test = [&]()
@@ -77,13 +84,16 @@ void tests(window &window)
 
         window.set_always_on_top(true);
         expect(window.always_on_top());
+
+        window.set_always_on_top(false);
+        expect(not window.always_on_top());
     };
 #endif
 
     "title"_test = [&]()
     {
         window.set_title("Some Title");
-        expect(window.title() == "Some Title");
+        expect(window.title() == "Some Title") << window.title();
     };
 
     "size"_test = [&]()
@@ -100,15 +110,17 @@ void tests(window &window)
         window.set_max_size(600, 600);
         window.set_size(700, 700);
 
-        expect(window.size() == std::make_pair(600, 600));
+        auto [width, height] = window.size();
+        expect(window.size() == std::make_pair(600, 600)) << width << ":" << height;
     };
 
     "min_size"_test = [&]()
     {
-        window.set_min_size(100, 100);
+        window.set_min_size(200, 200);
         window.set_size(0, 0);
 
-        expect(window.size() == std::make_pair(100, 100));
+        auto [width, height] = window.size();
+        expect(window.size() == std::make_pair(200, 200)) << width << ":" << height;
     };
 
 #ifndef SAUCER_QT6
@@ -146,6 +158,5 @@ suite<"window"> window_suite = []
                             window.close();
                         }};
 
-    window.show();
     window.run();
 };
