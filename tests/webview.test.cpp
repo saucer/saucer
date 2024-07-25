@@ -174,7 +174,6 @@ void tests(saucer::webview &webview, bool thread)
 
 suite<"webview"> webview_suite = []
 {
-    saucer::webview::register_scheme("test");
     saucer::webview webview{{.hardware_acceleration = false}};
 
     "from-main"_test = [&]()

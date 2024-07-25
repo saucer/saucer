@@ -1,6 +1,6 @@
 #include "cfg.hpp"
 
-#include <array>
+#include <format>
 
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
@@ -8,127 +8,106 @@
 using namespace boost::ut;
 using namespace boost::ut::literals;
 
-struct custom_type
+struct data
 {
-    int field;
+    int x;
 };
 
-template <>
-struct glz::meta<custom_type>
+using saucer::forget;
+
+void tests(saucer::smartview<> &webview)
 {
-    using T                     = custom_type;
-    static constexpr auto value = object("field", &T::field);
-};
-
-suite smartview_suite = []
-{
-    using saucer::launch;
-
-    saucer::smartview smartview({.hardware_acceleration = false});
-
-    std::size_t i{0};
-    std::array<std::promise<bool>, 7> called{};
-
-    "evaluate"_test = [&]
+    "sync_methods"_test = [&]()
     {
-        auto callback = [&](int result)
+        expect(webview.evaluate<int>("await saucer.exposed.a()").get() == 10);
+        expect(webview.evaluate<int>("await saucer.exposed.b(10)").get() == 20);
+        expect(webview.evaluate<std::string>("await saucer.exposed.c('Hello C++', 20)").get() == "Hello C++20");
+    };
+
+    "complex_param"_test = [&]()
+    {
+        expect(webview.evaluate<int>("await saucer.exposed.d({{x: 15}})").get() == 30);
+    };
+
+    const auto *code = R"js(
+        await (async () => {{
+            try
+            {{
+                return (await saucer.call({}, [{}])).toString();
+            }}
+            catch (err)
+            {{
+                return err;
+            }}
+        }})()
+    )js";
+
+    "executor"_test = [&]()
+    {
+        expect(webview.evaluate<std::string>(code, "e", -100).get() == "expected positive number");
+        expect(webview.evaluate<std::string>(code, "e", 100).get() == "100");
+
+        expect(webview.evaluate<std::string>(code, "f", -100).get() == "expected positive number");
+        expect(webview.evaluate<std::string>(code, "f", 100).get() == "105");
+    };
+
+    "async_methods"_test = [&]()
+    {
+        expect(webview.evaluate<int>("await saucer.exposed.g()").get() == 15);
+        forget(webview.evaluate<void>("await saucer.exposed.h()"));
+    };
+}
+
+suite<"smartview"> smartview_suite = []
+{
+    saucer::smartview smartview{{.hardware_acceleration = false}};
+
+    smartview.expose("close", [&]() { smartview.close(); });
+
+    smartview.expose("a", []() { return 10; });
+    smartview.expose("b", [](int param) { return param + 10; });
+    smartview.expose("c", [](std::string text, int param) { return std::format("{}{}", text, param); });
+
+    smartview.expose("d", [](const data &param) { return param.x * 2; });
+
+    smartview.expose("e",
+                     [](int param, const saucer::executor<int> &exec)
+                     {
+                         const auto &[resolve, reject] = exec;
+
+                         if (param < 0)
+                         {
+                             return reject("expected positive number");
+                         }
+
+                         resolve(param);
+                     });
+    smartview.expose(
+        "f",
+        [&](int param, const saucer::executor<int> &exec)
         {
-            std::cout << "evaluate called (" << i << ")" << std::endl;
+            const auto &[resolve, reject] = exec;
 
-            called.at(i++).set_value(true);
-            expect(eq(result, 4));
-        };
-
-        smartview.evaluate<int>("Math.pow({}, {})", 2, 2) | saucer::then(callback);
-        smartview.evaluate<int>("Math.pow({})", saucer::make_args(2, 2)) | saucer::then(callback);
-    };
-
-    "expose"_test = [&]
-    {
-        smartview.expose("f1",
-                         [&]
-                         {
-                             std::cout << "f1 called" << std::endl;
-                             called[2].set_value(true);
-                         });
-
-        smartview.expose("f2",
-                         [&](int a, const std::string &b)
-                         {
-                             std::cout << "f2 called" << std::endl;
-                             called[3].set_value(true);
-
-                             expect(eq(a, 10));
-                             expect(b == "hello!") << b;
-                         });
-
-        smartview.expose("f3",
-                         [&](custom_type custom)
-                         {
-                             std::cout << "f3 called" << std::endl;
-
-                             called[4].set_value(true);
-                             expect(eq(custom.field, 1337));
-                         });
-
-        smartview.expose(
-            "f4",
-            [&](const std::string &utf8)
+            if (param < 0)
             {
-                std::cout << "f4 called" << std::endl;
+                return reject("expected positive number");
+            }
 
-                expect(utf8 == "測試-тест");
-                expect(smartview.evaluate<std::string>("'測試-тест'").get() == "測試-тест");
+            resolve(smartview.evaluate<int>("{} + 5", param).get());
+        },
+        saucer::launch::async);
 
-                called[5].set_value(true);
+    smartview.expose("g", [&]() { return smartview.evaluate<int>("10 + 5").get(); }, saucer::launch::async);
+    smartview.expose("h", [&]() { forget(smartview.evaluate<void>("saucer.exposed.close()")); }, saucer::launch::async);
 
-                return custom_type{.field = 1337};
-            },
-            launch::async);
+    std::jthread thread{[&]()
+                        {
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            tests(smartview);
+                        }};
 
-        smartview.expose("f5",
-                         [&](int param, const saucer::executor<int> &exec)
-                         {
-                             const auto &[resolve, reject] = exec;
-
-                             std::cout << "f5 called" << std::endl;
-
-                             called[6].set_value(true);
-                             expect(eq(param, 100));
-
-                             resolve(500);
-                         });
-
-        std::async(std::launch::deferred,
-                   [&]
-                   {
-                       expect(called[0].get_future().get());
-                       expect(called[1].get_future().get());
-
-                       auto all = saucer::all(
-                           smartview.evaluate<void>("window.saucer.call({}, [])", "f1"),
-                           smartview.evaluate<void>("window.saucer.call({})",
-                                                    saucer::make_args("f2", std::make_tuple(10, "hello!"))),
-                           smartview.evaluate<void>("window.saucer.call({}, {})", "f3",
-                                                    std::make_tuple(custom_type{.field = 1337})),
-                           smartview.evaluate<custom_type>("await window.saucer.exposed.f4({})", "測試-тест"),
-                           smartview.evaluate<int>("await window.saucer.exposed.f5({})", 100));
-
-                       expect(called[2].get_future().get());
-                       expect(called[3].get_future().get());
-                       expect(called[4].get_future().get());
-                       expect(called[5].get_future().get());
-                       expect(called[6].get_future().get());
-
-                       expect(std::get<0>(all).field == 1337);
-                       expect(std::get<1>(all) == 500);
-
-                       smartview.close();
-                   }) |
-            saucer::forget();
-    };
-
-    smartview.set_url("https://saucer.github.io");
+    smartview.set_url("https://saucer.github.io/");
     smartview.show();
+
     smartview.run();
 };
