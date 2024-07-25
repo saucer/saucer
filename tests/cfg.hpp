@@ -12,7 +12,7 @@ namespace cfg
         template <class... Ts>
         auto on(boost::ut::events::test<Ts...> test)
         {
-            std::cout << "Running Test: " << test.name << std::endl;
+            std::cout << "|- " << test.name << std::endl;
             boost::ut::runner<>::on(test);
         }
     };

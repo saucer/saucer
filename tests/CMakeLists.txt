@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(saucer-tests  LANGUAGES CXX)
+project(saucer-tests LANGUAGES CXX)
 
 # --------------------------------------------------------------------------------------------------------
 # Create executable
@@ -30,7 +30,7 @@ include("../cmake/cpm.cmake")
 
 CPMFindPackage(
   NAME           ut
-  VERSION        2.0.0
+  VERSION        2.1.0
   GIT_REPOSITORY "https://github.com/boost-ext/ut"
   OPTIONS        "BOOST_UT_DISABLE_MODULE ON"
 )
