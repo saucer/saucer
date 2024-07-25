@@ -21,6 +21,7 @@ class navigation_guard
     ~navigation_guard()
     {
         m_promise.get_future().wait_for(m_timeout);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 };
 
@@ -140,7 +141,7 @@ void tests(saucer::webview &webview)
         }
 
         webview.execute("document.title = 'Execute Test'");
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
         expect(webview.page_title() == "Execute Test");
     };
