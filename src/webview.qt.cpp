@@ -55,12 +55,6 @@ namespace saucer
                                       m_events.at<web_event::load_started>().fire();
                                   });
 
-        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::titleChanged, [this](const auto &title)
-                                  { m_events.at<web_event::title_changed>().fire(title.toStdString()); });
-
-        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::iconChanged, [this](const auto &favicon)
-                                  { m_events.at<web_event::icon_changed>().fire(icon{{favicon}}); });
-
         window::m_impl->on_closed = [this]
         {
             set_dev_tools(false);
@@ -294,8 +288,14 @@ namespace saucer
     {
         switch (event)
         {
+        case web_event::title_changed:
+            m_impl->web_view->disconnect(m_impl->title_changed);
+            break;
         case web_event::load_finished:
             m_impl->web_view->disconnect(m_impl->load_finished);
+            break;
+        case web_event::icon_changed:
+            m_impl->web_view->disconnect(m_impl->icon_changed);
             break;
         case web_event::url_changed:
             m_impl->web_view->disconnect(m_impl->url_changed);

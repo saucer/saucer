@@ -339,6 +339,11 @@ namespace saucer
 
     void window::set_icon(const icon &icon)
     {
+        if (icon.empty())
+        {
+            return;
+        }
+
         if (!m_impl->is_thread_safe())
         {
             return m_impl->post_safe([this, icon] { return set_icon(icon); });

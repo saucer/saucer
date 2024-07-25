@@ -39,6 +39,8 @@ namespace saucer
 
       public:
         QMetaObject::Connection url_changed;
+        QMetaObject::Connection icon_changed;
+        QMetaObject::Connection title_changed;
         QMetaObject::Connection load_finished;
 
       public:

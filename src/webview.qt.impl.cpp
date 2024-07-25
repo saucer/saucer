@@ -1,6 +1,7 @@
 #include "webview.qt.impl.hpp"
 
 #include "scripts.hpp"
+#include "icon.qt.impl.hpp"
 
 #include <optional>
 #include <fmt/core.h>
@@ -56,8 +57,19 @@ namespace saucer
     }
 
     template <>
-    void webview::impl::setup<web_event::title_changed>(webview *)
+    void webview::impl::setup<web_event::title_changed>(webview *self)
     {
+        if (title_changed)
+        {
+            return;
+        }
+
+        auto handler = [self](const auto &title)
+        {
+            self->m_events.at<web_event::title_changed>().fire(title.toStdString());
+        };
+
+        title_changed = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
     }
 
     template <>
@@ -82,8 +94,19 @@ namespace saucer
     }
 
     template <>
-    void webview::impl::setup<web_event::icon_changed>(webview *)
+    void webview::impl::setup<web_event::icon_changed>(webview *self)
     {
+        if (icon_changed)
+        {
+            return;
+        }
+
+        auto handler = [self](const auto &favicon)
+        {
+            self->m_events.at<web_event::icon_changed>().fire(icon{{favicon}});
+        };
+
+        icon_changed = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
     }
 
     template <>
