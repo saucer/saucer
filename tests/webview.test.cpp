@@ -169,11 +169,6 @@ void tests(saucer::webview &webview)
         webview.remove_scheme("test");
     };
 
-    "close"_test = [&]()
-    {
-        webview.close();
-    };
-
     webview.clear(saucer::web_event::load_started);
     webview.clear(saucer::web_event::load_finished);
 
@@ -188,7 +183,9 @@ suite<"webview"> webview_suite = []
     std::jthread thread{[&]()
                         {
                             std::this_thread::sleep_for(std::chrono::seconds(2));
+
                             tests(webview);
+                            webview.close();
                         }};
 
     webview.show();
