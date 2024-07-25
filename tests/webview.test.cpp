@@ -8,20 +8,41 @@ using namespace boost::ut::literals;
 
 class navigation_guard
 {
-    std::promise<void> m_promise;
+    std::promise<void> m_ready;
+    std::promise<void> m_finished;
+
+  private:
     std::chrono::seconds m_timeout;
 
   public:
     navigation_guard(saucer::webview &webview, std::chrono::seconds timeout = std::chrono::seconds(20))
         : m_timeout(timeout)
     {
-        webview.once<saucer::web_event::load_finished>([this]() { m_promise.set_value(); });
+        webview.once<saucer::web_event::dom_ready>([this]() { m_ready.set_value(); });
+        webview.once<saucer::web_event::load_finished>([this]() { m_finished.set_value(); });
     }
 
     ~navigation_guard()
     {
+        m_ready.get_future().wait_for(m_timeout);
+        m_finished.get_future().wait_for(m_timeout);
+    }
+};
+
+class title_guard
+{
+    std::promise<void> m_promise;
+    std::chrono::seconds m_timeout;
+
+  public:
+    title_guard(saucer::webview &webview, std::chrono::seconds timeout = std::chrono::seconds(20)) : m_timeout(timeout)
+    {
+        webview.once<saucer::web_event::title_changed>([this](auto...) { m_promise.set_value(); });
+    }
+
+    ~title_guard()
+    {
         m_promise.get_future().wait_for(m_timeout);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 };
 
@@ -69,11 +90,14 @@ void tests(saucer::webview &webview)
     "page_title"_test = [&]()
     {
         {
-            auto guard = navigation_guard{webview};
+            auto nav_guard = navigation_guard{webview};
+            auto tit_guard = title_guard{webview};
+
             webview.set_url("https://saucer.github.io");
         }
 
-        expect(webview.page_title() == "Saucer | Saucer");
+        auto title = webview.page_title();
+        expect(title == "Saucer | Saucer") << title;
     };
 
 #ifndef SAUCER_QT6
@@ -136,14 +160,19 @@ void tests(saucer::webview &webview)
     "execute"_test = [&]()
     {
         {
-            auto guard = navigation_guard{webview};
+            auto nav_guard = navigation_guard{webview};
+            auto tit_guard = title_guard{webview};
+
             webview.set_url("https://saucer.github.io/");
         }
 
-        webview.execute("document.title = 'Execute Test'");
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        {
+            auto tit_guard = title_guard{webview};
+            webview.execute("document.title = 'Execute Test'");
+        }
 
-        expect(webview.page_title() == "Execute Test");
+        auto title = webview.page_title();
+        expect(title == "Execute Test") << title;
     };
 
     "inject"_test = [&]()
@@ -162,12 +191,17 @@ void tests(saucer::webview &webview)
         webview.inject("document.title = 'Hi!'", saucer::load_time::ready);
 
         {
-            auto guard = navigation_guard{webview};
+            auto guard     = navigation_guard{webview};
+            auto tit_guard = title_guard{webview};
+
             webview.set_url("https://cppreference.com/");
         }
 
-        expect(webview.page_title() == "Hi!");
         expect(webview.url().find("cppreference.com") != std::string::npos);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        auto title = webview.page_title();
+        expect(title == "Hi!") << title;
 
         webview.clear_scripts();
     };
