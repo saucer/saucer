@@ -6,6 +6,24 @@
 using namespace boost::ut;
 using namespace boost::ut::literals;
 
+class navigation_guard
+{
+    std::promise<void> m_promise;
+    std::chrono::seconds m_timeout;
+
+  public:
+    navigation_guard(saucer::webview &webview, std::chrono::seconds timeout = std::chrono::seconds(20))
+        : m_timeout(timeout)
+    {
+        webview.once<saucer::web_event::load_finished>([this]() { m_promise.set_value(); });
+    }
+
+    ~navigation_guard()
+    {
+        m_promise.get_future().wait_for(m_timeout);
+    }
+};
+
 void tests(saucer::webview &webview)
 {
     // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
@@ -34,8 +52,10 @@ void tests(saucer::webview &webview)
 
     "url"_test = [&]()
     {
-        webview.set_url("https://github.com/saucer/saucer");
-        std::this_thread::sleep_for(std::chrono::seconds(8));
+        {
+            auto guard = navigation_guard{webview};
+            webview.set_url("https://github.com/saucer/saucer");
+        }
 
         expect(load_started);
         expect(load_finished);
@@ -47,8 +67,10 @@ void tests(saucer::webview &webview)
 
     "page_title"_test = [&]()
     {
-        webview.set_url("https://saucer.github.io/");
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        {
+            auto guard = navigation_guard{webview};
+            webview.set_url("https://saucer.github.io");
+        }
 
         expect(webview.page_title() == "Saucer | Saucer");
     };
@@ -93,23 +115,29 @@ void tests(saucer::webview &webview)
                                           .mime    = "text/html",
                                       }}});
 
-        webview.serve("index.html");
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        {
+            auto guard = navigation_guard{webview};
+            webview.serve("index.html");
+        }
 
         expect(webview.url().find("github.com/Curve") != std::string::npos);
 
         webview.clear_embedded("index.html");
 
-        webview.serve("index.html");
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        {
+            auto guard = navigation_guard{webview};
+            webview.serve("index.html");
+        }
 
         expect(webview.url().find("github.com/Curve") == std::string::npos);
     };
 
     "execute"_test = [&]()
     {
-        webview.set_url("https://saucer.github.io/");
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        {
+            auto guard = navigation_guard{webview};
+            webview.set_url("https://saucer.github.io/");
+        }
 
         webview.execute("document.title = 'Execute Test'");
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -122,16 +150,20 @@ void tests(saucer::webview &webview)
         webview.inject("if (location.href.includes('cppref')) { location.href = 'https://isocpp.org'; }",
                        saucer::load_time::creation);
 
-        webview.set_url("https://cppreference.com/");
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        {
+            auto guard = navigation_guard{webview};
+            webview.set_url("https://cppreference.com/");
+        }
 
         webview.clear_scripts();
         expect(webview.url().find("isocpp.org") != std::string::npos);
 
         webview.inject("document.title = 'Hi!'", saucer::load_time::ready);
 
-        webview.set_url("https://cppreference.com/");
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        {
+            auto guard = navigation_guard{webview};
+            webview.set_url("https://cppreference.com/");
+        }
 
         expect(webview.page_title() == "Hi!");
         expect(webview.url().find("cppreference.com") != std::string::npos);
@@ -162,8 +194,10 @@ void tests(saucer::webview &webview)
                                   };
                               });
 
-        webview.serve("index.html", "test");
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        {
+            auto guard = navigation_guard{webview};
+            webview.serve("index.html", "test");
+        }
 
         expect(webview.page_title() == "Custom Scheme") << webview.page_title();
         webview.remove_scheme("test");

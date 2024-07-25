@@ -80,13 +80,8 @@ namespace saucer
             return;
         }
 
-        auto handler = [self](bool success)
+        auto handler = [self](auto...)
         {
-            if (!success)
-            {
-                return;
-            }
-
             self->m_events.at<web_event::load_finished>().fire();
         };
 
