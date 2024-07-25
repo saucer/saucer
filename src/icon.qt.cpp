@@ -39,6 +39,18 @@ namespace saucer
         return m_impl->icon.isNull();
     }
 
+    std::optional<icon> icon::from(const stash<> &ico)
+    {
+        QPixmap rtn{};
+
+        if (!rtn.loadFromData(ico.data(), ico.size()))
+        {
+            return std::nullopt;
+        }
+
+        return icon{{rtn}};
+    }
+
     std::optional<icon> icon::from(const fs::path &file)
     {
         auto q_icon = QIcon{QString::fromStdString(file.string())};
@@ -49,17 +61,5 @@ namespace saucer
         }
 
         return icon{{q_icon}};
-    }
-
-    std::optional<icon> icon::from(const stash<const std::uint8_t> &ico)
-    {
-        QPixmap rtn{};
-
-        if (!rtn.loadFromData(ico.data(), ico.size()))
-        {
-            return std::nullopt;
-        }
-
-        return icon{{rtn}};
     }
 } // namespace saucer

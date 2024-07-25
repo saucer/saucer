@@ -37,7 +37,7 @@ namespace saucer
         [[nodiscard]] bool empty() const;
 
       public:
+        [[nodiscard]] static std::optional<icon> from(const stash<> &ico);
         [[nodiscard]] static std::optional<icon> from(const fs::path &file);
-        [[nodiscard]] static std::optional<icon> from(const stash<const std::uint8_t> &ico);
     };
 } // namespace saucer

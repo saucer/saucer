@@ -24,8 +24,8 @@ namespace saucer
 
     struct response
     {
+        stash<> data;
         std::string mime;
-        stash<const std::uint8_t> data;
         std::map<std::string, std::string> headers;
     };
 
@@ -47,7 +47,7 @@ namespace saucer
         [[nodiscard]] std::string method() const;
 
       public:
-        [[nodiscard]] stash<const std::uint8_t> content() const;
+        [[nodiscard]] stash<> content() const;
         [[nodiscard]] std::map<std::string, std::string> headers() const;
     };
 

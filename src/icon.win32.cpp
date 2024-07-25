@@ -39,9 +39,10 @@ namespace saucer
         return !m_impl->bitmap || m_impl->bitmap->GetLastStatus() != Gdiplus::Status::Ok;
     }
 
-    std::optional<icon> icon::from(const fs::path &file)
+    std::optional<icon> icon::from(const stash<> &ico)
     {
-        auto *bitmap = Gdiplus::Bitmap::FromFile(file.wstring().c_str());
+        ComPtr<IStream> data = SHCreateMemStream(ico.data(), static_cast<DWORD>(ico.size()));
+        auto *bitmap         = Gdiplus::Bitmap::FromStream(data.Get());
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {
@@ -52,10 +53,9 @@ namespace saucer
         return icon{{std::shared_ptr<Gdiplus::Bitmap>{bitmap}}};
     }
 
-    std::optional<icon> icon::from(const stash<const std::uint8_t> &ico)
+    std::optional<icon> icon::from(const fs::path &file)
     {
-        ComPtr<IStream> data = SHCreateMemStream(ico.data(), static_cast<DWORD>(ico.size()));
-        auto *bitmap         = Gdiplus::Bitmap::FromStream(data.Get());
+        auto *bitmap = Gdiplus::Bitmap::FromFile(file.wstring().c_str());
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {

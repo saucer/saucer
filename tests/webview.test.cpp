@@ -1,4 +1,5 @@
 #include "cfg.hpp"
+#include "saucer/stash/stash.hpp"
 
 #include <saucer/webview.hpp>
 
@@ -150,10 +151,7 @@ suite webview_suite = []
 
         webview.on<saucer::web_event::url_changed>(callback);
 
-        const auto *data = reinterpret_cast<const std::uint8_t *>(html.data());
-        auto content     = saucer::stash<const std::uint8_t>::view({data, data + html.size()});
-        auto file        = saucer::embedded_file{"text/html", content};
-
+        auto file = saucer::embedded_file{saucer::make_stash(html), "text/html"};
         webview.embed({{"test.html", file}});
         webview.serve("test.html");
 

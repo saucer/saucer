@@ -1,5 +1,11 @@
 #pragma once
 
+#include <memory>
+#include <ranges>
+
+#include <cstddef>
+#include <string_view>
+
 #include <span>
 #include <vector>
 
@@ -8,16 +14,13 @@
 
 namespace saucer
 {
-    template <typename T>
+    template <typename T = std::uint8_t>
     class stash
     {
         using owning_t  = std::vector<std::remove_const_t<T>>;
-        using viewing_t = std::span<T>;
-
-      public:
-        using data_t    = std::variant<viewing_t, owning_t>;
-        using lazy_t    = std::shared_future<data_t>;
-        using variant_t = std::variant<data_t, lazy_t>;
+        using viewing_t = std::span<std::add_const_t<T>>;
+        using lazy_t    = std::shared_future<std::shared_ptr<stash<T>>>;
+        using variant_t = std::variant<owning_t, viewing_t, lazy_t>;
 
       private:
         variant_t m_data;
@@ -26,7 +29,7 @@ namespace saucer
         stash(variant_t);
 
       public:
-        [[nodiscard]] T *data() const;
+        [[nodiscard]] const T *data() const;
         [[nodiscard]] std::size_t size() const;
 
       public:
@@ -36,8 +39,12 @@ namespace saucer
       public:
         [[nodiscard]] static stash lazy(lazy_t data);
         template <typename Callback>
-        [[nodiscard]] static stash lazy(Callback &&);
+        [[nodiscard]] static stash lazy(Callback);
     };
+
+    template <typename T = std::uint8_t, typename V>
+        requires std::ranges::range<V>
+    auto make_stash(const V &data);
 } // namespace saucer
 
 #include "stash.inl"

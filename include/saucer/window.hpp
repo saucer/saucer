@@ -17,7 +17,7 @@
 
 namespace saucer
 {
-    enum class window_event : std::uint8_t
+    enum class window_event
     {
         maximize,
         minimize,
@@ -27,7 +27,7 @@ namespace saucer
         close,
     };
 
-    enum class window_edge : std::uint8_t
+    enum class window_edge
     {
         top    = 1 << 0,
         bottom = 1 << 1,

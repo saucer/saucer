@@ -17,13 +17,13 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    enum class load_time : std::uint8_t
+    enum class load_time
     {
         creation,
         ready,
     };
 
-    enum class web_event : std::uint8_t
+    enum class web_event
     {
         title_changed,
         load_finished,
@@ -35,8 +35,8 @@ namespace saucer
 
     struct embedded_file
     {
+        stash<> content;
         std::string mime;
-        stash<const std::uint8_t> content;
     };
 
     class webview : public window

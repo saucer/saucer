@@ -30,11 +30,11 @@ namespace saucer
         return rtn;
     }
 
-    stash<const std::uint8_t> request::content() const
+    stash<> request::content() const
     {
         if (!m_impl->body)
         {
-            return stash<const std::uint8_t>::from({});
+            return stash<>::from({});
         }
 
         STATSTG stats;
@@ -46,7 +46,7 @@ namespace saucer
         ULONG read{};
         m_impl->body->Read(data.data(), static_cast<ULONG>(data.size()), &read);
 
-        return stash<const std::uint8_t>::from(std::move(data));
+        return stash<>::from(std::move(data));
     }
 
     std::map<std::string, std::string> request::headers() const

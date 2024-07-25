@@ -37,8 +37,8 @@ namespace saucer
             const auto &data = locked->at(file);
 
             return response{
-                .mime = data.mime,
                 .data = data.content,
+                .mime = data.mime,
             };
         };
 

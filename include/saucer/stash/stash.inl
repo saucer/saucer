@@ -4,41 +4,37 @@
 
 namespace saucer
 {
+    template <typename... Ts>
+    struct overload : Ts...
+    {
+        using Ts::operator()...;
+    };
+
     template <typename T>
     stash<T>::stash(variant_t data) : m_data(std::move(data))
     {
     }
 
     template <typename T>
-    T *stash<T>::data() const
+    const T *stash<T>::data() const
     {
-        auto visitor = [](auto &data)
-        {
-            return data.data();
+        overload visitor = {
+            [](const lazy_t &data) { return data.get()->data(); },
+            [](const auto &data) { return data.data(); },
         };
 
-        if (std::holds_alternative<lazy_t>(m_data))
-        {
-            return std::visit(visitor, std::get<lazy_t>(m_data).get());
-        }
-
-        return std::visit(visitor, std::get<data_t>(m_data));
+        return std::visit(visitor, m_data);
     }
 
     template <typename T>
     std::size_t stash<T>::size() const
     {
-        auto visitor = [](auto &data)
-        {
-            return data.size();
+        overload visitor = {
+            [](const lazy_t &data) { return data.get()->size(); },
+            [](const auto &data) { return data.size(); },
         };
 
-        if (std::holds_alternative<lazy_t>(m_data))
-        {
-            return std::visit(visitor, std::get<lazy_t>(m_data).get());
-        }
-
-        return std::visit(visitor, std::get<data_t>(m_data));
+        return std::visit(visitor, m_data);
     }
 
     template <typename T>
@@ -61,8 +57,27 @@ namespace saucer
 
     template <typename T>
     template <typename Callback>
-    stash<T> stash<T>::lazy(Callback &&callback)
+    stash<T> stash<T>::lazy(Callback callback)
     {
-        return {std::async(std::launch::deferred, std::forward<Callback>(callback)).share()};
+        auto fn = [callback = std::move(callback)]()
+        {
+            return std::make_shared<stash>(std::invoke(callback));
+        };
+
+        return {std::async(std::launch::deferred, std::move(fn)).share()};
+    }
+
+    template <typename T, typename V>
+        requires std::ranges::range<V>
+    auto make_stash(const V &data)
+    {
+        if constexpr (std::ranges::view<V>)
+        {
+            return stash<T>::view({std::begin(data), std::end(data)});
+        }
+        else
+        {
+            return stash<T>::from({std::begin(data), std::end(data)});
+        }
     }
 } // namespace saucer
