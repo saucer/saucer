@@ -50,6 +50,10 @@ class title_guard
     }
 };
 
+#if defined(SAUCER_CI) && defined(SAUCER_QT6)
+#define PARTIAL_SKIP
+#endif
+
 void tests(saucer::webview &webview)
 {
     // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
@@ -86,7 +90,7 @@ void tests(saucer::webview &webview)
             webview.set_url("https://github.com/saucer/saucer");
         }
 
-#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
+#ifndef PARTIAL_SKIP
         expect(load_started);
         expect(load_finished);
         expect(dom_ready);
@@ -96,7 +100,7 @@ void tests(saucer::webview &webview)
         expect(webview.url().find("github.com/saucer/saucer") != std::string::npos) << webview.url();
     };
 
-#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
+#ifndef PARTIAL_SKIP
     "page_title"_test = [&]()
     {
         {
@@ -133,7 +137,7 @@ void tests(saucer::webview &webview)
     };
 #endif
 
-#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
+#ifndef PARTIAL_SKIP
     "embed"_test = [&]()
     {
         std::string page = R"html(
@@ -188,7 +192,7 @@ void tests(saucer::webview &webview)
         expect(title == "Execute Test") << title;
     };
 
-#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
+#ifndef PARTIAL_SKIP
     "inject"_test = [&]()
     {
         webview.inject("if (location.href.includes('cppref')) { location.href = 'https://isocpp.org'; }",
