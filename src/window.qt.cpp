@@ -274,6 +274,7 @@ namespace saucer
         else
         {
             state &= ~Qt::WindowState::WindowMinimized;
+            state |= Qt::WindowState::WindowActive;
         }
 
         m_impl->window->setWindowState(state);
