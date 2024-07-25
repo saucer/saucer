@@ -8,5 +8,4 @@ runs:
       shell: bash
       run: |
         Xvfb :1 -screen 1 1920x1080x16 & 
-        bash -c "sleep 5m && xwd -display :1 -root -silent | convert xwd:- png:/tmp/screenshot.png" &
         QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"

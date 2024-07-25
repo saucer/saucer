@@ -1,8 +1,6 @@
 #include "cfg.hpp"
 
 #include <chrono>
-#include <atomic>
-
 #include <saucer/webview.hpp>
 
 using namespace boost::ut;
@@ -56,6 +54,9 @@ void tests(saucer::webview &webview)
 {
     // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
 
+    // Other tests (such as page-title tests) are disabled only in the CI under certain circumstances (due to issues
+    // related to the non existence of a proper display server - mostly with QT6).
+
     std::string last_url{};
     webview.on<saucer::web_event::url_changed>([&](const auto &url) { last_url = url; });
 
@@ -93,6 +94,7 @@ void tests(saucer::webview &webview)
         expect(webview.url().find("github.com/saucer/saucer") != std::string::npos) << webview.url();
     };
 
+#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
     "page_title"_test = [&]()
     {
         {
@@ -105,6 +107,7 @@ void tests(saucer::webview &webview)
         auto title = webview.page_title();
         expect(title == "Saucer | Saucer") << title;
     };
+#endif
 
 #ifndef SAUCER_QT6
     "dev_tools"_test = [&]()
@@ -128,6 +131,7 @@ void tests(saucer::webview &webview)
     };
 #endif
 
+#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
     "embed"_test = [&]()
     {
         std::string page = R"html(
@@ -162,6 +166,7 @@ void tests(saucer::webview &webview)
 
         expect(webview.url().find("github.com/Curve") == std::string::npos);
     };
+#endif
 
     "execute"_test = [&]()
     {
@@ -181,6 +186,7 @@ void tests(saucer::webview &webview)
         expect(title == "Execute Test") << title;
     };
 
+#if !(defined(SAUCER_CI) && defined(SAUCER_QT6))
     "inject"_test = [&]()
     {
         webview.inject("if (location.href.includes('cppref')) { location.href = 'https://isocpp.org'; }",
@@ -211,6 +217,7 @@ void tests(saucer::webview &webview)
 
         webview.clear_scripts();
     };
+#endif
 
     "scheme"_test = [&]()
     {
