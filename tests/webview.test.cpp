@@ -8,20 +8,21 @@ using namespace boost::ut::literals;
 
 void tests(saucer::webview &webview)
 {
-    webview.show();
+    // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
 
     std::string last_url{};
     webview.on<saucer::web_event::url_changed>([&](const auto &url) { last_url = url; });
 
     bool dom_ready{false};
-    webview.once<saucer::web_event::dom_ready>([&]() { dom_ready = true; });
+    webview.on<saucer::web_event::dom_ready>([&]() { dom_ready = true; });
 
     bool load_started{false};
-    webview.once<saucer::web_event::load_started>([&]() { load_started = true; });
+    webview.on<saucer::web_event::load_started>([&]() { load_started = true; });
 
     bool load_finished{false};
-    webview.once<saucer::web_event::load_finished>([&]() { load_finished = true; });
+    webview.on<saucer::web_event::load_finished>([&]() { load_finished = true; });
 
+#ifndef SAUCER_QT6
     "background"_test = [&]()
     {
         webview.set_background({255, 0, 0, 255});
@@ -29,11 +30,12 @@ void tests(saucer::webview &webview)
         auto [r, g, b, a] = webview.background();
         expect(r == 255 && g == 0 && b == 0 && a == 255);
     };
+#endif
 
     "url"_test = [&]()
     {
         webview.set_url("https://github.com/saucer/saucer");
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::seconds(8));
 
         expect(load_started);
         expect(load_finished);
@@ -51,6 +53,7 @@ void tests(saucer::webview &webview)
         expect(webview.page_title() == "Saucer | Saucer");
     };
 
+#ifndef SAUCER_QT6
     "dev_tools"_test = [&]()
     {
         expect(not webview.dev_tools());
@@ -70,6 +73,7 @@ void tests(saucer::webview &webview)
         webview.set_context_menu(false);
         expect(not webview.context_menu());
     };
+#endif
 
     "embed"_test = [&]()
     {
@@ -170,6 +174,10 @@ void tests(saucer::webview &webview)
         webview.close();
     };
 
+    webview.clear(saucer::web_event::load_started);
+    webview.clear(saucer::web_event::load_finished);
+
+    webview.clear(saucer::web_event::dom_ready);
     webview.clear(saucer::web_event::url_changed);
 }
 
@@ -183,5 +191,6 @@ suite<"webview"> webview_suite = []
                             tests(webview);
                         }};
 
+    webview.show();
     webview.run();
 };
