@@ -4,6 +4,8 @@
 #include "instantiate.hpp"
 
 #include "utils.win32.hpp"
+
+#include "icon.win32.impl.hpp"
 #include "window.win32.impl.hpp"
 
 #include <ranges>
@@ -34,6 +36,20 @@ namespace saucer
         m_impl->create_webview(this, window::m_impl->hwnd, std::move(copy));
 
         m_impl->web_view->get_Settings(&m_impl->settings);
+
+        auto resource_requested = [this](auto, auto *args)
+        {
+            m_impl->scheme_handler(args);
+            return S_OK;
+        };
+
+        m_impl->web_view->add_WebResourceRequested(Callback<ResourceRequested>(resource_requested).Get(), nullptr);
+
+        if (!impl::gdi_token)
+        {
+            Gdiplus::GdiplusStartupInput input{};
+            Gdiplus::GdiplusStartup(&impl::gdi_token, &input, nullptr);
+        }
 
         auto receive_message = [this](auto, auto *args)
         {
@@ -83,6 +99,25 @@ namespace saucer
             webview->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
         }
 
+        if (ComPtr<ICoreWebView2_15> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
+        {
+            auto icon_received = [this](auto, auto *stream)
+            {
+                m_impl->favicon = icon{{std::make_shared<Gdiplus::Bitmap>(stream)}};
+                m_events.at<web_event::icon_changed>().fire(m_impl->favicon);
+
+                return S_OK;
+            };
+
+            auto icon_changed = [this, webview, icon_received](auto...)
+            {
+                webview->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(icon_received).Get());
+                return S_OK;
+            };
+
+            webview->add_FaviconChanged(Callback<FaviconChanged>(icon_changed).Get(), nullptr);
+        }
+
         // Ensure consistent behavior with other platforms.
         // TODO: Window-Request Event.
 
@@ -130,6 +165,32 @@ namespace saucer
         }
 
         return false;
+    }
+
+    icon webview::favicon() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this] { return favicon(); });
+        }
+
+        return m_impl->favicon;
+    }
+
+    std::string webview::page_title() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return window::m_impl->post_safe([this] { return page_title(); });
+        }
+
+        LPWSTR title{};
+        m_impl->web_view->get_DocumentTitle(&title);
+
+        auto rtn = utils::narrow(title);
+        CoTaskMemFree(title);
+
+        return rtn;
     }
 
     bool webview::dev_tools() const
@@ -324,6 +385,10 @@ namespace saucer
     {
         switch (event)
         {
+        case web_event::title_changed:
+            m_impl->web_view->remove_DocumentTitleChanged(m_impl->title_token.value_or(EventRegistrationToken{}));
+            m_impl->title_token.reset();
+            break;
         case web_event::load_finished:
             m_impl->web_view->remove_NavigationCompleted(m_impl->load_token.value_or(EventRegistrationToken{}));
             m_impl->load_token.reset();
@@ -358,7 +423,7 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    INSTANTIATE_EVENTS(webview, 4, web_event)
+    INSTANTIATE_EVENTS(webview, 6, web_event)
 
     void webview::register_scheme(const std::string &name)
     {

@@ -9,6 +9,9 @@
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 
+#include <windows.h>
+#include <gdiplus.h>
+
 #include <shlwapi.h>
 #include <WebView2EnvironmentOptions.h>
 
@@ -98,9 +101,6 @@ namespace saucer
         {
             return scheme_handler(arg);
         };
-
-        scheme_token.emplace();
-        web_view->add_WebResourceRequested(Callback<ResourceRequested>(resource_handler).Get(), &scheme_token.value());
 
         CoUninitialize();
     }
@@ -259,9 +259,33 @@ namespace saucer
         case WM_DESTROY:
             impl->controller->Close();
             break;
+        case WM_QUIT:
+            if (gdi_token)
+            {
+                Gdiplus::GdiplusShutdown(gdi_token);
+            }
+            break;
         }
 
         return original();
+    }
+
+    template <>
+    void webview::impl::setup<web_event::title_changed>(webview *self)
+    {
+        if (title_token)
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            self->m_events.at<web_event::title_changed>().fire(self->page_title());
+            return S_OK;
+        };
+
+        title_token.emplace();
+        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &title_token.value());
     }
 
     template <>
@@ -280,6 +304,11 @@ namespace saucer
 
         load_token.emplace();
         web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &load_token.value());
+    }
+
+    template <>
+    void webview::impl::setup<web_event::icon_changed>(webview *)
+    {
     }
 
     template <>

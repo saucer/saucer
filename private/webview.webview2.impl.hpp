@@ -20,11 +20,14 @@ namespace saucer
     using EnvironmentCompleted = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
     using ControllerCompleted  = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
     using ResourceRequested    = ICoreWebView2WebResourceRequestedEventHandler;
+    using TitleChanged         = ICoreWebView2DocumentTitleChangedEventHandler;
     using NavigationComplete   = ICoreWebView2NavigationCompletedEventHandler;
     using WebMessageHandler    = ICoreWebView2WebMessageReceivedEventHandler;
     using NavigationStarting   = ICoreWebView2NavigationStartingEventHandler;
     using NewWindowRequest     = ICoreWebView2NewWindowRequestedEventHandler;
     using DOMLoaded            = ICoreWebView2DOMContentLoadedEventHandler;
+    using FaviconChanged       = ICoreWebView2FaviconChangedEventHandler;
+    using GetFavicon           = ICoreWebView2GetFaviconCompletedHandler;
     using SourceChanged        = ICoreWebView2SourceChangedEventHandler;
 
     struct webview::impl
@@ -39,8 +42,11 @@ namespace saucer
 
       public:
         std::optional<EventRegistrationToken> load_token;
-        std::optional<EventRegistrationToken> scheme_token;
+        std::optional<EventRegistrationToken> title_token;
         std::optional<EventRegistrationToken> navigation_token;
+
+      public:
+        icon favicon;
 
       public:
         bool dom_loaded{false};
@@ -66,6 +72,9 @@ namespace saucer
 
       public:
         static const std::string &inject_script();
+
+      public:
+        static inline ULONG_PTR gdi_token;
         static inline auto env_options = Make<CoreWebView2EnvironmentOptions>();
     };
 } // namespace saucer

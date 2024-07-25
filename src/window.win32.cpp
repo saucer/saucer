@@ -1,6 +1,8 @@
 #include "window.win32.impl.hpp"
 
 #include "utils.win32.hpp"
+#include "icon.win32.impl.hpp"
+
 #include "instantiate.hpp"
 
 #include <fmt/core.h>
@@ -368,6 +370,29 @@ namespace saucer
         SetWindowPos(m_impl->hwnd, enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 
+    void window::set_icon(const icon &icon)
+    {
+        if (icon.empty())
+        {
+            return;
+        }
+
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, icon] { return set_icon(icon); });
+        }
+
+        HICON handle{};
+
+        if (icon.m_impl->bitmap->GetHICON(&handle) != Gdiplus::Status::Ok)
+        {
+            return;
+        }
+
+        SendMessage(m_impl->hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(handle));
+        DestroyIcon(handle);
+    }
+
     void window::set_title(const std::string &title)
     {
         if (!m_impl->is_thread_safe())
@@ -378,17 +403,17 @@ namespace saucer
         SetWindowTextW(m_impl->hwnd, utils::widen(title).c_str());
     }
 
-    void window::set_background(const color &color)
+    void window::set_background(const color &background)
     {
         if (!m_impl->is_thread_safe())
         {
-            return m_impl->post_safe([this, color] { return set_background(color); });
+            return m_impl->post_safe([this, background] { return set_background(background); });
         }
 
         std::promise<void> promise;
         auto result = promise.get_future();
 
-        m_impl->post(new set_background_message{color, &promise}, impl::WM_SET_BACKGROUND);
+        m_impl->post(new set_background_message{background, &promise}, impl::WM_SET_BACKGROUND);
 
         while (result.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
         {

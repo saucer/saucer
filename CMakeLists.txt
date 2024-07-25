@@ -25,7 +25,7 @@ option(saucer_examples          "Build examples"                                
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_webview2_version "1.0.1901.177"  CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_webview2_version "1.0.2592.51"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 
 # --------------------------------------------------------------------------------------------------------
