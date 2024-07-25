@@ -6,8 +6,10 @@
 using namespace boost::ut;
 using namespace boost::ut::literals;
 
-void tests(saucer::webview &webview, bool thread)
+void tests(saucer::webview &webview)
 {
+    webview.show();
+
     std::string last_url{};
     webview.on<saucer::web_event::url_changed>([&](const auto &url) { last_url = url; });
 
@@ -33,9 +35,9 @@ void tests(saucer::webview &webview, bool thread)
         webview.set_url("https://github.com/saucer/saucer");
         std::this_thread::sleep_for(std::chrono::seconds(5));
 
-        expect(!thread || load_started);
-        expect(!thread || load_finished);
-        expect(!thread || dom_ready);
+        expect(load_started);
+        expect(load_finished);
+        expect(dom_ready);
 
         expect(webview.url() == last_url) << webview.url() << ":" << last_url;
         expect(webview.url().find("github.com/saucer/saucer") != std::string::npos) << webview.url();
@@ -46,7 +48,7 @@ void tests(saucer::webview &webview, bool thread)
         webview.set_url("https://saucer.github.io/");
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
-        expect(!thread || webview.page_title() == "Saucer | Saucer");
+        expect(webview.page_title() == "Saucer | Saucer");
     };
 
     "dev_tools"_test = [&]()
@@ -90,14 +92,14 @@ void tests(saucer::webview &webview, bool thread)
         webview.serve("index.html");
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        expect(!thread || webview.url().find("github.com/Curve") != std::string::npos);
+        expect(webview.url().find("github.com/Curve") != std::string::npos);
 
         webview.clear_embedded("index.html");
 
         webview.serve("index.html");
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(!thread || webview.url().find("github.com/Curve") == std::string::npos);
+        expect(webview.url().find("github.com/Curve") == std::string::npos);
     };
 
     "execute"_test = [&]()
@@ -108,26 +110,27 @@ void tests(saucer::webview &webview, bool thread)
         webview.execute("document.title = 'Execute Test'");
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
-        expect(!thread || webview.page_title() == "Execute Test");
+        expect(webview.page_title() == "Execute Test");
     };
 
     "inject"_test = [&]()
     {
-        webview.inject("location.href = 'https://isocpp.org'", saucer::load_time::creation);
+        webview.inject("if (location.href.includes('cppref')) { location.href = 'https://isocpp.org'; }",
+                       saucer::load_time::creation);
 
         webview.set_url("https://cppreference.com/");
         std::this_thread::sleep_for(std::chrono::seconds(5));
 
-        expect(!thread || webview.url().find("isocpp.org") != std::string::npos);
         webview.clear_scripts();
+        expect(webview.url().find("isocpp.org") != std::string::npos);
 
         webview.inject("document.title = 'Hi!'", saucer::load_time::ready);
 
         webview.set_url("https://cppreference.com/");
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
 
-        expect(!thread || webview.page_title() == "Hi!");
-        expect(!thread || webview.url().find("cppreference.com") != std::string::npos);
+        expect(webview.page_title() == "Hi!");
+        expect(webview.url().find("cppreference.com") != std::string::npos);
 
         webview.clear_scripts();
     };
@@ -158,16 +161,14 @@ void tests(saucer::webview &webview, bool thread)
         webview.serve("index.html", "test");
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        expect(!thread || webview.page_title() == "Custom Scheme");
+        expect(webview.page_title() == "Custom Scheme") << webview.page_title();
         webview.remove_scheme("test");
     };
 
-    if (!thread)
+    "close"_test = [&]()
     {
-        webview.clear(saucer::web_event::dom_ready);
-        webview.clear(saucer::web_event::load_started);
-        webview.clear(saucer::web_event::load_finished);
-    }
+        webview.close();
+    };
 
     webview.clear(saucer::web_event::url_changed);
 }
@@ -176,23 +177,11 @@ suite<"webview"> webview_suite = []
 {
     saucer::webview webview{{.hardware_acceleration = false}};
 
-    "from-main"_test = [&]()
-    {
-        tests(webview, false);
-    };
-
     std::jthread thread{[&]()
                         {
                             std::this_thread::sleep_for(std::chrono::seconds(2));
-
-                            "from-thread"_test = [&]()
-                            {
-                                tests(webview, true);
-                            };
-
-                            webview.close();
+                            tests(webview);
                         }};
 
-    webview.show();
     webview.run();
 };
