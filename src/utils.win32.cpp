@@ -1,12 +1,33 @@
 #include "utils.win32.hpp"
 
 #include <stdexcept>
-#include <fmt/core.h>
+#include <string_view>
 
 #include <windows.h>
+#include <fmt/core.h>
 
 namespace saucer
 {
+    class library
+    {
+        HMODULE m_module;
+
+      public:
+        library(std::wstring_view name) : m_module(LoadLibraryW(name.data())) {}
+
+      public:
+        ~library()
+        {
+            FreeLibrary(m_module);
+        }
+
+      public:
+        [[nodiscard]] HMODULE value() const
+        {
+            return m_module;
+        }
+    };
+
     void utils::throw_error(const std::string &msg)
     {
         static constexpr auto lang    = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
@@ -20,17 +41,16 @@ namespace saucer
 
     void utils::set_dpi_awareness()
     {
-        auto *shcore = LoadLibraryW(L"Shcore.dll");
-        auto *func   = GetProcAddress(shcore, "SetProcessDpiAwareness");
+        auto shcore = library{L"Shcore.dll"};
 
-        if (func)
+        if (auto *func = GetProcAddress(shcore.value(), "SetProcessDpiAwareness"); func)
         {
             reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(func)(2);
             return;
         }
 
-        auto *user32 = LoadLibraryW(L"user32.dll");
-        func         = GetProcAddress(user32, "SetProcessDPIAware");
+        auto user32 = library{L"user32.dll"};
+        auto *func  = GetProcAddress(user32.value(), "SetProcessDPIAware");
 
         if (!func)
         {
