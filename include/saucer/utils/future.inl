@@ -68,7 +68,7 @@ namespace saucer
     {
         std::thread{[future = std::move(future)]() mutable
                     {
-                        future.get();
+                        future.wait();
                     }}
             .detach();
     }
