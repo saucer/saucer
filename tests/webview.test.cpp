@@ -1,6 +1,8 @@
 #include "cfg.hpp"
 
 #include <chrono>
+#include <atomic>
+
 #include <saucer/webview.hpp>
 
 using namespace boost::ut;
@@ -8,41 +10,45 @@ using namespace boost::ut::literals;
 
 class navigation_guard
 {
-    std::promise<void> m_ready;
-    std::promise<void> m_finished;
+    std::shared_ptr<std::promise<void>> m_ready;
+    std::shared_ptr<std::promise<void>> m_finished;
 
   private:
     std::chrono::seconds m_timeout;
 
   public:
     navigation_guard(saucer::webview &webview, std::chrono::seconds timeout = std::chrono::seconds(20))
-        : m_timeout(timeout)
+        : m_ready(std::make_shared<std::promise<void>>()), m_finished(std::make_shared<std::promise<void>>()),
+          m_timeout(timeout)
     {
-        webview.once<saucer::web_event::dom_ready>([this]() { m_ready.set_value(); });
-        webview.once<saucer::web_event::load_finished>([this]() { m_finished.set_value(); });
+        webview.once<saucer::web_event::dom_ready>([m_ready = m_ready]() { m_ready->set_value(); });
+        webview.once<saucer::web_event::load_finished>([m_finished = m_finished]() { m_finished->set_value(); });
     }
 
     ~navigation_guard()
     {
-        m_ready.get_future().wait_for(m_timeout);
-        m_finished.get_future().wait_for(m_timeout);
+        m_ready->get_future().wait_for(m_timeout);
+        m_finished->get_future().wait_for(m_timeout);
     }
 };
 
 class title_guard
 {
-    std::promise<void> m_promise;
+    std::shared_ptr<std::promise<void>> m_promise;
+
+  private:
     std::chrono::seconds m_timeout;
 
   public:
-    title_guard(saucer::webview &webview, std::chrono::seconds timeout = std::chrono::seconds(20)) : m_timeout(timeout)
+    title_guard(saucer::webview &webview, std::chrono::seconds timeout = std::chrono::seconds(20))
+        : m_promise(std::make_shared<std::promise<void>>()), m_timeout(timeout)
     {
-        webview.once<saucer::web_event::title_changed>([this](auto...) { m_promise.set_value(); });
+        webview.once<saucer::web_event::title_changed>([m_promise = m_promise](auto...) { m_promise->set_value(); });
     }
 
     ~title_guard()
     {
-        m_promise.get_future().wait_for(m_timeout);
+        m_promise->get_future().wait_for(m_timeout);
     }
 };
 
