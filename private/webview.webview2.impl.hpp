@@ -37,8 +37,8 @@ namespace saucer
         ComPtr<ICoreWebView2> web_view;
 
       public:
-        std::vector<LPCWSTR> injected;
         std::vector<std::string> scripts;
+        std::vector<std::wstring> injected;
 
       public:
         std::optional<EventRegistrationToken> load_token;

@@ -41,7 +41,7 @@ namespace saucer
             return original();
         }
 
-        if (msg == window->window::m_impl->WM_SAFE_CALL)
+        if (msg == impl::WM_SAFE_CALL)
         {
             delete reinterpret_cast<message *>(l_param);
             return original();
@@ -51,15 +51,24 @@ namespace saucer
         {
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
+            auto flags = GetWindowLongW(hwnd, GWL_STYLE);
+
+            if (!(flags & WS_THICKFRAME))
+            {
+                auto [width, height] = window->size();
+                auto [off_x, off_y]  = window->m_impl->window_offset();
+
+                info->ptMaxTrackSize = {.x = width + off_x, .y = height + off_y};
+                info->ptMinTrackSize = info->ptMaxTrackSize;
+
+                return original();
+            }
 
             auto [min_x, min_y] = window->min_size();
             auto [max_x, max_y] = window->max_size();
 
-            info->ptMaxTrackSize.x = max_x;
-            info->ptMaxTrackSize.y = max_y;
-
-            info->ptMinTrackSize.x = min_x;
-            info->ptMinTrackSize.y = min_y;
+            info->ptMaxTrackSize = {.x = max_x, .y = max_y};
+            info->ptMinTrackSize = {.x = min_x, .y = min_y};
 
             break;
         }
