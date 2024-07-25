@@ -32,7 +32,7 @@ jobs:
           backend: ${{ matrix.backend }}
           platform: Linux
           build-type: ${{ matrix.config }}
-          cmake-args: -Dsaucer_tests=ON -DSAUCER_CI=ON
+          cmake-args: -Dsaucer_tests=ON -Dsaucer_ci=ON
 
       - name: 🧪 Test
         timeout-minutes: 10

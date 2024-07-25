@@ -19,6 +19,7 @@ option(saucer_package_all       "Add all required dependencies to install target
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
 option(saucer_tests             "Build tests"                                      OFF)
+option(saucer_ci                "Notify that tests are running in ci"              OFF)
 option(saucer_examples          "Build examples"                                   OFF)
 
 # --------------------------------------------------------------------------------------------------------
@@ -102,6 +103,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_tests)
+  if (saucer_ci)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_CI)
+  endif()
+  
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_TESTS)
 endif()
 
