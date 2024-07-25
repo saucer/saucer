@@ -2,6 +2,8 @@
 
 #include "stash.hpp"
 
+#include <functional>
+
 namespace saucer
 {
     template <typename... Ts>
