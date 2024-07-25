@@ -19,6 +19,7 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       public:
+        icon();
         icon(impl);
 
       public:
@@ -27,6 +28,13 @@ namespace saucer
 
       public:
         ~icon();
+
+      public:
+        icon &operator=(const icon &);
+        icon &operator=(icon &&) noexcept;
+
+      public:
+        [[nodiscard]] bool empty() const;
 
       public:
         [[nodiscard]] static std::optional<icon> from(const fs::path &file);
