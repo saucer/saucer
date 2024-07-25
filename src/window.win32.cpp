@@ -171,7 +171,8 @@ namespace saucer
         }
 
         std::wstring title;
-        title.reserve(GetWindowTextLengthW(m_impl->hwnd) + 1);
+
+        title.resize(GetWindowTextLengthW(m_impl->hwnd));
         GetWindowTextW(m_impl->hwnd, title.data(), static_cast<int>(title.capacity()));
 
         return utils::narrow(title);
@@ -261,12 +262,22 @@ namespace saucer
 
     void window::start_drag()
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this] { start_drag(); });
+        }
+
         ReleaseCapture();
         PostMessage(m_impl->hwnd, WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
     }
 
     void window::start_resize(saucer::window_edge edge)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, edge] { start_resize(edge); });
+        }
+
         DWORD translated{};
 
         if (edge == window_edge::left)
@@ -308,11 +319,21 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, enabled] { set_minimized(enabled); });
+        }
+
         ShowWindow(m_impl->hwnd, enabled ? SW_MINIMIZE : SW_RESTORE);
     }
 
     void window::set_maximized(bool enabled)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, enabled] { set_maximized(enabled); });
+        }
+
         ShowWindow(m_impl->hwnd, enabled ? SW_MAXIMIZE : SW_RESTORE);
     }
 
@@ -436,12 +457,14 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
-        m_impl->max_size = {width, height};
+        auto [off_x, off_y] = m_impl->window_offset();
+        m_impl->max_size    = {width + off_x, height + off_y};
     }
 
     void window::set_min_size(int width, int height)
     {
-        m_impl->min_size = {width, height};
+        auto [off_x, off_y] = m_impl->window_offset();
+        m_impl->min_size    = {width + off_x, height + off_y};
     }
 
     void window::clear(window_event event)
