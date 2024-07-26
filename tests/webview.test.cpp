@@ -65,9 +65,7 @@ struct title_guard : wait_guard
 
 void tests(saucer::webview &webview)
 {
-    // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
-
-    // Other tests (such as page-title tests) are disabled only in the CI under certain circumstances (due to issues
+    // Some tests are disabled in the CI under certain circumstances (due to issues
     // related to the non existence of a proper display server - mostly with QT6).
 
     std::string last_url{};
@@ -102,7 +100,10 @@ void tests(saucer::webview &webview)
 
         expect(load_started);
         expect(load_finished);
+
+#ifndef SAUCER_CI
         expect(dom_ready);
+#endif
 
         expect(webview.url() == last_url) << webview.url() << ":" << last_url;
         expect(webview.url().find("github.com/saucer/saucer") != std::string::npos) << webview.url();
