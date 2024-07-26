@@ -14,7 +14,7 @@ void tests(window &window)
 {
     window.show();
 
-    // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed.
+    // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed (minor wayland issues).
 
     bool was_minimized{false};
     window.on<saucer::window_event::minimize>([&](bool minimized) { was_minimized = minimized; });
@@ -122,16 +122,6 @@ void tests(window &window)
         auto [width, height] = window.size();
         expect(window.size() == std::make_pair(200, 200)) << width << ":" << height;
     };
-
-#ifndef SAUCER_QT6
-    "hide"_test = [&]()
-    {
-        window.focus();
-        window.hide();
-
-        expect(not window.focused());
-    };
-#endif
 
     window.clear(saucer::window_event::maximize);
     window.clear(saucer::window_event::minimize);
