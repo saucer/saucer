@@ -112,7 +112,7 @@ void tests(saucer::webview &webview)
     "page_title"_test = [&]()
     {
         {
-            auto guard = title_guard{webview, "Saucer"};
+            auto guard = title_guard{webview, "Saucer | Saucer"};
             webview.set_url("https://saucer.github.io");
         }
 
