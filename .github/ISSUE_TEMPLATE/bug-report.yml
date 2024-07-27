@@ -45,8 +45,24 @@ body:
       description: The operating system the problem occurred on.
       options:
         - Linux
+        - MacOS
         - Windows 10
         - Windows 11
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: 🧰 Compiler
+      description: The exact compiler (and compiler version) used.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: 📦 Environment
+      description: The exact WebView2 / QT / Webkit version that is installed on the system.
     validations:
       required: true
 
