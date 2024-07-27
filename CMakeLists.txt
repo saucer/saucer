@@ -19,7 +19,7 @@ option(saucer_package_all       "Add all required dependencies to install target
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
 option(saucer_tests             "Build tests"                                      OFF)
-option(saucer_ci                "Notify that tests are running in ci"              OFF)
+option(saucer_ci                "Set when running CI-Tests"                        OFF)
 option(saucer_examples          "Build examples"                                   OFF)
 
 # --------------------------------------------------------------------------------------------------------
