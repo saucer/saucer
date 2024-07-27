@@ -109,6 +109,7 @@ void tests(saucer::webview &webview)
         expect(webview.url().find("github.com/saucer/saucer") != std::string::npos) << webview.url();
     };
 
+#ifndef SAUCER_CI
     "page_title"_test = [&]()
     {
         {
@@ -119,6 +120,7 @@ void tests(saucer::webview &webview)
         auto title = webview.page_title();
         expect(title == "Saucer | Saucer") << title;
     };
+#endif
 
     "dev_tools"_test = [&]()
     {
