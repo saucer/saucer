@@ -13,20 +13,6 @@ namespace saucer
         return creation_thread == std::this_thread::get_id();
     }
 
-    std::pair<int, int> window::impl::window_offset() const
-    {
-        RECT window_rect;
-        RECT client_rect;
-
-        GetWindowRect(hwnd, &window_rect);
-        GetClientRect(hwnd, &client_rect);
-
-        int width  = window_rect.right - window_rect.left - client_rect.right;
-        int height = window_rect.bottom - window_rect.top - client_rect.bottom;
-
-        return {width, height};
-    }
-
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -56,19 +42,24 @@ namespace saucer
             if (!(flags & WS_THICKFRAME))
             {
                 auto [width, height] = window->size();
-                auto [off_x, off_y]  = window->m_impl->window_offset();
 
-                info->ptMaxTrackSize = {.x = width + off_x, .y = height + off_y};
+                info->ptMaxTrackSize = {.x = width, .y = height};
                 info->ptMinTrackSize = info->ptMaxTrackSize;
 
                 return original();
             }
 
-            auto [min_x, min_y] = window->min_size();
-            auto [max_x, max_y] = window->max_size();
+            if (auto min_size = window->m_impl->min_size; min_size)
+            {
+                auto [min_x, min_y]  = min_size.value();
+                info->ptMinTrackSize = {.x = min_x, .y = min_y};
+            }
 
-            info->ptMaxTrackSize = {.x = max_x, .y = max_y};
-            info->ptMinTrackSize = {.x = min_x, .y = min_y};
+            if (auto max_size = window->m_impl->max_size; max_size)
+            {
+                auto [max_x, max_y]  = max_size.value();
+                info->ptMaxTrackSize = {.x = max_x, .y = max_y};
+            }
 
             break;
         }

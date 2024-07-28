@@ -24,7 +24,6 @@ namespace saucer
 
       public:
         [[nodiscard]] bool is_thread_safe() const;
-        [[nodiscard]] std::pair<int, int> window_offset() const;
 
       public:
         static const UINT WM_SAFE_CALL;

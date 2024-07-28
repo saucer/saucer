@@ -22,6 +22,9 @@ void tests(window &window)
     bool was_maximized{false};
     window.on<saucer::window_event::maximize>([&](bool maximized) { was_maximized = maximized; });
 
+    std::pair<int, int> last_size{};
+    window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });
+
     "minimize"_test = [&]()
     {
         window.set_minimized(true);
@@ -101,8 +104,15 @@ void tests(window &window)
         window.set_resizable(true);
         window.set_size(500, 500);
 
-        auto [width, height] = window.size();
-        expect(width == 500 && height == 500) << width << ":" << height;
+        {
+            auto [width, height] = window.size();
+            expect(width == 500 && height == 500) << width << ":" << height;
+        }
+
+        {
+            auto [width, height] = last_size;
+            expect(width == 500 && height == 500) << width << ":" << height;
+        }
     };
 
     "max_size"_test = [&]()
@@ -123,6 +133,7 @@ void tests(window &window)
         expect(window.size() == std::make_pair(200, 200)) << width << ":" << height;
     };
 
+    window.clear(saucer::window_event::resize);
     window.clear(saucer::window_event::maximize);
     window.clear(saucer::window_event::minimize);
 }

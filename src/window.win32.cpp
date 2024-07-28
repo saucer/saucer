@@ -186,7 +186,7 @@ namespace saucer
         }
 
         RECT rect;
-        GetClientRect(m_impl->hwnd, &rect);
+        GetWindowRect(m_impl->hwnd, &rect);
 
         return {rect.right - rect.left, rect.bottom - rect.top};
     }
@@ -257,7 +257,7 @@ namespace saucer
         SetForegroundWindow(m_impl->hwnd);
     }
 
-    // The next two methods were fairly simply to implement thanks to Qt!
+    // Kudos to Qt for serving as a really good reference here:
     // https://github.com/qt/qtbase/blob/37b6f941ee210e0bc4d65e8e700b6e19eb89c414/src/plugins/platforms/windows/qwindowswindow.cpp#L3028
 
     void window::start_drag()
@@ -451,20 +451,27 @@ namespace saucer
             return m_impl->post_safe([this, width, height] { set_size(width, height); });
         }
 
-        auto [off_x, off_y] = m_impl->window_offset();
-        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width + off_x, height + off_y, SWP_NOMOVE | SWP_NOZORDER);
+        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
     }
 
     void window::set_max_size(int width, int height)
     {
-        auto [off_x, off_y] = m_impl->window_offset();
-        m_impl->max_size    = {width + off_x, height + off_y};
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, width, height] { set_max_size(width, height); });
+        }
+
+        m_impl->max_size = {width, height};
     }
 
     void window::set_min_size(int width, int height)
     {
-        auto [off_x, off_y] = m_impl->window_offset();
-        m_impl->min_size    = {width + off_x, height + off_y};
+        if (!m_impl->is_thread_safe())
+        {
+            return m_impl->post_safe([this, width, height] { set_min_size(width, height); });
+        }
+
+        m_impl->min_size = {width, height};
     }
 
     void window::clear(window_event event)
