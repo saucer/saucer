@@ -33,10 +33,15 @@ namespace saucer
     std::map<std::string, std::string> request::headers() const
     {
         auto headers = m_impl->request->requestHeaders();
-        auto rtn     = std::views::transform(headers, [&headers](auto &item)
-                                             { return std::make_pair(item.toStdString(), headers[item].toStdString()); });
 
-        return {rtn.begin(), rtn.end()};
+        auto transform = [&headers](auto &item)
+        {
+            return std::make_pair(item.toStdString(), headers[item].toStdString());
+        };
+
+        return headers                            //
+               | std::views::transform(transform) //
+               | std::ranges::to<std::map<std::string, std::string>>();
     }
 
     void url_scheme_handler::requestStarted(QWebEngineUrlRequestJob *request)

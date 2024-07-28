@@ -49,7 +49,7 @@ struct navigation_guard : wait_guard
 {
     navigation_guard(saucer::webview &webview, const std::string &contains,
                      std::chrono::milliseconds delay = std::chrono::milliseconds(500))
-        : wait_guard([&webview, contains]() { return webview.url().find(contains) != std::string::npos; }, delay)
+        : wait_guard([&webview, contains]() { return webview.url().contains(contains); }, delay)
     {
     }
 };
@@ -58,7 +58,7 @@ struct title_guard : wait_guard
 {
     title_guard(saucer::webview &webview, const std::string &contains,
                 std::chrono::milliseconds delay = std::chrono::milliseconds(500))
-        : wait_guard([&webview, contains]() { return webview.page_title().find(contains) != std::string::npos; }, delay)
+        : wait_guard([&webview, contains]() { return webview.page_title().contains(contains); }, delay)
     {
     }
 };
@@ -106,7 +106,7 @@ void tests(saucer::webview &webview)
 #endif
 
         expect(webview.url() == last_url) << webview.url() << ":" << last_url;
-        expect(webview.url().find("github.com/saucer/saucer") != std::string::npos) << webview.url();
+        expect(webview.url().contains("github.com/saucer/saucer")) << webview.url();
     };
 
 #ifndef SAUCER_CI
@@ -255,7 +255,7 @@ void tests(saucer::webview &webview)
         }
 
         webview.clear_scripts();
-        expect(webview.url().find("isocpp.org") != std::string::npos);
+        expect(webview.url().contains("isocpp.org"));
 
         webview.inject("document.title = 'Hi!'", saucer::load_time::ready);
 
@@ -264,7 +264,7 @@ void tests(saucer::webview &webview)
             webview.set_url("https://cppreference.com/");
         }
 
-        expect(webview.url().find("cppreference.com") != std::string::npos);
+        expect(webview.url().contains("cppreference.com"));
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
         auto title = webview.page_title();
