@@ -2,10 +2,7 @@
 
 namespace saucer
 {
-    const UINT window::impl::WM_SAFE_CALL      = RegisterWindowMessageW(L"safe_call");
-    const UINT window::impl::WM_GET_BACKGROUND = RegisterWindowMessageW(L"get_background");
-    const UINT window::impl::WM_SET_BACKGROUND = RegisterWindowMessageW(L"set_background");
-
+    const UINT window::impl::WM_SAFE_CALL            = RegisterWindowMessageW(L"safe_call");
     std::atomic<std::size_t> window::impl::instances = 0;
 
     bool window::impl::is_thread_safe() const
@@ -29,7 +26,7 @@ namespace saucer
 
         if (msg == impl::WM_SAFE_CALL)
         {
-            delete reinterpret_cast<message *>(l_param);
+            delete reinterpret_cast<safe_message *>(l_param);
             return original();
         }
 
@@ -120,5 +117,12 @@ namespace saucer
         }
 
         return original();
+    }
+
+    safe_message::safe_message(callback_t callback) : m_callback(std::move(callback)) {}
+
+    safe_message::~safe_message()
+    {
+        std::invoke(m_callback);
     }
 } // namespace saucer

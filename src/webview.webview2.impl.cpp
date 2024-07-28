@@ -215,38 +215,6 @@ namespace saucer
             return original();
         }
 
-        if (msg == web_view->window::m_impl->WM_GET_BACKGROUND)
-        {
-            auto *message = reinterpret_cast<get_background_message *>(l_param);
-
-            if (ComPtr<ICoreWebView2Controller2> controller; SUCCEEDED(impl->controller.As(&controller)))
-            {
-                COREWEBVIEW2_COLOR color;
-                controller->get_DefaultBackgroundColor(&color);
-                message->result->set_value(saucer::color{color.R, color.G, color.B, color.A});
-            }
-
-            delete message;
-
-            return original();
-        }
-
-        if (msg == web_view->window::m_impl->WM_SET_BACKGROUND)
-        {
-            auto *message = reinterpret_cast<set_background_message *>(l_param);
-
-            if (ComPtr<ICoreWebView2Controller2> controller; SUCCEEDED(impl->controller.As(&controller)))
-            {
-                auto [r, g, b, a] = message->data;
-                controller->put_DefaultBackgroundColor({.A = a, .R = r, .G = g, .B = b});
-            }
-
-            message->result->set_value();
-            delete message;
-
-            return original();
-        }
-
         switch (msg)
         {
         case WM_SHOWWINDOW:

@@ -2,10 +2,8 @@
 
 #include "window.hpp"
 
-#include <optional>
-
 #include <thread>
-#include <future>
+#include <optional>
 
 #include <windows.h>
 
@@ -27,86 +25,23 @@ namespace saucer
 
       public:
         static const UINT WM_SAFE_CALL;
-        static const UINT WM_GET_BACKGROUND;
-        static const UINT WM_SET_BACKGROUND;
-
-      public:
         static std::atomic<std::size_t> instances;
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
-
-      public:
-        template <typename T>
-        auto post(T *, UINT);
-
-      public:
-        template <typename Func, typename Result = std::invoke_result_t<Func>>
-        Result post_safe(Func &&);
     };
 
-    struct set_background_message
+    class safe_message
     {
-        color data;
-        std::promise<void> *result;
-    };
-
-    struct get_background_message
-    {
-        std::promise<color> *result;
-    };
-
-    struct message
-    {
-        virtual ~message() = default;
-    };
-
-    template <typename T>
-    class safe_message : public message
-    {
-        using callback_t = std::function<T()>;
+        using callback_t = std::move_only_function<void()>;
 
       private:
-        callback_t m_func;
-        std::promise<T> *m_result;
+        callback_t m_callback;
 
       public:
-        safe_message(callback_t func, std::promise<T> *result) : m_func(std::move(func)), m_result(result) {}
+        safe_message(callback_t callback);
 
       public:
-        ~safe_message() override
-        {
-            if constexpr (!std::is_void_v<T>)
-            {
-                m_result->set_value(std::invoke(m_func));
-            }
-            else
-            {
-                std::invoke(m_func);
-                m_result->set_value();
-            }
-        }
+        ~safe_message();
     };
-
-    template <typename T>
-    auto window::impl::post(T *data, UINT msg)
-    {
-        PostMessage(hwnd, msg, 0, reinterpret_cast<LPARAM>(data));
-    }
-
-    template <typename Func, typename Result>
-    Result window::impl::post_safe(Func &&func)
-    {
-        if (!hwnd)
-        {
-            return Result{};
-        }
-
-        std::promise<Result> result;
-
-        // ? The WndProc will delete the message.
-        post(new safe_message<Result>{std::forward<Func>(func), &result}, WM_SAFE_CALL);
-
-        return result.get_future().get();
-    }
 } // namespace saucer
