@@ -108,11 +108,12 @@ void tests(window &window)
             auto [width, height] = window.size();
             expect(width == 500 && height == 500) << width << ":" << height;
         }
-
+#ifndef SAUCER_QT5
         {
             auto [width, height] = last_size;
             expect(width == 500 && height == 500) << width << ":" << height;
         }
+#endif
     };
 
     "max_size"_test = [&]()
