@@ -442,7 +442,7 @@ namespace saucer
 
     void webview::register_scheme(const std::string &name)
     {
-        static std::map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
+        static std::unordered_map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
 
         ComPtr<ICoreWebView2EnvironmentOptions4> options;
 

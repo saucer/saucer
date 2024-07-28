@@ -4,8 +4,8 @@
 #include "window.hpp"
 #include "scheme.hpp"
 
-#include <map>
 #include <filesystem>
+#include <unordered_map>
 
 #include <string>
 #include <memory>
@@ -44,7 +44,7 @@ namespace saucer
         struct impl;
 
       private:
-        using embedded_files = std::map<std::string, embedded_file>;
+        using embedded_files = std::unordered_map<std::string, embedded_file>;
 
       private:
         using events = ereignis::manager<                                         //

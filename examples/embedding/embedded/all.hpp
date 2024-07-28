@@ -1,6 +1,8 @@
 #pragma once
-#include <map>
+
 #include <string>
+#include <unordered_map>
+
 #include <saucer/webview.hpp>
 
 #include "assets/logo.png.hpp"
@@ -12,7 +14,7 @@ namespace saucer::embedded
 {
     inline auto all()
     {
-        std::map<std::string, embedded_file> rtn;
+        std::unordered_map<std::string, embedded_file> rtn;
 
         rtn.emplace("assets/logo.png", embedded_file{stash<>::view(assets_logo_png), "image/png"});
         rtn.emplace("src/index.html", embedded_file{stash<>::view(src_index_html), "text/html"});

@@ -6,9 +6,8 @@
 #include <string>
 
 #include <memory>
-#include <cstdint>
-
 #include <functional>
+
 #include <tl/expected.hpp>
 
 namespace saucer

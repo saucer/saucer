@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <string_view>
+#include <unordered_map>
 
 #include <QMetaObject>
 #include <QWebChannel>
@@ -35,7 +36,7 @@ namespace saucer
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
-        std::map<std::string, url_scheme_handler> schemes;
+        std::unordered_map<std::string, url_scheme_handler> schemes;
 
       public:
         QMetaObject::Connection url_changed;

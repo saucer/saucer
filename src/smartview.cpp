@@ -26,8 +26,8 @@ namespace saucer
         poolparty::pool<> pool;
 
       public:
-        lock<std::map<id, resolver>> evaluations;
-        lock<std::map<std::string, std::pair<function, launch>>> functions;
+        lock<std::unordered_map<id, resolver>> evaluations;
+        lock<std::unordered_map<std::string, std::pair<function, launch>>> functions;
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
