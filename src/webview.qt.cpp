@@ -114,7 +114,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return favicon(); });
+            return dispatch([this] { return favicon(); }).get();
         }
 
         return {{m_impl->web_view->icon()}};
@@ -124,17 +124,34 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return page_title(); });
+            return dispatch([this] { return page_title(); }).get();
         }
 
         return m_impl->web_view->title().toStdString();
+    }
+
+    color webview::background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return background(); }).get();
+        }
+
+        auto color = m_impl->web_page->backgroundColor();
+
+        return {
+            static_cast<std::uint8_t>(color.red()),
+            static_cast<std::uint8_t>(color.green()),
+            static_cast<std::uint8_t>(color.blue()),
+            static_cast<std::uint8_t>(color.alpha()),
+        };
     }
 
     bool webview::dev_tools() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return dev_tools(); });
+            return dispatch([this] { return dev_tools(); }).get();
         }
 
         return static_cast<bool>(m_impl->dev_page);
@@ -144,7 +161,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return url(); });
+            return dispatch([this] { return url(); }).get();
         }
 
         return m_impl->web_view->url().toString().toStdString();
@@ -154,7 +171,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return context_menu(); });
+            return dispatch([this] { return context_menu(); }).get();
         }
 
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
@@ -164,7 +181,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, enabled] { return set_dev_tools(enabled); });
+            return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
         }
 
         if (!m_impl->dev_page && !enabled)
@@ -193,18 +210,40 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, enabled] { return set_context_menu(enabled); });
+            return dispatch([this, enabled] { return set_context_menu(enabled); }).get();
         }
 
         m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
                                                        : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
+    void webview::set_background(const color &background)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, background] { return set_background(background); }).get();
+        }
+
+        const auto [r, g, b, a] = background;
+        const auto transparent  = a <= 255;
+
+        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, transparent);
+        window::m_impl->window->setAttribute(Qt::WA_TranslucentBackground, transparent);
+
+        auto color = QColor{r, g, b, a};
+        m_impl->web_page->setBackgroundColor(color);
+
+        auto palette = window::m_impl->window->palette();
+        palette.setColor(QPalette::ColorRole::Window, color);
+
+        window::m_impl->window->setPalette(palette);
+    }
+
     void webview::set_file(const fs::path &file)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, file] { return set_file(file); });
+            return dispatch([this, file] { return set_file(file); }).get();
         }
 
         m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(file.string())));
@@ -214,7 +253,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, url] { return set_url(url); });
+            return dispatch([this, url] { return set_url(url); }).get();
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
@@ -224,7 +263,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this] { return clear_scripts(); });
+            return dispatch([this] { return clear_scripts(); }).get();
         }
 
         m_impl->web_view->page()->scripts().clear();
@@ -237,7 +276,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, java_script] { execute(java_script); });
+            return dispatch([this, java_script] { execute(java_script); }).get();
         }
 
         if (!m_impl->dom_loaded)
@@ -253,8 +292,9 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, name, handler = std::move(handler)]
-                                             { return handle_scheme(name, handler); });
+            return dispatch([this, name, handler = std::move(handler)] mutable
+                            { return handle_scheme(name, std::move(handler)); })
+                .get();
         }
 
         if (m_impl->schemes.contains(name))
@@ -270,7 +310,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, name] { return remove_scheme(name); });
+            return dispatch([this, name] { return remove_scheme(name); }).get();
         }
 
         auto it = m_impl->schemes.find(name);
@@ -288,7 +328,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, event] { return clear(event); });
+            return dispatch([this, event] { return clear(event); }).get();
         }
 
         switch (event)
@@ -322,7 +362,9 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, callback = std::move(callback)] { return once<Event>(callback); });
+            return dispatch([this, callback = std::move(callback)]() mutable
+                            { return once<Event>(std::move(callback)); })
+                .get();
         }
 
         m_impl->setup<Event>(this);
@@ -334,7 +376,8 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return window::m_impl->post_safe([this, callback = std::move(callback)] { return on<Event>(callback); });
+            return dispatch([this, callback = std::move(callback)]() mutable { return on<Event>(std::move(callback)); })
+                .get();
         }
 
         m_impl->setup<Event>(this);

@@ -39,6 +39,8 @@ namespace saucer
         std::string mime;
     };
 
+    using color = std::array<std::uint8_t, 4>;
+
     class webview : public window
     {
         struct impl;
@@ -74,6 +76,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;
+        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] std::string page_title() const;
 
       public:
@@ -84,6 +87,9 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_dev_tools(bool enabled);
         [[sc::thread_safe]] void set_context_menu(bool enabled);
+        [[sc::thread_safe]] void set_background(const color &background);
+
+      public:
         [[sc::thread_safe]] void set_file(const fs::path &file);
         [[sc::thread_safe]] void set_url(const std::string &url);
 

@@ -2,9 +2,6 @@
 
 #include "window.hpp"
 
-#include <future>
-#include <functional>
-
 #include <QMainWindow>
 #include <QApplication>
 
@@ -23,10 +20,6 @@ namespace saucer
 
       public:
         [[nodiscard]] bool is_thread_safe() const;
-
-      public:
-        template <typename Func, typename Result = std::invoke_result_t<Func>>
-        Result post_safe(Func &&);
 
       public:
         static thread_local inline std::unique_ptr<QApplication> application;
@@ -49,45 +42,17 @@ namespace saucer
         void resizeEvent(QResizeEvent *event) override;
     };
 
-    template <typename T>
     class safe_event : public QEvent
     {
-        using callback_t = std::function<T()>;
+        using callback_t = std::move_only_function<void()>;
 
       private:
-        callback_t m_func;
-        std::promise<T> *m_result;
+        callback_t m_callback;
 
       public:
-        safe_event(callback_t func, std::promise<T> *result)
-            : QEvent(QEvent::User), m_func(std::move(func)), m_result(result)
-        {
-        }
+        safe_event(callback_t callback);
 
       public:
-        ~safe_event() override
-        {
-            if constexpr (!std::is_void_v<T>)
-            {
-                m_result->set_value(std::invoke(m_func));
-            }
-            else
-            {
-                std::invoke(m_func);
-                m_result->set_value();
-            }
-        }
+        ~safe_event() override;
     };
-
-    template <typename Func, typename Result>
-    Result window::impl::post_safe(Func &&func)
-    {
-        std::promise<Result> result;
-        auto *event = new safe_event<Result>{std::forward<Func>(func), &result};
-
-        // ? Qt will automatically delete the event after processing.
-        QApplication::postEvent(window.get(), event);
-
-        return result.get_future().get();
-    }
 } // namespace saucer

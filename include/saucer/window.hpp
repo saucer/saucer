@@ -6,8 +6,8 @@
 #include <memory>
 
 #include <set>
-#include <array>
 #include <utility>
+#include <functional>
 
 #include <thread>
 #include <cstdint>
@@ -48,11 +48,12 @@ namespace saucer
         std::size_t threads = std::thread::hardware_concurrency();
     };
 
-    using color = std::array<std::uint8_t, 4>;
-
     class window
     {
         struct impl;
+
+      private:
+        using callback_t = std::move_only_function<void()>;
 
       private:
         using events = ereignis::manager<                          //
@@ -85,7 +86,6 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
 
       public:
-        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] std::string title() const;
 
       public:
@@ -117,7 +117,6 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_icon(const icon &icon);
         [[sc::thread_safe]] void set_title(const std::string &title);
-        [[sc::thread_safe]] void set_background(const color &background);
 
       public:
         [[sc::thread_safe]] void set_size(int width, int height);
@@ -135,7 +134,15 @@ namespace saucer
         [[sc::thread_safe]] std::uint64_t on(events::type_t<Event>);
 
       public:
+        [[sc::thread_safe]] void dispatch(callback_t callback) const;
+
+        template <typename Callback>
+        [[sc::thread_safe]] auto dispatch(Callback &&callback) const;
+
+      public:
         template <bool Blocking = true>
         [[sc::may_block]] static void run();
     };
 } // namespace saucer
+
+#include "window.inl"

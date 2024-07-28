@@ -50,5 +50,5 @@ namespace saucer
         [[nodiscard]] std::map<std::string, std::string> headers() const;
     };
 
-    using scheme_handler = std::function<tl::expected<response, request_error>(const request &)>;
+    using scheme_handler = std::move_only_function<tl::expected<response, request_error>(const request &)>;
 } // namespace saucer
