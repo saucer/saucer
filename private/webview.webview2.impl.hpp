@@ -51,7 +51,7 @@ namespace saucer
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
-        std::map<std::string, scheme_handler> schemes;
+        std::unordered_map<std::string, scheme_handler> schemes;
 
       public:
         WNDPROC o_wnd_proc;
