@@ -319,7 +319,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::url_changed>(webview *self)
     {
-        if (navigation_token)
+        if (source_token)
         {
             return;
         }
@@ -330,8 +330,8 @@ namespace saucer
             return S_OK;
         };
 
-        navigation_token.emplace();
-        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &navigation_token.value());
+        source_token.emplace();
+        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &source_token.value());
     }
 
     template <>

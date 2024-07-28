@@ -399,8 +399,8 @@ namespace saucer
             m_impl->load_token.reset();
             break;
         case web_event::url_changed:
-            m_impl->web_view->remove_SourceChanged(m_impl->navigation_token.value_or(EventRegistrationToken{}));
-            m_impl->navigation_token.reset();
+            m_impl->web_view->remove_SourceChanged(m_impl->source_token.value_or(EventRegistrationToken{}));
+            m_impl->source_token.reset();
             break;
         default:
             break;

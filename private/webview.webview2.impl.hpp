@@ -43,7 +43,7 @@ namespace saucer
       public:
         std::optional<EventRegistrationToken> load_token;
         std::optional<EventRegistrationToken> title_token;
-        std::optional<EventRegistrationToken> navigation_token;
+        std::optional<EventRegistrationToken> source_token;
 
       public:
         icon favicon;
