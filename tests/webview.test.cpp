@@ -184,6 +184,50 @@ void tests(saucer::webview &webview)
         expect(title != "Embedded") << title;
     };
 
+    "embed_lazy"_test = [&]()
+    {
+        std::string page = R"html(
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Lazy Embedded</title>
+            </head>
+        </html>
+        )html";
+
+        std::size_t called = 0;
+
+        webview.embed({{"index.html", saucer::embedded_file{
+                                          .content = saucer::stash<>::lazy(
+                                              [&page, &called]()
+                                              {
+                                                  called++;
+                                                  return saucer::make_stash(page);
+                                              }),
+                                          .mime = "text/html",
+                                      }}});
+
+        {
+            auto guard = title_guard{webview, "Embedded"};
+            webview.serve("index.html");
+        }
+
+        expect(called == 1);
+        expect(webview.page_title() == "Lazy Embedded");
+
+        {
+            auto guard = navigation_guard{webview, "github"};
+            webview.set_url("https://github.com");
+        }
+        {
+            auto guard = title_guard{webview, "Embedded"};
+            webview.serve("index.html");
+        }
+
+        expect(called == 1);
+        expect(webview.page_title() == "Lazy Embedded");
+    };
+
     "execute"_test = [&]()
     {
         {
