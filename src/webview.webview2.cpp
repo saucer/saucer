@@ -454,7 +454,7 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type_t<Event> callback)
+    void webview::once(events::type<Event> callback)
     {
         if (!window::m_impl->is_thread_safe())
         {
@@ -468,7 +468,7 @@ namespace saucer
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type_t<Event> callback)
+    std::uint64_t webview::on(events::type<Event> callback)
     {
         if (!window::m_impl->is_thread_safe())
         {

@@ -121,11 +121,11 @@ namespace saucer
 
         using window::once;
         template <web_event Event>
-        [[sc::thread_safe]] void once(events::type_t<Event> callback);
+        [[sc::thread_safe]] void once(events::type<Event> callback);
 
         using window::on;
         template <web_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> callback);
+        [[sc::thread_safe]] std::uint64_t on(events::type<Event> callback);
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);

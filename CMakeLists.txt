@@ -142,7 +142,7 @@ include("cmake/nuget.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        2.8
+  VERSION        3.0
   GIT_REPOSITORY "https://github.com/Curve/lockpp"
 )
 
@@ -162,13 +162,13 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        3.1
+  VERSION        4.0
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
 )
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        11.0.1
+  GIT_TAG        11.0.2
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
@@ -180,19 +180,19 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           flagpp
-  VERSION        2.1
+  VERSION        3.0
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
 )
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        1.2.0
+  VERSION        2.0.0
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
 CPMFindPackage(
   NAME           poolparty
-  VERSION        1.0.1
+  VERSION        2.0.0
   GIT_REPOSITORY "https://github.com/Curve/poolparty"
 )
 
