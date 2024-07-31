@@ -100,8 +100,8 @@ namespace saucer
             return std::invoke(func, std::move(data), executor);
         }
 
-        m_impl->pool.emplace([func, released = data.release(), executor = std::move(executor)]()
-                             { std::invoke(func, std::unique_ptr<message_data>{released}, executor); });
+        m_impl->pool.emplace([func, data = std::move(data), executor = std::move(executor)]() mutable
+                             { std::invoke(func, std::move(data), executor); });
     }
 
     void smartview_core::resolve(std::unique_ptr<message_data> data)
