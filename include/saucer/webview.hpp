@@ -48,7 +48,7 @@ namespace saucer
       private:
         using embedded_files = std::unordered_map<std::string, embedded_file>;
 
-      private:
+      public:
         using events = ereignis::manager<                                         //
             ereignis::event<web_event::title_changed, void(const std::string &)>, //
             ereignis::event<web_event::load_finished, void()>,                    //

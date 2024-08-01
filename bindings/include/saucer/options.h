@@ -18,8 +18,6 @@ extern "C"
     void saucer_options_set_storage_path(saucer_options *, const char *path);
     void saucer_options_add_chrome_flag(saucer_options *, const char *flag);
 
-    void saucer_options_set_threads(saucer_options *, size_t count);
-
 #ifdef __cplusplus
 }
 #endif

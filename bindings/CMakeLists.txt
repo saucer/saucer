@@ -21,7 +21,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PUBLIC  "include")
-target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
+target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private" "utils")
 
 # --------------------------------------------------------------------------------------------------------
 # Add Sources
@@ -30,9 +30,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/icon.cpp"
     "src/memory.cpp"
+
+    "src/stash.cpp"
+    "src/scheme.cpp"
     "src/options.cpp"
     
     "src/window.cpp"
+    "src/webview.cpp"
 )
 
 # --------------------------------------------------------------------------------------------------------

@@ -4,12 +4,12 @@
 
 extern "C"
 {
-    void saucer_free(void *data)
+    void saucer_memory_free(void *data)
     {
         free(data); // NOLINT
     }
 
-    void *saucer_alloc(size_t size)
+    void *saucer_memory_alloc(size_t size)
     {
         return malloc(size); // NOLINT
     }

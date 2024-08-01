@@ -1,11 +1,5 @@
-#include "icon.h"
-#include "utils.hpp"
-
-#include <saucer/icon.hpp>
-
-struct saucer_icon : saucer::handle<saucer_icon, saucer::icon>
-{
-};
+#include "icon.hpp"
+#include "stash.hpp"
 
 extern "C"
 {
@@ -28,30 +22,18 @@ extern "C"
             return;
         }
 
-        *result = saucer_icon::from(icon.value());
+        *result = saucer_icon::from(std::move(icon.value()));
     }
 
-    void saucer_icon_from_data_copy(saucer_icon **result, const uint8_t *data, size_t size)
+    void saucer_icon_from_data(saucer_icon **result, saucer_stash *stash)
     {
-        auto icon = saucer::icon::from(saucer::stash<>::from({data, data + size}));
+        auto icon = saucer::icon::from(stash->value());
 
         if (!icon)
         {
             return;
         }
 
-        *result = saucer_icon::from(icon.value());
-    }
-
-    void saucer_icon_from_data_view(saucer_icon **result, const uint8_t *data, size_t size)
-    {
-        auto icon = saucer::icon::from(saucer::stash<>::view({data, data + size}));
-
-        if (!icon)
-        {
-            return;
-        }
-
-        *result = saucer_icon::from(icon.value());
+        *result = saucer_icon::from(std::move(icon.value()));
     }
 }

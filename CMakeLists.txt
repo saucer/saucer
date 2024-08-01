@@ -18,9 +18,11 @@ option(saucer_modules           "Enable smartview modules"                      
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
+option(saucer_examples          "Build examples"                                   OFF)
+option(saucer_bindings          "Build bindings"                                   OFF)
+
 option(saucer_tests             "Build tests"                                      OFF)
 option(saucer_ci                "Set when running CI-Tests"                        OFF)
-option(saucer_examples          "Build examples"                                   OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Library options
@@ -38,6 +40,14 @@ if (saucer_prefer_remote)
 endif()
 
 set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
+
+# --------------------------------------------------------------------------------------------------------
+# Global Configuration
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_bindings)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Ensure valid library options
@@ -174,7 +184,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        3.1.7
+  VERSION        3.1.9
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 

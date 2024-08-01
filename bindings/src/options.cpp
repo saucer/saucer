@@ -1,11 +1,5 @@
 #include "options.h"
-#include "utils.hpp"
-
-#include <saucer/window.hpp>
-
-struct saucer_options : saucer::handle<saucer_options, saucer::options>
-{
-};
+#include "options.hpp"
 
 extern "C"
 {
@@ -37,10 +31,5 @@ extern "C"
     void saucer_options_add_chrome_flag(saucer_options *handle, const char *flag)
     {
         handle->value().chrome_flags.emplace(flag);
-    }
-
-    void saucer_options_set_threads(saucer_options *handle, size_t count)
-    {
-        handle->value().threads = count;
     }
 }
