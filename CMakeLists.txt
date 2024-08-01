@@ -269,6 +269,15 @@ if (saucer_examples)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
+# Setup Bindings
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_bindings)
+  message(STATUS "[saucer] Building Bindings")
+  add_subdirectory(bindings)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
 # Setup Packaging Target
 # └ We build this artifact so that people who don't use CMake can manually include all required headers
 #   of our dependencies and link against our static-lib.

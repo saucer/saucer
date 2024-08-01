@@ -55,7 +55,7 @@ namespace saucer
       private:
         using callback_t = std::move_only_function<void()>;
 
-      private:
+      public:
         using events = ereignis::manager<                          //
             ereignis::event<window_event::resize, void(int, int)>, //
             ereignis::event<window_event::maximize, void(bool)>,   //
