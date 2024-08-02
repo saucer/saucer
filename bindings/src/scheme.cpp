@@ -19,6 +19,11 @@ extern "C"
         return saucer_response::from(tl::unexpected<saucer::request_error>{static_cast<saucer::request_error>(error)});
     }
 
+    void saucer_response_free(saucer_response *handle)
+    {
+        delete handle;
+    }
+
     void saucer_response_add_header(saucer_response *handle, const char *header, const char *value)
     {
         handle->value()->headers.emplace(header, value);

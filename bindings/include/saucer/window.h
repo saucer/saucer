@@ -70,6 +70,12 @@ extern "C"
     void saucer_window_clear(saucer_handle *, SAUCER_WINDOW_EVENT event);
     void saucer_window_remove(saucer_handle *, SAUCER_WINDOW_EVENT event, uint64_t id);
 
+    /**
+     * @note See respective comment on events in "window.h"
+     * @warning The icon passed to the @param callback in the `web_event::icon_changed` event must be free'd by the
+     * user
+     */
+
     void saucer_window_once(saucer_handle *, SAUCER_WINDOW_EVENT event, void *callback);
     uint64_t saucer_window_on(saucer_handle *, SAUCER_WINDOW_EVENT event, void *callback);
 

@@ -37,7 +37,8 @@ namespace bindings
         template <typename U>
         static auto convert(U &&data)
         {
-            return saucer_icon::make(data); // TODO: Lifetime?
+            // ! User is responsible for freeing this!
+            return saucer_icon::make(std::forward<U>(data));
         };
     };
 

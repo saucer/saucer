@@ -37,7 +37,7 @@ extern "C"
     void saucer_free(saucer_handle *);
 
     typedef bool (*saucer_on_message)(const char *);
-    void saucer_webview_on_message(saucer_handle *, saucer_on_message);
+    void saucer_webview_on_message(saucer_handle *, saucer_on_message callback);
 
     /*[[sc::requires_free]]*/ saucer_icon *saucer_webview_favicon(saucer_handle *);
     void saucer_webview_background(saucer_handle *, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a);
@@ -72,10 +72,20 @@ extern "C"
     void saucer_webview_clear(saucer_handle *, SAUCER_WEB_EVENT event);
     void saucer_webview_remove(saucer_handle *, SAUCER_WEB_EVENT event, uint64_t id);
 
+    /**
+     * @note The @param callback should be a function pointer to a function matching the event, that is:
+     * <return-type>(saucer_handle *, <params>...);
+     *
+     * Where "<return-type>" and "<params>..." are to be
+     * substituted according to the given event signature (see the respective C++ header)
+     *
+     * @example web_event::title_changed => void(*)(saucer_handle *, const char *)
+     */
+
     void saucer_webview_once(saucer_handle *, SAUCER_WEB_EVENT event, void *callback);
     uint64_t saucer_webview_on(saucer_handle *, SAUCER_WEB_EVENT event, void *callback);
 
-    void saucer_register_scheme(const char *name);
+    /*[[sc::before_init]]*/ void saucer_register_scheme(const char *name);
 
 #ifdef __cplusplus
 }

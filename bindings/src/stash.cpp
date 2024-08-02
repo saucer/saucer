@@ -30,6 +30,15 @@ extern "C"
 
     saucer_stash *saucer_stash_lazy(saucer_stash_lazy_callback callback)
     {
-        return saucer_stash::from(saucer::stash<>::lazy([callback]() { return std::invoke(callback)->value(); }));
+        return saucer_stash::from(saucer::stash<>::lazy(
+            [callback]()
+            {
+                auto *handle = std::invoke(callback);
+                auto rtn     = std::move(handle->value());
+
+                delete handle;
+
+                return rtn;
+            }));
     }
 }

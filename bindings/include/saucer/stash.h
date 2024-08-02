@@ -19,6 +19,11 @@ extern "C"
     saucer_stash *saucer_stash_view(const uint8_t *data, size_t size);
 
     typedef saucer_stash *(*saucer_stash_lazy_callback)();
+
+    /**
+     * @note The stash returned from within the @param callback is automatically deleted. However, the stash returned
+     * from this function must still be freed accordingly.
+     */
     saucer_stash *saucer_stash_lazy(saucer_stash_lazy_callback callback);
 
 #ifdef __cplusplus
