@@ -103,7 +103,7 @@ namespace saucer
         {
             auto icon_received = [this](auto, auto *stream)
             {
-                m_impl->favicon = icon{{std::make_shared<Gdiplus::Bitmap>(stream)}};
+                m_impl->favicon = icon{{std::make_shared<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream))}};
                 m_events.at<web_event::icon_changed>().fire(m_impl->favicon);
 
                 return S_OK;
