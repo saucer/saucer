@@ -259,6 +259,12 @@ namespace saucer
         m_impl->web_view->setUrl(QString::fromStdString(url));
     }
 
+    void webview::serve(const std::string &file, const std::string &scheme)
+    {
+        set_url(fmt::format("{}:/{}", scheme, file));
+    }
+
+
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())

@@ -4,11 +4,6 @@
 
 namespace saucer
 {
-    void webview::serve(const std::string &file, const std::string &scheme)
-    {
-        set_url(fmt::format("{}:/{}", scheme, file));
-    }
-
     void webview::embed(embedded_files files)
     {
         {
