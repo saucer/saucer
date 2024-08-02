@@ -11,6 +11,7 @@
 #include "wrap.hpp"
 #include "handle.hpp"
 
+#include <utility>
 #include <cstring>
 
 struct saucer_embedded_file : bindings::handle<saucer_embedded_file, saucer::embedded_file>
@@ -205,6 +206,8 @@ extern "C"
             return handle->once<web_event::load_finished>(
                 bindings::callback<events::type<web_event::load_finished>>(handle, callback));
         }
+
+        std::unreachable();
     }
 
     uint64_t saucer_webview_on(saucer_handle *handle, SAUCER_WEB_EVENT event, void *callback)
@@ -233,6 +236,8 @@ extern "C"
             return handle->on<web_event::load_finished>(
                 bindings::callback<events::type<web_event::load_finished>>(handle, callback));
         }
+
+        std::unreachable();
     }
 
     void saucer_register_scheme(const char *name)

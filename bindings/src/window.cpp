@@ -6,7 +6,9 @@
 #include "memory.h"
 #include "wrap.hpp"
 
+#include <utility>
 #include <cstring>
+
 #include <saucer/window.hpp>
 
 extern "C"
@@ -182,6 +184,8 @@ extern "C"
             return handle->once<window_event::resize>(
                 bindings::callback<events::type<window_event::resize>>(handle, callback));
         }
+
+        std::unreachable();
     }
 
     uint64_t saucer_window_on(saucer_handle *handle, SAUCER_WINDOW_EVENT event, void *callback)
@@ -210,6 +214,8 @@ extern "C"
             return handle->on<window_event::resize>(
                 bindings::callback<events::type<window_event::resize>>(handle, callback));
         }
+
+        std::unreachable();
     }
 
     void saucer_window_dispatch(saucer_handle *handle, saucer_window_callback callback)
