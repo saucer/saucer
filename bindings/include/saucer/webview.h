@@ -66,6 +66,9 @@ extern "C"
     void saucer_webview_execute(saucer_handle *, const char *java_script);
     void saucer_webview_inject(saucer_handle *, const char *java_script, SAUCER_LOAD_TIME load_time);
 
+    /**
+     * @note The stash returned from within the @param handler is automatically free'd
+     */
     void saucer_webview_handle_scheme(saucer_handle *, const char *name, saucer_scheme_handler handler);
     void saucer_webview_remove_scheme(saucer_handle *, const char *name);
 

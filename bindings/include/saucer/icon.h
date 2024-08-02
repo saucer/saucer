@@ -16,14 +16,14 @@ extern "C"
     /**
      * @brief Try to construct an icon from a given file.
      * @note The pointer pointed to by @param result will be set to a saucer_icon in case of success. The returned icon
-     * must be freed.
+     * must be free'd.
      */
     void saucer_icon_from_file(saucer_icon **result, const char *file);
 
     /**
      * @brief Try to construct an icon from a given stash (raw bytes).
      * @note The pointer pointed to by @param result will be set to a saucer_icon in case of success. The returned icon
-     * must be freed.
+     * must be free'd.
      */
     void saucer_icon_from_data(saucer_icon **result, saucer_stash *stash);
 

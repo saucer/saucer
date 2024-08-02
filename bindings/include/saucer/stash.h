@@ -22,7 +22,7 @@ extern "C"
 
     /**
      * @note The stash returned from within the @param callback is automatically deleted. However, the stash returned
-     * from this function must still be freed accordingly.
+     * from this function must still be free'd accordingly.
      */
     saucer_stash *saucer_stash_lazy(saucer_stash_lazy_callback callback);
 
