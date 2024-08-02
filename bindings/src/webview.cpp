@@ -151,18 +151,17 @@ extern "C"
 
     void saucer_webview_handle_scheme(saucer_handle *handle, const char *name, saucer_scheme_handler handler)
     {
-        handle->handle_scheme(
-            name,
-            [handle, handler](const saucer::request &request) -> tl::expected<saucer::response, saucer::request_error>
-            {
-                auto *wrapped = saucer_request::from(&request);
-                auto *ptr     = std::invoke(handler, handle, wrapped);
-                auto rtn      = ptr->value();
+        handle->handle_scheme(name,
+                              [handle, handler](const saucer::request &request)
+                              {
+                                  auto *wrapped = saucer_request::from(&request);
+                                  auto *ptr     = std::invoke(handler, handle, wrapped);
+                                  auto rtn      = ptr->value();
 
-                delete ptr;
+                                  delete ptr;
 
-                return rtn;
-            });
+                                  return rtn;
+                              });
     }
 
     void saucer_webview_remove_scheme(saucer_handle *handle, const char *name)
