@@ -76,7 +76,6 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;
-        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] std::string page_title() const;
 
       public:
@@ -85,8 +84,15 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] color background() const;
+        [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
+
+      public:
         [[sc::thread_safe]] void set_dev_tools(bool enabled);
         [[sc::thread_safe]] void set_context_menu(bool enabled);
+
+      public:
+        [[sc::thread_safe]] void set_force_dark_mode(bool enabled);
         [[sc::thread_safe]] void set_background(const color &background);
 
       public:

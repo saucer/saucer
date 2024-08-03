@@ -1,7 +1,8 @@
 #include "scheme.qt.impl.hpp"
 
-#include <ranges>
+#include "warnings.hpp"
 
+#include <ranges>
 #include <QtGlobal>
 
 #include <QMap>
@@ -26,6 +27,10 @@ namespace saucer
 
     stash<> request::content() const
     {
+#if QT_VERSION < QT_VERSION_CHECK(6, 7, 0)
+        emit_warning<qt67_warning>();
+#endif
+
         const auto *data = reinterpret_cast<const std::uint8_t *>(m_impl->body.data());
         return stash<>::view({data, data + m_impl->body.size()});
     }
