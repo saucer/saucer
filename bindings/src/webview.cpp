@@ -50,11 +50,6 @@ extern "C"
         return saucer_icon::from(handle->favicon());
     }
 
-    void saucer_webview_background(saucer_handle *handle, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a)
-    {
-        std::tie(*r, *g, *b, *a) = handle->background();
-    }
-
     char *saucer_webview_page_title(saucer_handle *handle)
     {
         auto title = handle->page_title();
@@ -85,6 +80,16 @@ extern "C"
         return handle->context_menu();
     }
 
+    void saucer_webview_background(saucer_handle *handle, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a)
+    {
+        std::tie(*r, *g, *b, *a) = handle->background();
+    }
+
+    bool saucer_webview_force_dark_mode(saucer_handle *handle)
+    {
+        return handle->force_dark_mode();
+    }
+
     void saucer_webview_set_dev_tools(saucer_handle *handle, bool enabled)
     {
         handle->set_dev_tools(enabled);
@@ -93,6 +98,11 @@ extern "C"
     void saucer_webview_set_context_menu(saucer_handle *handle, bool enabled)
     {
         handle->set_context_menu(enabled);
+    }
+
+    void saucer_webview_set_force_dark_mode(saucer_handle *handle, bool enabled)
+    {
+        return handle->set_force_dark_mode(enabled);
     }
 
     void saucer_webview_set_background(saucer_handle *handle, uint8_t r, uint8_t g, uint8_t b, uint8_t a)

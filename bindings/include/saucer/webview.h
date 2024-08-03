@@ -40,15 +40,19 @@ extern "C"
     void saucer_webview_on_message(saucer_handle *, saucer_on_message callback);
 
     /*[[sc::requires_free]]*/ saucer_icon *saucer_webview_favicon(saucer_handle *);
-    void saucer_webview_background(saucer_handle *, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a);
     /*[[sc::requires_free]]*/ char *saucer_webview_page_title(saucer_handle *);
 
     bool saucer_webview_dev_tools(saucer_handle *);
     /*[[sc::requires_free]]*/ char *saucer_webview_url(saucer_handle *);
     bool saucer_webview_context_menu(saucer_handle *);
 
+    void saucer_webview_background(saucer_handle *, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a);
+    bool saucer_webview_force_dark_mode(saucer_handle *);
+
     void saucer_webview_set_dev_tools(saucer_handle *, bool enabled);
     void saucer_webview_set_context_menu(saucer_handle *, bool enabled);
+
+    void saucer_webview_set_force_dark_mode(saucer_handle *, bool enabled);
     void saucer_webview_set_background(saucer_handle *, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     void saucer_webview_set_file(saucer_handle *, const char *file);
