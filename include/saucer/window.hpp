@@ -70,6 +70,9 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
+        void dispatch(callback_t callback) const;
+
+      protected:
         window(const options & = {});
 
       public:
@@ -134,8 +137,6 @@ namespace saucer
         [[sc::thread_safe]] std::uint64_t on(events::type<Event>);
 
       public:
-        [[sc::thread_safe]] void dispatch(callback_t callback) const;
-
         template <typename Callback>
         [[sc::thread_safe]] auto dispatch(Callback &&callback) const;
 

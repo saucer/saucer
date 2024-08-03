@@ -220,7 +220,7 @@ extern "C"
 
     void saucer_window_dispatch(saucer_handle *handle, saucer_window_callback callback)
     {
-        handle->dispatch(callback);
+        handle->dispatch(callback).wait();
     }
 
     void saucer_window_run(saucer_handle *handle)

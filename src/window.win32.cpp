@@ -71,6 +71,12 @@ namespace saucer
         DestroyWindow(m_impl->hwnd);
     }
 
+    void window::dispatch(callback_t callback) const
+    {
+        auto *message = new safe_message{std::move(callback)};
+        PostMessage(m_impl->hwnd, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
+    }
+
     template <>
     void window::run<false>();
 
@@ -454,12 +460,6 @@ namespace saucer
     std::uint64_t window::on(events::type<Event> callback)
     {
         return m_events.at<Event>().add(std::move(callback));
-    }
-
-    void window::dispatch(callback_t callback) const
-    {
-        auto *message = new safe_message{std::move(callback)};
-        PostMessage(m_impl->hwnd, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
     }
 
     template <>

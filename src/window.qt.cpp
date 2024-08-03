@@ -62,6 +62,12 @@ namespace saucer
 
     window::~window() = default;
 
+    void window::dispatch(callback_t callback) const
+    {
+        auto *event = new safe_event{std::move(callback)};
+        QApplication::postEvent(m_impl->window.get(), event);
+    }
+
     bool window::focused() const
     {
         if (!m_impl->is_thread_safe())
@@ -398,12 +404,6 @@ namespace saucer
     std::uint64_t window::on(events::type<Event> callback)
     {
         return m_events.at<Event>().add(std::move(callback));
-    }
-
-    void window::dispatch(callback_t callback) const
-    {
-        auto *event = new safe_event{std::move(callback)};
-        QApplication::postEvent(m_impl->window.get(), event);
     }
 
     template <>
