@@ -177,26 +177,6 @@ namespace saucer
         return m_impl->favicon;
     }
 
-    color webview::background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this]() { return background(); }).get();
-        }
-
-        ComPtr<ICoreWebView2Controller2> controller;
-
-        if (!SUCCEEDED(m_impl->controller.As(&controller)))
-        {
-            return {};
-        }
-
-        COREWEBVIEW2_COLOR color;
-        controller->get_DefaultBackgroundColor(&color);
-
-        return {color.R, color.G, color.B, color.A};
-    }
-
     std::string webview::page_title() const
     {
         if (!window::m_impl->is_thread_safe())
@@ -255,6 +235,57 @@ namespace saucer
         return static_cast<bool>(rtn);
     }
 
+    color webview::background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return background(); }).get();
+        }
+
+        ComPtr<ICoreWebView2Controller2> controller;
+
+        if (!SUCCEEDED(m_impl->controller.As(&controller)))
+        {
+            return {};
+        }
+
+        COREWEBVIEW2_COLOR color;
+        controller->get_DefaultBackgroundColor(&color);
+
+        return {color.R, color.G, color.B, color.A};
+    }
+
+    bool webview::force_dark_mode() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return force_dark_mode(); }).get();
+        }
+
+        ComPtr<ICoreWebView2_13> webview;
+
+        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
+        {
+            return {};
+        }
+
+        ComPtr<ICoreWebView2Profile> profile;
+
+        if (!SUCCEEDED(webview->get_Profile(&profile)))
+        {
+            return {};
+        }
+
+        COREWEBVIEW2_PREFERRED_COLOR_SCHEME scheme;
+
+        if (!SUCCEEDED(profile->get_PreferredColorScheme(&scheme)))
+        {
+            return {};
+        }
+
+        return scheme == COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK;
+    }
+
     void webview::set_dev_tools(bool enabled)
     {
         if (!window::m_impl->is_thread_safe())
@@ -280,6 +311,31 @@ namespace saucer
         }
 
         m_impl->settings->put_AreDefaultContextMenusEnabled(enabled);
+    }
+
+    void webview::set_force_dark_mode(bool enabled)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, enabled]() { return set_force_dark_mode(enabled); }).get();
+        }
+
+        ComPtr<ICoreWebView2_13> webview;
+
+        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
+        {
+            return;
+        }
+
+        ComPtr<ICoreWebView2Profile> profile;
+
+        if (!SUCCEEDED(webview->get_Profile(&profile)))
+        {
+            return;
+        }
+
+        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK
+                                                  : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
     }
 
     void webview::set_background(const color &background)
