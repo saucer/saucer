@@ -58,7 +58,7 @@ endif()
 # Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_valid_backends Qt5 Qt6 WebView2 Default)
+set(saucer_valid_backends Qt5 Qt6 WebKit2Gtk WebView2 Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
@@ -127,6 +127,10 @@ endif()
 if (saucer_backend MATCHES "^Qt.$")
   string(REGEX REPLACE "[a-zA-Z]+" "" QT_VERSION "${saucer_backend}")
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT${QT_VERSION})
+endif()
+
+if (saucer_backend STREQUAL "WebKit2Gtk")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT2GTK)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
@@ -249,6 +253,21 @@ if (saucer_backend MATCHES "^Qt.$")
 
   find_package(Qt${QT_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
+endif()
+
+if (saucer_backend MATCHES "WebKit2Gtk")
+  file(GLOB gtk_sources 
+    "src/*.gtk.*cpp"
+  )
+
+  target_sources(${PROJECT_NAME} PRIVATE ${gtk_sources})
+
+  find_package(PkgConfig REQUIRED)
+
+  pkg_check_modules(gtk4 REQUIRED IMPORTED_TARGET gtk4)
+  pkg_check_modules(webkit2gtk REQUIRED IMPORTED_TARGET webkitgtk-6.0)
+
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::gtk4 PkgConfig::webkit2gtk)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
