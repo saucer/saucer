@@ -55,7 +55,11 @@ namespace saucer
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
         auto palette = m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window, {255, 255, 255});
+
+        auto color = palette.color(QPalette::ColorRole::Window);
+        color.setAlpha(255);
+
+        palette.setColor(QPalette::ColorRole::Window, color);
 
         m_impl->window->setPalette(palette);
     }
