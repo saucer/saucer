@@ -13,9 +13,9 @@ namespace saucer
     };
 
     template <typename T>
-    void emit_warning()
+    consteval void emit_warning()
     {
-        if (!std::is_constant_evaluated())
+        if constexpr (!std::is_constant_evaluated())
         {
             T::raise();
         }
