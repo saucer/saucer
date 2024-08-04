@@ -142,6 +142,7 @@ void tests(saucer::webview &webview)
         expect(not webview.context_menu());
     };
 
+#ifndef SAUCER_QT5
     "force_dark"_test = [&]()
     {
         webview.set_force_dark_mode(true);
@@ -150,6 +151,7 @@ void tests(saucer::webview &webview)
         webview.set_force_dark_mode(false);
         expect(not webview.force_dark_mode());
     };
+#endif
 
     "embed"_test = [&]()
     {
