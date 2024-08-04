@@ -142,6 +142,15 @@ void tests(saucer::webview &webview)
         expect(not webview.context_menu());
     };
 
+    "force_dark"_test = [&]()
+    {
+        webview.set_force_dark_mode(true);
+        expect(webview.force_dark_mode());
+
+        webview.set_force_dark_mode(false);
+        expect(not webview.force_dark_mode());
+    };
+
     "embed"_test = [&]()
     {
         std::string page = R"html(
