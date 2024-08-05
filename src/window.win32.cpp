@@ -417,7 +417,8 @@ namespace saucer
             return;
         }
 
-        SendMessage(m_impl->hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(handle));
+        SendMessage(m_impl->hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(handle));
+
         DestroyIcon(handle);
     }
 
