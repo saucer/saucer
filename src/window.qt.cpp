@@ -47,6 +47,11 @@ namespace saucer
             impl::application = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
         }
 
+        if (!impl::receiver)
+        {
+            impl::receiver = std::make_unique<impl::event_receiver>();
+        }
+
         m_impl->window = std::make_unique<impl::main_window>(this);
 
         m_impl->max_size = m_impl->window->maximumSize();
@@ -66,10 +71,10 @@ namespace saucer
 
     window::~window() = default;
 
-    void window::dispatch(callback_t callback) const
+    void window::dispatch(callback_t callback)
     {
         auto *event = new safe_event{std::move(callback)};
-        QApplication::postEvent(m_impl->window.get(), event);
+        QApplication::postEvent(impl::receiver.get(), event);
     }
 
     bool window::focused() const

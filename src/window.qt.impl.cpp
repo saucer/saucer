@@ -59,15 +59,25 @@ namespace saucer
         m_parent->m_events.at<window_event::resize>().fire(width(), height());
     }
 
+    bool window::impl::event_receiver::event(QEvent *event)
+    {
+        if (event->type() != QEvent::User)
+        {
+            return QObject::event(event);
+        }
+
+        if (auto *cast = dynamic_cast<safe_event *>(event); cast)
+        {
+            std::invoke(cast->callback);
+        }
+
+        return QObject::event(event);
+    }
+
+    safe_event::safe_event(callback_t callback) : QEvent(QEvent::User), callback(std::move(callback)) {}
+
     bool window::impl::is_thread_safe() const
     {
         return QThread::currentThread() == window->thread();
-    }
-
-    safe_event::safe_event(callback_t callback) : QEvent(QEvent::User), m_callback(std::move(callback)) {}
-
-    safe_event::~safe_event()
-    {
-        std::invoke(m_callback);
     }
 } // namespace saucer

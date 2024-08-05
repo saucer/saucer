@@ -70,7 +70,7 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
-        void dispatch(callback_t callback) const;
+        static void dispatch(callback_t callback);
 
       protected:
         window(const options & = {});
@@ -138,7 +138,7 @@ namespace saucer
 
       public:
         template <typename Callback>
-        [[sc::thread_safe]] auto dispatch(Callback &&callback) const;
+        [[sc::thread_safe]] static auto dispatch(Callback &&callback);
 
       public:
         template <bool Blocking = true>

@@ -10,6 +10,7 @@ namespace saucer
     struct window::impl
     {
         class main_window;
+        struct event_receiver;
 
       public:
         std::unique_ptr<QMainWindow> window;
@@ -23,6 +24,7 @@ namespace saucer
 
       public:
         static thread_local inline std::unique_ptr<QApplication> application;
+        static inline std::unique_ptr<QObject> receiver;
     };
 
     class window::impl::main_window : public QMainWindow
@@ -42,17 +44,19 @@ namespace saucer
         void resizeEvent(QResizeEvent *event) override;
     };
 
-    class safe_event : public QEvent
+    struct safe_event : QEvent
     {
         using callback_t = std::move_only_function<void()>;
 
-      private:
-        callback_t m_callback;
+      public:
+        callback_t callback;
 
       public:
         safe_event(callback_t callback);
+    };
 
-      public:
-        ~safe_event() override;
+    struct window::impl::event_receiver : public QObject
+    {
+        bool event(QEvent *) override;
     };
 } // namespace saucer
