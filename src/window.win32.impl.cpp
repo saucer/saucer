@@ -5,14 +5,19 @@ namespace saucer
     const UINT window::impl::WM_SAFE_CALL            = RegisterWindowMessageW(L"safe_call");
     std::atomic<std::size_t> window::impl::instances = 0;
 
-    bool window::impl::is_thread_safe() const
+    bool window::impl::is_thread_safe()
     {
-        return creation_thread == std::this_thread::get_id();
+        if (!creation_thread)
+        {
+            return true;
+        }
+
+        return creation_thread.value() == std::this_thread::get_id();
     }
 
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        if (impl::receiver && hwnd == *impl::receiver && msg == WM_SAFE_CALL)
+        if (impl::handler && hwnd == *impl::handler && msg == WM_SAFE_CALL)
         {
             auto *message = reinterpret_cast<safe_message *>(l_param);
 

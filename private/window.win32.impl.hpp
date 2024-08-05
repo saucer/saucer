@@ -17,21 +17,24 @@ namespace saucer
         HWND hwnd;
 
       public:
-        std::thread::id creation_thread;
-
-      public:
         UINT last_state;
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:
-        [[nodiscard]] bool is_thread_safe() const;
+        [[nodiscard]] static bool is_thread_safe();
 
       public:
         static const UINT WM_SAFE_CALL;
-        static std::atomic<std::size_t> instances;
 
       public:
-        static inline custom_ptr<HWND> receiver;
+        static inline HMODULE instance;
+        static inline custom_ptr<HWND> handler;
+
+      public:
+        static std::atomic<std::size_t> instances;
+        static inline std::optional<std::thread::id> creation_thread;
+
+      public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
