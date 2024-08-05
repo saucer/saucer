@@ -10,7 +10,6 @@ namespace saucer
     struct window::impl
     {
         class main_window;
-        struct event_receiver;
 
       public:
         std::unique_ptr<QMainWindow> window;
@@ -20,11 +19,11 @@ namespace saucer
         std::function<void()> on_closed;
 
       public:
-        [[nodiscard]] bool is_thread_safe() const;
+        static bool is_thread_safe();
 
       public:
         static thread_local inline std::unique_ptr<QApplication> application;
-        static inline std::unique_ptr<QObject> receiver;
+        static inline std::unique_ptr<QObject> handler;
     };
 
     class window::impl::main_window : public QMainWindow
@@ -55,7 +54,7 @@ namespace saucer
         safe_event(callback_t callback);
     };
 
-    struct window::impl::event_receiver : public QObject
+    struct event_handler : public QObject
     {
         bool event(QEvent *) override;
     };
