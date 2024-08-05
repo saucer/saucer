@@ -80,10 +80,10 @@ extern "C"
     uint64_t saucer_window_on(saucer_handle *, SAUCER_WINDOW_EVENT event, void *callback);
 
     typedef void (*saucer_window_callback)();
-    void saucer_window_dispatch(saucer_handle *, saucer_window_callback callback);
+    void saucer_window_dispatch(saucer_window_callback callback);
 
-    void saucer_window_run(saucer_handle *);
-    void saucer_window_run_once(saucer_handle *);
+    void saucer_window_run();
+    void saucer_window_run_once();
 
 #ifdef __cplusplus
 }
