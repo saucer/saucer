@@ -39,6 +39,28 @@ namespace saucer
             }
         }
 
+        if (!impl::receiver)
+        {
+            auto hwnd = CreateWindowExW(0,                   //
+                                        L"Saucer",           //
+                                        L"Saucer Receiver",  //
+                                        WS_OVERLAPPEDWINDOW, //
+                                        CW_USEDEFAULT,       //
+                                        CW_USEDEFAULT,       //
+                                        CW_USEDEFAULT,       //
+                                        CW_USEDEFAULT,       //
+                                        nullptr,             //
+                                        nullptr,             //
+                                        instance,            //
+                                        nullptr);
+
+            impl::receiver = custom_ptr<HWND>{new HWND{hwnd}, [](HWND *window)
+                                              {
+                                                  DestroyWindow(*window);
+                                                  delete window;
+                                              }};
+        }
+
         const auto dw_style = IsWindows8OrGreater() ? WS_EX_NOREDIRECTIONBITMAP : 0;
 
         m_impl->hwnd = CreateWindowExW(dw_style,            //
@@ -60,21 +82,20 @@ namespace saucer
         }
 
         utils::set_dpi_awareness();
-
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
         impl::instances++;
     }
 
     window::~window()
     {
-        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(nullptr));
         DestroyWindow(m_impl->hwnd);
     }
 
-    void window::dispatch(callback_t callback) const
+    void window::dispatch(callback_t callback)
     {
         auto *message = new safe_message{std::move(callback)};
-        PostMessage(m_impl->hwnd, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
+        PostMessage(*impl::receiver, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
     }
 
     template <>

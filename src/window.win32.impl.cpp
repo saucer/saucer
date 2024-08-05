@@ -12,21 +12,25 @@ namespace saucer
 
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        if (impl::receiver && hwnd == *impl::receiver && msg == WM_SAFE_CALL)
+        {
+            auto *message = reinterpret_cast<safe_message *>(l_param);
+
+            std::invoke(message->callback);
+            delete message;
+
+            return 0;
+        }
 
         auto original = [&]()
         {
             return DefWindowProcW(hwnd, msg, w_param, l_param);
         };
 
+        auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+
         if (!window)
         {
-            return original();
-        }
-
-        if (msg == impl::WM_SAFE_CALL)
-        {
-            delete reinterpret_cast<safe_message *>(l_param);
             return original();
         }
 
@@ -102,7 +106,6 @@ namespace saucer
             }
 
             window->m_events.at<window_event::closed>().fire();
-            window->m_impl->hwnd = nullptr;
 
             instances--;
 
@@ -119,10 +122,5 @@ namespace saucer
         return original();
     }
 
-    safe_message::safe_message(callback_t callback) : m_callback(std::move(callback)) {}
-
-    safe_message::~safe_message()
-    {
-        std::invoke(m_callback);
-    }
+    safe_message::safe_message(callback_t callback) : callback(std::move(callback)) {}
 } // namespace saucer

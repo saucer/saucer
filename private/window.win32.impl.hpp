@@ -9,6 +9,9 @@
 
 namespace saucer
 {
+    template <typename T>
+    using custom_ptr = std::unique_ptr<T, std::function<void(T *)>>;
+
     struct window::impl
     {
         HWND hwnd;
@@ -28,20 +31,18 @@ namespace saucer
         static std::atomic<std::size_t> instances;
 
       public:
+        static inline custom_ptr<HWND> receiver;
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
-    class safe_message
+    struct safe_message
     {
         using callback_t = std::move_only_function<void()>;
 
-      private:
-        callback_t m_callback;
+      public:
+        callback_t callback;
 
       public:
         safe_message(callback_t callback);
-
-      public:
-        ~safe_message();
     };
 } // namespace saucer
