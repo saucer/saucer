@@ -100,8 +100,8 @@ namespace saucer
         }
 
         auto executor = serializer::executor{
-            [this, id = message.id, latch = m_impl->latch](const auto &result) { resolve(id, result); },
-            [this, id = message.id, latch = m_impl->latch](const auto &error) { reject(id, std::move(error)); },
+            [this, id = message.id](const auto &result) { resolve(id, result); },
+            [this, id = message.id](const auto &error) { reject(id, std::move(error)); },
         };
 
         auto &[func, policy] = functions.at(message.name);
@@ -111,8 +111,9 @@ namespace saucer
             return std::invoke(func, std::move(data), executor);
         }
 
-        m_impl->pool->emplace([func, data = std::move(data), executor = std::move(executor)]() mutable
-                              { std::invoke(func, std::move(data), executor); });
+        m_impl->pool->emplace(
+            [func, latch = m_impl->latch, data = std::move(data), executor = std::move(executor)]() mutable
+            { std::invoke(func, std::move(data), executor); });
     }
 
     void smartview_core::resolve(std::unique_ptr<message_data> data)
