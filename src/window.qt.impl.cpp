@@ -63,7 +63,17 @@ namespace saucer
 
     bool window::impl::is_thread_safe()
     {
-        return !handler || handler->thread() == QThread::currentThread();
+        if (application)
+        {
+            return application->thread() == QThread::currentThread();
+        }
+
+        if (handler)
+        {
+            return handler->thread() == QThread::currentThread();
+        }
+
+        return true;
     }
 
     bool event_handler::event(QEvent *event)

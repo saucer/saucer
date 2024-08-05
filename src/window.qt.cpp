@@ -434,6 +434,11 @@ namespace saucer
             impl::handler = std::make_unique<event_handler>();
         }
 
+        if (!impl::is_thread_safe()) [[unlikely]]
+        {
+            throw std::runtime_error{"This function should only be called from the main-thread"};
+        }
+
         if constexpr (Blocking)
         {
             QApplication::exec();
