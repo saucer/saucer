@@ -7,7 +7,7 @@
 namespace saucer
 {
     template <typename Callback>
-    auto window::dispatch(Callback &&callback)
+    auto window::dispatch(Callback &&callback) const
     {
         auto task = poolparty::packaged_task{std::forward<Callback>(callback)};
         auto rtn  = task.get_future();

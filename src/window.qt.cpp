@@ -50,9 +50,9 @@ namespace saucer
                            impl::application = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
                        });
 
-        if (!impl::is_thread_safe()) [[unlikely]]
+        if (!impl::application) [[unlikely]]
         {
-            throw std::runtime_error{"It is not safe to construct a webview from a different thread"};
+            throw std::runtime_error{"Unable to find QApplication. Make sure to create webview's in the main-thread"};
         }
 
         m_impl->window = std::make_unique<impl::main_window>(this);
@@ -74,20 +74,15 @@ namespace saucer
 
     window::~window() = default;
 
-    void window::dispatch(callback_t callback)
+    void window::dispatch(callback_t callback) const
     {
-        if (!impl::handler) [[unlikely]]
-        {
-            throw std::runtime_error{"Could not find message-loop! Make sure to call 'window::run()' before dispatch"};
-        }
-
         auto *event = new safe_event{std::move(callback)};
-        QApplication::postEvent(impl::handler.get(), event);
+        QApplication::postEvent(m_impl->window.get(), event);
     }
 
     bool window::focused() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return focused(); }).get();
         }
@@ -97,7 +92,7 @@ namespace saucer
 
     bool window::minimized() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return minimized(); }).get();
         }
@@ -107,7 +102,7 @@ namespace saucer
 
     bool window::maximized() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return maximized(); }).get();
         }
@@ -117,7 +112,7 @@ namespace saucer
 
     bool window::resizable() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return resizable(); }).get();
         }
@@ -127,7 +122,7 @@ namespace saucer
 
     bool window::decorations() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return decorations(); }).get();
         }
@@ -137,7 +132,7 @@ namespace saucer
 
     std::string window::title() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return title(); }).get();
         }
@@ -147,7 +142,7 @@ namespace saucer
 
     bool window::always_on_top() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return always_on_top(); }).get();
         }
@@ -157,7 +152,7 @@ namespace saucer
 
     std::pair<int, int> window::size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return size(); }).get();
         }
@@ -167,7 +162,7 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return max_size(); }).get();
         }
@@ -177,7 +172,7 @@ namespace saucer
 
     std::pair<int, int> window::min_size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return min_size(); }).get();
         }
@@ -187,7 +182,7 @@ namespace saucer
 
     void window::hide()
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return hide(); }).get();
         }
@@ -197,7 +192,7 @@ namespace saucer
 
     void window::show()
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return show(); }).get();
         }
@@ -207,7 +202,7 @@ namespace saucer
 
     void window::close()
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return close(); }).get();
         }
@@ -217,7 +212,7 @@ namespace saucer
 
     void window::focus()
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return focus(); }).get();
         }
@@ -227,7 +222,7 @@ namespace saucer
 
     void window::start_drag()
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this] { return start_drag(); }).get();
         }
@@ -237,7 +232,7 @@ namespace saucer
 
     void window::start_resize(window_edge edge)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, edge] { return start_resize(edge); }).get();
         }
@@ -266,7 +261,7 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, enabled] { return set_minimized(enabled); }).get();
         }
@@ -288,7 +283,7 @@ namespace saucer
 
     void window::set_maximized(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, enabled] { return set_maximized(enabled); }).get();
         }
@@ -309,7 +304,7 @@ namespace saucer
 
     void window::set_resizable(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, enabled] { return set_resizable(enabled); }).get();
         }
@@ -326,7 +321,7 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, enabled] { return set_decorations(enabled); }).get();
         }
@@ -336,7 +331,7 @@ namespace saucer
 
     void window::set_always_on_top(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, enabled] { return set_always_on_top(enabled); }).get();
         }
@@ -351,7 +346,7 @@ namespace saucer
             return;
         }
 
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, icon] { return set_icon(icon); }).get();
         }
@@ -361,7 +356,7 @@ namespace saucer
 
     void window::set_title(const std::string &title)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, title] { return set_title(title); }).get();
         }
@@ -371,7 +366,7 @@ namespace saucer
 
     void window::set_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, width, height] { return set_size(width, height); }).get();
         }
@@ -381,7 +376,7 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, width, height] { return set_max_size(width, height); }).get();
         }
@@ -392,7 +387,7 @@ namespace saucer
 
     void window::set_min_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_impl->is_thread_safe())
         {
             return dispatch([this, width, height] { return set_min_size(width, height); }).get();
         }
@@ -423,30 +418,16 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    template void window::run<true>();
-    template void window::run<false>();
-
-    template <bool Blocking>
-    void window::run()
+    template <>
+    void window::run<true>()
     {
-        if (!impl::handler) [[unlikely]]
-        {
-            impl::handler = std::make_unique<event_handler>();
-        }
+        QApplication::exec();
+    }
 
-        if (!impl::is_thread_safe()) [[unlikely]]
-        {
-            throw std::runtime_error{"This function should only be called from the main-thread"};
-        }
-
-        if constexpr (Blocking)
-        {
-            QApplication::exec();
-        }
-        else
-        {
-            QApplication::processEvents();
-        }
+    template <>
+    void window::run<false>()
+    {
+        QApplication::processEvents();
     }
 
     INSTANTIATE_EVENTS(window, 6, window_event)

@@ -19,11 +19,10 @@ namespace saucer
         std::function<void()> on_closed;
 
       public:
-        [[nodiscard]] static bool is_thread_safe();
+        [[nodiscard]] bool is_thread_safe() const;
 
       public:
         static thread_local inline std::unique_ptr<QApplication> application;
-        static inline std::unique_ptr<QObject> handler;
     };
 
     class window::impl::main_window : public QMainWindow
@@ -43,19 +42,17 @@ namespace saucer
         void resizeEvent(QResizeEvent *event) override;
     };
 
-    struct safe_event : QEvent
+    class safe_event : public QEvent
     {
         using callback_t = std::move_only_function<void()>;
 
-      public:
-        callback_t callback;
+      private:
+        callback_t m_callback;
 
       public:
         safe_event(callback_t callback);
-    };
 
-    struct event_handler : public QObject
-    {
-        bool event(QEvent *) override;
+      public:
+        ~safe_event() override;
     };
 } // namespace saucer
