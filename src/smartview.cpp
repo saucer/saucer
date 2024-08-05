@@ -1,6 +1,8 @@
 #include "smartview.hpp"
 
+#include "latch.hpp"
 #include "scripts.hpp"
+
 #include "serializers/data.hpp"
 #include "serializers/serializer.hpp"
 
@@ -23,22 +25,25 @@ namespace saucer
         using pending_future = std::shared_ptr<std::future<void>>;
 
       public:
-        poolparty::pool<> pool;
-
-      public:
         lock<std::unordered_map<id, resolver>> evaluations;
         lock<std::unordered_map<std::string, std::pair<function, launch>>> functions;
 
       public:
+        shared_latch latch;
         std::unique_ptr<saucer::serializer> serializer;
 
       public:
-        impl(std::size_t threads) : pool(threads) {}
+        static inline std::unique_ptr<poolparty::pool<>> pool;
     };
 
     smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
-        : webview(options), m_impl(std::make_unique<impl>(options.threads))
+        : webview(options), m_impl(std::make_unique<impl>())
     {
+        if (!impl::pool)
+        {
+            impl::pool = std::make_unique<poolparty::pool<>>(options.threads);
+        }
+
         m_impl->serializer = std::move(serializer);
 
         inject(fmt::format(scripts::smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer())),
@@ -47,7 +52,13 @@ namespace saucer
         inject(m_impl->serializer->script(), load_time::creation);
     }
 
-    smartview_core::~smartview_core() = default;
+    smartview_core::~smartview_core()
+    {
+        while (!m_impl->latch.empty())
+        {
+            run<false>();
+        }
+    }
 
     bool smartview_core::on_message(const std::string &message)
     {
@@ -89,8 +100,8 @@ namespace saucer
         }
 
         auto executor = serializer::executor{
-            [this, id = message.id](const auto &result) { resolve(id, result); },
-            [this, id = message.id](const auto &error) { reject(id, std::move(error)); },
+            [this, id = message.id, latch = m_impl->latch](const auto &result) { resolve(id, result); },
+            [this, id = message.id, latch = m_impl->latch](const auto &error) { reject(id, std::move(error)); },
         };
 
         auto &[func, policy] = functions.at(message.name);
@@ -100,8 +111,8 @@ namespace saucer
             return std::invoke(func, std::move(data), executor);
         }
 
-        m_impl->pool.emplace([func, data = std::move(data), executor = std::move(executor)]() mutable
-                             { std::invoke(func, std::move(data), executor); });
+        m_impl->pool->emplace([func, data = std::move(data), executor = std::move(executor)]() mutable
+                              { std::invoke(func, std::move(data), executor); });
     }
 
     void smartview_core::resolve(std::unique_ptr<message_data> data)
