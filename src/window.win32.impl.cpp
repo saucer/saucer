@@ -5,25 +5,19 @@ namespace saucer
     const UINT window::impl::WM_SAFE_CALL            = RegisterWindowMessageW(L"safe_call");
     std::atomic<std::size_t> window::impl::instances = 0;
 
-    bool window::impl::is_thread_safe()
+    bool window::impl::is_thread_safe() const
     {
-        if (!creation_thread)
-        {
-            return true;
-        }
+        auto window_thread = GetWindowThreadProcessId(hwnd, nullptr);
+        auto current       = GetCurrentThreadId();
 
-        return creation_thread.value() == std::this_thread::get_id();
+        return window_thread == current;
     }
 
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        if (impl::handler && hwnd == *impl::handler && msg == WM_SAFE_CALL)
+        if (msg == impl::WM_SAFE_CALL)
         {
-            auto *message = reinterpret_cast<safe_message *>(l_param);
-
-            std::invoke(message->callback);
-            delete message;
-
+            delete reinterpret_cast<safe_message *>(l_param);
             return 0;
         }
 
@@ -43,9 +37,8 @@ namespace saucer
         {
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
-            auto flags = GetWindowLongW(hwnd, GWL_STYLE);
 
-            if (!(flags & WS_THICKFRAME))
+            if (!window->m_impl->resizable)
             {
                 auto [width, height] = window->size();
 
@@ -76,15 +69,15 @@ namespace saucer
             switch (w_param)
             {
             case SIZE_MAXIMIZED:
-                window->m_impl->last_state = SIZE_MAXIMIZED;
+                window->m_impl->prev_state = SIZE_MAXIMIZED;
                 window->m_events.at<window_event::maximize>().fire(true);
                 break;
             case SIZE_MINIMIZED:
-                window->m_impl->last_state = SIZE_MINIMIZED;
+                window->m_impl->prev_state = SIZE_MINIMIZED;
                 window->m_events.at<window_event::minimize>().fire(true);
                 break;
             case SIZE_RESTORED:
-                switch (window->m_impl->last_state)
+                switch (window->m_impl->prev_state)
                 {
                 case SIZE_MAXIMIZED:
                     window->m_events.at<window_event::maximize>().fire(false);
@@ -94,7 +87,7 @@ namespace saucer
                     break;
                 }
 
-                window->m_impl->last_state = SIZE_RESTORED;
+                window->m_impl->prev_state = SIZE_RESTORED;
                 break;
             }
 
@@ -103,7 +96,6 @@ namespace saucer
 
             break;
         }
-        case WM_DESTROY:
         case WM_CLOSE: {
             if (window->m_events.at<window_event::close>().until(true))
             {
@@ -112,9 +104,7 @@ namespace saucer
 
             window->m_events.at<window_event::closed>().fire();
 
-            instances--;
-
-            if (instances > 0)
+            if (--instances > 0)
             {
                 break;
             }
@@ -127,5 +117,10 @@ namespace saucer
         return original();
     }
 
-    safe_message::safe_message(callback_t callback) : callback(std::move(callback)) {}
+    safe_message::safe_message(callback_t callback) : m_callback(std::move(callback)) {}
+
+    safe_message::~safe_message()
+    {
+        std::invoke(m_callback);
+    }
 } // namespace saucer

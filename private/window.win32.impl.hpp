@@ -9,43 +9,41 @@
 
 namespace saucer
 {
-    template <typename T>
-    using custom_ptr = std::unique_ptr<T, std::function<void(T *)>>;
-
     struct window::impl
     {
         HWND hwnd;
+        UINT prev_state;
 
       public:
-        UINT last_state;
+        bool resizable;
+        bool decorations;
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:
-        [[nodiscard]] static bool is_thread_safe();
+        [[nodiscard]] bool is_thread_safe() const;
 
       public:
         static const UINT WM_SAFE_CALL;
 
       public:
-        static inline HMODULE instance;
-        static inline custom_ptr<HWND> handler;
-
-      public:
         static std::atomic<std::size_t> instances;
-        static inline std::optional<std::thread::id> creation_thread;
+        static thread_local inline HMODULE instance;
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 
-    struct safe_message
+    class safe_message
     {
         using callback_t = std::move_only_function<void()>;
 
-      public:
-        callback_t callback;
+      private:
+        callback_t m_callback;
 
       public:
         safe_message(callback_t callback);
+
+      public:
+        ~safe_message();
     };
 } // namespace saucer
