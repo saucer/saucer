@@ -52,7 +52,7 @@ namespace saucer
 
         if (!impl::application) [[unlikely]]
         {
-            throw std::runtime_error{"Unable to find QApplication. Make sure to create webview's in the main-thread"};
+            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
         }
 
         m_impl->window = std::make_unique<impl::main_window>(this);
