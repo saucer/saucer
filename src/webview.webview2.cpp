@@ -358,13 +358,8 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this, file]() { return set_file(file); }).get();
-        }
-
         auto path = fmt::format("file://{}", fs::canonical(file).string());
-        m_impl->web_view->Navigate(utils::widen(path).c_str());
+        set_url(path);
     }
 
     void webview::set_url(const std::string &url)

@@ -21,18 +21,30 @@ namespace saucer
 
     window::window([[maybe_unused]] const options &options) : m_impl(std::make_unique<impl>())
     {
-        if (!impl::application)
-        {
-            auto *application = gtk_application_new("io.saucer.saucer", G_APPLICATION_DEFAULT_FLAGS);
-            impl::application = custom_ptr<GtkApplication>(application, [](auto *value) { g_object_unref(value); });
-        }
+        static std::once_flag flag;
 
-        m_impl->creation_thread = std::this_thread::get_id();
+        std::call_once(flag,
+                       []()
+                       {
+                           auto *raw         = adw_application_new("io.saucer.saucer", G_APPLICATION_DEFAULT_FLAGS);
+                           impl::application = custom_ptr<AdwApplication>(raw, [](auto *ptr) { g_object_unref(ptr); });
+                       });
+
+        if (!impl::application) [[unlikely]]
+        {
+            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
+        }
 
         auto callback = [](GtkApplication *, gpointer data)
         {
             auto *thiz   = static_cast<impl *>(data);
-            thiz->window = GTK_APPLICATION_WINDOW(gtk_application_window_new(impl::application.get()));
+            thiz->window = ADW_APPLICATION_WINDOW(adw_application_window_new(GTK_APPLICATION(impl::application.get())));
+
+            thiz->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+            thiz->header  = ADW_HEADER_BAR(adw_header_bar_new());
+
+            gtk_box_append(thiz->content, GTK_WIDGET(thiz->header));
+            adw_application_window_set_content(thiz->window, GTK_WIDGET(thiz->content));
         };
 
         auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
@@ -78,8 +90,9 @@ namespace saucer
 
         auto *native  = gtk_widget_get_native(GTK_WIDGET(m_impl->window));
         auto *surface = gtk_native_get_surface(native);
+        auto state    = gdk_toplevel_get_state(GDK_TOPLEVEL(surface));
 
-        return gdk_toplevel_get_state(GDK_TOPLEVEL(surface));
+        return state & GDK_TOPLEVEL_STATE_MINIMIZED;
     }
 
     bool window::maximized() const
@@ -224,9 +237,7 @@ namespace saucer
             return dispatch([this, edge] { return start_resize(edge); }).get();
         }
 
-        auto *native  = gtk_widget_get_native(GTK_WIDGET(m_impl->window));
-        auto *surface = gtk_native_get_surface(native);
-
+        auto *surface = gtk_native_get_surface(gtk_widget_get_native(GTK_WIDGET(m_impl->window)));
         auto *display = gdk_surface_get_display(surface);
         auto *seat    = gdk_display_get_default_seat(display);
         auto *cursor  = gdk_seat_get_pointer(seat);
@@ -250,8 +261,7 @@ namespace saucer
             translated |= GDK_SURFACE_EDGE_EAST;
         }
 
-        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), static_cast<GdkSurfaceEdge>(translated), cursor, 0, 0, 0,
-                                  GDK_CURRENT_TIME);
+        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), static_cast<GdkSurfaceEdge>(translated), cursor, 0, 0, 0, 1);
     }
 
     void window::set_minimized(bool enabled)

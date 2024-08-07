@@ -255,16 +255,17 @@ endif()
 if (saucer_backend MATCHES "WebKit2Gtk")
   file(GLOB gtk_sources 
     "src/*.gtk.*cpp"
+    "src/*.webkit.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${gtk_sources})
 
   find_package(PkgConfig REQUIRED)
 
-  pkg_check_modules(gtk4 REQUIRED IMPORTED_TARGET gtk4)
+  pkg_check_modules(libadwaita REQUIRED IMPORTED_TARGET libadwaita-1)
   pkg_check_modules(webkit2gtk REQUIRED IMPORTED_TARGET webkitgtk-6.0)
 
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::gtk4 PkgConfig::webkit2gtk)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::libadwaita PkgConfig::webkit2gtk)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")

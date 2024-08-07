@@ -2,8 +2,8 @@
 
 namespace saucer
 {
-    bool window::impl::is_thread_safe() const
+    bool window::impl::is_thread_safe()
     {
-        return creation_thread == std::this_thread::get_id();
+        return impl::application != nullptr;
     }
 } // namespace saucer

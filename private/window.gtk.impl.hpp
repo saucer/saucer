@@ -5,8 +5,7 @@
 #include <memory>
 #include <functional>
 
-#include <thread>
-#include <gtk/gtk.h>
+#include <adwaita.h>
 
 namespace saucer
 {
@@ -15,15 +14,16 @@ namespace saucer
 
     struct window::impl
     {
-        GtkApplicationWindow *window;
+        AdwApplicationWindow *window;
 
       public:
-        std::thread::id creation_thread;
+        GtkBox *content;
+        AdwHeaderBar *header;
 
       public:
-        [[nodiscard]] bool is_thread_safe() const;
+        [[nodiscard]] static bool is_thread_safe();
 
       public:
-        static thread_local inline custom_ptr<GtkApplication> application;
+        static thread_local inline custom_ptr<AdwApplication> application;
     };
 } // namespace saucer
