@@ -389,12 +389,12 @@ namespace saucer
             m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(script.c_str());
         }
 
-        if (!m_impl->injected.empty())
+        if (m_impl->injected.empty())
         {
-            m_impl->injected.resize(1);
+            return;
         }
 
-        m_impl->scripts.clear();
+        m_impl->injected.resize(1);
     }
 
     void webview::execute(const std::string &java_script)
