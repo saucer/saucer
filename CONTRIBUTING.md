@@ -16,7 +16,7 @@
 
 # Talk to us!
 
-Before starting to work on any patches please talk to use before hand.  
+Before starting to work on any patches please talk to us before hand.  
 This helps us prevent situations where you may want to implement a feature that is already in the works.  
 
 We're always grateful for your contributions :) We just want to make sure your hard work doesn't go to waste!

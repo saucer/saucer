@@ -12,12 +12,11 @@ namespace saucer
     struct window::impl
     {
         HWND hwnd;
+        UINT prev_state;
 
       public:
-        std::thread::id creation_thread;
-
-      public:
-        UINT last_state;
+        bool resizable;
+        bool decorations;
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:
@@ -25,7 +24,10 @@ namespace saucer
 
       public:
         static const UINT WM_SAFE_CALL;
+
+      public:
         static std::atomic<std::size_t> instances;
+        static thread_local inline HMODULE instance;
 
       public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);

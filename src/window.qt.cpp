@@ -16,35 +16,43 @@ namespace saucer
 {
     window::window(const options &options) : m_impl(std::make_unique<impl>())
     {
-        static int argc{1};
-        static std::vector<const char *> argv{"saucer"};
+        static std::once_flag flag;
 
-        if (!impl::application)
-        {
+        std::call_once(flag,
+                       [&]()
+                       {
+                           static int argc{1};
+                           static std::vector<const char *> argv{"saucer"};
+
 #ifndef SAUCER_TESTS
-            qputenv("QT_LOGGING_RULES", "*=false");
+                           qputenv("QT_LOGGING_RULES", "*=false");
 #endif
 
-            auto flags = options.chrome_flags;
+                           auto flags = options.chrome_flags;
 
-            if (options.hardware_acceleration)
-            {
-                flags.emplace("--enable-oop-rasterization");
-                flags.emplace("--enable-gpu-rasterization");
+                           if (options.hardware_acceleration)
+                           {
+                               flags.emplace("--enable-oop-rasterization");
+                               flags.emplace("--enable-gpu-rasterization");
 
-                flags.emplace("--use-gl=desktop");
-                flags.emplace("--enable-native-gpu-memory-buffers");
-            }
+                               flags.emplace("--use-gl=desktop");
+                               flags.emplace("--enable-native-gpu-memory-buffers");
+                           }
 
-            const auto args = fmt::format("{}", fmt::join(flags, " "));
-            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
+                           const auto args = fmt::format("{}", fmt::join(flags, " "));
+                           qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
 
 #ifdef SAUCER_QT5
-            QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+                           QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-            auto *punned      = static_cast<void *>(argv.data());
-            impl::application = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
+                           auto *punned      = static_cast<void *>(argv.data());
+                           impl::application = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
+                       });
+
+        if (!impl::application) [[unlikely]]
+        {
+            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
         }
 
         m_impl->window = std::make_unique<impl::main_window>(this);

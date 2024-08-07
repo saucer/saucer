@@ -18,25 +18,29 @@ namespace saucer
 {
     window::window(const options &) : m_impl(std::make_unique<impl>())
     {
-        static HMODULE instance;
-        static WNDCLASSW wnd_class;
+        static std::once_flag flag;
 
-        m_impl->creation_thread = std::this_thread::get_id();
+        std::call_once(flag,
+                       []()
+                       {
+                           impl::instance = GetModuleHandleW(nullptr);
 
-        if (!instance)
+                           //? Register the window class, later referred to by passing `lpClassName` = "Saucer"
+                           WNDCLASSW wnd_class{};
+
+                           wnd_class.hInstance     = impl::instance;
+                           wnd_class.lpszClassName = L"Saucer";
+                           wnd_class.lpfnWndProc   = impl::wnd_proc;
+
+                           if (!RegisterClassW(&wnd_class))
+                           {
+                               utils::throw_error("RegisterClassW() failed");
+                           }
+                       });
+
+        if (!impl::instance) [[unlikely]]
         {
-            instance = GetModuleHandleW(nullptr);
-
-            //? Register the window class, later referred to by passing `lpClassName` = "Saucer"
-
-            wnd_class.hInstance     = instance;
-            wnd_class.lpszClassName = L"Saucer";
-            wnd_class.lpfnWndProc   = m_impl->wnd_proc;
-
-            if (!RegisterClassW(&wnd_class))
-            {
-                utils::throw_error("RegisterClassW() failed");
-            }
+            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
         }
 
         const auto dw_style = IsWindows8OrGreater() ? WS_EX_NOREDIRECTIONBITMAP : 0;
@@ -51,7 +55,7 @@ namespace saucer
                                        CW_USEDEFAULT,       //
                                        nullptr,             //
                                        nullptr,             //
-                                       instance,            //
+                                       impl::instance,      //
                                        nullptr);
 
         if (!m_impl->hwnd)
@@ -60,14 +64,18 @@ namespace saucer
         }
 
         utils::set_dpi_awareness();
-
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
+        const auto style = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+
+        m_impl->resizable   = style & WS_THICKFRAME;
+        m_impl->decorations = style & WS_CAPTION;
+
         impl::instances++;
     }
 
     window::~window()
     {
-        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(nullptr));
         DestroyWindow(m_impl->hwnd);
     }
 
@@ -76,12 +84,6 @@ namespace saucer
         auto *message = new safe_message{std::move(callback)};
         PostMessage(m_impl->hwnd, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
     }
-
-    template <>
-    void window::run<false>();
-
-    template <>
-    void window::run<true>();
 
     bool window::focused() const
     {
@@ -125,7 +127,7 @@ namespace saucer
             return dispatch([this]() { return resizable(); }).get();
         }
 
-        return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+        return m_impl->resizable;
     }
 
     bool window::decorations() const
@@ -135,8 +137,7 @@ namespace saucer
             return dispatch([this]() { return decorations(); }).get();
         }
 
-        const auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-        return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & flags;
+        return m_impl->decorations;
     }
 
     bool window::always_on_top() const
@@ -230,7 +231,7 @@ namespace saucer
             return dispatch([this]() { close(); }).get();
         }
 
-        DestroyWindow(m_impl->hwnd);
+        PostMessage(m_impl->hwnd, WM_CLOSE, 0, 0);
     }
 
     void window::focus()
@@ -342,6 +343,7 @@ namespace saucer
             current_style &= ~flags;
         }
 
+        m_impl->resizable = enabled;
         SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
     }
 
@@ -364,6 +366,7 @@ namespace saucer
             current_style &= ~flags;
         }
 
+        m_impl->decorations = enabled;
         SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
     }
 
@@ -396,7 +399,8 @@ namespace saucer
             return;
         }
 
-        SendMessage(m_impl->hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(handle));
+        SendMessage(m_impl->hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(handle));
+
         DestroyIcon(handle);
     }
 

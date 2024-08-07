@@ -33,7 +33,12 @@ namespace saucer::scripts
         }}
     }};
 
-    document.addEventListener("mousedown", async ({{ x, y, target }}) => {{
+    document.addEventListener("mousedown", async ({{ x, y, target, button }}) => {{
+        if (button !== 0)
+        {{
+            return;
+        }}
+
         if (target.hasAttribute("data-webview-ignore"))
         {{
             return;

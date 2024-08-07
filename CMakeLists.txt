@@ -19,8 +19,7 @@ option(saucer_package_all       "Add all required dependencies to install target
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
 option(saucer_examples          "Build examples"                                   OFF)
-option(saucer_bindings          "Build bindings"                                   OFF)
-option(saucer_msvc_hack         "Enable hack to fix crashes with bindings"         OFF)
+option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"        OFF) # See VS2022 17.10 Changelog
 
 option(saucer_tests             "Build tests"                                      OFF)
 option(saucer_ci                "Set when running CI-Tests"                        OFF)
@@ -45,10 +44,6 @@ set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
 # --------------------------------------------------------------------------------------------------------
 # Global Configuration
 # --------------------------------------------------------------------------------------------------------
-
-if (saucer_bindings)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
 
 if (saucer_msvc_hack)
   add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
@@ -145,6 +140,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/webview.cpp"
     "src/smartview.cpp"
     "src/serializer.glaze.cpp"
+    
+    "src/latch.cpp"
     "src/requests.cpp"
 )
 
@@ -193,7 +190,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        3.1.9
+  VERSION        3.2.1
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -300,15 +297,6 @@ if (saucer_examples)
   message(STATUS "[saucer] Building Examples")
   add_subdirectory("examples/json-bridge")
   add_subdirectory("examples/embedding")
-endif()
-
-# --------------------------------------------------------------------------------------------------------
-# Setup Bindings
-# --------------------------------------------------------------------------------------------------------
-
-if (saucer_bindings)
-  message(STATUS "[saucer] Building Bindings")
-  add_subdirectory(bindings)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
