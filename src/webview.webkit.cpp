@@ -2,11 +2,11 @@
 
 #include "icon.gtk.impl.hpp"
 #include "window.gtk.impl.hpp"
+#include "scheme.webkit.impl.hpp"
 
 #include "requests.hpp"
 
 #include <fmt/core.h>
-#include <webkit/WebKitUserContentManager.h>
 
 namespace saucer
 {
@@ -38,6 +38,21 @@ namespace saucer
                                     }),
                          this);
 
+        g_signal_connect(m_impl->web_view, "load-changed",
+                         G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent event, gpointer data)
+                                    {
+                                        if (event != WEBKIT_LOAD_STARTED)
+                                        {
+                                            return;
+                                        }
+
+                                        auto *self = reinterpret_cast<webview *>(data);
+
+                                        self->m_impl->dom_loaded = false;
+                                        self->m_events.at<web_event::load_started>().fire();
+                                    }),
+                         this);
+
         inject(impl::inject_script(), load_time::creation);
     }
 
@@ -45,6 +60,21 @@ namespace saucer
 
     bool webview::on_message(const std::string &message)
     {
+        if (message == "dom_loaded")
+        {
+            m_impl->dom_loaded = true;
+
+            for (const auto &pending : m_impl->pending)
+            {
+                execute(pending);
+            }
+
+            m_impl->pending.clear();
+            m_events.at<web_event::dom_ready>().fire();
+
+            return true;
+        }
+
         auto request = requests::parse(message);
 
         if (!request)
@@ -215,7 +245,34 @@ namespace saucer
         webkit_web_view_load_uri(m_impl->web_view, url.c_str());
     }
 
+    void webview::serve(const std::string &file, const std::string &scheme)
+    {
+        set_url(fmt::format("{}:/{}", scheme, file));
+    }
+
     // TODO: Embed, Serve, Clear-Scripts...
+
+    void webview::clear_scripts()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return clear_scripts(); }).get();
+        }
+
+        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
+
+        for (const auto &script : m_impl->scripts | std::views::drop(1))
+        {
+            webkit_user_content_manager_remove_script(manager, script.get());
+        }
+
+        if (m_impl->scripts.empty())
+        {
+            return;
+        }
+
+        m_impl->scripts.resize(1);
+    }
 
     void webview::execute(const std::string &java_script)
     {
@@ -224,7 +281,11 @@ namespace saucer
             return dispatch([this, java_script]() { return execute(java_script); }).get();
         }
 
-        // TODO: Check if dom is ready...
+        if (!m_impl->dom_loaded)
+        {
+            m_impl->pending.emplace_back(java_script);
+            return;
+        }
 
         webkit_web_view_evaluate_javascript(m_impl->web_view, java_script.c_str(), -1, nullptr, nullptr, nullptr,
                                             nullptr, nullptr);
@@ -241,5 +302,56 @@ namespace saucer
 
         m_impl->scripts.emplace_back(script);
         webkit_user_content_manager_add_script(manager, script);
+    }
+
+    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, name, handler = std::move(handler)] mutable
+                            { return handle_scheme(name, std::move(handler)); })
+                .get();
+        }
+
+        auto *context  = webkit_web_view_get_context(m_impl->web_view);
+        auto *security = webkit_web_context_get_security_manager(context);
+
+        webkit_web_context_register_uri_scheme(
+            context, name.c_str(),
+            [](WebKitURISchemeRequest *request, gpointer user_data)
+            {
+                auto req = saucer::request{{request}};
+
+                if (!user_data)
+                {
+                    return;
+                }
+
+                auto result = std::invoke(*reinterpret_cast<scheme_handler *>(user_data), req);
+
+                if (!result.has_value())
+                {
+                    // TODO
+                    return;
+                }
+
+                auto data = result->data;
+                auto size = static_cast<gssize>(data.size());
+
+                auto bytes  = bytes_ptr{g_bytes_new(data.data(), size)};
+                auto stream = object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
+
+                webkit_uri_scheme_request_finish(request, stream.get(), size, result->mime.c_str());
+            },
+            new scheme_handler{std::move(handler)},
+            [](gpointer data) { delete reinterpret_cast<scheme_handler *>(data); });
+
+        webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
+        webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
+    }
+
+    void webview::register_scheme(const std::string &)
+    {
+        //? Registering schemes before hand is not required for webkit.
     }
 } // namespace saucer

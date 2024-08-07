@@ -19,6 +19,11 @@ namespace saucer
         std::vector<script_ptr> scripts;
 
       public:
+        bool dom_loaded{false};
+        std::vector<std::string> pending;
+
+      public:
         static const std::string &inject_script();
+        static constinit std::string_view ready_script;
     };
 } // namespace saucer

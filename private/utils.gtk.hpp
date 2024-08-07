@@ -17,7 +17,6 @@ namespace saucer
       public:
         explicit object_ptr(T *data) : m_data(data) {}
 
-      public:
         object_ptr(const object_ptr &other) : m_data(other.m_data)
         {
             if (!m_data)
@@ -42,10 +41,23 @@ namespace saucer
         }
 
       public:
+        T *get() const
+        {
+            return m_data;
+        }
+
+        explicit operator bool() const
+        {
+            return m_data != nullptr;
+        }
+
+      public:
         static object_ptr copy(T *data)
         {
             ref(data);
             return object_ptr{data};
         }
     };
+
+    using bytes_ptr = object_ptr<GBytes, g_bytes_ref, g_bytes_unref>;
 } // namespace saucer

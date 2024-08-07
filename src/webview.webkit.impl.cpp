@@ -25,4 +25,6 @@ namespace saucer
 
         return instance.value();
     }
+
+    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.send_message('dom_loaded')";
 } // namespace saucer
