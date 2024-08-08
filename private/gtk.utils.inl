@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.gtk.hpp"
+#include "gtk.utils.hpp"
 
 #include <utility>
 

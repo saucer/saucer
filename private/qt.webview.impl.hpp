@@ -1,7 +1,7 @@
 #pragma once
 
 #include "webview.hpp"
-#include "scheme.qt.impl.hpp"
+#include "qt.scheme.impl.hpp"
 
 #include <string>
 #include <vector>

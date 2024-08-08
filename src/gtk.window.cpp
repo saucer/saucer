@@ -1,5 +1,5 @@
 #include "window.hpp"
-#include "window.gtk.impl.hpp"
+#include "gtk.window.impl.hpp"
 
 #include "warnings.hpp"
 

@@ -1,4 +1,4 @@
-#include "window.qt.impl.hpp"
+#include "qt.window.impl.hpp"
 
 #include <QThread>
 #include <QCloseEvent>

@@ -1,7 +1,7 @@
-#include "window.qt.impl.hpp"
+#include "qt.window.impl.hpp"
 
 #include "instantiate.hpp"
-#include "icon.qt.impl.hpp"
+#include "qt.icon.impl.hpp"
 
 #include <fmt/core.h>
 #include <fmt/xchar.h>

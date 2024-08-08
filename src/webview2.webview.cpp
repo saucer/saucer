@@ -1,12 +1,12 @@
-#include "webview.webview2.impl.hpp"
+#include "webview2.webview.impl.hpp"
 
 #include "requests.hpp"
 #include "instantiate.hpp"
 
-#include "utils.win32.hpp"
+#include "win32.utils.hpp"
 
-#include "icon.win32.impl.hpp"
-#include "window.win32.impl.hpp"
+#include "win32.icon.impl.hpp"
+#include "win32.window.impl.hpp"
 
 #include <ranges>
 #include <filesystem>

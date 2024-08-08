@@ -1,6 +1,6 @@
-#include "webview.qt.impl.hpp"
+#include "qt.webview.impl.hpp"
 
-#include "window.qt.impl.hpp"
+#include "qt.window.impl.hpp"
 
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
@@ -17,22 +17,31 @@ namespace saucer
         QWebEngineScript script;
         bool found = false;
 
+        auto check_previous = [&](const char *name)
+        {
+            auto scripts = m_impl->web_view->page()->scripts().find(name);
+
+            if (scripts.empty())
+            {
+                return;
+            }
+
+            found  = true;
+            script = scripts.front();
+        };
+
         switch (load_time)
         {
         case load_time::creation:
-            script = m_impl->web_view->page()->scripts().findScript("_creation");
-            found  = !script.isNull();
-
-            script.setInjectionPoint(QWebEngineScript::DocumentCreation);
+            check_previous("_creation");
             script.setName("_creation");
+            script.setInjectionPoint(QWebEngineScript::DocumentCreation);
             break;
 
         case load_time::ready:
-            script = m_impl->web_view->page()->scripts().findScript("_ready");
-            found  = !script.isNull();
-
-            script.setInjectionPoint(QWebEngineScript::DocumentReady);
+            check_previous("_ready");
             script.setName("_ready");
+            script.setInjectionPoint(QWebEngineScript::DocumentReady);
             break;
         }
 

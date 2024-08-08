@@ -240,9 +240,9 @@ endif()
 
 if (saucer_backend MATCHES "^Qt.$")
   file(GLOB qt_sources 
-    "src/*.qt.*cpp"
-    "private/*.qt.*hpp"
-    "src/*.qt${QT_VERSION}.*cpp"
+    "src/qt.*cpp"
+    "private/qt.*hpp"
+    "src/qt${QT_VERSION}.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
@@ -254,8 +254,8 @@ endif()
 
 if (saucer_backend MATCHES "WebKit2Gtk")
   file(GLOB gtk_sources 
-    "src/*.gtk.*cpp"
-    "src/*.webkit.*cpp"
+    "src/gtk.*cpp"
+    "src/webkit.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${gtk_sources})
@@ -270,8 +270,8 @@ endif()
 
 if (saucer_backend STREQUAL "WebView2")
   file(GLOB win_sources 
-    "src/*.win32.*cpp"
-    "src/*.webview2.*cpp"
+    "src/win32.*cpp"
+    "src/webview2.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})

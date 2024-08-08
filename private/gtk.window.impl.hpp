@@ -1,7 +1,7 @@
 #pragma once
 
 #include "window.hpp"
-#include "utils.gtk.hpp"
+#include "gtk.utils.hpp"
 
 #include <adwaita.h>
 

@@ -1,6 +1,6 @@
-#include "scheme.webkit.impl.hpp"
+#include "webkit.scheme.impl.hpp"
 
-#include "utils.gtk.hpp"
+#include "gtk.utils.hpp"
 
 namespace saucer
 {

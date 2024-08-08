@@ -1,10 +1,10 @@
-#include "webview.qt.impl.hpp"
+#include "qt.webview.impl.hpp"
 
 #include "warnings.hpp"
 #include "instantiate.hpp"
 
-#include "icon.qt.impl.hpp"
-#include "window.qt.impl.hpp"
+#include "qt.icon.impl.hpp"
+#include "qt.window.impl.hpp"
 
 #include "scheme.hpp"
 #include "requests.hpp"

@@ -1,8 +1,8 @@
-#include "webview.webkit.impl.hpp"
+#include "webkit.webview.impl.hpp"
 
-#include "icon.gtk.impl.hpp"
-#include "window.gtk.impl.hpp"
-#include "scheme.webkit.impl.hpp"
+#include "gtk.icon.impl.hpp"
+#include "gtk.window.impl.hpp"
+#include "webkit.scheme.impl.hpp"
 
 #include "requests.hpp"
 

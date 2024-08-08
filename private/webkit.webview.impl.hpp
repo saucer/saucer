@@ -2,8 +2,8 @@
 
 #include "webview.hpp"
 
-#include "utils.gtk.hpp"
-#include "scheme.webkit.impl.hpp"
+#include "gtk.utils.hpp"
+#include "webkit.scheme.impl.hpp"
 
 #include <vector>
 #include <unordered_map>

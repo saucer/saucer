@@ -1,7 +1,7 @@
-#include "webview.qt.impl.hpp"
+#include "qt.webview.impl.hpp"
 
 #include "scripts.hpp"
-#include "icon.qt.impl.hpp"
+#include "qt.icon.impl.hpp"
 
 #include <optional>
 #include <fmt/core.h>

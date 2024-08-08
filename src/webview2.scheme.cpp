@@ -1,4 +1,4 @@
-#include "scheme.webview2.impl.hpp"
+#include "webview2.scheme.impl.hpp"
 
 #include "utils.win32.hpp"
 
@@ -16,9 +16,9 @@ namespace saucer
         auto rtn = utils::narrow(raw);
         CoTaskMemFree(raw);
 
-        auto start    = rtn.find(":");
-        auto scheme   = rtn.substr(0, start);
-        
+        auto start  = rtn.find(":");
+        auto scheme = rtn.substr(0, start);
+
         auto offset   = rtn.find("saucer/", start);
         auto location = rtn.substr(offset + 7);
 

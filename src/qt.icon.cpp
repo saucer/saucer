@@ -1,4 +1,6 @@
-#include "icon.gtk.impl.hpp"
+#include "qt.icon.impl.hpp"
+
+#include <QPixmap>
 
 namespace saucer
 {
@@ -32,33 +34,32 @@ namespace saucer
         return *this;
     }
 
-    bool icon::empty() const // NOLINT
+    bool icon::empty() const
     {
-        return false;
+        return m_impl->icon.isNull();
     }
 
     std::optional<icon> icon::from(const stash<> &ico)
     {
-        auto bytes    = g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};
-        auto *texture = gdk_texture_new_from_bytes(bytes.get(), nullptr);
+        QPixmap rtn{};
 
-        if (!texture)
+        if (!rtn.loadFromData(ico.data(), ico.size()))
         {
             return std::nullopt;
         }
 
-        return icon{{texture}};
+        return icon{{rtn}};
     }
 
     std::optional<icon> icon::from(const fs::path &file)
     {
-        auto *texture = gdk_texture_new_from_filename(file.string().c_str(), nullptr);
+        auto q_icon = QIcon{QString::fromStdString(file.string())};
 
-        if (!texture)
+        if (q_icon.isNull())
         {
             return std::nullopt;
         }
 
-        return icon{{texture}};
+        return icon{{q_icon}};
     }
 } // namespace saucer

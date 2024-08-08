@@ -1,7 +1,7 @@
-#include "window.win32.impl.hpp"
+#include "win32.window.impl.hpp"
 
-#include "utils.win32.hpp"
-#include "icon.win32.impl.hpp"
+#include "win32.utils.hpp"
+#include "win32.icon.impl.hpp"
 
 #include "instantiate.hpp"
 

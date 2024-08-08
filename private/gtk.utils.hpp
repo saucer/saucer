@@ -49,4 +49,4 @@ namespace saucer
     using g_event_ptr = ref_ptr<GdkEvent, gdk_event_ref, gdk_event_unref>;
 } // namespace saucer
 
-#include "utils.gtk.inl"
+#include "gtk.utils.inl"
