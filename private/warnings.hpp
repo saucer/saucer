@@ -28,14 +28,6 @@ namespace saucer
         }
     };
 
-    struct gtk_wayland_warning
-    {
-        [[deprecated("GTK does not implement this functionality correctly under Wayland")]]
-        static void raise()
-        {
-        }
-    };
-
     template <typename T>
     consteval void emit_warning()
     {

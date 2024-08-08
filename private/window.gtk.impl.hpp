@@ -1,16 +1,31 @@
 #pragma once
 
 #include "window.hpp"
-
-#include <memory>
-#include <functional>
+#include "utils.gtk.hpp"
 
 #include <adwaita.h>
 
 namespace saucer
 {
-    template <typename T>
-    using custom_ptr = std::unique_ptr<T, std::function<void(T *)>>;
+    struct click_event
+    {
+        event_ptr event;
+        GtkEventController *controller;
+    };
+
+    struct event_data
+    {
+        GdkDevice *device;
+        GdkSurface *surface;
+
+      public:
+        int button;
+        std::uint32_t time;
+
+      public:
+        double x;
+        double y;
+    };
 
     struct window::impl
     {
@@ -19,6 +34,10 @@ namespace saucer
       public:
         GtkBox *content;
         AdwHeaderBar *header;
+
+      public:
+        click_event prev_click;
+        [[nodiscard]] event_data prev_data() const;
 
       public:
         [[nodiscard]] static bool is_thread_safe();

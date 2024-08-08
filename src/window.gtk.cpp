@@ -37,14 +37,15 @@ namespace saucer
 
         auto callback = [](GtkApplication *, gpointer data)
         {
-            auto *thiz   = static_cast<impl *>(data);
-            thiz->window = ADW_APPLICATION_WINDOW(adw_application_window_new(GTK_APPLICATION(impl::application.get())));
+            auto *self        = static_cast<impl *>(data);
+            auto *application = GTK_APPLICATION(impl::application.get());
 
-            thiz->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
-            thiz->header  = ADW_HEADER_BAR(adw_header_bar_new());
+            self->window  = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
+            self->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+            self->header  = ADW_HEADER_BAR(adw_header_bar_new());
 
-            gtk_box_append(thiz->content, GTK_WIDGET(thiz->header));
-            adw_application_window_set_content(thiz->window, GTK_WIDGET(thiz->content));
+            gtk_box_append(self->content, GTK_WIDGET(self->header));
+            adw_application_window_set_content(self->window, GTK_WIDGET(self->content));
         };
 
         auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
@@ -61,14 +62,13 @@ namespace saucer
 
     void window::dispatch(callback_t callback) const // NOLINT
     {
-        auto once = [](gpointer data)
+        auto once = [](callback_t *data)
         {
-            auto *callback = static_cast<callback_t *>(data);
+            auto callback = std::unique_ptr<callback_t>{data};
             std::invoke(*callback);
-            delete callback;
         };
 
-        g_idle_add_once(+once, new callback_t{std::move(callback)});
+        g_idle_add_once(reinterpret_cast<GSourceOnceFunc>(+once), new callback_t{std::move(callback)});
     }
 
     bool window::focused() const
@@ -167,9 +167,7 @@ namespace saucer
             return dispatch([this] { return min_size(); }).get();
         }
 
-        int width{};
-        int height{};
-
+        int width{}, height{};
         gtk_widget_get_size_request(GTK_WIDGET(m_impl->window), &width, &height);
 
         return {width, height};
@@ -205,9 +203,9 @@ namespace saucer
         gtk_window_close(GTK_WINDOW(m_impl->window));
     }
 
-    void window::focus()
+    void window::focus() // NOLINT
     {
-        return show();
+        emit_warning<gtk_warning>();
     }
 
     void window::start_drag()
@@ -217,51 +215,51 @@ namespace saucer
             return dispatch([this] { return start_drag(); }).get();
         }
 
-        auto *native  = gtk_widget_get_native(GTK_WIDGET(m_impl->window));
-        auto *surface = gtk_native_get_surface(native);
-
-        auto *display = gdk_surface_get_display(surface);
-        auto *seat    = gdk_display_get_default_seat(display);
-        auto *cursor  = gdk_seat_get_pointer(seat);
-
-        gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), cursor, 0, 0, 0, GDK_CURRENT_TIME);
+        auto [device, surface, button, time, x, y] = m_impl->prev_data();
+        gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), device, button, x, y, time);
     }
 
     void window::start_resize(window_edge edge)
     {
-        emit_warning<gtk_buggy_warning>();
-        emit_warning<gtk_wayland_warning>();
-
         if (!m_impl->is_thread_safe())
         {
             return dispatch([this, edge] { return start_resize(edge); }).get();
         }
 
-        auto *surface = gtk_native_get_surface(gtk_widget_get_native(GTK_WIDGET(m_impl->window)));
-        auto *display = gdk_surface_get_display(surface);
-        auto *seat    = gdk_display_get_default_seat(display);
-        auto *cursor  = gdk_seat_get_pointer(seat);
+        GdkSurfaceEdge translated{};
 
-        int translated{};
+        switch (std::to_underlying(edge))
+        {
+            using enum window_edge;
 
-        if (edge & window_edge::top)
-        {
-            translated |= GDK_SURFACE_EDGE_NORTH;
-        }
-        if (edge & window_edge::bottom)
-        {
-            translated |= GDK_SURFACE_EDGE_SOUTH;
-        }
-        if (edge & window_edge::left)
-        {
-            translated |= GDK_SURFACE_EDGE_WEST;
-        }
-        if (edge & window_edge::right)
-        {
-            translated |= GDK_SURFACE_EDGE_EAST;
+        case std::to_underlying(top):
+            translated = GDK_SURFACE_EDGE_NORTH;
+            break;
+        case std::to_underlying(bottom):
+            translated = GDK_SURFACE_EDGE_SOUTH;
+            break;
+        case std::to_underlying(left):
+            translated = GDK_SURFACE_EDGE_WEST;
+            break;
+        case std::to_underlying(right):
+            translated = GDK_SURFACE_EDGE_EAST;
+            break;
+        case top | left:
+            translated = GDK_SURFACE_EDGE_NORTH_WEST;
+            break;
+        case top | right:
+            translated = GDK_SURFACE_EDGE_NORTH_EAST;
+            break;
+        case bottom | left:
+            translated = GDK_SURFACE_EDGE_SOUTH_WEST;
+            break;
+        case bottom | right:
+            translated = GDK_SURFACE_EDGE_SOUTH_EAST;
+            break;
         }
 
-        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), static_cast<GdkSurfaceEdge>(translated), cursor, 0, 0, 0, 1);
+        auto [device, surface, button, time, x, y] = m_impl->prev_data();
+        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 
     void window::set_minimized(bool enabled)
@@ -315,6 +313,7 @@ namespace saucer
             return dispatch([this, enabled] { return set_decorations(true); }).get();
         }
 
+        gtk_widget_set_visible(GTK_WIDGET(m_impl->header), enabled);
         gtk_window_set_decorated(GTK_WINDOW(m_impl->window), enabled);
     }
 
@@ -323,9 +322,9 @@ namespace saucer
         emit_warning<gtk_warning>();
     }
 
-    void window::set_icon(const icon &icon)
+    void window::set_icon(const icon &) // NOLINT
     {
-        // TODO: Implement
+        emit_warning<gtk_warning>();
     }
 
     void window::set_title(const std::string &title)
@@ -368,8 +367,8 @@ namespace saucer
     {
         auto callback = [](GtkApplication *, gpointer *data)
         {
-            // The "real" callback is registered in the constructor already, however, due to the non-async workaround,
-            // we register it here again to silence GIO warnings.
+            // The "real" callback is registered in the constructor already, however, due to the non-async
+            // workaround, we register it here again to silence GIO warnings.
         };
 
         g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), nullptr);
