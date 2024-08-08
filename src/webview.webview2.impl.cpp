@@ -44,7 +44,7 @@ namespace saucer
 
     void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::options options)
     {
-        auto flags = options.chrome_flags;
+        auto flags = options.browser_flags;
 
         if (!options.hardware_acceleration)
         {

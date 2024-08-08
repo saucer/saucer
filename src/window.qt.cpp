@@ -28,7 +28,7 @@ namespace saucer
                            qputenv("QT_LOGGING_RULES", "*=false");
 #endif
 
-                           auto flags = options.chrome_flags;
+                           auto flags = options.browser_flags;
 
                            if (options.hardware_acceleration)
                            {

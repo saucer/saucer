@@ -77,7 +77,7 @@ namespace saucer
         std::vector<GValue> values;
         std::vector<std::string> names;
 
-        for (const auto &flag : options.chrome_flags)
+        for (const auto &flag : options.browser_flags)
         {
             auto delim = flag.find('=');
 

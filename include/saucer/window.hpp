@@ -42,7 +42,7 @@ namespace saucer
 
       public:
         std::filesystem::path storage_path;
-        std::set<std::string> chrome_flags;
+        std::set<std::string> browser_flags;
 
       public:
         std::size_t threads = std::thread::hardware_concurrency();
