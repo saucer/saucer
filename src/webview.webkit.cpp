@@ -14,6 +14,9 @@ namespace saucer
     {
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
 
+        m_impl->settings = object_ptr{impl::make_settings(options)};
+        webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
+
         gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
 
         gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view), true);
@@ -21,39 +24,62 @@ namespace saucer
 
         gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
 
-        g_signal_connect(m_impl->web_view, "context-menu",
-                         G_CALLBACK(+[](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, gpointer data)
-                                    { return !reinterpret_cast<impl *>(data)->context_menu; }),
-                         m_impl.get());
+        auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, void *data)
+        {
+            return !reinterpret_cast<impl *>(data)->context_menu;
+        };
+
+        g_signal_connect(m_impl->web_view, "context-menu", G_CALLBACK(+on_context), m_impl.get());
 
         auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
         webkit_user_content_manager_register_script_message_handler(manager, "saucer", nullptr);
 
-        g_signal_connect(manager, "script-message-received",
-                         G_CALLBACK(+[](WebKitWebView *, JSCValue *message, gpointer data)
-                                    {
-                                        auto *str = jsc_value_to_string(message);
-                                        reinterpret_cast<webview *>(data)->on_message(str);
-                                        g_free(str);
-                                    }),
-                         this);
-
-        g_signal_connect(m_impl->web_view, "load-changed",
-                         G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent event, gpointer data)
-                                    {
-                                        if (event != WEBKIT_LOAD_STARTED)
+        auto on_message = [](WebKitWebView *, JSCValue *message, void *data)
+        {
+            auto str = custom_ptr<char>{jsc_value_to_string(message), [](char *ptr)
                                         {
-                                            return;
-                                        }
+                                            g_free(ptr);
+                                        }};
 
-                                        auto *self = reinterpret_cast<webview *>(data);
+            reinterpret_cast<webview *>(data)->on_message(str.get());
+        };
 
-                                        self->m_impl->dom_loaded = false;
-                                        self->m_events.at<web_event::load_started>().fire();
-                                    }),
-                         this);
+        g_signal_connect(manager, "script-message-received", G_CALLBACK(+on_message), this);
+
+        auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
+        {
+            if (event != WEBKIT_LOAD_STARTED)
+            {
+                return;
+            }
+
+            auto *self = reinterpret_cast<webview *>(data);
+
+            self->m_impl->dom_loaded = false;
+            self->m_events.at<web_event::load_started>().fire();
+        };
+
+        g_signal_connect(m_impl->web_view, "load-changed", G_CALLBACK(+on_load), this);
+
+        auto *controller = gtk_gesture_click_new();
+
+        auto on_click = [](GtkGestureClick *gesture, gint, double, double, void *data)
+        {
+            auto *self       = reinterpret_cast<webview *>(data);
+            auto *controller = GTK_EVENT_CONTROLLER(gesture);
+            auto *event      = gtk_event_controller_get_current_event(controller);
+
+            self->window::m_impl->prev_click = {
+                .event      = event_ptr::copy(event),
+                .controller = controller,
+            };
+        };
+
+        g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
+        gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view), GTK_EVENT_CONTROLLER(controller));
 
         inject(impl::inject_script(), load_time::creation);
+        inject(std::string{impl::ready_script}, load_time::ready);
     }
 
     webview::~webview() = default;
@@ -250,8 +276,6 @@ namespace saucer
         set_url(fmt::format("{}:/{}", scheme, file));
     }
 
-    // TODO: Embed, Serve, Clear-Scripts...
-
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())
@@ -261,7 +285,7 @@ namespace saucer
 
         auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
 
-        for (const auto &script : m_impl->scripts | std::views::drop(1))
+        for (const auto &script : m_impl->scripts | std::views::drop(2))
         {
             webkit_user_content_manager_remove_script(manager, script.get());
         }
@@ -271,7 +295,7 @@ namespace saucer
             return;
         }
 
-        m_impl->scripts.resize(1);
+        m_impl->scripts.resize(2);
     }
 
     void webview::execute(const std::string &java_script)
