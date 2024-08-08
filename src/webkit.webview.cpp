@@ -15,6 +15,16 @@ namespace saucer
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
         m_impl->settings = impl::make_settings(options);
 
+        if (options.persistent_cookies)
+        {
+            auto *session = webkit_web_view_get_network_session(m_impl->web_view);
+            auto *manager = webkit_network_session_get_cookie_manager(session);
+
+            auto path = options.storage_path.empty() ? (fs::temp_directory_path() / "saucer") : options.storage_path;
+            webkit_cookie_manager_set_persistent_storage(manager, path.c_str(),
+                                                         WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+        }
+
         webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
 
         gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
