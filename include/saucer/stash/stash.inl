@@ -69,6 +69,12 @@ namespace saucer
         return {std::async(std::launch::deferred, std::move(fn)).share()};
     }
 
+    template <typename T>
+    stash<T> stash<T>::empty()
+    {
+        return {};
+    }
+
     template <typename T, typename V>
         requires std::ranges::range<V>
     auto make_stash(const V &data)

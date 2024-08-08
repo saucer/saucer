@@ -39,6 +39,9 @@ namespace saucer
         [[nodiscard]] static stash lazy(lazy_t data);
         template <typename Callback>
         [[nodiscard]] static stash lazy(Callback);
+
+      public:
+        [[nodiscard]] static stash empty();
     };
 
     template <typename T = std::uint8_t, typename V>
