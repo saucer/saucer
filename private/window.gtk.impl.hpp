@@ -9,7 +9,7 @@ namespace saucer
 {
     struct click_event
     {
-        event_ptr event;
+        g_event_ptr event;
         GtkEventController *controller;
     };
 

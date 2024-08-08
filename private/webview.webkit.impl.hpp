@@ -12,7 +12,7 @@
 
 namespace saucer
 {
-    using script_ptr = object_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
+    using script_ptr = ref_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
 
     struct webview::impl
     {
@@ -27,7 +27,7 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
-        object_ptr<WebKitSettings> settings;
+        g_object_ptr<WebKitSettings> settings;
         std::unordered_map<std::string, std::unique_ptr<scheme_state>> schemes;
 
       public:

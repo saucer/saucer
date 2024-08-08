@@ -13,12 +13,11 @@ namespace saucer
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+        m_impl->settings = impl::make_settings(options);
 
-        m_impl->settings = object_ptr{impl::make_settings(options)};
         webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
 
         gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
-
         gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view), true);
         gtk_widget_set_hexpand(GTK_WIDGET(m_impl->web_view), true);
 
@@ -70,7 +69,7 @@ namespace saucer
             auto *event      = gtk_event_controller_get_current_event(controller);
 
             self->window::m_impl->prev_click = {
-                .event      = event_ptr::copy(event),
+                .event      = g_event_ptr::copy(event),
                 .controller = controller,
             };
         };
@@ -132,7 +131,7 @@ namespace saucer
             return dispatch([this] { return favicon(); }).get();
         }
 
-        return {{object_ptr<GdkTexture>::copy(webkit_web_view_get_favicon(m_impl->web_view))}};
+        return {{g_object_ptr<GdkTexture>::copy(webkit_web_view_get_favicon(m_impl->web_view))}};
     }
 
     std::string webview::page_title() const
@@ -190,7 +189,7 @@ namespace saucer
             return dispatch([this] { return background(); }).get();
         }
 
-        GdkRGBA color;
+        GdkRGBA color{};
         webkit_web_view_get_background_color(m_impl->web_view, &color);
 
         return {
@@ -214,10 +213,10 @@ namespace saucer
             return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
         }
 
-        auto *settings = webkit_web_view_get_settings(m_impl->web_view);
-        webkit_settings_set_enable_developer_extras(settings, enabled);
-
+        auto *settings  = webkit_web_view_get_settings(m_impl->web_view);
         auto *inspector = webkit_web_view_get_inspector(m_impl->web_view);
+
+        webkit_settings_set_enable_developer_extras(settings, enabled);
         webkit_web_inspector_show(inspector);
     }
 
@@ -317,6 +316,11 @@ namespace saucer
 
     void webview::inject(const std::string &java_script, const load_time &load_time)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, java_script, load_time]() { return inject(java_script, load_time); }).get();
+        }
+
         auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
         auto *script =
             webkit_user_script_new(java_script.c_str(), WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
@@ -359,7 +363,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, name] mutable { return remove_scheme(name); }).get();
+            return dispatch([this, name] { return remove_scheme(name); }).get();
         }
 
         if (!m_impl->schemes.contains(name))

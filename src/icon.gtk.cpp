@@ -39,15 +39,15 @@ namespace saucer
 
     std::optional<icon> icon::from(const stash<> &ico)
     {
-        auto *bytes   = const_cast<std::uint8_t *>(ico.data()); // NOLINT
-        auto *texture = gdk_texture_new_from_bytes(reinterpret_cast<GBytes *>(bytes), nullptr);
+        auto bytes    = g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};
+        auto *texture = gdk_texture_new_from_bytes(bytes.get(), nullptr);
 
         if (!texture)
         {
             return std::nullopt;
         }
 
-        return icon{{object_ptr<GdkTexture>{texture}}};
+        return icon{{texture}};
     }
 
     std::optional<icon> icon::from(const fs::path &file)
@@ -59,6 +59,6 @@ namespace saucer
             return std::nullopt;
         }
 
-        return icon{{object_ptr<GdkTexture>{texture}}};
+        return icon{{texture}};
     }
 } // namespace saucer
