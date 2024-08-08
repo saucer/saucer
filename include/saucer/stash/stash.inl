@@ -72,7 +72,7 @@ namespace saucer
     template <typename T>
     stash<T> stash<T>::empty()
     {
-        return {};
+        return {{}};
     }
 
     template <typename T, typename V>
