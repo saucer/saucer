@@ -313,41 +313,37 @@ namespace saucer
                 .get();
         }
 
+        if (m_impl->schemes.contains(name))
+        {
+            return;
+        }
+
         auto *context  = webkit_web_view_get_context(m_impl->web_view);
         auto *security = webkit_web_context_get_security_manager(context);
 
-        webkit_web_context_register_uri_scheme(
-            context, name.c_str(),
-            [](WebKitURISchemeRequest *request, gpointer user_data)
-            {
-                auto req = saucer::request{{request}};
+        auto state    = std::make_unique<scheme_state>(std::move(handler));
+        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme_state::handle);
 
-                if (!user_data)
-                {
-                    return;
-                }
-
-                auto result = std::invoke(*reinterpret_cast<scheme_handler *>(user_data), req);
-
-                if (!result.has_value())
-                {
-                    // TODO
-                    return;
-                }
-
-                auto data = result->data;
-                auto size = static_cast<gssize>(data.size());
-
-                auto bytes  = bytes_ptr{g_bytes_new(data.data(), size)};
-                auto stream = object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
-
-                webkit_uri_scheme_request_finish(request, stream.get(), size, result->mime.c_str());
-            },
-            new scheme_handler{std::move(handler)},
-            [](gpointer data) { delete reinterpret_cast<scheme_handler *>(data); });
+        webkit_web_context_register_uri_scheme(context, name.c_str(), callback, state.get(), nullptr);
+        m_impl->schemes.emplace(name, std::move(state));
 
         webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
         webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
+    }
+
+    void webview::remove_scheme(const std::string &name)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, name] mutable { return remove_scheme(name); }).get();
+        }
+
+        if (!m_impl->schemes.contains(name))
+        {
+            return;
+        }
+
+        m_impl->schemes.at(name)->handler = nullptr;
     }
 
     void webview::register_scheme(const std::string &)

@@ -10,4 +10,10 @@ namespace saucer
     {
         WebKitURISchemeRequest *request;
     };
+
+    struct scheme_state
+    {
+        scheme_handler handler;
+        static void handle(WebKitURISchemeRequest *, scheme_state *);
+    };
 } // namespace saucer

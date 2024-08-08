@@ -20,7 +20,7 @@ namespace saucer
 
     stash<> request::content() const
     {
-        auto stream = object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request)};
+        auto stream = object_ptr{webkit_uri_scheme_request_get_http_body(m_impl->request)};
 
         if (!stream)
         {
@@ -51,5 +51,77 @@ namespace saucer
             { reinterpret_cast<decltype(rtn) *>(data)->emplace(name, value); }, &rtn);
 
         return rtn;
+    }
+
+    void scheme_state::handle(WebKitURISchemeRequest *request, scheme_state *state)
+    {
+        static auto scheme_error = g_quark_from_string("SCHEME_ERROR");
+
+        auto req = saucer::request{{request}};
+
+        if (!state->handler)
+        {
+            return;
+        }
+
+        auto result = std::invoke(state->handler, req);
+
+        if (!result.has_value())
+        {
+            int status{};
+            std::string phrase{};
+
+            switch (result.error())
+            {
+            case request_error::aborted:
+                status = 500;
+                phrase = "Aborted";
+                break;
+            case request_error::bad_url:
+                status = 500;
+                phrase = "Invalid Url";
+                break;
+            case request_error::denied:
+                status = 401;
+                phrase = "Unauthorized";
+                break;
+            case request_error::not_found:
+                status = 404;
+                phrase = "Not Found";
+                break;
+            default:
+            case request_error::failed:
+                status = 500;
+                phrase = "Failed";
+                break;
+            }
+
+            auto stream   = object_ptr{g_memory_input_stream_new()};
+            auto response = object_ptr{webkit_uri_scheme_response_new(stream.get(), -1)};
+
+            webkit_uri_scheme_response_set_status(response.get(), status, phrase.c_str());
+            webkit_uri_scheme_request_finish_with_response(request, response.get());
+
+            return;
+        }
+
+        auto data = result->data;
+        auto size = static_cast<gssize>(data.size());
+
+        auto bytes  = bytes_ptr{g_bytes_new(data.data(), size)};
+        auto stream = object_ptr{g_memory_input_stream_new_from_bytes(bytes.get())};
+
+        auto response = object_ptr{webkit_uri_scheme_response_new(stream.get(), size)};
+        auto *headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
+
+        for (const auto &[name, value] : result->headers)
+        {
+            soup_message_headers_append(headers, name.c_str(), value.c_str());
+        }
+
+        webkit_uri_scheme_response_set_content_type(response.get(), result->mime.c_str());
+        webkit_uri_scheme_response_set_http_headers(response.get(), headers);
+
+        webkit_uri_scheme_request_finish_with_response(request, response.get());
     }
 } // namespace saucer
