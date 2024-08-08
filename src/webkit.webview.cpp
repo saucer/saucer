@@ -25,6 +25,10 @@ namespace saucer
                                                          WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
+        webkit_settings_set_hardware_acceleration_policy(
+            m_impl->settings.get(), options.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
+                                                                  : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+
         webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
 
         gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
