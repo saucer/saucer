@@ -19,7 +19,7 @@ namespace saucer
         std::function<void()> on_closed;
 
       public:
-        [[nodiscard]] bool is_thread_safe() const;
+        [[nodiscard]] static bool is_thread_safe();
 
       public:
         static thread_local inline std::unique_ptr<QApplication> application;

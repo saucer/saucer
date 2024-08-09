@@ -20,10 +20,10 @@ namespace saucer
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:
-        [[nodiscard]] bool is_thread_safe() const;
+        static const UINT WM_SAFE_CALL;
 
       public:
-        static const UINT WM_SAFE_CALL;
+        [[nodiscard]] static bool is_thread_safe();
 
       public:
         static std::atomic<std::size_t> instances;

@@ -5,9 +5,9 @@
 
 namespace saucer
 {
-    bool window::impl::is_thread_safe() const
+    bool window::impl::is_thread_safe()
     {
-        return window->thread() == QThread::currentThread();
+        return application != nullptr;
     }
 
     window::impl::main_window::main_window(class window *parent) : m_parent(parent) {}

@@ -82,7 +82,7 @@ namespace saucer
 
     bool window::focused() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return focused(); }).get();
         }
@@ -92,7 +92,7 @@ namespace saucer
 
     bool window::minimized() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return minimized(); }).get();
         }
@@ -102,7 +102,7 @@ namespace saucer
 
     bool window::maximized() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return maximized(); }).get();
         }
@@ -112,7 +112,7 @@ namespace saucer
 
     bool window::resizable() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return resizable(); }).get();
         }
@@ -122,7 +122,7 @@ namespace saucer
 
     bool window::decorations() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return decorations(); }).get();
         }
@@ -132,7 +132,7 @@ namespace saucer
 
     std::string window::title() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return title(); }).get();
         }
@@ -142,7 +142,7 @@ namespace saucer
 
     bool window::always_on_top() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return always_on_top(); }).get();
         }
@@ -152,7 +152,7 @@ namespace saucer
 
     std::pair<int, int> window::size() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return size(); }).get();
         }
@@ -162,7 +162,7 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return max_size(); }).get();
         }
@@ -172,7 +172,7 @@ namespace saucer
 
     std::pair<int, int> window::min_size() const
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return min_size(); }).get();
         }
@@ -182,7 +182,7 @@ namespace saucer
 
     void window::hide()
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return hide(); }).get();
         }
@@ -192,7 +192,7 @@ namespace saucer
 
     void window::show()
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return show(); }).get();
         }
@@ -202,7 +202,7 @@ namespace saucer
 
     void window::close()
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return close(); }).get();
         }
@@ -212,7 +212,7 @@ namespace saucer
 
     void window::focus()
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return focus(); }).get();
         }
@@ -222,7 +222,7 @@ namespace saucer
 
     void window::start_drag()
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this] { return start_drag(); }).get();
         }
@@ -232,7 +232,7 @@ namespace saucer
 
     void window::start_resize(window_edge edge)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, edge] { return start_resize(edge); }).get();
         }
@@ -261,7 +261,7 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, enabled] { return set_minimized(enabled); }).get();
         }
@@ -283,7 +283,7 @@ namespace saucer
 
     void window::set_maximized(bool enabled)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, enabled] { return set_maximized(enabled); }).get();
         }
@@ -304,7 +304,7 @@ namespace saucer
 
     void window::set_resizable(bool enabled)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, enabled] { return set_resizable(enabled); }).get();
         }
@@ -321,7 +321,7 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, enabled] { return set_decorations(enabled); }).get();
         }
@@ -331,7 +331,7 @@ namespace saucer
 
     void window::set_always_on_top(bool enabled)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, enabled] { return set_always_on_top(enabled); }).get();
         }
@@ -346,7 +346,7 @@ namespace saucer
             return;
         }
 
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, icon] { return set_icon(icon); }).get();
         }
@@ -356,7 +356,7 @@ namespace saucer
 
     void window::set_title(const std::string &title)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, title] { return set_title(title); }).get();
         }
@@ -366,7 +366,7 @@ namespace saucer
 
     void window::set_size(int width, int height)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, width, height] { return set_size(width, height); }).get();
         }
@@ -376,7 +376,7 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, width, height] { return set_max_size(width, height); }).get();
         }
@@ -387,7 +387,7 @@ namespace saucer
 
     void window::set_min_size(int width, int height)
     {
-        if (!m_impl->is_thread_safe())
+        if (!impl::is_thread_safe())
         {
             return dispatch([this, width, height] { return set_min_size(width, height); }).get();
         }
