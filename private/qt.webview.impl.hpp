@@ -39,12 +39,6 @@ namespace saucer
         std::unordered_map<std::string, url_scheme_handler> schemes;
 
       public:
-        QMetaObject::Connection url_changed;
-        QMetaObject::Connection icon_changed;
-        QMetaObject::Connection title_changed;
-        QMetaObject::Connection load_finished;
-
-      public:
         template <web_event>
         void setup(webview *);
 

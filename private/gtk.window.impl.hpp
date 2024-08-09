@@ -41,12 +41,6 @@ namespace saucer
         [[nodiscard]] event_data prev_data() const;
 
       public:
-        std::optional<gulong> close_event;
-        std::optional<gulong> focused_event;
-        std::optional<gulong> maximize_event;
-        std::optional<std::pair<gulong, gulong>> resize_event;
-
-      public:
         template <window_event>
         void setup(saucer::window *);
 

@@ -365,28 +365,19 @@ namespace saucer
     {
         if (!impl::is_thread_safe())
         {
-            return dispatch([this, event]() { return clear(event); }).get();
+            return dispatch([this, event] { return clear(event); }).get();
         }
-
-        switch (event)
-        {
-            using enum window_event;
-
-        case close:
-            if (m_impl->close_event)
-            {
-                g_signal_handler_disconnect(m_impl->window.get(), m_impl->close_event.value());
-            }
-            break;
-        default:
-            break;
-        };
 
         m_events.clear(event);
     }
 
     void window::remove(window_event event, std::uint64_t id)
     {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, event, id] { return remove(event, id); }).get();
+        }
+
         m_events.remove(event, id);
     }
 

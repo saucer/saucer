@@ -40,7 +40,9 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::resize>(saucer::window *self)
     {
-        if (self->m_impl->resize_event)
+        auto &event = self->m_events.at<window_event::resize>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -51,16 +53,16 @@ namespace saucer
             self->m_events.at<window_event::resize>().fire(width, height);
         };
 
-        auto w_id = g_signal_connect(self->m_impl->window.get(), "notify::default-width", G_CALLBACK(+callback), self);
-        auto h_id = g_signal_connect(self->m_impl->window.get(), "notify::default-height", G_CALLBACK(+callback), self);
-
-        self->m_impl->resize_event.emplace(w_id, h_id);
+        g_signal_connect(self->m_impl->window.get(), "notify::default-width", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->window.get(), "notify::default-height", G_CALLBACK(+callback), self);
     }
 
     template <>
     void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
     {
-        if (self->m_impl->maximize_event)
+        auto &event = self->m_events.at<window_event::maximize>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -70,8 +72,7 @@ namespace saucer
             self->m_events.at<window_event::maximize>().fire(self->maximized());
         };
 
-        auto id = g_signal_connect(self->m_impl->window.get(), "notify::maximized", G_CALLBACK(+callback), self);
-        self->m_impl->maximize_event.emplace(id);
+        g_signal_connect(self->m_impl->window.get(), "notify::maximized", G_CALLBACK(+callback), self);
     }
 
     template <>
@@ -82,7 +83,9 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::focus>(saucer::window *self)
     {
-        if (self->m_impl->focused_event)
+        auto &event = self->m_events.at<window_event::focus>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -92,14 +95,15 @@ namespace saucer
             self->m_events.at<window_event::focus>().fire(self->focused());
         };
 
-        auto id = g_signal_connect(self->m_impl->window.get(), "notify::is-active", G_CALLBACK(+callback), self);
-        self->m_impl->focused_event.emplace(id);
+        g_signal_connect(self->m_impl->window.get(), "notify::is-active", G_CALLBACK(+callback), self);
     }
 
     template <>
     void saucer::window::impl::setup<window_event::close>(saucer::window *self)
     {
-        if (self->m_impl->close_event)
+        auto &event = self->m_events.at<window_event::close>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -116,7 +120,24 @@ namespace saucer
         };
 
         auto id = g_signal_connect(self->m_impl->window.get(), "close-request", G_CALLBACK(+callback), self);
-        self->m_impl->close_event.emplace(id);
+
+        auto clear = [self, id]()
+        {
+            if (!self->m_events.at<window_event::close>().empty())
+            {
+                return;
+            }
+
+            if (!self->m_events.at<window_event::closed>().empty())
+            {
+                return;
+            }
+
+            g_signal_handler_disconnect(self->m_impl->window.get(), id);
+        };
+
+        event.on_clear(clear);
+        self->m_events.at<window_event::closed>().on_clear(clear);
     }
 
     template <>

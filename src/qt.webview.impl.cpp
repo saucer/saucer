@@ -59,7 +59,9 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::title_changed>(webview *self)
     {
-        if (title_changed)
+        auto &event = self->m_events.at<web_event::title_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -69,13 +71,16 @@ namespace saucer
             self->m_events.at<web_event::title_changed>().fire(title.toStdString());
         };
 
-        title_changed = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
+        auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
+        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
     template <>
     void webview::impl::setup<web_event::load_finished>(webview *self)
     {
-        if (load_finished)
+        auto &event = self->m_events.at<web_event::load_finished>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -85,13 +90,16 @@ namespace saucer
             self->m_events.at<web_event::load_finished>().fire();
         };
 
-        load_finished = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
+        auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
+        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
     template <>
     void webview::impl::setup<web_event::icon_changed>(webview *self)
     {
-        if (icon_changed)
+        auto &event = self->m_events.at<web_event::icon_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -101,7 +109,8 @@ namespace saucer
             self->m_events.at<web_event::icon_changed>().fire(icon{{favicon}});
         };
 
-        icon_changed = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
+        auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
+        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
     template <>
@@ -112,7 +121,9 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::url_changed>(webview *self)
     {
-        if (url_changed)
+        auto &event = self->m_events.at<web_event::url_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -127,7 +138,8 @@ namespace saucer
             self->m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
         };
 
-        url_changed = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
+        auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
+        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
     template <>

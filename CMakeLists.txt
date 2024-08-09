@@ -178,7 +178,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        4.0
+  VERSION        4.1
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
 )
 
@@ -190,7 +190,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        3.2.1
+  VERSION        3.2.2
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
