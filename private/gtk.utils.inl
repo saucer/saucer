@@ -3,10 +3,10 @@
 #include "gtk.utils.hpp"
 
 #include <utility>
+#include <functional>
 
 namespace saucer
 {
-
     template <typename T, auto Ref, auto Unref>
     template <auto Action>
     T *ref_ptr<T, Ref, Unref>::perform(T *data)
@@ -41,7 +41,7 @@ namespace saucer
     template <typename T, auto Ref, auto Unref>
     ref_ptr<T, Ref, Unref>::~ref_ptr()
     {
-        perform<Unref>(m_data);
+        reset(nullptr);
     }
 
     template <typename T, auto Ref, auto Unref>
@@ -49,10 +49,8 @@ namespace saucer
     {
         if (this != &other)
         {
-            perform<Unref>(m_data);
+            reset(other.m_data);
             perform<Ref>(other.m_data);
-
-            m_data = other.m_data;
         }
 
         return *this;
@@ -63,8 +61,7 @@ namespace saucer
     {
         if (this != &other)
         {
-            perform<Unref>(m_data);
-            m_data = std::exchange(other.m_data, nullptr);
+            reset(std::exchange(other.m_data, nullptr));
         }
 
         return *this;
@@ -80,6 +77,13 @@ namespace saucer
     ref_ptr<T, Ref, Unref>::operator bool() const
     {
         return m_data != nullptr;
+    }
+
+    template <typename T, auto Ref, auto Unref>
+    void ref_ptr<T, Ref, Unref>::reset(T *other)
+    {
+        perform<Unref>(m_data);
+        m_data = other;
     }
 
     template <typename T, auto Ref, auto Unref>

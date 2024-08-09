@@ -16,7 +16,11 @@ namespace saucer
 
     struct webview::impl
     {
-        WebKitWebView *web_view;
+        g_object_ptr<WebKitWebView> web_view;
+
+      public:
+        gulong message_received;
+        WebKitUserContentManager *manager;
 
       public:
         bool context_menu;

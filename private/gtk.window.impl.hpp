@@ -30,7 +30,7 @@ namespace saucer
 
     struct window::impl
     {
-        AdwApplicationWindow *window;
+        g_object_ptr<AdwApplicationWindow> window;
 
       public:
         GtkBox *content;
@@ -55,6 +55,7 @@ namespace saucer
         [[nodiscard]] static bool is_thread_safe();
 
       public:
-        static thread_local inline custom_ptr<AdwApplication> application;
+        static inline bool init{false};
+        static thread_local inline g_object_ptr<AdwApplication> application;
     };
 } // namespace saucer

@@ -13,12 +13,12 @@ namespace saucer
 {
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
-        m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+        m_impl->web_view = g_object_ptr<WebKitWebView>::copy(WEBKIT_WEB_VIEW(webkit_web_view_new()));
         m_impl->settings = impl::make_settings(options);
 
         if (options.persistent_cookies)
         {
-            auto *session = webkit_web_view_get_network_session(m_impl->web_view);
+            auto *session = webkit_web_view_get_network_session(m_impl->web_view.get());
             auto *manager = webkit_network_session_get_cookie_manager(session);
 
             auto path = options.storage_path.empty() ? (fs::temp_directory_path() / "saucer") : options.storage_path;
@@ -30,35 +30,35 @@ namespace saucer
             m_impl->settings.get(), options.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
                                                                   : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
-        webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
+        webkit_web_view_set_settings(m_impl->web_view.get(), m_impl->settings.get());
 
-        gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
-        gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view), true);
-        gtk_widget_set_hexpand(GTK_WIDGET(m_impl->web_view), true);
+        gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view.get()), 1, 1);
+        gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view.get()), true);
+        gtk_widget_set_hexpand(GTK_WIDGET(m_impl->web_view.get()), true);
 
-        gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
+        gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view.get()));
 
         auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, void *data)
         {
             return !reinterpret_cast<impl *>(data)->context_menu;
         };
 
-        g_signal_connect(m_impl->web_view, "context-menu", G_CALLBACK(+on_context), m_impl.get());
+        g_signal_connect(m_impl->web_view.get(), "context-menu", G_CALLBACK(+on_context), m_impl.get());
 
-        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
-        webkit_user_content_manager_register_script_message_handler(manager, "saucer", nullptr);
+        m_impl->manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        webkit_user_content_manager_register_script_message_handler(m_impl->manager, "saucer", nullptr);
 
-        auto on_message = [](WebKitWebView *, JSCValue *message, void *data)
+        auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
         {
-            auto str = custom_ptr<char>{jsc_value_to_string(message), [](char *ptr)
-                                        {
-                                            g_free(ptr);
-                                        }};
+            auto *raw = jsc_value_to_string(value);
+            std::string message{raw};
+            g_free(raw);
 
-            reinterpret_cast<webview *>(data)->on_message(str.get());
+            reinterpret_cast<webview *>(data)->on_message(message);
         };
 
-        g_signal_connect(manager, "script-message-received", G_CALLBACK(+on_message), this);
+        m_impl->message_received =
+            g_signal_connect(m_impl->manager, "script-message-received", G_CALLBACK(+on_message), this);
 
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
         {
@@ -85,7 +85,7 @@ namespace saucer
             self->m_events.at<web_event::load_started>().fire();
         };
 
-        g_signal_connect(m_impl->web_view, "load-changed", G_CALLBACK(+on_load), this);
+        g_signal_connect(m_impl->web_view.get(), "load-changed", G_CALLBACK(+on_load), this);
 
         auto *controller = gtk_gesture_click_new();
 
@@ -102,13 +102,16 @@ namespace saucer
         };
 
         g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
-        gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view), GTK_EVENT_CONTROLLER(controller));
+        gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view.get()), GTK_EVENT_CONTROLLER(controller));
 
         inject(impl::inject_script(), load_time::creation);
         inject(std::string{impl::ready_script}, load_time::ready);
     }
 
-    webview::~webview() = default;
+    webview::~webview()
+    {
+        g_signal_handler_disconnect(m_impl->manager, m_impl->message_received);
+    }
 
     bool webview::on_message(const std::string &message)
     {
@@ -158,7 +161,7 @@ namespace saucer
             return dispatch([this] { return favicon(); }).get();
         }
 
-        return {{g_object_ptr<GdkTexture>::copy(webkit_web_view_get_favicon(m_impl->web_view))}};
+        return {{g_object_ptr<GdkTexture>::copy(webkit_web_view_get_favicon(m_impl->web_view.get()))}};
     }
 
     std::string webview::page_title() const
@@ -168,7 +171,7 @@ namespace saucer
             return dispatch([this] { return page_title(); }).get();
         }
 
-        return webkit_web_view_get_title(m_impl->web_view);
+        return webkit_web_view_get_title(m_impl->web_view.get());
     }
 
     bool webview::dev_tools() const
@@ -178,7 +181,7 @@ namespace saucer
             return dispatch([this] { return dev_tools(); }).get();
         }
 
-        auto *settings = webkit_web_view_get_settings(m_impl->web_view);
+        auto *settings = webkit_web_view_get_settings(m_impl->web_view.get());
         return webkit_settings_get_enable_developer_extras(settings);
     }
 
@@ -189,7 +192,7 @@ namespace saucer
             return dispatch([this] { return url(); }).get();
         }
 
-        const auto *rtn = webkit_web_view_get_uri(m_impl->web_view);
+        const auto *rtn = webkit_web_view_get_uri(m_impl->web_view.get());
 
         if (!rtn)
         {
@@ -217,13 +220,13 @@ namespace saucer
         }
 
         GdkRGBA color{};
-        webkit_web_view_get_background_color(m_impl->web_view, &color);
+        webkit_web_view_get_background_color(m_impl->web_view.get(), &color);
 
         return {
-            static_cast<std::uint8_t>(color.red),
-            static_cast<std::uint8_t>(color.green),
-            static_cast<std::uint8_t>(color.blue),
-            static_cast<std::uint8_t>(color.alpha),
+            static_cast<std::uint8_t>(color.red * 255.f),
+            static_cast<std::uint8_t>(color.green * 255.f),
+            static_cast<std::uint8_t>(color.blue * 255.f),
+            static_cast<std::uint8_t>(color.alpha * 255.f),
         };
     }
 
@@ -234,10 +237,10 @@ namespace saucer
             return dispatch([this] { return force_dark_mode(); }).get();
         }
 
-        bool enabled{};
-        g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &enabled, nullptr);
+        AdwColorScheme scheme{};
+        g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
 
-        return enabled;
+        return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -247,8 +250,8 @@ namespace saucer
             return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
         }
 
-        auto *settings  = webkit_web_view_get_settings(m_impl->web_view);
-        auto *inspector = webkit_web_view_get_inspector(m_impl->web_view);
+        auto *settings  = webkit_web_view_get_settings(m_impl->web_view.get());
+        auto *inspector = webkit_web_view_get_inspector(m_impl->web_view.get());
 
         webkit_settings_set_enable_developer_extras(settings, enabled);
         webkit_web_inspector_show(inspector);
@@ -271,7 +274,8 @@ namespace saucer
             return dispatch([this, enabled] { return set_force_dark_mode(enabled); }).get();
         }
 
-        g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", enabled, nullptr);
+        g_object_set(adw_style_manager_get_default(), "color-scheme",
+                     enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT, nullptr);
     }
 
     void webview::set_background(const color &background)
@@ -284,13 +288,13 @@ namespace saucer
         auto [r, g, b, a] = background;
 
         GdkRGBA color{
-            .red   = static_cast<float>(r),
-            .green = static_cast<float>(g),
-            .blue  = static_cast<float>(b),
-            .alpha = static_cast<float>(a),
+            .red   = static_cast<float>(r) / 255.f,
+            .green = static_cast<float>(g) / 255.f,
+            .blue  = static_cast<float>(b) / 255.f,
+            .alpha = static_cast<float>(a) / 255.f,
         };
 
-        webkit_web_view_set_background_color(m_impl->web_view, &color);
+        webkit_web_view_set_background_color(m_impl->web_view.get(), &color);
     }
 
     void webview::set_file(const fs::path &file)
@@ -306,7 +310,7 @@ namespace saucer
             return dispatch([this, url]() { return set_url(url); }).get();
         }
 
-        webkit_web_view_load_uri(m_impl->web_view, url.c_str());
+        webkit_web_view_load_uri(m_impl->web_view.get(), url.c_str());
     }
 
     void webview::serve(const std::string &file, const std::string &scheme)
@@ -321,7 +325,7 @@ namespace saucer
             return dispatch([this]() { return clear_scripts(); }).get();
         }
 
-        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
+        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
 
         for (const auto &script : m_impl->scripts | std::views::drop(2))
         {
@@ -349,8 +353,8 @@ namespace saucer
             return;
         }
 
-        webkit_web_view_evaluate_javascript(m_impl->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr,
-                                            nullptr);
+        webkit_web_view_evaluate_javascript(m_impl->web_view.get(), code.c_str(), -1, nullptr, nullptr, nullptr,
+                                            nullptr, nullptr);
     }
 
     void webview::inject(const std::string &code, load_time time, web_frame frame)
@@ -365,7 +369,7 @@ namespace saucer
         auto webkit_frame = frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
                                                     : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
 
-        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
+        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
         auto *script  = webkit_user_script_new(code.c_str(), webkit_frame, webkit_time, nullptr, nullptr);
 
         m_impl->scripts.emplace_back(script);
@@ -386,7 +390,7 @@ namespace saucer
             return;
         }
 
-        auto *context  = webkit_web_view_get_context(m_impl->web_view);
+        auto *context  = webkit_web_view_get_context(m_impl->web_view.get());
         auto *security = webkit_web_context_get_security_manager(context);
 
         auto state    = std::make_unique<scheme_state>(std::move(handler));
@@ -428,13 +432,13 @@ namespace saucer
         case title_changed:
             if (m_impl->title_changed)
             {
-                g_signal_handler_disconnect(m_impl->web_view, m_impl->title_changed.value());
+                g_signal_handler_disconnect(m_impl->web_view.get(), m_impl->title_changed.value());
             }
             break;
         case icon_changed:
             if (m_impl->icon_changed)
             {
-                g_signal_handler_disconnect(m_impl->web_view, m_impl->icon_changed.value());
+                g_signal_handler_disconnect(m_impl->web_view.get(), m_impl->icon_changed.value());
             }
             break;
         default:

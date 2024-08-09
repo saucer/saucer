@@ -1,15 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <functional>
-
 #include <gtk/gtk.h>
 
 namespace saucer
 {
-    template <typename T>
-    using custom_ptr = std::unique_ptr<T, std::function<void(T *)>>;
-
     template <typename T, auto Ref, auto Unref>
     class ref_ptr
     {
@@ -37,6 +31,9 @@ namespace saucer
       public:
         [[nodiscard]] T *get() const;
         [[nodiscard]] explicit operator bool() const;
+
+      public:
+        void reset(T *other = nullptr);
 
       public:
         static ref_ptr copy(T *data);

@@ -22,7 +22,7 @@ namespace saucer
             self->m_events.at<web_event::title_changed>().fire(self->page_title());
         };
 
-        auto id = g_signal_connect(self->m_impl->web_view, "notify::title", G_CALLBACK(+callback), self);
+        auto id = g_signal_connect(self->m_impl->web_view.get(), "notify::title", G_CALLBACK(+callback), self);
         self->m_impl->title_changed.emplace(id);
     }
 
@@ -44,7 +44,7 @@ namespace saucer
             self->m_events.at<web_event::icon_changed>().fire(self->favicon());
         };
 
-        auto id = g_signal_connect(self->m_impl->web_view, "notify::favicon", G_CALLBACK(+callback), self);
+        auto id = g_signal_connect(self->m_impl->web_view.get(), "notify::favicon", G_CALLBACK(+callback), self);
         self->m_impl->icon_changed.emplace(id);
     }
 

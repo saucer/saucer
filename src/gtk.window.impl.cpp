@@ -4,7 +4,7 @@ namespace saucer
 {
     bool window::impl::is_thread_safe()
     {
-        return impl::application != nullptr;
+        return impl::application.get() != nullptr;
     }
 
     event_data window::impl::prev_data() const
@@ -51,10 +51,10 @@ namespace saucer
             self->m_events.at<window_event::resize>().fire(width, height);
         };
 
-        auto width_id  = g_signal_connect(self->m_impl->window, "notify::default-width", G_CALLBACK(+callback), self);
-        auto height_id = g_signal_connect(self->m_impl->window, "notify::default-height", G_CALLBACK(+callback), self);
+        auto w_id = g_signal_connect(self->m_impl->window.get(), "notify::default-width", G_CALLBACK(+callback), self);
+        auto h_id = g_signal_connect(self->m_impl->window.get(), "notify::default-height", G_CALLBACK(+callback), self);
 
-        self->m_impl->resize_event.emplace(width_id, height_id);
+        self->m_impl->resize_event.emplace(w_id, h_id);
     }
 
     template <>
@@ -70,7 +70,7 @@ namespace saucer
             self->m_events.at<window_event::maximize>().fire(self->maximized());
         };
 
-        auto id = g_signal_connect(self->m_impl->window, "notify::maximized", G_CALLBACK(+callback), self);
+        auto id = g_signal_connect(self->m_impl->window.get(), "notify::maximized", G_CALLBACK(+callback), self);
         self->m_impl->maximize_event.emplace(id);
     }
 
@@ -92,7 +92,7 @@ namespace saucer
             self->m_events.at<window_event::focus>().fire(self->focused());
         };
 
-        auto id = g_signal_connect(self->m_impl->window, "notify::is-active", G_CALLBACK(+callback), self);
+        auto id = g_signal_connect(self->m_impl->window.get(), "notify::is-active", G_CALLBACK(+callback), self);
         self->m_impl->focused_event.emplace(id);
     }
 
@@ -109,7 +109,7 @@ namespace saucer
             self->m_events.at<window_event::closed>().fire();
         };
 
-        auto id = g_signal_connect(self->m_impl->window, "destroy", G_CALLBACK(+callback), self);
+        auto id = g_signal_connect(self->m_impl->window.get(), "destroy", G_CALLBACK(+callback), self);
         self->m_impl->closed_event.emplace(id);
     }
 
@@ -126,7 +126,7 @@ namespace saucer
             return self->m_events.at<window_event::close>().until(true).value_or(false);
         };
 
-        auto id = g_signal_connect(self->m_impl->window, "close-request", G_CALLBACK(+callback), self);
+        auto id = g_signal_connect(self->m_impl->window.get(), "close-request", G_CALLBACK(+callback), self);
         self->m_impl->close_event.emplace(id);
     }
 } // namespace saucer
