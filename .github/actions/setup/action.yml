@@ -23,7 +23,7 @@ runs:
     - name: 📋 Install Base Dependencies
       shell: bash
       if: inputs.platform == 'Linux'
-      run: "pacman --noconfirm -Syu cmake gcc git xorg-server-xvfb xorg-xwd imagemagick"
+      run: "pacman --noconfirm -Syu cmake gcc git xorg-server-xvfb xorg-xwd"
 
     - name: 📋 Install Qt5-Dependencies
       shell: bash
@@ -43,7 +43,5 @@ runs:
     - name: 🔨 Compile
       shell: bash
       run: |
-        mkdir build 
-        cd build
-        cmake .. -Dsaucer_backend=${{ inputs.backend }} ${{ inputs.cmake-args }}
-        cmake --build . --config ${{ inputs.build-type }}
+        cmake -B build -Dsaucer_backend=${{ inputs.backend }} ${{ inputs.cmake-args }}
+        cmake --build build --config ${{ inputs.build-type }}

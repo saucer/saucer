@@ -7,5 +7,9 @@ runs:
     - name: 🧪 Run Tests
       shell: bash
       run: |
-        Xvfb :1 -screen 1 1920x1080x16 & 
-        QTWEBENGINE_DISABLE_SANDBOX=1 DISPLAY=:1 "./build/tests/saucer-tests"
+        Xvfb :1 -screen 1 1920x1080x16 &
+
+        export DISPLAY=:1
+        export QTWEBENGINE_DISABLE_SANDBOX=1
+
+        ctest --test-dir build/tests --verbose

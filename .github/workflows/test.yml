@@ -38,7 +38,4 @@ jobs:
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
+        if: ${{ matrix.backend != "WebKitGtk" }}

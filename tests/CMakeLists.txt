@@ -36,3 +36,11 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Boost::ut saucer::saucer)
+
+# --------------------------------------------------------------------------------------------------------
+# Add Test-Target
+# --------------------------------------------------------------------------------------------------------
+
+include(CTest)
+
+add_test(NAME saucer-tests COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
