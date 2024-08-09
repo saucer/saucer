@@ -71,24 +71,26 @@ namespace saucer
 
             switch (result.error())
             {
-            case request_error::aborted:
+                using enum request_error;
+
+            case aborted:
                 status = 500;
                 phrase = "Aborted";
                 break;
-            case request_error::bad_url:
+            case bad_url:
                 status = 500;
                 phrase = "Invalid Url";
                 break;
-            case request_error::denied:
+            case denied:
                 status = 401;
                 phrase = "Unauthorized";
                 break;
-            case request_error::not_found:
+            case not_found:
                 status = 404;
                 phrase = "Not Found";
                 break;
             default:
-            case request_error::failed:
+            case failed:
                 status = 500;
                 phrase = "Failed";
                 break;

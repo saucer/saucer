@@ -498,15 +498,17 @@ namespace saucer
 
         switch (event)
         {
-        case web_event::title_changed:
+            using enum web_event;
+
+        case title_changed:
             m_impl->web_view->remove_DocumentTitleChanged(m_impl->title_token.value_or(EventRegistrationToken{}));
             m_impl->title_token.reset();
             break;
-        case web_event::load_finished:
+        case load_finished:
             m_impl->web_view->remove_NavigationCompleted(m_impl->load_token.value_or(EventRegistrationToken{}));
             m_impl->load_token.reset();
             break;
-        case web_event::url_changed:
+        case url_changed:
             m_impl->web_view->remove_SourceChanged(m_impl->source_token.value_or(EventRegistrationToken{}));
             m_impl->source_token.reset();
             break;

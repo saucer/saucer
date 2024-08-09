@@ -153,20 +153,22 @@ namespace saucer
         {
             switch (result.error())
             {
-            case request_error::aborted:
+                using enum request_error;
+
+            case aborted:
                 environment->CreateWebResourceResponse(nullptr, 500, L"Aborted", L"", &response);
                 break;
-            case request_error::bad_url:
+            case bad_url:
                 environment->CreateWebResourceResponse(nullptr, 500, L"Invalid Url", L"", &response);
                 break;
-            case request_error::denied:
+            case denied:
                 environment->CreateWebResourceResponse(nullptr, 401, L"Unauthorized", L"", &response);
                 break;
-            case request_error::not_found:
+            case not_found:
                 environment->CreateWebResourceResponse(nullptr, 404, L"Not Found", L"", &response);
                 break;
             default:
-            case request_error::failed:
+            case failed:
                 environment->CreateWebResourceResponse(nullptr, 500, L"Failed", L"", &response);
                 break;
             }

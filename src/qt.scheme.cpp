@@ -63,16 +63,18 @@ namespace saucer
         {
             switch (result.error())
             {
-            case request_error::aborted:
+                using enum request_error;
+
+            case aborted:
                 return request->fail(QWebEngineUrlRequestJob::RequestAborted);
-            case request_error::bad_url:
+            case bad_url:
                 return request->fail(QWebEngineUrlRequestJob::UrlInvalid);
-            case request_error::denied:
+            case denied:
                 return request->fail(QWebEngineUrlRequestJob::RequestDenied);
-            case request_error::not_found:
+            case not_found:
                 return request->fail(QWebEngineUrlRequestJob::UrlNotFound);
             default:
-            case request_error::failed:
+            case failed:
                 return request->fail(QWebEngineUrlRequestJob::RequestFailed);
             }
         }

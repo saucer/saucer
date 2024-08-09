@@ -367,16 +367,18 @@ namespace saucer
 
         switch (event)
         {
-        case web_event::title_changed:
+            using enum web_event;
+
+        case title_changed:
             m_impl->web_view->disconnect(m_impl->title_changed);
             break;
-        case web_event::load_finished:
+        case load_finished:
             m_impl->web_view->disconnect(m_impl->load_finished);
             break;
-        case web_event::icon_changed:
+        case icon_changed:
             m_impl->web_view->disconnect(m_impl->icon_changed);
             break;
-        case web_event::url_changed:
+        case url_changed:
             m_impl->web_view->disconnect(m_impl->url_changed);
             break;
         default:
