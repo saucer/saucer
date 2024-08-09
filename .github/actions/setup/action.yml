@@ -35,6 +35,11 @@ runs:
       if: inputs.backend == 'Qt6'
       run: "pacman --noconfirm -Syu qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
 
+    - name: 📋 Install WebKitGtk-Dependencies
+      shell: bash
+      if: inputs.backend == 'WebKitGtk'
+      run: "pacman --noconfirm -Syu gtk4 webkitgtk-6.0"
+
     - name: 🔨 Compile
       shell: bash
       run: |

@@ -13,6 +13,7 @@ jobs:
         backend:
           - Qt5
           - Qt6
+          - WebKitGtk
         config:
           - Release
           - Debug
