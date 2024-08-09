@@ -38,7 +38,7 @@ runs:
     - name: 📋 Install WebKitGtk-Dependencies
       shell: bash
       if: inputs.backend == 'WebKitGtk'
-      run: "pacman --noconfirm -Syu gtk4 webkitgtk-6.0"
+      run: "pacman --noconfirm -Syu gtk4 libadwaita webkitgtk-6.0"
 
     - name: 🔨 Compile
       shell: bash
