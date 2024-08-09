@@ -43,8 +43,9 @@ Checks: "*,
         -performance-no-int-to-ptr,
         -cppcoreguidelines-interfaces-global-init,
         -*-avoid-c-arrays,
-        -hicpp-no-array-decay
-        -*-array-to-pointer-decay
+        -hicpp-no-array-decay,
+        -*-array-to-pointer-decay,
+        -readability-isolate-declaration
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
