@@ -38,4 +38,4 @@ jobs:
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-        if: ${{ matrix.backend != "WebKitGtk" }}
+        if: ${{ matrix.backend != 'WebKitGtk' }}
