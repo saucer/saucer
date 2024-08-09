@@ -4,8 +4,8 @@
 
 #include <optional>
 
+#include <fmt/core.h>
 #include <fmt/xchar.h>
-#include <fmt/format.h>
 
 #include <boost/callable_traits.hpp>
 
