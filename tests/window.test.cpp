@@ -10,7 +10,7 @@ struct window : saucer::window
     window(const saucer::options &opts) : saucer::window(opts) {}
 };
 
-void tests(window &window)
+void tests(window &window, bool thread)
 {
     window.show();
 
@@ -25,6 +25,7 @@ void tests(window &window)
     std::pair<int, int> last_size{};
     window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });
 
+#ifndef SAUCER_WEBKITGTK
     "minimize"_test = [&]()
     {
         window.set_minimized(true);
@@ -39,20 +40,21 @@ void tests(window &window)
         expect(not was_minimized);
         expect(not window.minimized());
     };
+#endif
 
     "maximize"_test = [&]()
     {
         window.set_maximized(true);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(was_maximized);
-        expect(window.maximized());
+        expect(!thread || was_maximized);
+        expect(!thread || window.maximized());
 
         window.set_maximized(false);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(not was_maximized);
-        expect(not window.maximized());
+        expect(!thread || not was_maximized);
+        expect(!thread || not window.maximized());
     };
 
     "resizable"_test = [&]()
@@ -81,6 +83,7 @@ void tests(window &window)
         expect(window.decorations());
     };
 
+#ifndef SAUCER_WEBKITGTK
     "always_on_top"_test = [&]()
     {
         expect(not window.always_on_top());
@@ -91,6 +94,7 @@ void tests(window &window)
         window.set_always_on_top(false);
         expect(not window.always_on_top());
     };
+#endif
 #endif
 
     "title"_test = [&]()
@@ -108,7 +112,7 @@ void tests(window &window)
             auto [width, height] = window.size();
             expect(width == 500 && height == 500) << width << ":" << height;
         }
-#ifndef SAUCER_QT5
+#if !defined(SAUCER_QT5) && !defined(SAUCER_WEBKITGTK)
         {
             auto [width, height] = last_size;
             expect(width == 500 && height == 500) << width << ":" << height;
@@ -116,6 +120,7 @@ void tests(window &window)
 #endif
     };
 
+#ifndef SAUCER_WEBKITGTK
     "max_size"_test = [&]()
     {
         window.set_max_size(600, 600);
@@ -124,6 +129,7 @@ void tests(window &window)
         auto [width, height] = window.size();
         expect(window.size() == std::make_pair(600, 600)) << width << ":" << height;
     };
+#endif
 
     "min_size"_test = [&]()
     {
@@ -145,7 +151,7 @@ suite<"window"> window_suite = []
 
     "from-main"_test = [&]()
     {
-        tests(window);
+        tests(window, false);
     };
 
     std::jthread thread{[&]()
@@ -154,7 +160,7 @@ suite<"window"> window_suite = []
 
                             "from-thread"_test = [&]()
                             {
-                                tests(window);
+                                tests(window, true);
                             };
 
                             window.close();

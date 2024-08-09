@@ -257,7 +257,7 @@ void tests(saucer::webview &webview)
 
     "inject"_test = [&]()
     {
-        webview.inject("if (location.href.includes('cppref')) { location.href = 'https://isocpp.org'; }",
+        webview.inject("if (location.href.includes('cppreference')) { location.href = 'https://isocpp.org'; }",
                        saucer::load_time::creation);
 
         {
@@ -275,7 +275,7 @@ void tests(saucer::webview &webview)
             webview.set_url("https://cppreference.com/");
         }
 
-        expect(webview.url().contains("cppreference.com"));
+        expect(webview.url().contains("cppreference"));
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
         auto title = webview.page_title();
