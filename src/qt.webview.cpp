@@ -421,8 +421,6 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    INSTANTIATE_EVENTS(webview, 6, web_event)
-
     void webview::register_scheme(const std::string &name)
     {
         auto scheme = QWebEngineUrlScheme{name.c_str()};
@@ -433,4 +431,6 @@ namespace saucer
 
         QWebEngineUrlScheme::registerScheme(scheme);
     }
+
+    INSTANTIATE_EVENTS(webview, 6, web_event)
 } // namespace saucer

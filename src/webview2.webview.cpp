@@ -537,8 +537,6 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    INSTANTIATE_EVENTS(webview, 6, web_event)
-
     void webview::register_scheme(const std::string &name)
     {
         static std::unordered_map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
@@ -569,4 +567,6 @@ namespace saucer
 
         utils::throw_error("Failed to register scheme(s)");
     }
+
+    INSTANTIATE_EVENTS(webview, 6, web_event)
 } // namespace saucer

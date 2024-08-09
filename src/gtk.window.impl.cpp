@@ -1,5 +1,7 @@
 #include "gtk.window.impl.hpp"
 
+#include "warnings.hpp"
+
 namespace saucer
 {
     bool window::impl::is_thread_safe()
@@ -35,5 +37,99 @@ namespace saucer
             .x       = out.x,
             .y       = out.y,
         };
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::resize>(saucer::window *self)
+    {
+        if (self->m_impl->resize_event)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        {
+            auto [width, height] = self->size();
+            self->m_events.at<window_event::resize>().fire(width, height);
+        };
+
+        auto width_id  = g_signal_connect(self->m_impl->window, "notify::default-width", G_CALLBACK(+callback), self);
+        auto height_id = g_signal_connect(self->m_impl->window, "notify::default-height", G_CALLBACK(+callback), self);
+
+        self->m_impl->resize_event.emplace(width_id, height_id);
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
+    {
+        if (self->m_impl->maximize_event)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        {
+            self->m_events.at<window_event::maximize>().fire(self->maximized());
+        };
+
+        auto id = g_signal_connect(self->m_impl->window, "notify::maximized", G_CALLBACK(+callback), self);
+        self->m_impl->maximize_event.emplace(id);
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::minimize>(saucer::window *)
+    {
+        emit_warning<gtk_warning>();
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::focus>(saucer::window *self)
+    {
+        if (self->m_impl->focused_event)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        {
+            self->m_events.at<window_event::focus>().fire(self->focused());
+        };
+
+        auto id = g_signal_connect(self->m_impl->window, "notify::is-active", G_CALLBACK(+callback), self);
+        self->m_impl->focused_event.emplace(id);
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::closed>(saucer::window *self)
+    {
+        if (self->m_impl->closed_event)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWidget *, saucer::window *self)
+        {
+            self->m_events.at<window_event::closed>().fire();
+        };
+
+        auto id = g_signal_connect(self->m_impl->window, "destroy", G_CALLBACK(+callback), self);
+        self->m_impl->closed_event.emplace(id);
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::close>(saucer::window *self)
+    {
+        if (self->m_impl->close_event)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWindow *, saucer::window *self)
+        {
+            return self->m_events.at<window_event::close>().until(true).value_or(false);
+        };
+
+        auto id = g_signal_connect(self->m_impl->window, "close-request", G_CALLBACK(+callback), self);
+        self->m_impl->close_event.emplace(id);
     }
 } // namespace saucer

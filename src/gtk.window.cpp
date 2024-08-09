@@ -1,7 +1,7 @@
-#include "window.hpp"
 #include "gtk.window.impl.hpp"
 
 #include "warnings.hpp"
+#include "instantiate.hpp"
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -81,18 +81,10 @@ namespace saucer
         return gtk_window_is_active(GTK_WINDOW(m_impl->window));
     }
 
-    bool window::minimized() const
+    bool window::minimized() const // NOLINT
     {
-        if (!m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return minimized(); }).get();
-        }
-
-        auto *native  = gtk_widget_get_native(GTK_WIDGET(m_impl->window));
-        auto *surface = gtk_native_get_surface(native);
-        auto state    = gdk_toplevel_get_state(GDK_TOPLEVEL(surface));
-
-        return state & GDK_TOPLEVEL_STATE_MINIMIZED;
+        emit_warning<gtk_warning>();
+        return {};
     }
 
     bool window::maximized() const
@@ -148,8 +140,8 @@ namespace saucer
             return dispatch([this] { return size(); }).get();
         }
 
-        auto width  = gtk_widget_get_size(GTK_WIDGET(m_impl->window), GTK_ORIENTATION_HORIZONTAL);
-        auto height = gtk_widget_get_size(GTK_WIDGET(m_impl->window), GTK_ORIENTATION_VERTICAL);
+        int width{}, height{};
+        gtk_window_get_default_size(GTK_WINDOW(m_impl->window), &width, &height);
 
         return {width, height};
     }
@@ -362,6 +354,44 @@ namespace saucer
         gtk_widget_set_size_request(GTK_WIDGET(m_impl->window), width, height);
     }
 
+    void window::clear(window_event event)
+    {
+        m_events.clear(event);
+    }
+
+    void window::remove(window_event event, std::uint64_t id)
+    {
+        m_events.remove(event, id);
+    }
+
+    template <window_event Event>
+    void window::once(events::type<Event> callback)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable
+                            { return once<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
+        m_events.at<Event>().once(std::move(callback));
+    }
+
+    template <window_event Event>
+    std::uint64_t window::on(events::type<Event> callback)
+    {
+        if (!m_impl->is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable //
+                            { return on<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
+        return m_events.at<Event>().add(std::move(callback));
+    }
+
     template <>
     void window::run<true>()
     {
@@ -388,8 +418,9 @@ namespace saucer
             return;
         }
 
-        if (!init && g_application_register(G_APPLICATION(impl::application.get()), nullptr, nullptr))
+        if (!init)
         {
+            g_application_register(G_APPLICATION(impl::application.get()), nullptr, nullptr);
             g_application_activate(G_APPLICATION(impl::application.get()));
             init = true;
         }
@@ -397,4 +428,6 @@ namespace saucer
         g_main_context_iteration(context, false);
         g_main_context_release(context);
     }
+
+    INSTANTIATE_EVENTS(window, 6, window_event)
 } // namespace saucer
