@@ -356,6 +356,50 @@ namespace saucer
 
     void window::clear(window_event event)
     {
+        if (!m_impl->is_thread_safe())
+        {
+            return dispatch([this, event]() { return clear(event); }).get();
+        }
+
+        switch (event)
+        {
+            using enum window_event;
+
+        case resize:
+            if (m_impl->resize_event)
+            {
+                auto [width_id, height_id] = m_impl->resize_event.value();
+                g_signal_handler_disconnect(m_impl->window, width_id);
+                g_signal_handler_disconnect(m_impl->window, height_id);
+            }
+            break;
+        case maximize:
+            if (m_impl->maximize_event)
+            {
+                g_signal_handler_disconnect(m_impl->window, m_impl->maximize_event.value());
+            }
+            break;
+        case focus:
+            if (m_impl->focused_event)
+            {
+                g_signal_handler_disconnect(m_impl->window, m_impl->focused_event.value());
+            }
+            break;
+        case closed:
+            if (m_impl->closed_event)
+            {
+                g_signal_handler_disconnect(m_impl->window, m_impl->closed_event.value());
+            }
+        case close:
+            if (m_impl->close_event)
+            {
+                g_signal_handler_disconnect(m_impl->window, m_impl->close_event.value());
+            }
+            break;
+        default:
+            break;
+        };
+
         m_events.clear(event);
     }
 

@@ -3,6 +3,7 @@
 #include "window.hpp"
 #include "gtk.utils.hpp"
 
+#include <optional>
 #include <adwaita.h>
 
 namespace saucer
