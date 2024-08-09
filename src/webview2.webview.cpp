@@ -397,32 +397,32 @@ namespace saucer
         m_impl->injected.resize(1);
     }
 
-    void webview::execute(const std::string &java_script)
+    void webview::execute(const std::string &code)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, java_script]() { return execute(java_script); }).get();
+            return dispatch([this, code]() { return execute(code); }).get();
         }
 
         if (!m_impl->dom_loaded)
         {
-            m_impl->pending.emplace_back(java_script);
+            m_impl->pending.emplace_back(code);
             return;
         }
 
-        m_impl->web_view->ExecuteScript(utils::widen(java_script).c_str(), nullptr);
+        m_impl->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
     }
 
-    void webview::inject(const std::string &java_script, const load_time &load_time)
+    void webview::inject(const std::string &code, load_time time, web_frame frame)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, java_script, load_time]() { return inject(java_script, load_time); }).get();
+            return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
         }
 
-        if (load_time == load_time::ready)
+        if (time == load_time::ready)
         {
-            m_impl->scripts.emplace_back(java_script);
+            m_impl->scripts.emplace_back(code);
             return;
         }
 
@@ -432,7 +432,20 @@ namespace saucer
             return S_OK;
         };
 
-        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(java_script).c_str(),
+        auto source = code;
+
+        if (frame == web_frame::top)
+        {
+            source = fmt::format(R"js(
+            if (self === top)
+            {{
+                {}
+            }}
+            )js",
+                                 code);
+        }
+
+        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(source).c_str(),
                                                               Callback<ScriptInjected>(callback).Get());
     }
 

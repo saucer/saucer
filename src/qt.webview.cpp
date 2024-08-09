@@ -45,6 +45,8 @@ namespace saucer
         m_impl->channel     = std::make_unique<QWebChannel>();
         m_impl->channel_obj = std::make_unique<impl::web_class>(this);
 
+        window::m_impl->window->setCentralWidget(m_impl->web_view.get());
+
         m_impl->web_view->setPage(m_impl->web_page.get());
         m_impl->web_page->setWebChannel(m_impl->channel.get());
         m_impl->channel->registerObject("saucer", m_impl->channel_obj.get());
@@ -64,7 +66,6 @@ namespace saucer
         inject(impl::inject_script(), load_time::creation);
         inject(std::string{impl::ready_script}, load_time::ready);
 
-        window::m_impl->window->setCentralWidget(m_impl->web_view.get());
         m_impl->web_view->show();
     }
 
@@ -309,20 +310,20 @@ namespace saucer
         inject(impl::inject_script(), load_time::creation);
     }
 
-    void webview::execute(const std::string &java_script)
+    void webview::execute(const std::string &code)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, java_script] { execute(java_script); }).get();
+            return dispatch([this, code] { execute(code); }).get();
         }
 
         if (!m_impl->dom_loaded)
         {
-            m_impl->pending.emplace_back(java_script);
+            m_impl->pending.emplace_back(code);
             return;
         }
 
-        m_impl->web_view->page()->runJavaScript(QString::fromStdString(java_script));
+        m_impl->web_view->page()->runJavaScript(QString::fromStdString(code));
     }
 
     void webview::handle_scheme(const std::string &name, scheme_handler handler)

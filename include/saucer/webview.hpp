@@ -23,6 +23,12 @@ namespace saucer
         ready,
     };
 
+    enum class web_frame
+    {
+        top,
+        all,
+    };
+
     enum class web_event
     {
         title_changed,
@@ -111,8 +117,8 @@ namespace saucer
         [[sc::thread_safe]] void clear_embedded(const std::string &file);
 
       public:
-        [[sc::thread_safe]] void execute(const std::string &java_script);
-        [[sc::thread_safe]] void inject(const std::string &java_script, const load_time &load_time);
+        [[sc::thread_safe]] void execute(const std::string &code);
+        [[sc::thread_safe]] void inject(const std::string &code, load_time time, web_frame frame = web_frame::top);
 
       public:
         [[sc::thread_safe]] void handle_scheme(const std::string &name, scheme_handler handler);

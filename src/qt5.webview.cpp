@@ -5,19 +5,21 @@
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 
+#include <fmt/core.h>
+
 namespace saucer
 {
-    void webview::inject(const std::string &java_script, const load_time &load_time)
+    void webview::inject(const std::string &code, load_time time, web_frame frame)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, java_script, load_time] { inject(java_script, load_time); }).get();
+            return dispatch([this, code, time, frame] { inject(code, time, frame); }).get();
         }
 
         QWebEngineScript script;
         bool found = false;
 
-        switch (load_time)
+        switch (time)
         {
         case load_time::creation:
             script = m_impl->web_view->page()->scripts().findScript("_creation");
@@ -40,14 +42,26 @@ namespace saucer
         {
             script.setRunsOnSubFrames(false);
             script.setWorldId(QWebEngineScript::MainWorld);
-            script.setSourceCode(QString::fromStdString(java_script));
         }
         else
         {
             m_impl->web_view->page()->scripts().remove(script);
-            script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(java_script));
         }
 
+        auto source = code;
+
+        if (frame == web_frame::top)
+        {
+            source = fmt::format(R"js(
+            if (self === top)
+            {{
+                {}
+            }}
+            )js",
+                                 code);
+        }
+
+        script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(source));
         m_impl->web_view->page()->scripts().insert(script);
     }
 } // namespace saucer

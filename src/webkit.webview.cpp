@@ -353,18 +353,20 @@ namespace saucer
                                             nullptr);
     }
 
-    void webview::inject(const std::string &code, load_time time)
+    void webview::inject(const std::string &code, load_time time, web_frame frame)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, code, time]() { return inject(code, time); }).get();
+            return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
         }
 
+        auto webkit_time  = time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
+                                                        : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
+        auto webkit_frame = frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
+                                                    : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
+
         auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
-        auto *script  = webkit_user_script_new(code.c_str(), WEBKIT_USER_CONTENT_INJECT_TOP_FRAME,
-                                              time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                                           : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END,
-                                               nullptr, nullptr);
+        auto *script  = webkit_user_script_new(code.c_str(), webkit_frame, webkit_time, nullptr, nullptr);
 
         m_impl->scripts.emplace_back(script);
         webkit_user_content_manager_add_script(manager, script);
