@@ -45,6 +45,12 @@ namespace saucer
             adw_application_window_set_content(self->window.get(), GTK_WIDGET(self->content));
         };
 
+        if (impl::init)
+        {
+            std::invoke(callback, nullptr, m_impl.get());
+            return;
+        }
+
         auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
 
         while (!m_impl->window.get())
