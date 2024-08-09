@@ -5,6 +5,7 @@
 #include "webkit.scheme.impl.hpp"
 
 #include "requests.hpp"
+#include "instantiate.hpp"
 
 #include <fmt/core.h>
 
@@ -61,12 +62,24 @@ namespace saucer
 
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
         {
+            auto *self = reinterpret_cast<webview *>(data);
+
+            if (event == WEBKIT_LOAD_COMMITTED)
+            {
+                self->m_events.at<web_event::url_changed>().fire(self->url());
+                return;
+            }
+
+            if (event == WEBKIT_LOAD_FINISHED)
+            {
+                self->m_events.at<web_event::load_finished>().fire();
+                return;
+            }
+
             if (event != WEBKIT_LOAD_STARTED)
             {
                 return;
             }
-
-            auto *self = reinterpret_cast<webview *>(data);
 
             self->m_impl->dom_loaded = false;
             self->m_events.at<web_event::load_started>().fire();
@@ -214,10 +227,17 @@ namespace saucer
         };
     }
 
-    bool webview::force_dark_mode() const // NOLINT
+    bool webview::force_dark_mode() const
     {
-        // TODO: Is this possible?
-        return {};
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return force_dark_mode(); }).get();
+        }
+
+        bool enabled{};
+        g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &enabled, nullptr);
+
+        return enabled;
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -244,9 +264,14 @@ namespace saucer
         m_impl->context_menu = enabled;
     }
 
-    void webview::set_force_dark_mode(bool)
+    void webview::set_force_dark_mode(bool enabled)
     {
-        // TODO: Is this possible?
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, enabled] { return set_force_dark_mode(enabled); }).get();
+        }
+
+        g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", enabled, nullptr);
     }
 
     void webview::set_background(const color &background)
@@ -311,36 +336,35 @@ namespace saucer
         m_impl->scripts.resize(2);
     }
 
-    void webview::execute(const std::string &java_script)
+    void webview::execute(const std::string &code)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, java_script]() { return execute(java_script); }).get();
+            return dispatch([this, code]() { return execute(code); }).get();
         }
 
         if (!m_impl->dom_loaded)
         {
-            m_impl->pending.emplace_back(java_script);
+            m_impl->pending.emplace_back(code);
             return;
         }
 
-        webkit_web_view_evaluate_javascript(m_impl->web_view, java_script.c_str(), -1, nullptr, nullptr, nullptr,
-                                            nullptr, nullptr);
+        webkit_web_view_evaluate_javascript(m_impl->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr,
+                                            nullptr);
     }
 
-    void webview::inject(const std::string &java_script, const load_time &load_time)
+    void webview::inject(const std::string &code, load_time time)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, java_script, load_time]() { return inject(java_script, load_time); }).get();
+            return dispatch([this, code, time]() { return inject(code, time); }).get();
         }
 
         auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
-        auto *script =
-            webkit_user_script_new(java_script.c_str(), WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
-                                   load_time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                                    : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END,
-                                   nullptr, nullptr);
+        auto *script  = webkit_user_script_new(code.c_str(), WEBKIT_USER_CONTENT_INJECT_TOP_FRAME,
+                                              time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
+                                                                           : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END,
+                                               nullptr, nullptr);
 
         m_impl->scripts.emplace_back(script);
         webkit_user_content_manager_add_script(manager, script);
@@ -388,8 +412,73 @@ namespace saucer
         m_impl->schemes.at(name)->handler = nullptr;
     }
 
+    void webview::clear(web_event event)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, event]() { return clear(event); }).get();
+        }
+
+        switch (event)
+        {
+            using enum web_event;
+
+        case title_changed:
+            if (m_impl->title_changed)
+            {
+                g_signal_handler_disconnect(m_impl->web_view, m_impl->title_changed.value());
+            }
+            break;
+        case icon_changed:
+            if (m_impl->icon_changed)
+            {
+                g_signal_handler_disconnect(m_impl->web_view, m_impl->icon_changed.value());
+            }
+            break;
+        default:
+            break;
+        };
+
+        m_events.clear(event);
+    }
+
+    void webview::remove(web_event event, std::uint64_t id)
+    {
+        m_events.remove(event, id);
+    }
+
+    template <web_event Event>
+    void webview::once(events::type<Event> callback)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable
+                            { return once<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
+        m_events.at<Event>().once(std::move(callback));
+    }
+
+    template <web_event Event>
+    std::uint64_t webview::on(events::type<Event> callback)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable //
+                            { return on<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
+        return m_events.at<Event>().add(std::move(callback));
+    }
+
     void webview::register_scheme(const std::string &)
     {
         //? Registering schemes before hand is not required for webkit.
     }
+
+    INSTANTIATE_EVENTS(webview, 6, web_event)
 } // namespace saucer

@@ -9,6 +9,60 @@
 
 namespace saucer
 {
+    template <>
+    void saucer::webview::impl::setup<web_event::title_changed>(webview *self)
+    {
+        if (self->m_impl->title_changed)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWindow *, GParamSpec *, webview *self)
+        {
+            self->m_events.at<web_event::title_changed>().fire(self->page_title());
+        };
+
+        auto id = g_signal_connect(self->m_impl->web_view, "notify::title", G_CALLBACK(+callback), self);
+        self->m_impl->title_changed.emplace(id);
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::load_finished>(webview *)
+    {
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::icon_changed>(webview *self)
+    {
+        if (self->m_impl->icon_changed)
+        {
+            return;
+        }
+
+        auto callback = [](GtkWindow *, GParamSpec *, webview *self)
+        {
+            self->m_events.at<web_event::icon_changed>().fire(self->favicon());
+        };
+
+        auto id = g_signal_connect(self->m_impl->web_view, "notify::favicon", G_CALLBACK(+callback), self);
+        self->m_impl->icon_changed.emplace(id);
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::load_started>(webview *)
+    {
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::url_changed>(webview *)
+    {
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
+    {
+    }
+
     const std::string &webview::impl::inject_script()
     {
         static std::optional<std::string> instance;
