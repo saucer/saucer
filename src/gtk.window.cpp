@@ -1,6 +1,5 @@
 #include "gtk.window.impl.hpp"
 
-#include "warnings.hpp"
 #include "instantiate.hpp"
 
 #include <gdk/gdk.h>
@@ -83,7 +82,6 @@ namespace saucer
 
     bool window::minimized() const // NOLINT
     {
-        emit_warning<gtk_warning>();
         return {};
     }
 
@@ -119,7 +117,6 @@ namespace saucer
 
     bool window::always_on_top() const // NOLINT
     {
-        emit_warning<gtk_warning>();
         return {};
     }
 
@@ -148,7 +145,6 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const // NOLINT
     {
-        emit_warning<gtk_warning>();
         return {};
     }
 
@@ -197,7 +193,6 @@ namespace saucer
 
     void window::focus() // NOLINT
     {
-        emit_warning<gtk_warning>();
     }
 
     void window::start_drag()
@@ -256,8 +251,6 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
-        emit_warning<gtk_buggy_warning>();
-
         if (!m_impl->is_thread_safe())
         {
             return dispatch([this, enabled] { return set_minimized(true); }).get();
@@ -311,12 +304,10 @@ namespace saucer
 
     void window::set_always_on_top(bool) // NOLINT
     {
-        emit_warning<gtk_warning>();
     }
 
     void window::set_icon(const icon &) // NOLINT
     {
-        emit_warning<gtk_warning>();
     }
 
     void window::set_title(const std::string &title)
@@ -341,7 +332,6 @@ namespace saucer
 
     void window::set_max_size(int, int) // NOLINT
     {
-        emit_warning<gtk_warning>();
     }
 
     void window::set_min_size(int width, int height)

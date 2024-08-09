@@ -1,7 +1,5 @@
 #include "gtk.window.impl.hpp"
 
-#include "warnings.hpp"
-
 namespace saucer
 {
     bool window::impl::is_thread_safe()
@@ -79,7 +77,6 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::minimize>(saucer::window *)
     {
-        emit_warning<gtk_warning>();
     }
 
     template <>

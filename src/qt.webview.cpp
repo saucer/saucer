@@ -1,6 +1,5 @@
 #include "qt.webview.impl.hpp"
 
-#include "warnings.hpp"
 #include "instantiate.hpp"
 
 #include "qt.icon.impl.hpp"
@@ -190,7 +189,6 @@ namespace saucer
         const auto *settings = m_impl->profile->settings();
         return settings->testAttribute(QWebEngineSettings::ForceDarkMode);
 #else
-        emit_warning<qt67_warning>();
         return {};
 #endif
     }
@@ -245,8 +243,6 @@ namespace saucer
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         auto *settings = m_impl->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
-#else
-        emit_warning<qt67_warning>();
 #endif
     }
 
