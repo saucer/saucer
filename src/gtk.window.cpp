@@ -369,11 +369,6 @@ namespace saucer
         {
             using enum window_event;
 
-        case closed:
-            if (m_impl->closed_event)
-            {
-                g_signal_handler_disconnect(m_impl->window.get(), m_impl->closed_event.value());
-            }
         case close:
             if (m_impl->close_event)
             {

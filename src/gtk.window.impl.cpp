@@ -97,23 +97,6 @@ namespace saucer
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::closed>(saucer::window *self)
-    {
-        if (self->m_impl->closed_event)
-        {
-            return;
-        }
-
-        auto callback = [](GtkWidget *, saucer::window *self)
-        {
-            self->m_events.at<window_event::closed>().fire();
-        };
-
-        auto id = g_signal_connect(self->m_impl->window.get(), "destroy", G_CALLBACK(+callback), self);
-        self->m_impl->closed_event.emplace(id);
-    }
-
-    template <>
     void saucer::window::impl::setup<window_event::close>(saucer::window *self)
     {
         if (self->m_impl->close_event)
@@ -123,10 +106,22 @@ namespace saucer
 
         auto callback = [](GtkWindow *, saucer::window *self)
         {
-            return self->m_events.at<window_event::close>().until(true).value_or(false);
+            if (self->m_events.at<window_event::close>().until(true))
+            {
+                return true;
+            }
+
+            self->m_events.at<window_event::closed>().fire();
+            return false;
         };
 
         auto id = g_signal_connect(self->m_impl->window.get(), "close-request", G_CALLBACK(+callback), self);
         self->m_impl->close_event.emplace(id);
+    }
+
+    template <>
+    void saucer::window::impl::setup<window_event::closed>(saucer::window *self)
+    {
+        setup<window_event::close>(self);
     }
 } // namespace saucer
