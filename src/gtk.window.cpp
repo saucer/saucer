@@ -59,6 +59,9 @@ namespace saucer
         }
 
         g_signal_handler_disconnect(impl::application.get(), id);
+
+        //? Undecorated windows would be 0x0 otherwise
+        set_size(800, 600);
     }
 
     window::~window() = default;
