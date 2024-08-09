@@ -53,7 +53,7 @@ endif()
 # Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_valid_backends Qt5 Qt6 WebKit2Gtk WebView2 Default)
+set(saucer_valid_backends Qt5 Qt6 WebKitGtk WebView2 Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
@@ -124,8 +124,8 @@ if (saucer_backend MATCHES "^Qt.$")
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT${QT_VERSION})
 endif()
 
-if (saucer_backend STREQUAL "WebKit2Gtk")
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT2GTK)
+if (saucer_backend STREQUAL "WebKitGtk")
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKITGTK)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
@@ -252,7 +252,7 @@ if (saucer_backend MATCHES "^Qt.$")
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
 endif()
 
-if (saucer_backend MATCHES "WebKit2Gtk")
+if (saucer_backend MATCHES "WebKitGtk")
   file(GLOB gtk_sources 
     "src/gtk.*cpp"
     "src/webkit.*cpp"
@@ -263,9 +263,9 @@ if (saucer_backend MATCHES "WebKit2Gtk")
   find_package(PkgConfig REQUIRED)
 
   pkg_check_modules(libadwaita REQUIRED IMPORTED_TARGET libadwaita-1)
-  pkg_check_modules(webkit2gtk REQUIRED IMPORTED_TARGET webkitgtk-6.0)
+  pkg_check_modules(webkitgtk  REQUIRED IMPORTED_TARGET webkitgtk-6.0)
 
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::libadwaita PkgConfig::webkit2gtk)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::libadwaita PkgConfig::webkitgtk)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
