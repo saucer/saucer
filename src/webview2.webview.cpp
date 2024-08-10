@@ -496,31 +496,16 @@ namespace saucer
             return dispatch([this, event]() { return clear(event); }).get();
         }
 
-        switch (event)
-        {
-            using enum web_event;
-
-        case title_changed:
-            m_impl->web_view->remove_DocumentTitleChanged(m_impl->title_token.value_or(EventRegistrationToken{}));
-            m_impl->title_token.reset();
-            break;
-        case load_finished:
-            m_impl->web_view->remove_NavigationCompleted(m_impl->load_token.value_or(EventRegistrationToken{}));
-            m_impl->load_token.reset();
-            break;
-        case url_changed:
-            m_impl->web_view->remove_SourceChanged(m_impl->source_token.value_or(EventRegistrationToken{}));
-            m_impl->source_token.reset();
-            break;
-        default:
-            break;
-        };
-
         m_events.clear(event);
     }
 
     void webview::remove(web_event event, std::uint64_t id)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, event, id]() { return remove(event, id); }).get();
+        }
+
         m_events.remove(event, id);
     }
 

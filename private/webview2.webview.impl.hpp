@@ -3,7 +3,6 @@
 #include "webview.hpp"
 
 #include <string>
-#include <optional>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -39,11 +38,6 @@ namespace saucer
       public:
         std::vector<std::string> scripts;
         std::vector<std::wstring> injected;
-
-      public:
-        std::optional<EventRegistrationToken> load_token;
-        std::optional<EventRegistrationToken> title_token;
-        std::optional<EventRegistrationToken> source_token;
 
       public:
         icon favicon;

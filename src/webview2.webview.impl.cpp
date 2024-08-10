@@ -248,7 +248,9 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::title_changed>(webview *self)
     {
-        if (title_token)
+        auto &event = self->m_events.at<web_event::title_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -259,14 +261,17 @@ namespace saucer
             return S_OK;
         };
 
-        title_token.emplace();
-        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &title_token.value());
+        EventRegistrationToken token;
+        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &token);
+        event.on_clear([self, token]() { self->m_impl->web_view->remove_DocumentTitleChanged(token); });
     }
 
     template <>
     void webview::impl::setup<web_event::load_finished>(webview *self)
     {
-        if (load_token)
+        auto &event = self->m_events.at<web_event::load_finished>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -277,8 +282,9 @@ namespace saucer
             return S_OK;
         };
 
-        load_token.emplace();
-        web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &load_token.value());
+        EventRegistrationToken token;
+        web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
+        event.on_clear([self, token]() { self->m_impl->web_view->remove_NavigationCompleted(token); });
     }
 
     template <>
@@ -294,7 +300,9 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::url_changed>(webview *self)
     {
-        if (source_token)
+        auto &event = self->m_events.at<web_event::url_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -305,8 +313,9 @@ namespace saucer
             return S_OK;
         };
 
-        source_token.emplace();
-        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &source_token.value());
+        EventRegistrationToken token;
+        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
+        event.on_clear([self, token]() { self->m_impl->web_view->remove_SourceChanged(token); });
     }
 
     template <>
