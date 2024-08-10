@@ -36,7 +36,7 @@ namespace saucer
             auto *application = GTK_APPLICATION(impl::application.get());
             auto *window      = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
 
-            self->window  = g_object_ptr<AdwApplicationWindow>::copy(window);
+            self->window  = g_object_ptr<AdwApplicationWindow>::ref(window);
             self->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
             self->header  = ADW_HEADER_BAR(adw_header_bar_new());
 

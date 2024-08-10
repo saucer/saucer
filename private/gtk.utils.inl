@@ -87,7 +87,7 @@ namespace saucer
     }
 
     template <typename T, auto Ref, auto Unref>
-    ref_ptr<T, Ref, Unref> ref_ptr<T, Ref, Unref>::copy(T *data)
+    ref_ptr<T, Ref, Unref> ref_ptr<T, Ref, Unref>::ref(T *data)
     {
         perform<Ref>(data);
         return data;

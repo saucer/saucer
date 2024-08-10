@@ -13,7 +13,7 @@ namespace saucer
 {
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
-        m_impl->web_view = g_object_ptr<WebKitWebView>::copy(WEBKIT_WEB_VIEW(webkit_web_view_new()));
+        m_impl->web_view = g_object_ptr<WebKitWebView>::ref(WEBKIT_WEB_VIEW(webkit_web_view_new()));
         m_impl->settings = impl::make_settings(options);
 
         if (options.persistent_cookies)
@@ -96,7 +96,7 @@ namespace saucer
             auto *event      = gtk_event_controller_get_current_event(controller);
 
             self->window::m_impl->prev_click.emplace(click_event{
-                .event      = g_event_ptr::copy(event),
+                .event      = g_event_ptr::ref(event),
                 .controller = controller,
             });
         };
@@ -161,7 +161,7 @@ namespace saucer
             return dispatch([this] { return favicon(); }).get();
         }
 
-        return {{g_object_ptr<GdkTexture>::copy(webkit_web_view_get_favicon(m_impl->web_view.get()))}};
+        return {{g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view.get()))}};
     }
 
     std::string webview::page_title() const
