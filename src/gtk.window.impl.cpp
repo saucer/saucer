@@ -7,9 +7,14 @@ namespace saucer
         return impl::application.get() != nullptr;
     }
 
-    event_data window::impl::prev_data() const
+    std::optional<event_data> window::impl::prev_data() const
     {
-        auto [event, controller] = prev_click;
+        if (!prev_click)
+        {
+            return std::nullopt;
+        }
+
+        auto [event, controller] = prev_click.value();
         auto *widget             = gtk_event_controller_get_widget(controller);
 
         double x{}, y{};
@@ -27,7 +32,7 @@ namespace saucer
         auto button = static_cast<gint>(gdk_button_event_get_button(event.get()));
         auto time   = gdk_event_get_time(event.get());
 
-        return {
+        return event_data{
             .device  = device,
             .surface = surface,
             .button  = button,

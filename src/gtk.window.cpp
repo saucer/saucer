@@ -34,8 +34,7 @@ namespace saucer
         {
             auto *self        = static_cast<impl *>(data);
             auto *application = GTK_APPLICATION(impl::application.get());
-
-            auto *window = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
+            auto *window      = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
 
             self->window  = g_object_ptr<AdwApplicationWindow>::copy(window);
             self->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
@@ -209,7 +208,14 @@ namespace saucer
             return dispatch([this] { return start_drag(); }).get();
         }
 
-        auto [device, surface, button, time, x, y] = m_impl->prev_data();
+        auto data = m_impl->prev_data();
+
+        if (!data)
+        {
+            return;
+        }
+
+        auto [device, surface, button, time, x, y] = data.value();
         gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), device, button, x, y, time);
     }
 
@@ -252,7 +258,14 @@ namespace saucer
             break;
         }
 
-        auto [device, surface, button, time, x, y] = m_impl->prev_data();
+        auto data = m_impl->prev_data();
+
+        if (!data)
+        {
+            return;
+        }
+
+        auto [device, surface, button, time, x, y] = data.value();
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 

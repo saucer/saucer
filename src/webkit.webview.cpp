@@ -95,10 +95,10 @@ namespace saucer
             auto *controller = GTK_EVENT_CONTROLLER(gesture);
             auto *event      = gtk_event_controller_get_current_event(controller);
 
-            self->window::m_impl->prev_click = {
+            self->window::m_impl->prev_click.emplace(click_event{
                 .event      = g_event_ptr::copy(event),
                 .controller = controller,
-            };
+            });
         };
 
         g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);

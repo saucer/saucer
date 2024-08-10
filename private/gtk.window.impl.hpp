@@ -37,8 +37,8 @@ namespace saucer
         AdwHeaderBar *header;
 
       public:
-        click_event prev_click;
-        [[nodiscard]] event_data prev_data() const;
+        std::optional<click_event> prev_click;
+        [[nodiscard]] std::optional<event_data> prev_data() const;
 
       public:
         template <window_event>
