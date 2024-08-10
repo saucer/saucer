@@ -425,31 +425,16 @@ namespace saucer
             return dispatch([this, event]() { return clear(event); }).get();
         }
 
-        switch (event)
-        {
-            using enum web_event;
-
-        case title_changed:
-            if (m_impl->title_changed)
-            {
-                g_signal_handler_disconnect(m_impl->web_view.get(), m_impl->title_changed.value());
-            }
-            break;
-        case icon_changed:
-            if (m_impl->icon_changed)
-            {
-                g_signal_handler_disconnect(m_impl->web_view.get(), m_impl->icon_changed.value());
-            }
-            break;
-        default:
-            break;
-        };
-
         m_events.clear(event);
     }
 
     void webview::remove(web_event event, std::uint64_t id)
     {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, event, id] { return remove(event, id); }).get();
+        }
+
         m_events.remove(event, id);
     }
 

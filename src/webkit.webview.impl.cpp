@@ -12,7 +12,9 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::title_changed>(webview *self)
     {
-        if (self->m_impl->title_changed)
+        auto &event = self->m_events.at<web_event::title_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -22,8 +24,7 @@ namespace saucer
             self->m_events.at<web_event::title_changed>().fire(self->page_title());
         };
 
-        auto id = g_signal_connect(self->m_impl->web_view.get(), "notify::title", G_CALLBACK(+callback), self);
-        self->m_impl->title_changed.emplace(id);
+        g_signal_connect(self->m_impl->web_view.get(), "notify::title", G_CALLBACK(+callback), self);
     }
 
     template <>
@@ -34,7 +35,9 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::icon_changed>(webview *self)
     {
-        if (self->m_impl->icon_changed)
+        auto &event = self->m_events.at<web_event::icon_changed>();
+
+        if (!event.empty())
         {
             return;
         }
@@ -44,8 +47,7 @@ namespace saucer
             self->m_events.at<web_event::icon_changed>().fire(self->favicon());
         };
 
-        auto id = g_signal_connect(self->m_impl->web_view.get(), "notify::favicon", G_CALLBACK(+callback), self);
-        self->m_impl->icon_changed.emplace(id);
+        g_signal_connect(self->m_impl->web_view.get(), "notify::favicon", G_CALLBACK(+callback), self);
     }
 
     template <>

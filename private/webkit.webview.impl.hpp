@@ -35,10 +35,6 @@ namespace saucer
         std::unordered_map<std::string, std::unique_ptr<scheme_state>> schemes;
 
       public:
-        std::optional<gulong> icon_changed;
-        std::optional<gulong> title_changed;
-
-      public:
         template <web_event>
         void setup(webview *);
 
