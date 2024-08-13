@@ -14,6 +14,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_modules           "Enable smartview modules"                          ON)
+option(saucer_polyfill          "Enable polyfills. Mainly used for macOS"          OFF)
 
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
@@ -53,7 +54,7 @@ endif()
 # Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_valid_backends Qt5 Qt6 WebKitGtk WebView2 Default)
+set(saucer_valid_backends Qt5 Qt6 WebKitGtk WebView2 WebKit Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
@@ -67,8 +68,10 @@ endif()
 if (saucer_backend STREQUAL "Default")
   if (WIN32)
     set(saucer_backend WebView2)
+  elseif(APPLE)
+    set(saucer_backend WebKit)
   else()
-    set(saucer_backend Qt6)
+    set(saucer_backend WebKitGtk)
   endif()
 
   message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
@@ -132,6 +135,11 @@ if (saucer_backend STREQUAL "WebView2")
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBVIEW2)
 endif()
 
+if (saucer_backend STREQUAL "WebKit")
+  set(saucer_polyfill ON)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT)
+endif()
+
 # --------------------------------------------------------------------------------------------------------
 # Setup Sources
 # --------------------------------------------------------------------------------------------------------
@@ -150,10 +158,43 @@ if (saucer_modules)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Dependencies
+# Setup Polyfills
+# └ Apple Clang (as well as libc++) is lacking behind on some features which this library and
+#   some upstream dependencies rely upon. To avoid all sorts of upstream changes, we use
+#   a few (very ugly) hacks to make saucer work on macOS. These can hopefully be removed once
+#   Apple Clang moves to a more recent libc++. 
 # --------------------------------------------------------------------------------------------------------
 
 include("cmake/cpm.cmake")
+
+if (saucer_polyfill)
+  set(saucer_fmt_install OFF)
+
+  CPMFindPackage(
+    NAME           fu2
+    VERSION        4.2.1
+    GIT_REPOSITORY "https://github.com/saucer/function2"
+  )
+
+  CPMFindPackage(
+    NAME           jthread
+    GIT_TAG        V23.03.0
+    GIT_REPOSITORY "https://github.com/StirlingLabs/jthread"
+    OPTIONS        "ENABLE_JTHREAD_TESTS OFF"
+  )
+
+  link_libraries(function2::function2 jthread)
+
+  add_definitions(-include ${jthread_SOURCE_DIR}/include/jthread)
+  add_definitions(-include ${CMAKE_CURRENT_SOURCE_DIR}/polyfill/functional.hpp)
+else()
+  set(saucer_fmt_install ON)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Dependencies
+# --------------------------------------------------------------------------------------------------------
+
 include("cmake/nuget.cmake")
 
 CPMFindPackage(
@@ -186,6 +227,7 @@ CPMFindPackage(
   NAME           fmt
   GIT_TAG        11.0.2
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
+  OPTIONS        "FMT_INSTALL ${saucer_fmt_install}"
 )
 
 CPMFindPackage(
@@ -250,6 +292,22 @@ if (saucer_backend MATCHES "^Qt.$")
 
   find_package(Qt${QT_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
+endif()
+
+if (saucer_backend MATCHES "WebKit")
+  enable_language(OBJCXX)
+
+  file(GLOB cocoa_sources 
+    "src/cocoa.*mm"
+    "src/wk.*mm"
+  )
+
+  target_sources(${PROJECT_NAME} PRIVATE ${cocoa_sources})
+
+  find_library(cocoa Cocoa REQUIRED)
+  find_library(webkit WebKit REQUIRED)
+
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} ${cocoa} ${webkit})
 endif()
 
 if (saucer_backend MATCHES "WebKitGtk")
