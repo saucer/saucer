@@ -3,7 +3,7 @@
 #include "webview.hpp"
 
 #include "gtk.utils.hpp"
-#include "webkit.scheme.impl.hpp"
+#include "wkg.scheme.impl.hpp"
 
 #include <vector>
 #include <unordered_map>

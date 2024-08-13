@@ -255,7 +255,7 @@ endif()
 if (saucer_backend MATCHES "WebKitGtk")
   file(GLOB gtk_sources 
     "src/gtk.*cpp"
-    "src/webkit.*cpp"
+    "src/wkg.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${gtk_sources})
@@ -271,7 +271,7 @@ endif()
 if (saucer_backend STREQUAL "WebView2")
   file(GLOB win_sources 
     "src/win32.*cpp"
-    "src/webview2.*cpp"
+    "src/wv2.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})

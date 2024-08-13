@@ -1,10 +1,10 @@
-#include "webview2.webview.impl.hpp"
+#include "wv2.webview.impl.hpp"
 
 #include "scripts.hpp"
 #include "win32.utils.hpp"
 
 #include "win32.window.impl.hpp"
-#include "webview2.scheme.impl.hpp"
+#include "wv2.scheme.impl.hpp"
 
 #include <fmt/core.h>
 #include <fmt/xchar.h>
