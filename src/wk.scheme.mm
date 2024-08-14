@@ -2,7 +2,7 @@
 
 namespace saucer
 {
-    request::request(impl data) : m_impl(std::make_unique<impl>(data)) {}
+    request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::~request() = default;
 

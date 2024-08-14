@@ -22,6 +22,9 @@ namespace saucer
         NSWindow *window;
 
       public:
+        std::function<void()> on_closed;
+
+      public:
         std::optional<window_edge> edge;
         std::optional<click_event> prev_click;
 

@@ -18,12 +18,15 @@ namespace saucer
         WKWebView *web_view;
 
       public:
-        NSAppearance *default_appearance;
+        NSAppearance *appearance;
         WKUserContentController *controller;
 
       public:
-        bool dom_loaded{false};
+        bool force_dark{false};
         bool context_menu{false};
+
+      public:
+        bool dom_loaded{false};
         std::vector<std::string> pending;
 
       public:
