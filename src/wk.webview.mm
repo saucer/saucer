@@ -220,7 +220,11 @@ namespace saucer
                                                        blue:(static_cast<float>(b) / 255.f)
                                                       alpha:(static_cast<float>(a) / 255.f)];
 
+        [window::m_impl->window setBackgroundColor:color];
         [m_impl->web_view setUnderPageBackgroundColor:color];
+
+        [m_impl->web_view setValue:[NSNumber numberWithBool:static_cast<BOOL>(a < 255)]
+                            forKey:@"drawsTransparentBackground"];
     }
 
     void webview::set_file(const fs::path &file)
