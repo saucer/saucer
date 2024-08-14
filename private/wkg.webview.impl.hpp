@@ -23,7 +23,7 @@ namespace saucer
         WebKitUserContentManager *manager;
 
       public:
-        bool context_menu;
+        bool context_menu{false};
         std::vector<script_ptr> scripts;
 
       public:

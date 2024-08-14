@@ -1,0 +1,384 @@
+#include "wk.webview.impl.hpp"
+
+#include "cocoa.window.impl.hpp"
+
+#include "requests.hpp"
+#include "instantiate.hpp"
+
+#import <CoreImage/CoreImage.h>
+
+#include <fmt/core.h>
+
+namespace saucer
+{
+    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
+    {
+        impl::init_objc();
+
+        auto *const config = impl::config();
+
+        m_impl->controller = config.userContentController;
+        [m_impl->controller addScriptMessageHandler:[[MessageHandler alloc] initWithParent:this] name:@"saucer"];
+
+        m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:config frame:NSZeroRect];
+        [m_impl->web_view setNavigationDelegate:[[NavigationDelegate alloc] initWithParent:this]];
+
+        [window::m_impl->window setContentView:m_impl->web_view];
+        m_impl->default_appearance = window::m_impl->window.appearance;
+
+        inject(impl::inject_script(), load_time::creation);
+        inject(std::string{impl::ready_script}, load_time::ready);
+    }
+
+    webview::~webview()
+    {
+        m_impl->web_view = nil;
+    }
+
+    bool webview::on_message(const std::string &message)
+    {
+        if (message == "dom_loaded")
+        {
+            m_impl->dom_loaded = true;
+
+            for (const auto &pending : m_impl->pending)
+            {
+                execute(pending);
+            }
+
+            m_impl->pending.clear();
+            m_events.at<web_event::dom_ready>().fire();
+
+            return true;
+        }
+
+        auto request = requests::parse(message);
+
+        if (!request)
+        {
+            return false;
+        }
+
+        if (std::holds_alternative<requests::resize>(request.value()))
+        {
+            const auto data = std::get<requests::resize>(request.value());
+            start_resize(static_cast<window_edge>(data.edge));
+
+            return true;
+        }
+
+        if (std::holds_alternative<requests::drag>(request.value()))
+        {
+            start_drag();
+            return true;
+        }
+
+        return false;
+    }
+
+    icon webview::favicon() const // NOLINT
+    {
+        return {};
+    }
+
+    std::string webview::page_title() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return page_title(); }).get();
+        }
+
+        return m_impl->web_view.title.UTF8String;
+    }
+
+    bool webview::dev_tools() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return dev_tools(); }).get();
+        }
+
+        return [[m_impl->controller valueForKey:@"developerExtrasEnabled"] boolValue];
+    }
+
+    std::string webview::url() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return url(); }).get();
+        }
+
+        return m_impl->web_view.URL.absoluteString.UTF8String;
+    }
+
+    bool webview::context_menu() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return context_menu(); }).get();
+        }
+
+        return m_impl->context_menu;
+    }
+
+    color webview::background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return background(); }).get();
+        }
+
+        auto *const background = m_impl->web_view.underPageBackgroundColor;
+        auto *const color      = [[CIColor alloc] initWithColor:background];
+
+        return {
+            static_cast<std::uint8_t>(color.red * 255.f),
+            static_cast<std::uint8_t>(color.green * 255.f),
+            static_cast<std::uint8_t>(color.blue * 255.f),
+            static_cast<std::uint8_t>(color.alpha * 255.f),
+        };
+    }
+
+    bool webview::force_dark_mode() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return force_dark_mode(); }).get();
+        }
+
+        return window::m_impl->window.appearance.name == NSAppearanceNameVibrantDark;
+    }
+
+    void webview::set_dev_tools(bool enabled)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
+        }
+
+        auto *const settings = impl::config().preferences;
+        [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
+
+        // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/_WKInspector.mm.auto.html
+        // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/WKWebView.mm.auto.html
+
+        const id inspector = [m_impl->web_view valueForKey:@"_inspector"];
+
+        if (!inspector)
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            [inspector performSelector:@selector(show)];
+            return;
+        }
+
+        [inspector performSelector:@selector(close)];
+    }
+
+    void webview::set_context_menu(bool enabled)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, enabled] { return set_context_menu(enabled); }).get();
+        }
+
+        m_impl->context_menu = enabled;
+    }
+
+    void webview::set_force_dark_mode(bool enabled)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, enabled] { return set_force_dark_mode(enabled); }).get();
+        }
+
+        auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
+                                         : m_impl->default_appearance;
+
+        [window::m_impl->window setAppearance:appearance];
+    }
+
+    void webview::set_background(const color &background)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, background] { return set_background(background); }).get();
+        }
+
+        auto [r, g, b, a] = background;
+
+        auto *const color = [NSColor colorWithCalibratedRed:(static_cast<float>(r) / 255.f)
+                                                      green:static_cast<float>(g) / 255.f
+                                                       blue:(static_cast<float>(b) / 255.f)
+                                                      alpha:(static_cast<float>(a) / 255.f)];
+
+        [m_impl->web_view setUnderPageBackgroundColor:color];
+    }
+
+    void webview::set_file(const fs::path &file)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, file] { return set_file(file); }).get();
+        }
+
+        auto *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
+        [m_impl->web_view loadFileURL:url allowingReadAccessToURL:url.URLByDeletingLastPathComponent];
+    }
+
+    void webview::set_url(const std::string &url)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, url] { return set_url(url); }).get();
+        }
+
+        auto *const request = [[NSURLRequest alloc]
+            initWithURL:[[NSURL alloc] initWithString:[[NSString alloc] initWithUTF8String:url.c_str()]]];
+
+        [m_impl->web_view loadRequest:request];
+    }
+
+    void webview::serve(const std::string &file, const std::string &scheme)
+    {
+        set_url(fmt::format("{}:/{}", scheme, file));
+    }
+
+    void webview::clear_scripts()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return clear_scripts(); }).get();
+        }
+
+        [m_impl->controller removeAllUserScripts];
+
+        inject(impl::inject_script(), load_time::creation);
+        inject(std::string{impl::ready_script}, load_time::ready);
+    }
+
+    void webview::execute(const std::string &code)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, code]() { return execute(code); }).get();
+        }
+
+        if (!m_impl->dom_loaded)
+        {
+            m_impl->pending.emplace_back(code);
+            return;
+        }
+
+        [m_impl->web_view evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
+    }
+
+    void webview::inject(const std::string &code, load_time time, web_frame frame)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
+        }
+
+        const auto webkit_time = time == load_time::creation ? WKUserScriptInjectionTimeAtDocumentStart
+                                                             : WKUserScriptInjectionTimeAtDocumentEnd;
+
+        auto *const script = [[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:code.c_str()]
+                                                    injectionTime:webkit_time
+                                                 forMainFrameOnly:static_cast<BOOL>(frame == web_frame::top)];
+
+        [m_impl->controller addUserScript:script];
+    }
+
+    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, name, handler = std::move(handler)] mutable
+                            { return handle_scheme(name, std::move(handler)); })
+                .get();
+        }
+
+        if (!impl::schemes.contains(name))
+        {
+            return;
+        }
+
+        [impl::schemes[name] add_handler:std::move(handler) webview:m_impl->web_view];
+    }
+
+    void webview::remove_scheme(const std::string &name)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, name] { return remove_scheme(name); }).get();
+        }
+
+        [impl::schemes[name] remove_handler:m_impl->web_view];
+    }
+
+    void webview::clear(web_event event)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, event]() { return clear(event); }).get();
+        }
+
+        m_events.clear(event);
+    }
+
+    void webview::remove(web_event event, std::uint64_t id)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, event, id] { return remove(event, id); }).get();
+        }
+
+        m_events.remove(event, id);
+    }
+
+    template <web_event Event>
+    void webview::once(events::type<Event> callback)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable
+                            { return once<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
+        m_events.at<Event>().once(std::move(callback));
+    }
+
+    template <web_event Event>
+    std::uint64_t webview::on(events::type<Event> callback)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable //
+                            { return on<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
+        return m_events.at<Event>().add(std::move(callback));
+    }
+
+    void webview::register_scheme(const std::string &name)
+    {
+        if (impl::schemes.contains(name))
+        {
+            return;
+        }
+
+        auto *const config  = impl::config();
+        auto *const handler = [[SchemeHandler alloc] init];
+
+        impl::schemes.emplace(name, handler);
+        [config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
+    }
+} // namespace saucer

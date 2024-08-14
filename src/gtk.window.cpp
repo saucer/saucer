@@ -18,7 +18,7 @@ namespace saucer
     template <>
     void window::run<false>();
 
-    window::window([[maybe_unused]] const options &options) : m_impl(std::make_unique<impl>())
+    window::window(const options &) : m_impl(std::make_unique<impl>())
     {
         if (!impl::init)
         {

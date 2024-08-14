@@ -12,6 +12,11 @@ namespace saucer
         using Ts::operator()...;
     };
 
+#ifdef __APPLE__
+    template <class... Ts>
+    overload(Ts...) -> overload<Ts...>;
+#endif
+
     template <typename T>
     stash<T>::stash(variant_t data) : m_data(std::move(data))
     {

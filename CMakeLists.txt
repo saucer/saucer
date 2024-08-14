@@ -294,7 +294,7 @@ if (saucer_backend MATCHES "^Qt.$")
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
 endif()
 
-if (saucer_backend MATCHES "WebKit")
+if (saucer_backend STREQUAL "WebKit")
   enable_language(OBJCXX)
 
   file(GLOB cocoa_sources 
@@ -306,11 +306,13 @@ if (saucer_backend MATCHES "WebKit")
 
   find_library(cocoa Cocoa REQUIRED)
   find_library(webkit WebKit REQUIRED)
+  find_library(cimage CoreImage REQUIRED)
 
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} ${cocoa} ${webkit})
+  target_compile_options(${PROJECT_NAME} PRIVATE "-fobjc-arc")
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} ${cocoa} ${webkit} ${cimage})
 endif()
 
-if (saucer_backend MATCHES "WebKitGtk")
+if (saucer_backend STREQUAL "WebKitGtk")
   file(GLOB gtk_sources 
     "src/gtk.*cpp"
     "src/wkg.*cpp"

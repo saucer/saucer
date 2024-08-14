@@ -1,6 +1,7 @@
 #include "cocoa.window.impl.hpp"
 
-#include <mutex>
+#include "instantiate.hpp"
+#include "cocoa.icon.impl.hpp"
 
 namespace saucer
 {
@@ -11,8 +12,17 @@ namespace saucer
         std::call_once(flag,
                        []()
                        {
-                           impl::application = [NSApplication sharedApplication];
-                           [impl::application setDelegate:[[AppDelegate alloc] init]];
+                           impl::init_objc();
+
+                           impl::application = app_ptr{[NSApplication sharedApplication],
+                                                       [](NSApplication *)
+                                                       {
+                                                           [NSApp terminate:nil];
+                                                       }};
+
+                           [NSApp activateIgnoringOtherApps:YES];
+                           [NSApp setDelegate:[[AppDelegate alloc] init]];
+                           [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
                        });
 
         if (!impl::application) [[unlikely]]
@@ -28,10 +38,14 @@ namespace saucer
                                                        backing:NSBackingStoreBuffered
                                                          defer:NO];
 
+        [m_impl->window setDelegate:[[WindowDelegate alloc] initWithParent:this]];
         [m_impl->window center];
     }
 
-    window::~window() = default;
+    window::~window()
+    {
+        m_impl->window = nil;
+    }
 
     void window::dispatch(callback_t callback) const // NOLINT
     {
@@ -52,7 +66,7 @@ namespace saucer
             return dispatch([this] { return focused(); }).get();
         }
 
-        return [m_impl->window isKeyWindow];
+        return m_impl->window.isKeyWindow;
     }
 
     bool window::minimized() const
@@ -62,13 +76,17 @@ namespace saucer
             return dispatch([this] { return minimized(); }).get();
         }
 
-        return [m_impl->window isMiniaturized];
+        return m_impl->window.isMiniaturized;
     }
 
-    bool window::maximized() const // NOLINT
+    bool window::maximized() const
     {
-        // TODO
-        return {};
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this] { return maximized(); }).get();
+        }
+
+        return m_impl->window.isZoomed;
     }
 
     bool window::resizable() const
@@ -78,7 +96,7 @@ namespace saucer
             return dispatch([this] { return resizable(); }).get();
         }
 
-        return [m_impl->window styleMask] & NSWindowStyleMaskResizable;
+        return m_impl->window.styleMask & NSWindowStyleMaskResizable;
     }
 
     bool window::decorations() const
@@ -88,13 +106,17 @@ namespace saucer
             return dispatch([this] { return decorations(); }).get();
         }
 
-        return !([m_impl->window styleMask] & NSWindowStyleMaskBorderless);
+        return !(m_impl->window.styleMask & NSWindowStyleMaskBorderless);
     }
 
-    bool window::always_on_top() const // NOLINT
+    bool window::always_on_top() const
     {
-        // TODO
-        return {};
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this] { return always_on_top(); }).get();
+        }
+
+        return m_impl->window.level == kCGMaximumWindowLevelKey;
     }
 
     std::string window::title() const
@@ -104,7 +126,7 @@ namespace saucer
             return dispatch([this] { return title(); }).get();
         }
 
-        return [[m_impl->window title] UTF8String];
+        return m_impl->window.title.UTF8String;
     }
 
     std::pair<int, int> window::size() const
@@ -114,7 +136,8 @@ namespace saucer
             return dispatch([this] { return size(); }).get();
         }
 
-        auto [width, height] = [m_impl->window frame].size;
+        auto [width, height] = m_impl->window.frame.size;
+
         return {width, height};
     }
 
@@ -125,7 +148,8 @@ namespace saucer
             return dispatch([this] { return max_size(); }).get();
         }
 
-        auto [width, height] = [m_impl->window maxSize];
+        auto [width, height] = m_impl->window.maxSize;
+
         return {width, height};
     }
 
@@ -136,7 +160,8 @@ namespace saucer
             return dispatch([this] { return min_size(); }).get();
         }
 
-        auto [width, height] = [m_impl->window minSize];
+        auto [width, height] = m_impl->window.minSize;
+
         return {width, height};
     }
 
@@ -190,10 +215,14 @@ namespace saucer
         [m_impl->window performWindowDragWithEvent:NSApp.currentEvent];
     }
 
-    void window::start_resize(window_edge edge) // NOLINT
+    void window::start_resize(window_edge edge)
     {
-        (void)edge;
-        // TODO
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this] { return start_drag(); }).get();
+        }
+
+        m_impl->edge.emplace(edge);
     }
 
     void window::set_minimized(bool enabled)
@@ -213,9 +242,6 @@ namespace saucer
             return dispatch([this, enabled] { return set_maximized(enabled); }).get();
         }
 
-        // TODO: Not sure if this is right yet, when maximized it takes full size (minus dock size), but other MacOS
-        // applications usually go to their own virtual desktop when maximized.
-
         [m_impl->window setIsZoomed:static_cast<BOOL>(enabled)];
     }
 
@@ -227,7 +253,7 @@ namespace saucer
         }
 
         static constexpr auto flag = NSWindowStyleMaskResizable;
-        auto mask                  = [m_impl->window styleMask];
+        auto mask                  = m_impl->window.styleMask;
 
         if (!enabled)
         {
@@ -238,7 +264,6 @@ namespace saucer
             mask |= flag;
         }
 
-        // TODO: I can't get the resize cursor to show up at all...
         [m_impl->window setStyleMask:mask];
     }
 
@@ -250,7 +275,7 @@ namespace saucer
         }
 
         static constexpr auto flag = NSWindowStyleMaskBorderless | NSWindowStyleMaskTitled;
-        auto mask                  = [m_impl->window styleMask];
+        auto mask                  = m_impl->window.styleMask;
 
         if (!enabled)
         {
@@ -264,14 +289,33 @@ namespace saucer
         [m_impl->window setStyleMask:mask];
     }
 
-    void window::set_always_on_top(bool enabled) // NOLINT
+    void window::set_always_on_top(bool enabled)
     {
-        // TODO
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, enabled] { return set_always_on_top(enabled); }).get();
+        }
+
+        m_impl->window.level = enabled ? kCGMaximumWindowLevelKey : kCGNormalWindowLevelKey;
     }
 
-    void window::set_icon(const icon &) // NOLINT
+    void window::set_icon(const icon &icon)
     {
-        // TODO
+        if (icon.empty())
+        {
+            return;
+        }
+
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, icon] { return set_icon(icon); }).get();
+        }
+
+        auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon];
+        auto tile        = m_impl->application.get().dockTile;
+
+        [tile setContentView:view];
+        [tile display];
     }
 
     void window::set_title(const std::string &title)
@@ -291,7 +335,7 @@ namespace saucer
             return dispatch([this, width, height] { return set_size(width, height); }).get();
         }
 
-        auto frame = [m_impl->window frame];
+        auto frame = m_impl->window.frame;
         frame.size = {static_cast<float>(width), static_cast<float>(height)};
 
         [m_impl->window setFrame:frame display:YES animate:YES];
@@ -317,10 +361,49 @@ namespace saucer
         [m_impl->window setMinSize:{static_cast<float>(width), static_cast<float>(height)}];
     }
 
+    void window::clear(window_event event)
+    {
+        m_events.clear(event);
+    }
+
+    void window::remove(window_event event, std::uint64_t id)
+    {
+        m_events.remove(event, id);
+    }
+
+    template <window_event Event>
+    void window::once(events::type<Event> callback)
+    {
+        m_events.at<Event>().once(std::move(callback));
+    }
+
+    template <window_event Event>
+    std::uint64_t window::on(events::type<Event> callback)
+    {
+        return m_events.at<Event>().add(std::move(callback));
+    }
+
     template <>
     void window::run<true>()
     {
-        [NSApp activateIgnoringOtherApps:YES];
         [NSApp run];
     }
+
+    template <>
+    void window::run<false>()
+    {
+        auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                               untilDate:[NSDate now]
+                                                  inMode:NSDefaultRunLoopMode
+                                                 dequeue:YES];
+
+        if (!event)
+        {
+            return;
+        }
+
+        [NSApp sendEvent:event];
+    }
+
+    INSTANTIATE_EVENTS(window, 6, window_event)
 } // namespace saucer
