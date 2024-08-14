@@ -24,7 +24,12 @@ namespace saucer
         [m_impl->web_view setNavigationDelegate:[[NavigationDelegate alloc] initWithParent:this]];
 
         [window::m_impl->window setContentView:m_impl->web_view];
-        m_impl->default_appearance = window::m_impl->window.appearance;
+        m_impl->appearance = window::m_impl->window.appearance;
+
+        window::m_impl->on_closed = [this]
+        {
+            set_dev_tools(false);
+        };
 
         inject(impl::inject_script(), load_time::creation);
         inject(std::string{impl::ready_script}, load_time::ready);
@@ -146,7 +151,7 @@ namespace saucer
             return dispatch([this] { return force_dark_mode(); }).get();
         }
 
-        return window::m_impl->window.appearance.name == NSAppearanceNameVibrantDark;
+        return m_impl->force_dark;
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -195,10 +200,10 @@ namespace saucer
             return dispatch([this, enabled] { return set_force_dark_mode(enabled); }).get();
         }
 
-        auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
-                                         : m_impl->default_appearance;
+        m_impl->force_dark = enabled;
 
-        [window::m_impl->window setAppearance:appearance];
+        [window::m_impl->window setAppearance:enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
+                                                      : m_impl->appearance];
     }
 
     void webview::set_background(const color &background)
@@ -381,4 +386,6 @@ namespace saucer
         impl::schemes.emplace(name, handler);
         [config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
     }
+
+    INSTANTIATE_EVENTS(webview, 6, web_event)
 } // namespace saucer

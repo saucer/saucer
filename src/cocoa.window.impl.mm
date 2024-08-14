@@ -35,11 +35,20 @@ namespace saucer
                                         { self->m_parent->m_events.at<window_event::minimize>().fire(false); }),
             "v@:@");
 
-        class_replaceMethod(
-            [WindowDelegate class], @selector(windowWillClose:),
-            imp_implementationWithBlock([](WindowDelegate *self, NSNotification *)
-                                        { self->m_parent->m_events.at<window_event::closed>().fire(); }),
-            "v@:@");
+        class_replaceMethod([WindowDelegate class], @selector(windowWillClose:),
+                            imp_implementationWithBlock(
+                                [](WindowDelegate *self, NSNotification *)
+                                {
+                                    auto &impl = *self->m_parent->m_impl;
+
+                                    if (impl.on_closed)
+                                    {
+                                        std::invoke(impl.on_closed);
+                                    }
+
+                                    self->m_parent->m_events.at<window_event::closed>().fire();
+                                }),
+                            "v@:@");
 
         class_replaceMethod([WindowDelegate class], @selector(windowDidResize:),
                             imp_implementationWithBlock(
