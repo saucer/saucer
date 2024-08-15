@@ -1,24 +1,30 @@
 #pragma once
 
 #include "webview.hpp"
-#include "wk.scheme.impl.hpp"
 
-#include <functional>
+#include "wk.scheme.impl.hpp"
+#include "cocoa.window.impl.hpp"
+
+#include <vector>
+#include <unordered_map>
 
 #import <WebKit/WebKit.h>
 
 @class MessageHandler;
+@class NavigationDelegate;
 
 namespace saucer
 {
-    using observer_callback_t = std::function<void()>;
-
     struct webview::impl
     {
         WKWebView *web_view;
 
       public:
         NSAppearance *appearance;
+        NavigationDelegate *delegate;
+
+      public:
+        WKWebViewConfiguration *config;
         WKUserContentController *controller;
 
       public:
@@ -30,29 +36,20 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
-        static WKWebViewConfiguration *config();
-        static inline std::unordered_map<std::string, SchemeHandler *> schemes;
-
-      public:
         template <web_event>
         void setup(webview *);
+
+      public:
+        static void init_objc();
 
       public:
         static const std::string &inject_script();
         static constinit std::string_view ready_script;
 
       public:
-        static void init_objc();
+        static inline std::unordered_map<std::string, SchemeHandler *> schemes;
     };
 } // namespace saucer
-
-@interface Observer : NSObject
-{
-  @public
-    saucer::observer_callback_t m_callback;
-}
-- (instancetype)initWithCallback:(saucer::observer_callback_t)callback;
-@end
 
 @interface MessageHandler : NSObject <WKScriptMessageHandler>
 {
