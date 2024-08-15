@@ -14,11 +14,11 @@ namespace saucer
 {
     enum class request_error
     {
-        failed,
-        denied,
-        aborted,
-        bad_url,
         not_found,
+        invalid,
+        aborted,
+        denied,
+        failed,
     };
 
     struct response
@@ -26,6 +26,9 @@ namespace saucer
         stash<> data;
         std::string mime;
         std::map<std::string, std::string> headers;
+
+      public:
+        int status{200};
     };
 
     class request

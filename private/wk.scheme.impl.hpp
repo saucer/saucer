@@ -3,8 +3,6 @@
 #include "scheme.hpp"
 
 #import <WebKit/WebKit.h>
-#import <WebKit/WKURLSchemeTask.h>
-#import <WebKit/WKURLSchemeHandler.h>
 
 namespace saucer
 {
@@ -13,7 +11,7 @@ namespace saucer
         friend void init_request_objc();
 
       public:
-        id<WKURLSchemeTask> request;
+        id<WKURLSchemeTask> task;
     };
 
     void init_request_objc();

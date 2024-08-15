@@ -11,52 +11,58 @@ void saucer::init_request_objc()
         return;
     }
 
-    class_replaceMethod([SchemeHandler class], @selector(webView:startURLSchemeTask:),
-                        imp_implementationWithBlock(
-                            [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> urlSchemeTask)
-                            {
-                                auto *id = (__bridge void *)instance;
-                                auto req = saucer::request{{urlSchemeTask}};
+    class_replaceMethod(
+        [SchemeHandler class], @selector(webView:startURLSchemeTask:),
+        imp_implementationWithBlock(
+            [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> urlSchemeTask)
+            {
+                auto *identifier = (__bridge void *)instance;
+                auto req         = saucer::request{{urlSchemeTask}};
 
-                                if (!self->m_handlers.contains(id))
-                                {
-                                    return;
-                                }
+                if (!self->m_handlers.contains(identifier))
+                {
+                    return;
+                }
 
-                                auto result = std::invoke(self->m_handlers[id], req);
+                auto result = std::invoke(self->m_handlers[identifier], req);
 
-                                if (!result.has_value())
-                                {
-                                    // TODO
-                                    return;
-                                }
+                if (!result.has_value())
+                {
+                    [urlSchemeTask didFailWithError:[NSError errorWithDomain:NSURLErrorDomain
+                                                                        code:std::to_underlying(result.error())
+                                                                    userInfo:nil]];
 
-                                auto content        = result->data;
-                                auto *const data    = [NSData dataWithBytes:content.data() length:content.size()];
-                                auto *const headers = [[NSMutableDictionary<NSString *, NSString *> alloc] init];
+                    return;
+                }
 
-                                for (const auto &[key, value] : result->headers)
-                                {
-                                    [headers setObject:[NSString stringWithUTF8String:value.c_str()]
-                                                forKey:[NSString stringWithUTF8String:key.c_str()]];
-                                }
+                auto content = result->data;
 
-                                [headers setObject:@"*" forKey:@"Access-Control-Allow-Origin"];
-                                [headers setObject:[NSString stringWithUTF8String:result->mime.c_str()]
-                                            forKey:@"Content-Type"];
-                                [headers setObject:[NSString stringWithFormat:@"%zu", content.size()]
-                                            forKey:@"Content-Length"];
+                auto *const data = [NSData dataWithBytes:content.data() length:static_cast<NSInteger>(content.size())];
+                auto *const headers = [[NSMutableDictionary<NSString *, NSString *> alloc] init];
 
-                                auto *const response = [[NSHTTPURLResponse alloc] initWithURL:urlSchemeTask.request.URL
-                                                                                   statusCode:200
-                                                                                  HTTPVersion:nil
-                                                                                 headerFields:headers];
+                for (const auto &[key, value] : result->headers)
+                {
+                    [headers setObject:[NSString stringWithUTF8String:value.c_str()]
+                                forKey:[NSString stringWithUTF8String:key.c_str()]];
+                }
 
-                                [urlSchemeTask didReceiveResponse:response];
-                                [urlSchemeTask didReceiveData:data];
-                                [urlSchemeTask didFinish];
-                            }),
-                        "v@:@");
+                auto *const mime   = [NSString stringWithUTF8String:result->mime.c_str()];
+                auto *const length = [NSString stringWithFormat:@"%zu", content.size()];
+
+                [headers setObject:@"*" forKey:@"Access-Control-Allow-Origin"];
+                [headers setObject:mime forKey:@"Content-Type"];
+                [headers setObject:length forKey:@"Content-Length"];
+
+                auto *const response = [[NSHTTPURLResponse alloc] initWithURL:urlSchemeTask.request.URL
+                                                                   statusCode:result->status
+                                                                  HTTPVersion:nil
+                                                                 headerFields:headers];
+
+                [urlSchemeTask didReceiveResponse:response];
+                [urlSchemeTask didReceiveData:data];
+                [urlSchemeTask didFinish];
+            }),
+        "v@:@");
 
     init = true;
 }
