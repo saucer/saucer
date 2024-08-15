@@ -19,6 +19,7 @@ namespace saucer
 {
     enum class window_event
     {
+        decorated,
         maximize,
         minimize,
         closed,
@@ -57,11 +58,12 @@ namespace saucer
 
       public:
         using events = ereignis::manager<                          //
-            ereignis::event<window_event::resize, void(int, int)>, //
+            ereignis::event<window_event::decorated, void(bool)>,  //
             ereignis::event<window_event::maximize, void(bool)>,   //
             ereignis::event<window_event::minimize, void(bool)>,   //
-            ereignis::event<window_event::focus, void(bool)>,      //
             ereignis::event<window_event::closed, void()>,         //
+            ereignis::event<window_event::resize, void(int, int)>, //
+            ereignis::event<window_event::focus, void(bool)>,      //
             ereignis::event<window_event::close, bool()>           //
             >;
 

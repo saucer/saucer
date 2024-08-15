@@ -66,6 +66,27 @@ namespace saucer
                 { return !self->m_parent->m_events.at<window_event::close>().until(true).value_or(false); }),
             "v@:@");
     }
+
+    template <>
+    void saucer::window::impl::setup<window_event::decorated>(saucer::window *self)
+    {
+        auto &event = self->m_events.at<window_event::decorated>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto *const observer =
+            [[Observer alloc] initWithCallback:[self]()
+                              {
+                                  self->m_events.at<window_event::decorated>().fire(self->decorations());
+                              }];
+
+        [self->m_impl->window addObserver:observer forKeyPath:@"styleMask" options:0 context:nullptr];
+        event.on_clear([observer, self]() { [self->m_impl->window removeObserver:observer forKeyPath:@"styleMask"]; });
+    }
+
     template <>
     void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
     {
