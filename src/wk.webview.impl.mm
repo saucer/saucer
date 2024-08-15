@@ -13,18 +13,6 @@ constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
-    WKWebViewConfiguration *webview::impl::config()
-    {
-        static WKWebViewConfiguration *instance;
-
-        if (!instance)
-        {
-            instance = [[WKWebViewConfiguration alloc] init];
-        }
-
-        return instance;
-    }
-
     template <>
     void saucer::webview::impl::setup<web_event::title_changed>(webview *self)
     {
@@ -107,13 +95,6 @@ namespace saucer
 
     void webview::impl::init_objc()
     {
-        static bool init = false;
-
-        if (init)
-        {
-            return;
-        }
-
         using event_func_t = void (*)(id, SEL, NSEvent *);
 
         auto mouse_down =
@@ -131,7 +112,7 @@ namespace saucer
                                 {
                                     auto &impl = *self->m_parent->window::m_impl;
 
-                                    self->m_parent->window::m_impl->prev_click.emplace(click_event{
+                                    impl.prev_click.emplace(click_event{
                                         .frame    = impl.window.frame,
                                         .position = NSEvent.mouseLocation,
                                     });
@@ -224,28 +205,8 @@ namespace saucer
             imp_implementationWithBlock([](MessageHandler *self, WKWebView *, WKNavigation *)
                                         { self->m_parent->m_events.at<web_event::load_started>().fire(); }),
             "v@:@");
-
-        init = true;
     }
 } // namespace saucer
-
-@implementation Observer
-- (instancetype)initWithCallback:(saucer::observer_callback_t)callback
-{
-    self             = [super init];
-    self->m_callback = std::move(callback);
-
-    return self;
-}
-
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
-                       context:(void *)context
-{
-    std::invoke(m_callback);
-}
-@end
 
 @implementation MessageHandler
 - (instancetype)initWithParent:(saucer::webview *)parent

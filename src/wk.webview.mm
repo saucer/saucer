@@ -5,6 +5,7 @@
 #include "requests.hpp"
 #include "instantiate.hpp"
 
+#import <objc/objc-runtime.h>
 #import <CoreImage/CoreImage.h>
 
 #include <fmt/core.h>
@@ -13,15 +14,29 @@ namespace saucer
 {
     webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
     {
-        impl::init_objc();
+        static std::once_flag flag;
 
-        auto *const config = impl::config();
+        std::call_once(flag,
+                       []()
+                       {
+                           impl::init_objc();
+                           register_scheme("saucer");
+                       });
 
-        m_impl->controller = config.userContentController;
+        m_impl->config = [[WKWebViewConfiguration alloc] init];
+
+        for (const auto &[name, handler] : impl::schemes)
+        {
+            [m_impl->config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
+        }
+
+        m_impl->controller = m_impl->config.userContentController;
         [m_impl->controller addScriptMessageHandler:[[MessageHandler alloc] initWithParent:this] name:@"saucer"];
 
-        m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:config frame:NSZeroRect];
-        [m_impl->web_view setNavigationDelegate:[[NavigationDelegate alloc] initWithParent:this]];
+        m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:m_impl->config frame:NSZeroRect];
+        m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
+
+        [m_impl->web_view setNavigationDelegate:m_impl->delegate];
 
         [window::m_impl->window setContentView:m_impl->web_view];
         m_impl->appearance = window::m_impl->window.appearance;
@@ -37,7 +52,12 @@ namespace saucer
 
     webview::~webview()
     {
+        [m_impl->controller removeAllScriptMessageHandlers];
+        [m_impl->controller removeAllUserScripts];
+
+        m_impl->delegate = nil;
         m_impl->web_view = nil;
+        m_impl->config   = nil;
     }
 
     bool webview::on_message(const std::string &message)
@@ -103,7 +123,10 @@ namespace saucer
             return dispatch([this] { return dev_tools(); }).get();
         }
 
-        return [[m_impl->controller valueForKey:@"developerExtrasEnabled"] boolValue];
+        auto *const settings = m_impl->config.preferences;
+        auto *const enabled  = reinterpret_cast<NSNumber *>([settings valueForKey:@"developerExtrasEnabled"]);
+
+        return enabled.boolValue;
     }
 
     std::string webview::url() const
@@ -161,7 +184,7 @@ namespace saucer
             return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
         }
 
-        auto *const settings = impl::config().preferences;
+        auto *const settings = m_impl->config.preferences;
         [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
 
         // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/_WKInspector.mm.auto.html
@@ -213,18 +236,29 @@ namespace saucer
             return dispatch([this, background] { return set_background(background); }).get();
         }
 
-        auto [r, g, b, a] = background;
+        const auto [r, g, b, a] = background;
 
-        auto *const color = [NSColor colorWithCalibratedRed:(static_cast<float>(r) / 255.f)
+        auto *const color = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
                                                       green:static_cast<float>(g) / 255.f
-                                                       blue:(static_cast<float>(b) / 255.f)
-                                                      alpha:(static_cast<float>(a) / 255.f)];
+                                                       blue:static_cast<float>(b) / 255.f
+                                                      alpha:static_cast<float>(a) / 255.f];
 
         [window::m_impl->window setBackgroundColor:color];
         [m_impl->web_view setUnderPageBackgroundColor:color];
 
-        [m_impl->web_view setValue:[NSNumber numberWithBool:static_cast<BOOL>(a < 255)]
-                            forKey:@"drawsTransparentBackground"];
+        using set_draws_background_t = void (*)(id, SEL, BOOL);
+
+        static auto *const selector      = @selector(_setDrawsBackground:);
+        static auto set_draws_background = reinterpret_cast<set_draws_background_t>( //
+            class_getMethodImplementation([WKWebView class], selector));
+
+        if (!set_draws_background)
+        {
+            return;
+        }
+
+        const auto transparent = a < 255;
+        set_draws_background(m_impl->web_view, selector, static_cast<BOOL>(!transparent));
     }
 
     void webview::set_file(const fs::path &file)
@@ -384,11 +418,7 @@ namespace saucer
             return;
         }
 
-        auto *const config  = impl::config();
-        auto *const handler = [[SchemeHandler alloc] init];
-
-        impl::schemes.emplace(name, handler);
-        [config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
+        impl::schemes.emplace(name, [[SchemeHandler alloc] init]);
     }
 
     INSTANTIATE_EVENTS(webview, 6, web_event)
