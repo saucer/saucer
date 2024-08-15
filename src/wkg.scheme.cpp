@@ -2,6 +2,8 @@
 
 #include "gtk.utils.hpp"
 
+#include <rebind/enum.hpp>
+
 namespace saucer
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(data)) {}
@@ -66,41 +68,14 @@ namespace saucer
 
         if (!result.has_value())
         {
-            int status{};
-            std::string phrase{};
+            static auto quark = webkit_network_error_quark();
+            auto error        = result.error();
 
-            switch (result.error())
-            {
-                using enum request_error;
+            auto meta = rebind::enum_value(error);
+            auto name = meta ? meta->name : "Unknown";
 
-            case aborted:
-                status = 500;
-                phrase = "Aborted";
-                break;
-            case bad_url:
-                status = 500;
-                phrase = "Invalid Url";
-                break;
-            case denied:
-                status = 401;
-                phrase = "Unauthorized";
-                break;
-            case not_found:
-                status = 404;
-                phrase = "Not Found";
-                break;
-            default:
-            case failed:
-                status = 500;
-                phrase = "Failed";
-                break;
-            }
-
-            auto stream   = g_object_ptr<GInputStream>{g_memory_input_stream_new()};
-            auto response = g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), -1)};
-
-            webkit_uri_scheme_response_set_status(response.get(), status, phrase.c_str());
-            webkit_uri_scheme_request_finish_with_response(request, response.get());
+            auto err = g_object_ptr<GError>{g_error_new(quark, std::to_underlying(result.error()), "%s", name.data())};
+            webkit_uri_scheme_request_finish_error(request, err.get());
 
             return;
         }
@@ -120,6 +95,7 @@ namespace saucer
         }
 
         webkit_uri_scheme_response_set_content_type(response.get(), result->mime.c_str());
+        webkit_uri_scheme_response_set_status(response.get(), result->status, "");
         webkit_uri_scheme_response_set_http_headers(response.get(), headers);
 
         webkit_uri_scheme_request_finish_with_response(request, response.get());
