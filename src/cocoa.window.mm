@@ -14,14 +14,17 @@ namespace saucer
                        {
                            impl::init_objc();
 
+                           static auto *delegate = [[AppDelegate alloc] init];
+
                            impl::application = app_ptr{[NSApplication sharedApplication],
                                                        [](NSApplication *)
                                                        {
                                                            [NSApp terminate:nil];
+                                                           delegate = nil;
                                                        }};
 
+                           [NSApp setDelegate:delegate];
                            [NSApp activateIgnoringOtherApps:YES];
-                           [NSApp setDelegate:[[AppDelegate alloc] init]];
                            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
                        });
 
@@ -38,7 +41,9 @@ namespace saucer
                                                        backing:NSBackingStoreBuffered
                                                          defer:NO];
 
-        [m_impl->window setDelegate:[[WindowDelegate alloc] initWithParent:this]];
+        m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
+
+        [m_impl->window setDelegate:m_impl->delegate];
         [m_impl->window center];
     }
 
@@ -106,7 +111,7 @@ namespace saucer
             return dispatch([this] { return decorations(); }).get();
         }
 
-        return !(m_impl->window.styleMask & NSWindowStyleMaskBorderless);
+        return m_impl->window.styleMask != NSWindowStyleMaskBorderless;
     }
 
     bool window::always_on_top() const
@@ -136,7 +141,7 @@ namespace saucer
             return dispatch([this] { return size(); }).get();
         }
 
-        auto [width, height] = m_impl->window.frame.size;
+        const auto [width, height] = m_impl->window.frame.size;
 
         return {width, height};
     }
@@ -148,7 +153,7 @@ namespace saucer
             return dispatch([this] { return max_size(); }).get();
         }
 
-        auto [width, height] = m_impl->window.maxSize;
+        const auto [width, height] = m_impl->window.maxSize;
 
         return {width, height};
     }
@@ -160,7 +165,7 @@ namespace saucer
             return dispatch([this] { return min_size(); }).get();
         }
 
-        auto [width, height] = m_impl->window.minSize;
+        const auto [width, height] = m_impl->window.minSize;
 
         return {width, height};
     }
@@ -274,19 +279,14 @@ namespace saucer
             return dispatch([this, enabled] { return set_decorations(enabled); }).get();
         }
 
-        static constexpr auto flag = NSWindowStyleMaskBorderless | NSWindowStyleMaskTitled;
-        auto mask                  = m_impl->window.styleMask;
+        const auto mask = m_impl->window.styleMask;
 
-        if (!enabled)
+        if (mask != NSWindowStyleMaskBorderless)
         {
-            mask &= ~flag;
-        }
-        else
-        {
-            mask |= flag;
+            m_impl->prev_mask = mask;
         }
 
-        [m_impl->window setStyleMask:mask];
+        [m_impl->window setStyleMask:enabled ? m_impl->prev_mask : NSWindowStyleMaskBorderless];
     }
 
     void window::set_always_on_top(bool enabled)
@@ -312,7 +312,7 @@ namespace saucer
         }
 
         auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon];
-        auto tile        = m_impl->application.get().dockTile;
+        auto *const tile = m_impl->application.get().dockTile;
 
         [tile setContentView:view];
         [tile display];
@@ -363,23 +363,49 @@ namespace saucer
 
     void window::clear(window_event event)
     {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, event] { return clear(event); }).get();
+        }
+
         m_events.clear(event);
     }
 
     void window::remove(window_event event, std::uint64_t id)
     {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, event, id] { return remove(event, id); }).get();
+        }
+
         m_events.remove(event, id);
     }
 
     template <window_event Event>
     void window::once(events::type<Event> callback)
     {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable
+                            { return once<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
         m_events.at<Event>().once(std::move(callback));
     }
 
     template <window_event Event>
     std::uint64_t window::on(events::type<Event> callback)
     {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, callback = std::move(callback)]() mutable //
+                            { return on<Event>(std::move(callback)); })
+                .get();
+        }
+
+        m_impl->setup<Event>(this);
         return m_events.at<Event>().add(std::move(callback));
     }
 

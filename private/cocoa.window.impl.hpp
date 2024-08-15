@@ -7,9 +7,12 @@
 
 #import <Cocoa/Cocoa.h>
 
+@class WindowDelegate;
+
 namespace saucer
 {
-    using app_ptr = std::unique_ptr<NSApplication, std::function<void(NSApplication *)>>;
+    using app_ptr             = std::unique_ptr<NSApplication, std::function<void(NSApplication *)>>;
+    using observer_callback_t = std::function<void()>;
 
     struct click_event
     {
@@ -22,11 +25,19 @@ namespace saucer
         NSWindow *window;
 
       public:
+        WindowDelegate *delegate;
+
+      public:
+        NSWindowStyleMask prev_mask;
         std::function<void()> on_closed;
 
       public:
         std::optional<window_edge> edge;
         std::optional<click_event> prev_click;
+
+      public:
+        template <window_event>
+        void setup(saucer::window *);
 
       public:
         [[nodiscard]] static bool is_thread_safe();
@@ -38,6 +49,14 @@ namespace saucer
         static void init_objc();
     };
 } // namespace saucer
+
+@interface Observer : NSObject
+{
+  @public
+    saucer::observer_callback_t m_callback;
+}
+- (instancetype)initWithCallback:(saucer::observer_callback_t)callback;
+@end
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 {
