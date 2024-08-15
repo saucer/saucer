@@ -46,6 +46,7 @@ namespace saucer
       public:
         template <window_event>
         void setup(saucer::window *);
+        void update_decorations(saucer::window *) const;
 
       public:
         [[nodiscard]] static bool is_thread_safe();

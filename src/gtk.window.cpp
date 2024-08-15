@@ -68,6 +68,8 @@ namespace saucer
         g_signal_handler_disconnect(impl::application.get(), id);
 
         //? Undecorated windows would be 0x0 otherwise
+
+        m_impl->update_decorations(this);
         set_size(800, 600);
     }
 
@@ -326,7 +328,6 @@ namespace saucer
             return dispatch([this, enabled] { return set_decorations(enabled); }).get();
         }
 
-        gtk_widget_set_visible(GTK_WIDGET(m_impl->header), enabled);
         gtk_window_set_decorated(GTK_WINDOW(m_impl->window.get()), enabled);
     }
 
@@ -428,7 +429,7 @@ namespace saucer
     template <>
     void window::run<true>()
     {
-        auto callback = [](GtkApplication *, gpointer *data)
+        auto callback = [](GtkApplication *, gpointer)
         {
             // The "real" callback is registered in the constructor already, however, due to the non-async
             // workaround, we register it here again to silence GIO warnings.
@@ -464,5 +465,5 @@ namespace saucer
         g_main_context_release(context);
     }
 
-    INSTANTIATE_EVENTS(window, 6, window_event)
+    INSTANTIATE_EVENTS(window, 7, window_event)
 } // namespace saucer

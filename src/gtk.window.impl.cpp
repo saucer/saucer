@@ -43,6 +43,11 @@ namespace saucer
     }
 
     template <>
+    void saucer::window::impl::setup<window_event::decorated>(saucer::window *)
+    {
+    }
+
+    template <>
     void saucer::window::impl::setup<window_event::resize>(saucer::window *self)
     {
         auto &event = self->m_events.at<window_event::resize>();
@@ -149,5 +154,18 @@ namespace saucer
     void saucer::window::impl::setup<window_event::closed>(saucer::window *self)
     {
         setup<window_event::close>(self);
+    }
+
+    void window::impl::update_decorations(saucer::window *self) const
+    {
+        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        {
+            const auto decorations = self->decorations();
+
+            gtk_widget_set_visible(GTK_WIDGET(self->m_impl->header), decorations);
+            self->m_events.at<window_event::decorated>().fire(decorations);
+        };
+
+        g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);
     }
 } // namespace saucer
