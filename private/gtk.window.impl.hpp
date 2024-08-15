@@ -33,6 +33,9 @@ namespace saucer
         g_object_ptr<AdwApplicationWindow> window;
 
       public:
+        g_object_ptr<GtkCssProvider> style;
+
+      public:
         GtkBox *content;
         AdwHeaderBar *header;
 

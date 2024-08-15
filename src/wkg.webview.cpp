@@ -294,6 +294,10 @@ namespace saucer
             .alpha = static_cast<float>(a) / 255.f,
         };
 
+        auto css = fmt::format(".window {{ background-color: rgba({}, {}, {}, {}); }}", r, g, b,
+                               static_cast<float>(a) / 255.f);
+
+        gtk_css_provider_load_from_string(window::m_impl->style.get(), css.c_str());
         webkit_web_view_set_background_color(m_impl->web_view.get(), &color);
     }
 

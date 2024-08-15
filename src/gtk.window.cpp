@@ -37,11 +37,19 @@ namespace saucer
             auto *window      = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
 
             self->window  = g_object_ptr<AdwApplicationWindow>::ref(window);
+            self->style   = gtk_css_provider_new();
             self->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
             self->header  = ADW_HEADER_BAR(adw_header_bar_new());
 
             gtk_box_append(self->content, GTK_WIDGET(self->header));
             adw_application_window_set_content(self->window.get(), GTK_WIDGET(self->content));
+
+            gtk_widget_add_css_class(GTK_WIDGET(self->window.get()), "window");
+
+            auto *display  = gtk_widget_get_display(GTK_WIDGET(self->window.get()));
+            auto *provider = GTK_STYLE_PROVIDER(self->style.get());
+
+            gtk_style_context_add_provider_for_display(display, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
         };
 
         if (impl::init)
