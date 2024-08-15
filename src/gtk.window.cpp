@@ -347,11 +347,6 @@ namespace saucer
             return dispatch([this, width, height] { return set_size(width, height); }).get();
         }
 
-        if (!resizable())
-        {
-            return;
-        }
-
         auto [min_width, min_height] = min_size();
 
         width  = std::max(width, min_width);

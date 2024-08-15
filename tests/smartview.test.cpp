@@ -100,7 +100,7 @@ suite<"smartview"> smartview_suite = []
     smartview.expose("g", [&]() { return smartview.evaluate<int>("10 + 5").get(); }, saucer::launch::async);
     smartview.expose("h", [&]() { forget(smartview.evaluate<void>("saucer.exposed.close()")); }, saucer::launch::async);
 
-    std::jthread thread{[&]()
+    const std::jthread thread{[&]()
                         {
                             std::this_thread::sleep_for(std::chrono::seconds(2));
                             tests(smartview);

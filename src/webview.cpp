@@ -18,7 +18,7 @@ namespace saucer
 
             if (start >= url.size())
             {
-                return tl::unexpected{request_error::bad_url};
+                return tl::unexpected{request_error::invalid};
             }
 
             auto file   = url.substr(start, url.find_first_of("#?") - start);

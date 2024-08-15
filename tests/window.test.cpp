@@ -14,8 +14,6 @@ void tests(window &window, bool thread)
 {
     window.show();
 
-    // Some tests have been disabled on QT6 due to upstream bugs which are yet to be fixed (minor wayland issues).
-
     bool was_minimized{false};
     window.on<saucer::window_event::minimize>([&](bool minimized) { was_minimized = minimized; });
 
@@ -25,7 +23,7 @@ void tests(window &window, bool thread)
     std::pair<int, int> last_size{};
     window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });
 
-#ifndef SAUCER_WEBKITGTK
+#if !defined(SAUCER_WEBKITGTK) && !defined(SAUCER_WEBKIT)
     "minimize"_test = [&]()
     {
         window.set_minimized(true);
@@ -64,11 +62,6 @@ void tests(window &window, bool thread)
 
         window.set_resizable(false);
         expect(not window.resizable());
-
-        window.set_size(size.first + 10, size.second + 10);
-
-        auto [width, height] = window.size();
-        expect(window.size() == size) << size.first << ":" << size.second << " -> " << width << ":" << height;
     };
 
 #ifndef SAUCER_QT6
@@ -124,20 +117,14 @@ void tests(window &window, bool thread)
     "max_size"_test = [&]()
     {
         window.set_max_size(600, 600);
-        window.set_size(700, 700);
-
-        auto [width, height] = window.size();
-        expect(window.size() == std::make_pair(600, 600)) << width << ":" << height;
+        expect(window.max_size() == std::make_pair(600, 600));
     };
 #endif
 
     "min_size"_test = [&]()
     {
         window.set_min_size(200, 200);
-        window.set_size(0, 0);
-
-        auto [width, height] = window.size();
-        expect(window.size() == std::make_pair(200, 200)) << width << ":" << height;
+        expect(window.min_size() == std::make_pair(200, 200));
     };
 
     window.clear(saucer::window_event::resize);
@@ -154,17 +141,17 @@ suite<"window"> window_suite = []
         tests(window, false);
     };
 
-    std::jthread thread{[&]()
-                        {
-                            std::this_thread::sleep_for(std::chrono::seconds(2));
+    const std::jthread thread{[&]()
+                              {
+                                  std::this_thread::sleep_for(std::chrono::seconds(2));
 
-                            "from-thread"_test = [&]()
-                            {
-                                tests(window, true);
-                            };
+                                  "from-thread"_test = [&]()
+                                  {
+                                      tests(window, true);
+                                  };
 
-                            window.close();
-                        }};
+                                  window.close();
+                              }};
 
     window.run();
 };

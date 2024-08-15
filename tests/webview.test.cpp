@@ -40,8 +40,6 @@ class wait_guard
 
             std::this_thread::sleep_for(m_delay);
         }
-
-        expect(true);
     }
 };
 
@@ -155,12 +153,15 @@ void tests(saucer::webview &webview)
 
     "embed"_test = [&]()
     {
-        std::string page = R"html(
+        const std::string page = R"html(
         <!DOCTYPE html>
         <html>
             <head>
                 <title>Embedded</title>
             </head>
+            <body>
+                Embed Test
+            </body>
         </html>
         )html";
 
@@ -178,7 +179,7 @@ void tests(saucer::webview &webview)
         webview.clear_embedded("index.html");
 
         {
-            auto guard = navigation_guard{webview, "github"};
+            auto guard = title_guard{webview, "GitHub"};
             webview.set_url("https://github.com");
         }
 
@@ -203,6 +204,9 @@ void tests(saucer::webview &webview)
             <head>
                 <title>Lazy Embedded</title>
             </head>
+            <body>
+                Lazy Embed Test
+            </body>
         </html>
         )html";
 
@@ -227,7 +231,7 @@ void tests(saucer::webview &webview)
         expect(webview.page_title() == "Lazy Embedded");
 
         {
-            auto guard = navigation_guard{webview, "github"};
+            auto guard = title_guard{webview, "GitHub"};
             webview.set_url("https://github.com");
         }
         {
@@ -292,12 +296,15 @@ void tests(saucer::webview &webview)
                                   expect(req.url() == "test:/index.html");
                                   expect(req.method() == "GET");
 
-                                  std::string html = R"html(
+                                  const std::string html = R"html(
                                   <!DOCTYPE html>
                                   <html>
                                       <head>
                                         <title>Custom Scheme</title>
                                       </head>
+                                      <body>
+                                        Custom Scheme Test
+                                      </body>
                                   </html>
                                   )html";
 
@@ -327,13 +334,13 @@ suite<"webview"> webview_suite = []
 {
     saucer::webview webview{{.hardware_acceleration = false}};
 
-    std::jthread thread{[&]()
-                        {
-                            std::this_thread::sleep_for(std::chrono::seconds(2));
+    const std::jthread thread{[&]()
+                              {
+                                  std::this_thread::sleep_for(std::chrono::seconds(2));
 
-                            tests(webview);
-                            webview.close();
-                        }};
+                                  tests(webview);
+                                  webview.close();
+                              }};
 
     webview.show();
     webview.run();

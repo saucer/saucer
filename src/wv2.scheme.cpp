@@ -40,7 +40,7 @@ namespace saucer
     {
         if (!m_impl->body)
         {
-            return stash<>::from({});
+            return stash<>::empty();
         }
 
         STATSTG stats;
