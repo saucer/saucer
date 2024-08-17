@@ -195,7 +195,9 @@ void tests(saucer::webview &webview)
         }
 
         {
-            auto guard = test::url_guard{webview, "github"};
+            auto guard       = test::url_guard{webview, "github"};
+            auto title_guard = test::title_guard{webview, "GitHub"};
+
             webview.execute("location.href = 'https://github.com'");
         }
 
@@ -218,7 +220,9 @@ void tests(saucer::webview &webview)
         webview.inject("location.href = 'https://github.com'", saucer::load_time::ready);
 
         {
-            auto guard = test::url_guard{webview, "github"};
+            auto guard       = test::url_guard{webview, "github"};
+            auto title_guard = test::title_guard{webview, "GitHub"};
+
             webview.set_url("https://google.com/");
         }
 
