@@ -22,18 +22,22 @@ jobs:
         
         include:
           - backend: Qt5
+            platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
 
           - backend: Qt6
+            platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
           
           - backend: WebKitGtk
+            platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
 
           - backend: WebKit
+            platform: MacOS
             os: macos-latest
 
 
@@ -50,7 +54,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           backend: ${{ matrix.backend }}
-          platform: Linux
+          platform: ${{ matrix.platform }}
           build-type: ${{ matrix.config }}
           cmake-args: -Dsaucer_tests=ON -Dsaucer_ci=ON
 
