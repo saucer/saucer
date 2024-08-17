@@ -72,10 +72,11 @@ namespace saucer
             auto error        = result.error();
 
             auto meta = rebind::enum_value(error);
-            auto name = meta ? meta->name : "Unknown";
+            auto name = meta ? meta->name : "unknown";
 
-            auto err = g_object_ptr<GError>{g_error_new(quark, std::to_underlying(result.error()), "%s", name.data())};
-            webkit_uri_scheme_request_finish_error(request, err.get());
+            auto *const err = g_error_new(quark, std::to_underlying(result.error()), "%s", std::string{name}.c_str());
+            webkit_uri_scheme_request_finish_error(request, err);
+            g_error_free(err);
 
             return;
         }
