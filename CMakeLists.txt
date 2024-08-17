@@ -176,7 +176,7 @@ if (saucer_polyfill)
 
   CPMFindPackage(
     NAME           fu2
-    VERSION        4.2.1
+    VERSION        4.2.2
     GIT_REPOSITORY "https://github.com/saucer/function2"
   )
 
@@ -223,7 +223,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        4.1
+  VERSION        4.2
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
 )
 
