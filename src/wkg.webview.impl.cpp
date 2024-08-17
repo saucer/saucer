@@ -135,16 +135,16 @@ namespace saucer
 
         for (const auto &flag : options.browser_flags)
         {
-            auto delim = flag.find('=');
+            const auto delim = flag.find('=');
 
             if (delim == std::string::npos)
             {
                 continue;
             }
 
-            auto name      = flag.substr(0, delim);
-            auto value     = std::string_view{flag}.substr(delim + 1);
-            auto converted = convert(value);
+            auto name            = flag.substr(0, delim);
+            const auto value     = std::string_view{flag}.substr(delim + 1);
+            const auto converted = convert(value);
 
             if (!converted)
             {

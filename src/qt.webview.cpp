@@ -138,7 +138,7 @@ namespace saucer
             return dispatch([this] { return dev_tools(); }).get();
         }
 
-        return static_cast<bool>(m_impl->dev_page);
+        return m_impl->dev_page != nullptr;
     }
 
     std::string webview::url() const
@@ -338,7 +338,7 @@ namespace saucer
             return dispatch([this, name] { return remove_scheme(name); }).get();
         }
 
-        auto it = m_impl->schemes.find(name);
+        const auto it = m_impl->schemes.find(name);
 
         if (it == m_impl->schemes.end())
         {

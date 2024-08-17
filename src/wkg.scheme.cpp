@@ -22,14 +22,14 @@ namespace saucer
 
     stash<> request::content() const
     {
-        auto stream = g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request)};
+        const auto stream = g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request)};
 
         if (!stream)
         {
             return stash<>::empty();
         }
 
-        auto content = g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
+        const auto content = g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
 
         if (!content)
         {
@@ -44,7 +44,7 @@ namespace saucer
 
     std::map<std::string, std::string> request::headers() const
     {
-        auto *headers = webkit_uri_scheme_request_get_http_headers(m_impl->request);
+        auto *const headers = webkit_uri_scheme_request_get_http_headers(m_impl->request);
 
         std::map<std::string, std::string> rtn;
 
@@ -80,14 +80,14 @@ namespace saucer
             return;
         }
 
-        auto data = result->data;
-        auto size = static_cast<gssize>(data.size());
+        const auto data = result->data;
+        const auto size = static_cast<gssize>(data.size());
 
-        auto bytes  = g_bytes_ptr{g_bytes_new(data.data(), size)};
-        auto stream = g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
+        const auto bytes  = g_bytes_ptr{g_bytes_new(data.data(), size)};
+        const auto stream = g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
 
-        auto response = g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
-        auto *headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
+        const auto response = g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
+        auto *const headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
 
         for (const auto &[name, value] : result->headers)
         {

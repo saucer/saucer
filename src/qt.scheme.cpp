@@ -31,7 +31,7 @@ namespace saucer
 
     std::map<std::string, std::string> request::headers() const
     {
-        auto headers = m_impl->request->requestHeaders();
+        const auto headers = m_impl->request->requestHeaders();
 
         auto transform = [&headers](auto &item)
         {
@@ -73,12 +73,12 @@ namespace saucer
             return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
         };
 
-        auto headers = std::views::transform(result->headers, to_array);
+        const auto headers = std::views::transform(result->headers, to_array);
         request->setAdditionalResponseHeaders(QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}});
 #endif
 
-        auto data    = result->data;
-        auto *buffer = new QBuffer{};
+        const auto data = result->data;
+        auto *buffer    = new QBuffer{};
 
         buffer->open(QIODevice::WriteOnly);
         buffer->write(reinterpret_cast<const char *>(data.data()), static_cast<std::int64_t>(data.size()));

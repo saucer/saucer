@@ -28,7 +28,7 @@ namespace saucer
             throw std::runtime_error{"Failed to open required qwebchannel.js"};
         }
 
-        auto content = qwebchannel.readAll().toStdString();
+        const auto content = qwebchannel.readAll().toStdString();
         qwebchannel.close();
 
         instance.emplace(content + fmt::format(scripts::webview_script, fmt::arg("internal", R"js(
@@ -71,7 +71,7 @@ namespace saucer
             self->m_events.at<web_event::title_changed>().fire(title.toStdString());
         };
 
-        auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
         event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
@@ -90,7 +90,7 @@ namespace saucer
             self->m_events.at<web_event::load_finished>().fire();
         };
 
-        auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
         event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
@@ -109,7 +109,7 @@ namespace saucer
             self->m_events.at<web_event::icon_changed>().fire(icon{{favicon}});
         };
 
-        auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
         event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 
@@ -138,7 +138,7 @@ namespace saucer
             self->m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
         };
 
-        auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
         event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
     }
 

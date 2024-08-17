@@ -46,8 +46,8 @@ namespace saucer
                            QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-                           auto *punned      = static_cast<void *>(argv.data());
-                           impl::application = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
+                           auto *const punned = static_cast<void *>(argv.data());
+                           impl::application  = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
                        });
 
         if (!impl::application) [[unlikely]]
@@ -62,21 +62,15 @@ namespace saucer
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
-        auto palette = m_impl->window->palette();
-
-        auto color = palette.color(QPalette::ColorRole::Window);
-        color.setAlpha(255);
-
-        palette.setColor(QPalette::ColorRole::Window, color);
-
-        m_impl->window->setPalette(palette);
+        auto [r, g, b, a] = background();
+        set_background({r, g, b, 255});
     }
 
     window::~window() = default;
 
     void window::dispatch(callback_t callback) const
     {
-        auto *event = new safe_event{std::move(callback)};
+        auto *const event = new safe_event{std::move(callback)};
         QApplication::postEvent(m_impl->window.get(), event);
     }
 
@@ -137,8 +131,8 @@ namespace saucer
             return dispatch([this] { return background(); }).get();
         }
 
-        auto palette    = m_impl->window->palette();
-        auto background = palette.window().color();
+        const auto palette    = m_impl->window->palette();
+        const auto background = palette.window().color();
 
         return {
             static_cast<std::uint8_t>(background.red()),
@@ -379,7 +373,7 @@ namespace saucer
             return dispatch([this, color] { return set_background(color); }).get();
         }
 
-        auto [r, g, b, a] = color;
+        const auto [r, g, b, a] = color;
 
         auto palette = m_impl->window->palette();
         palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});

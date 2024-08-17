@@ -33,9 +33,9 @@ namespace saucer
 
         auto callback = [](GtkApplication *, gpointer data)
         {
-            auto *self        = static_cast<impl *>(data);
-            auto *application = GTK_APPLICATION(impl::application.get());
-            auto *window      = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
+            auto *const self        = static_cast<impl *>(data);
+            auto *const application = GTK_APPLICATION(impl::application.get());
+            auto *const window      = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
 
             self->window  = g_object_ptr<AdwApplicationWindow>::ref(window);
             self->style   = gtk_css_provider_new();
@@ -47,8 +47,8 @@ namespace saucer
 
             gtk_widget_add_css_class(GTK_WIDGET(self->window.get()), "window");
 
-            auto *display  = gtk_widget_get_display(GTK_WIDGET(self->window.get()));
-            auto *provider = GTK_STYLE_PROVIDER(self->style.get());
+            auto *const display  = gtk_widget_get_display(GTK_WIDGET(self->window.get()));
+            auto *const provider = GTK_STYLE_PROVIDER(self->style.get());
 
             gtk_style_context_add_provider_for_display(display, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
         };
@@ -59,7 +59,7 @@ namespace saucer
             return;
         }
 
-        auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
+        const auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
 
         while (!m_impl->window.get())
         {
@@ -229,14 +229,14 @@ namespace saucer
             return dispatch([this] { return start_drag(); }).get();
         }
 
-        auto data = m_impl->prev_data();
+        const auto data = m_impl->prev_data();
 
         if (!data)
         {
             return;
         }
 
-        auto [device, surface, button, time, x, y] = data.value();
+        const auto [device, surface, button, time, x, y] = data.value();
         gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), device, button, x, y, time);
     }
 
@@ -279,14 +279,14 @@ namespace saucer
             break;
         }
 
-        auto data = m_impl->prev_data();
+        const auto data = m_impl->prev_data();
 
         if (!data)
         {
             return;
         }
 
-        auto [device, surface, button, time, x, y] = data.value();
+        const auto [device, surface, button, time, x, y] = data.value();
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 
@@ -357,10 +357,9 @@ namespace saucer
             return dispatch([this, color] { return set_background(color); }).get();
         }
 
-        auto [r, g, b, a] = color;
-
-        auto css = fmt::format(".window {{ background-color: rgba({}, {}, {}, {}); }}", r, g, b,
-                               static_cast<float>(a) / 255.f);
+        const auto [r, g, b, a] = color;
+        const auto css          = fmt::format(".window {{ background-color: rgba({}, {}, {}, {}); }}", r, g, b,
+                                              static_cast<float>(a) / 255.f);
 
         gtk_css_provider_load_from_string(m_impl->style.get(), css.c_str());
 
@@ -383,11 +382,6 @@ namespace saucer
         {
             return dispatch([this, width, height] { return set_size(width, height); }).get();
         }
-
-        auto [min_width, min_height] = min_size();
-
-        width  = std::max(width, min_width);
-        height = std::max(height, min_height);
 
         gtk_window_set_default_size(GTK_WINDOW(m_impl->window.get()), width, height);
     }

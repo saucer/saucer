@@ -33,7 +33,7 @@ namespace saucer
             return;
         }
 
-        auto *old = static_cast<QWindowStateChangeEvent *>(event);
+        auto *const old = static_cast<QWindowStateChangeEvent *>(event);
 
         if (old->oldState().testFlag(Qt::WindowState::WindowMaximized) != isMaximized())
         {

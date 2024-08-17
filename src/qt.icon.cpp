@@ -53,13 +53,13 @@ namespace saucer
 
     std::optional<icon> icon::from(const fs::path &file)
     {
-        auto q_icon = QIcon{QString::fromStdString(file.string())};
+        auto rtn = QIcon{QString::fromStdString(file.string())};
 
-        if (q_icon.isNull())
+        if (rtn.isNull())
         {
             return std::nullopt;
         }
 
-        return icon{{q_icon}};
+        return icon{{rtn}};
     }
 } // namespace saucer

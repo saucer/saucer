@@ -18,10 +18,16 @@ namespace saucer
 
         if (options.persistent_cookies)
         {
-            auto *session = webkit_web_view_get_network_session(m_impl->web_view.get());
-            auto *manager = webkit_network_session_get_cookie_manager(session);
+            auto *const session = webkit_web_view_get_network_session(m_impl->web_view.get());
+            auto *const manager = webkit_network_session_get_cookie_manager(session);
 
-            auto path = options.storage_path.empty() ? (fs::temp_directory_path() / "saucer") : options.storage_path;
+            auto path = options.storage_path;
+
+            if (path.empty())
+            {
+                path = fs::temp_directory_path() / "saucer";
+            }
+
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(),
                                                          WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
@@ -50,7 +56,7 @@ namespace saucer
 
         auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
         {
-            auto *raw = jsc_value_to_string(value);
+            auto *const raw = jsc_value_to_string(value);
             std::string message{raw};
             g_free(raw);
 
@@ -62,7 +68,7 @@ namespace saucer
 
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
         {
-            auto *self = reinterpret_cast<webview *>(data);
+            auto *const self = reinterpret_cast<webview *>(data);
 
             if (event == WEBKIT_LOAD_COMMITTED)
             {
@@ -87,13 +93,13 @@ namespace saucer
 
         g_signal_connect(m_impl->web_view.get(), "load-changed", G_CALLBACK(+on_load), this);
 
-        auto *controller = gtk_gesture_click_new();
+        auto *const controller = gtk_gesture_click_new();
 
         auto on_click = [](GtkGestureClick *gesture, gint, double, double, void *data)
         {
-            auto *self       = reinterpret_cast<webview *>(data);
-            auto *controller = GTK_EVENT_CONTROLLER(gesture);
-            auto *event      = gtk_event_controller_get_current_event(controller);
+            auto *const self       = reinterpret_cast<webview *>(data);
+            auto *const controller = GTK_EVENT_CONTROLLER(gesture);
+            auto *const event      = gtk_event_controller_get_current_event(controller);
 
             self->window::m_impl->prev_click.emplace(click_event{
                 .event      = g_event_ptr::ref(event),
@@ -181,7 +187,7 @@ namespace saucer
             return dispatch([this] { return dev_tools(); }).get();
         }
 
-        auto *settings = webkit_web_view_get_settings(m_impl->web_view.get());
+        auto *const settings = webkit_web_view_get_settings(m_impl->web_view.get());
         return webkit_settings_get_enable_developer_extras(settings);
     }
 
@@ -250,8 +256,8 @@ namespace saucer
             return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
         }
 
-        auto *settings  = webkit_web_view_get_settings(m_impl->web_view.get());
-        auto *inspector = webkit_web_view_get_inspector(m_impl->web_view.get());
+        auto *const settings  = webkit_web_view_get_settings(m_impl->web_view.get());
+        auto *const inspector = webkit_web_view_get_inspector(m_impl->web_view.get());
 
         webkit_settings_set_enable_developer_extras(settings, enabled);
         webkit_web_inspector_show(inspector);
@@ -285,7 +291,7 @@ namespace saucer
             return dispatch([this, color] { return set_page_background(color); }).get();
         }
 
-        auto [r, g, b, a] = color;
+        const auto [r, g, b, a] = color;
 
         GdkRGBA rgba{
             .red   = static_cast<float>(r) / 255.f,
@@ -299,8 +305,7 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
-        auto path = fmt::format("file://{}", fs::canonical(file).string());
-        set_url(path);
+        set_url(fmt::format("file://{}", fs::canonical(file).string()));
     }
 
     void webview::set_url(const std::string &url)
@@ -325,7 +330,7 @@ namespace saucer
             return dispatch([this]() { return clear_scripts(); }).get();
         }
 
-        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
 
         for (const auto &script : m_impl->scripts | std::views::drop(2))
         {
@@ -364,13 +369,13 @@ namespace saucer
             return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
         }
 
-        auto webkit_time  = time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                        : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
-        auto webkit_frame = frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
-                                                    : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
+        const auto webkit_time  = time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
+                                                              : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
+        const auto webkit_frame = frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
+                                                          : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
 
-        auto *manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
-        auto *script  = webkit_user_script_new(code.c_str(), webkit_frame, webkit_time, nullptr, nullptr);
+        auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        auto *const script  = webkit_user_script_new(code.c_str(), webkit_frame, webkit_time, nullptr, nullptr);
 
         m_impl->scripts.emplace_back(script);
         webkit_user_content_manager_add_script(manager, script);
@@ -390,8 +395,8 @@ namespace saucer
             return;
         }
 
-        auto *context  = webkit_web_view_get_context(m_impl->web_view.get());
-        auto *security = webkit_web_context_get_security_manager(context);
+        auto *const context  = webkit_web_view_get_context(m_impl->web_view.get());
+        auto *const security = webkit_web_context_get_security_manager(context);
 
         auto state    = std::make_unique<scheme_state>(std::move(handler));
         auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme_state::handle);

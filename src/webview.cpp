@@ -7,22 +7,22 @@ namespace saucer
     void webview::embed(embedded_files files)
     {
         {
-            auto locked = m_embedded_files.write();
+            const auto locked = m_embedded_files.write();
             locked->merge(std::move(files));
         }
 
         auto handler = [this](const auto &request) -> scheme_handler::result_type
         {
-            auto url   = request.url();
-            auto start = url.find('/') + 1;
+            const auto url   = request.url();
+            const auto start = url.find('/') + 1;
 
             if (start >= url.size())
             {
                 return tl::unexpected{request_error::invalid};
             }
 
-            auto file   = url.substr(start, url.find_first_of("#?") - start);
-            auto locked = m_embedded_files.read();
+            const auto file   = url.substr(start, url.find_first_of("#?") - start);
+            const auto locked = m_embedded_files.read();
 
             if (!locked->contains(file))
             {
@@ -43,7 +43,7 @@ namespace saucer
     void webview::clear_embedded()
     {
         {
-            auto locked = m_embedded_files.write();
+            const auto locked = m_embedded_files.write();
             locked->clear();
         }
         remove_scheme("saucer");
@@ -51,7 +51,7 @@ namespace saucer
 
     void webview::clear_embedded(const std::string &file)
     {
-        auto locked = m_embedded_files.write();
+        const auto locked = m_embedded_files.write();
         locked->erase(file);
     }
 } // namespace saucer

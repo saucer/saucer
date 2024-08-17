@@ -39,8 +39,8 @@ namespace saucer
 
     std::optional<icon> icon::from(const stash<> &ico)
     {
-        auto bytes    = g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};
-        auto *texture = gdk_texture_new_from_bytes(bytes.get(), nullptr);
+        const auto bytes    = g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};
+        auto *const texture = gdk_texture_new_from_bytes(bytes.get(), nullptr);
 
         if (!texture)
         {
@@ -52,7 +52,7 @@ namespace saucer
 
     std::optional<icon> icon::from(const fs::path &file)
     {
-        auto *texture = gdk_texture_new_from_filename(file.string().c_str(), nullptr);
+        auto *const texture = gdk_texture_new_from_filename(file.string().c_str(), nullptr);
 
         if (!texture)
         {
