@@ -7,6 +7,7 @@
 
 #import <objc/objc-runtime.h>
 #import <CoreImage/CoreImage.h>
+#import <CommonCrypto/CommonCrypto.h>
 
 #include <fmt/core.h>
 
@@ -29,6 +30,36 @@ namespace saucer
         {
             [m_impl->config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
         }
+
+        NSUUID *uuid;
+
+        if (options.persistent_cookies)
+        {
+            // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
+
+            auto id = options.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", options.storage_path.string());
+            auto *const data = [NSString stringWithUTF8String:id.c_str()];
+
+            unsigned char hash[32] = "";
+            CC_SHA256(data.UTF8String, [data lengthOfBytesUsingEncoding:NSUTF8StringEncoding], hash);
+
+            auto top = hash | std::views::drop(16) | std::ranges::to<std::vector<unsigned char>>();
+
+            top[6] &= 0x0F;
+            top[6] |= 0x50;
+
+            top[8] &= 0x3F;
+            top[8] |= 0x80;
+
+            uuid = [[NSUUID alloc] initWithUUIDBytes:top.data()];
+        }
+        else
+        {
+            uuid = [[NSUUID alloc] init];
+        }
+
+        auto *const store = [WKWebsiteDataStore dataStoreForIdentifier:uuid];
+        [m_impl->config setWebsiteDataStore:store];
 
         m_impl->controller = m_impl->config.userContentController;
         [m_impl->controller addScriptMessageHandler:[[MessageHandler alloc] initWithParent:this] name:@"saucer"];
