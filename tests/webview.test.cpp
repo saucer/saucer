@@ -263,7 +263,9 @@ void tests(saucer::webview &webview)
         }
 
         webview.remove_scheme("test");
-        expect(webview.url().contains("isocpp"));
+
+        const auto url = webview.url();
+        expect(url.contains("isocpp")) << url;
     };
 
     webview.clear(saucer::web_event::load_started);

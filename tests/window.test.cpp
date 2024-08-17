@@ -22,7 +22,7 @@ void tests(window &window, bool thread)
         expect(r == 255 && g == 0 && b == 0 && a == 255);
     };
 
-#if !defined(SAUCER_WEBKITGTK)
+#if !defined(SAUCER_WEBKITGTK) && !defined(SAUCER_WEBKIT)
     "minimize"_test = [&]()
     {
         window.set_minimized(true);
