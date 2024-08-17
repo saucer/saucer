@@ -61,22 +61,10 @@ namespace saucer
 
         if (!result.has_value())
         {
-            switch (result.error())
-            {
-                using enum request_error;
+            const auto offset = std::to_underlying(result.error()) + 1;
+            request->fail(static_cast<QWebEngineUrlRequestJob::Error>(offset));
 
-            case aborted:
-                return request->fail(QWebEngineUrlRequestJob::RequestAborted);
-            case bad_url:
-                return request->fail(QWebEngineUrlRequestJob::UrlInvalid);
-            case denied:
-                return request->fail(QWebEngineUrlRequestJob::RequestDenied);
-            case not_found:
-                return request->fail(QWebEngineUrlRequestJob::UrlNotFound);
-            default:
-            case failed:
-                return request->fail(QWebEngineUrlRequestJob::RequestFailed);
-            }
+            return;
         }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
