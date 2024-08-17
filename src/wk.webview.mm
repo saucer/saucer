@@ -149,11 +149,21 @@ namespace saucer
         return m_impl->context_menu;
     }
 
-    color webview::background() const
+    bool webview::force_dark_mode() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this] { return background(); }).get();
+            return dispatch([this] { return force_dark_mode(); }).get();
+        }
+
+        return m_impl->force_dark;
+    }
+
+    color webview::page_background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return page_background(); }).get();
         }
 
         auto *const background = m_impl->web_view.underPageBackgroundColor;
@@ -165,16 +175,6 @@ namespace saucer
             static_cast<std::uint8_t>(color.blue * 255.f),
             static_cast<std::uint8_t>(color.alpha * 255.f),
         };
-    }
-
-    bool webview::force_dark_mode() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return force_dark_mode(); }).get();
-        }
-
-        return m_impl->force_dark;
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -229,36 +229,34 @@ namespace saucer
                                                       : m_impl->appearance];
     }
 
-    void webview::set_background(const color &background)
+    void webview::set_page_background(const color &color)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, background] { return set_background(background); }).get();
+            return dispatch([this, color] { return set_page_background(color); }).get();
         }
 
-        const auto [r, g, b, a] = background;
+        const auto [r, g, b, a] = color;
 
-        auto *const color = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
-                                                      green:static_cast<float>(g) / 255.f
-                                                       blue:static_cast<float>(b) / 255.f
-                                                      alpha:static_cast<float>(a) / 255.f];
+        auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
+                                                     green:static_cast<float>(g) / 255.f
+                                                      blue:static_cast<float>(b) / 255.f
+                                                     alpha:static_cast<float>(a) / 255.f];
 
-        [window::m_impl->window setBackgroundColor:color];
-        [m_impl->web_view setUnderPageBackgroundColor:color];
+        [m_impl->web_view setUnderPageBackgroundColor:rgba];
 
-        using set_draws_background_t = void (*)(id, SEL, BOOL);
+        using func_t = void (*)(id, SEL, BOOL);
 
-        static auto *const selector      = @selector(_setDrawsBackground:);
-        static auto set_draws_background = reinterpret_cast<set_draws_background_t>( //
-            class_getMethodImplementation([WKWebView class], selector));
+        static auto *const selector = @selector(_setDrawsBackground:);
+        static auto draw_bg = reinterpret_cast<func_t>(class_getMethodImplementation([WKWebView class], selector));
 
-        if (!set_draws_background)
+        if (!draw_bg)
         {
             return;
         }
 
         const auto transparent = a < 255;
-        set_draws_background(m_impl->web_view, selector, static_cast<BOOL>(!transparent));
+        draw_bg(m_impl->web_view, selector, static_cast<BOOL>(!transparent));
     }
 
     void webview::set_file(const fs::path &file)
