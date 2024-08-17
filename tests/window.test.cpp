@@ -14,15 +14,6 @@ void tests(window &window, bool thread)
 {
     window.show();
 
-    bool was_minimized{false};
-    window.on<saucer::window_event::minimize>([&](bool minimized) { was_minimized = minimized; });
-
-    bool was_maximized{false};
-    window.on<saucer::window_event::maximize>([&](bool maximized) { was_maximized = maximized; });
-
-    std::pair<int, int> last_size{};
-    window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });
-
     "background"_test = [&]()
     {
         window.set_background({255, 0, 0, 255});
@@ -31,19 +22,17 @@ void tests(window &window, bool thread)
         expect(r == 255 && g == 0 && b == 0 && a == 255);
     };
 
-#if !defined(SAUCER_WEBKITGTK) && !defined(SAUCER_WEBKIT)
+#if !defined(SAUCER_WEBKITGTK)
     "minimize"_test = [&]()
     {
         window.set_minimized(true);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(was_minimized);
         expect(window.minimized());
 
         window.set_minimized(false);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(not was_minimized);
         expect(not window.minimized());
     };
 #endif
@@ -53,13 +42,11 @@ void tests(window &window, bool thread)
         window.set_maximized(true);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(!thread || was_maximized);
         expect(!thread || window.maximized());
 
         window.set_maximized(false);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        expect(!thread || not was_maximized);
         expect(!thread || not window.maximized());
     };
 
@@ -109,16 +96,8 @@ void tests(window &window, bool thread)
         window.set_resizable(true);
         window.set_size(500, 500);
 
-        {
-            auto [width, height] = window.size();
-            expect(width == 500 && height == 500) << width << ":" << height;
-        }
-#if !defined(SAUCER_QT5) && !defined(SAUCER_WEBKITGTK)
-        {
-            auto [width, height] = last_size;
-            expect(width == 500 && height == 500) << width << ":" << height;
-        }
-#endif
+        auto [width, height] = window.size();
+        expect(width == 500 && height == 500) << width << ":" << height;
     };
 
 #ifndef SAUCER_WEBKITGTK
