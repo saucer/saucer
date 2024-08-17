@@ -90,8 +90,8 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
 
       public:
-        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
+        [[sc::thread_safe]] [[nodiscard]] color page_background() const;
 
       public:
         [[sc::thread_safe]] void set_dev_tools(bool enabled);
@@ -99,7 +99,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void set_force_dark_mode(bool enabled);
-        [[sc::thread_safe]] void set_background(const color &background);
+        [[sc::thread_safe]] void set_page_background(const color &color);
 
       public:
         [[sc::thread_safe]] void set_file(const fs::path &file);

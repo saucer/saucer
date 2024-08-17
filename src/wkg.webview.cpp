@@ -212,24 +212,6 @@ namespace saucer
         return m_impl->context_menu;
     }
 
-    color webview::background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return background(); }).get();
-        }
-
-        GdkRGBA color{};
-        webkit_web_view_get_background_color(m_impl->web_view.get(), &color);
-
-        return {
-            static_cast<std::uint8_t>(color.red * 255.f),
-            static_cast<std::uint8_t>(color.green * 255.f),
-            static_cast<std::uint8_t>(color.blue * 255.f),
-            static_cast<std::uint8_t>(color.alpha * 255.f),
-        };
-    }
-
     bool webview::force_dark_mode() const
     {
         if (!window::m_impl->is_thread_safe())
@@ -241,6 +223,24 @@ namespace saucer
         g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
 
         return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
+    }
+
+    color webview::page_background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return page_background(); }).get();
+        }
+
+        GdkRGBA color{};
+        webkit_web_view_get_background_color(m_impl->web_view.get(), &color);
+
+        return {
+            static_cast<std::uint8_t>(color.red * 255.f),
+            static_cast<std::uint8_t>(color.green * 255.f),
+            static_cast<std::uint8_t>(color.blue * 255.f),
+            static_cast<std::uint8_t>(color.alpha * 255.f),
+        };
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -278,27 +278,23 @@ namespace saucer
                      enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT, nullptr);
     }
 
-    void webview::set_background(const color &background)
+    void webview::set_page_background(const color &color)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, background] { return set_background(background); }).get();
+            return dispatch([this, color] { return set_page_background(color); }).get();
         }
 
-        auto [r, g, b, a] = background;
+        auto [r, g, b, a] = color;
 
-        GdkRGBA color{
+        GdkRGBA rgba{
             .red   = static_cast<float>(r) / 255.f,
             .green = static_cast<float>(g) / 255.f,
             .blue  = static_cast<float>(b) / 255.f,
             .alpha = static_cast<float>(a) / 255.f,
         };
 
-        auto css = fmt::format(".window {{ background-color: rgba({}, {}, {}, {}); }}", r, g, b,
-                               static_cast<float>(a) / 255.f);
-
-        gtk_css_provider_load_from_string(window::m_impl->style.get(), css.c_str());
-        webkit_web_view_set_background_color(m_impl->web_view.get(), &color);
+        webkit_web_view_set_background_color(m_impl->web_view.get(), &rgba);
     }
 
     void webview::set_file(const fs::path &file)

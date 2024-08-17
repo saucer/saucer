@@ -80,10 +80,10 @@ void tests(saucer::webview &webview)
 
     "background"_test = [&]()
     {
-        webview.set_background({255, 0, 0, 255});
+        webview.set_page_background({0, 255, 0, 255});
 
-        auto [r, g, b, a] = webview.background();
-        expect(r == 255 && g == 0 && b == 0 && a == 255);
+        auto [r, g, b, a] = webview.page_background();
+        expect(r == 0 && g == 255 && b == 0 && a == 255);
     };
 
     "url"_test = [&]()

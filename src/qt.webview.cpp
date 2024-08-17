@@ -161,23 +161,6 @@ namespace saucer
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
     }
 
-    color webview::background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return background(); }).get();
-        }
-
-        auto color = m_impl->web_page->backgroundColor();
-
-        return {
-            static_cast<std::uint8_t>(color.red()),
-            static_cast<std::uint8_t>(color.green()),
-            static_cast<std::uint8_t>(color.blue()),
-            static_cast<std::uint8_t>(color.alpha()),
-        };
-    }
-
     bool webview::force_dark_mode() const
     {
         if (!window::m_impl->is_thread_safe())
@@ -191,6 +174,23 @@ namespace saucer
 #else
         return {};
 #endif
+    }
+
+    color webview::page_background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return page_background(); }).get();
+        }
+
+        const auto color = m_impl->web_page->backgroundColor();
+
+        return {
+            static_cast<std::uint8_t>(color.red()),
+            static_cast<std::uint8_t>(color.green()),
+            static_cast<std::uint8_t>(color.blue()),
+            static_cast<std::uint8_t>(color.alpha()),
+        };
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -246,26 +246,17 @@ namespace saucer
 #endif
     }
 
-    void webview::set_background(const color &background)
+    void webview::set_page_background(const color &color)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, background] { return set_background(background); }).get();
+            return dispatch([this, color] { return set_page_background(color); }).get();
         }
 
-        const auto [r, g, b, a] = background;
-        const auto transparent  = a <= 255;
+        const auto [r, g, b, a] = color;
 
-        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, transparent);
-        window::m_impl->window->setAttribute(Qt::WA_TranslucentBackground, transparent);
-
-        auto color = QColor{r, g, b, a};
-        m_impl->web_page->setBackgroundColor(color);
-
-        auto palette = window::m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window, color);
-
-        window::m_impl->window->setPalette(palette);
+        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, a < 255);
+        m_impl->web_page->setBackgroundColor({r, g, b, a});
     }
 
     void webview::set_file(const fs::path &file)

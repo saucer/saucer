@@ -130,6 +130,24 @@ namespace saucer
         return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
     }
 
+    color window::background() const
+    {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this] { return background(); }).get();
+        }
+
+        auto palette    = m_impl->window->palette();
+        auto background = palette.window().color();
+
+        return {
+            static_cast<std::uint8_t>(background.red()),
+            static_cast<std::uint8_t>(background.green()),
+            static_cast<std::uint8_t>(background.blue()),
+            static_cast<std::uint8_t>(background.alpha()),
+        };
+    }
+
     std::string window::title() const
     {
         if (!impl::is_thread_safe())
@@ -354,6 +372,22 @@ namespace saucer
         m_impl->window->setWindowIcon(icon.m_impl->icon);
     }
 
+    void window::set_background(const color &color)
+    {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, color] { return set_background(color); }).get();
+        }
+
+        auto [r, g, b, a] = color;
+
+        auto palette = m_impl->window->palette();
+        palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
+
+        m_impl->window->setAttribute(Qt::WA_TranslucentBackground, a < 255);
+        m_impl->window->setPalette(palette);
+    }
+
     void window::set_title(const std::string &title)
     {
         if (!impl::is_thread_safe())
@@ -430,5 +464,5 @@ namespace saucer
         QApplication::processEvents();
     }
 
-    INSTANTIATE_EVENTS(window, 6, window_event)
+    INSTANTIATE_EVENTS(window, 7, window_event)
 } // namespace saucer

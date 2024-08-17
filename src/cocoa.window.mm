@@ -431,5 +431,5 @@ namespace saucer
         [NSApp sendEvent:event];
     }
 
-    INSTANTIATE_EVENTS(window, 6, window_event)
+    INSTANTIATE_EVENTS(window, 7, window_event)
 } // namespace saucer

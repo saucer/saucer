@@ -33,6 +33,7 @@ namespace saucer
         g_object_ptr<AdwApplicationWindow> window;
 
       public:
+        color background;
         g_object_ptr<GtkCssProvider> style;
 
       public:

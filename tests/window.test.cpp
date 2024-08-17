@@ -23,6 +23,14 @@ void tests(window &window, bool thread)
     std::pair<int, int> last_size{};
     window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });
 
+    "background"_test = [&]()
+    {
+        window.set_background({255, 0, 0, 255});
+
+        auto [r, g, b, a] = window.background();
+        expect(r == 255 && g == 0 && b == 0 && a == 255);
+    };
+
 #if !defined(SAUCER_WEBKITGTK) && !defined(SAUCER_WEBKIT)
     "minimize"_test = [&]()
     {

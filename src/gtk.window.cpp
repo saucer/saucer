@@ -5,6 +5,7 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
+#include <fmt/core.h>
 #include <flagpp/flags.hpp>
 
 template <>
@@ -134,6 +135,16 @@ namespace saucer
     bool window::always_on_top() const // NOLINT
     {
         return {};
+    }
+
+    color window::background() const
+    {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this] { return background(); }).get();
+        }
+
+        return m_impl->background;
     }
 
     std::string window::title() const
@@ -337,6 +348,23 @@ namespace saucer
 
     void window::set_icon(const icon &) // NOLINT
     {
+    }
+
+    void window::set_background(const color &color)
+    {
+        if (!impl::is_thread_safe())
+        {
+            return dispatch([this, color] { return set_background(color); }).get();
+        }
+
+        auto [r, g, b, a] = color;
+
+        auto css = fmt::format(".window {{ background-color: rgba({}, {}, {}, {}); }}", r, g, b,
+                               static_cast<float>(a) / 255.f);
+
+        gtk_css_provider_load_from_string(m_impl->style.get(), css.c_str());
+
+        m_impl->background = color;
     }
 
     void window::set_title(const std::string &title)

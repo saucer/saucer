@@ -49,6 +49,8 @@ namespace saucer
         std::size_t threads = std::thread::hardware_concurrency();
     };
 
+    using color = std::array<std::uint8_t, 4>;
+
     class window
     {
         struct impl;
@@ -91,6 +93,7 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] std::string title() const;
 
       public:
@@ -121,6 +124,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void set_icon(const icon &icon);
+        [[sc::thread_safe]] void set_background(const color &color);
         [[sc::thread_safe]] void set_title(const std::string &title);
 
       public:
