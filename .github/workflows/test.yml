@@ -14,14 +14,33 @@ jobs:
           - Qt5
           - Qt6
           - WebKitGtk
+          - WebKit
+        
         config:
           - Release
           - Debug
+        
+        include:
+          - backend: Qt5
+            os: ubuntu-latest
+            container: archlinux:base-devel
+
+          - backend: Qt6
+            os: ubuntu-latest
+            container: archlinux:base-devel
+          
+          - backend: WebKitGtk
+            os: ubuntu-latest
+            container: archlinux:base-devel
+
+          - backend: WebKit
+            os: macos-latest
+
 
     name: ${{ matrix.backend }}-${{ matrix.config }}
 
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
 
     steps:
       - name: 📥 Checkout
@@ -38,4 +57,4 @@ jobs:
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-        if: ${{ matrix.backend != 'WebKitGtk' }}
+        if: ${{ matrix.backend != 'WebKitGtk' && matrix.backend != 'WebKit' }}
