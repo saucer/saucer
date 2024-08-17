@@ -103,10 +103,12 @@ void tests(saucer::webview &webview)
         <html>
             <head>
                 <title>Embedded</title>
+                <script>
+                    location.href = 'https://isocpp.org';
+                </script>
             </head>
             <body>
                 Embedded Test
-                <script>location.href = 'https://isocpp.org';</script>
             </body>
         </html>
         )html";
@@ -145,10 +147,12 @@ void tests(saucer::webview &webview)
         <html>
             <head>
                 <title>Lazy Embedded</title>
+                <script>
+                    location.href = 'https://isocpp.org';
+                </script>
             </head>
             <body>
                 Lazy Embed Test
-                <script>location.href = 'https://isocpp.org';</script>
             </body>
         </html>
         )html";
@@ -243,10 +247,12 @@ void tests(saucer::webview &webview)
                                   <html>
                                       <head>
                                         <title>Custom Scheme</title>
+                                        <script>
+                                            location.href = 'https://isocpp.org';
+                                        </script>
                                       </head>
                                       <body>
                                         Custom Scheme Test
-                                        <script>location.href = 'https://isocpp.org';</script>
                                       </body>
                                   </html>
                                   )html";
