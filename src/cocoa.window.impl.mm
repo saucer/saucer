@@ -131,6 +131,14 @@ namespace saucer
     void saucer::window::impl::setup<window_event::close>(saucer::window *)
     {
     }
+
+    void saucer::window::impl::set_alpha(std::uint8_t alpha) const
+    {
+        auto *const background = window.backgroundColor;
+        auto *const color      = [background colorWithAlphaComponent:static_cast<float>(alpha) / 255.f];
+
+        [window setBackgroundColor:color];
+    }
 } // namespace saucer
 
 @implementation Observer

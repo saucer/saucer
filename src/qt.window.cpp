@@ -62,8 +62,7 @@ namespace saucer
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
-        auto [r, g, b, a] = background();
-        set_background({r, g, b, 255});
+        m_impl->set_alpha(255);
     }
 
     window::~window() = default;
@@ -122,24 +121,6 @@ namespace saucer
         }
 
         return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
-    }
-
-    color window::background() const
-    {
-        if (!impl::is_thread_safe())
-        {
-            return dispatch([this] { return background(); }).get();
-        }
-
-        const auto palette    = m_impl->window->palette();
-        const auto background = palette.window().color();
-
-        return {
-            static_cast<std::uint8_t>(background.red()),
-            static_cast<std::uint8_t>(background.green()),
-            static_cast<std::uint8_t>(background.blue()),
-            static_cast<std::uint8_t>(background.alpha()),
-        };
     }
 
     std::string window::title() const
@@ -364,22 +345,6 @@ namespace saucer
         }
 
         m_impl->window->setWindowIcon(icon.m_impl->icon);
-    }
-
-    void window::set_background(const color &color)
-    {
-        if (!impl::is_thread_safe())
-        {
-            return dispatch([this, color] { return set_background(color); }).get();
-        }
-
-        const auto [r, g, b, a] = color;
-
-        auto palette = m_impl->window->palette();
-        palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
-
-        m_impl->window->setAttribute(Qt::WA_TranslucentBackground, a < 255);
-        m_impl->window->setPalette(palette);
     }
 
     void window::set_title(const std::string &title)

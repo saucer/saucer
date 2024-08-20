@@ -124,24 +124,6 @@ namespace saucer
         return m_impl->window.level == kCGMaximumWindowLevelKey;
     }
 
-    color window::background() const
-    {
-        if (!impl::is_thread_safe())
-        {
-            return dispatch([this] { return background(); }).get();
-        }
-
-        auto *const background = m_impl->window.backgroundColor;
-        auto *const color      = [[CIColor alloc] initWithColor:background];
-
-        return {
-            static_cast<std::uint8_t>(color.red * 255.f),
-            static_cast<std::uint8_t>(color.green * 255.f),
-            static_cast<std::uint8_t>(color.blue * 255.f),
-            static_cast<std::uint8_t>(color.alpha * 255.f),
-        };
-    }
-
     std::string window::title() const
     {
         if (!impl::is_thread_safe())
@@ -334,23 +316,6 @@ namespace saucer
 
         [tile setContentView:view];
         [tile display];
-    }
-
-    void window::set_background(const color &color)
-    {
-        if (!impl::is_thread_safe())
-        {
-            return dispatch([this, color] { return set_background(color); }).get();
-        }
-
-        const auto [r, g, b, a] = color;
-
-        auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
-                                                     green:static_cast<float>(g) / 255.f
-                                                      blue:static_cast<float>(b) / 255.f
-                                                     alpha:static_cast<float>(a) / 255.f];
-
-        [m_impl->window setBackgroundColor:rgba];
     }
 
     void window::set_title(const std::string &title)

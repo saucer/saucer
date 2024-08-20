@@ -33,10 +33,6 @@ namespace saucer
         g_object_ptr<AdwApplicationWindow> window;
 
       public:
-        color background;
-        g_object_ptr<GtkCssProvider> style;
-
-      public:
         GtkBox *content;
         AdwHeaderBar *header;
 
@@ -47,6 +43,9 @@ namespace saucer
       public:
         template <window_event>
         void setup(saucer::window *);
+
+      public:
+        void make_transparent(bool enabled) const;
         void update_decorations(saucer::window *) const;
 
       public:
@@ -54,6 +53,7 @@ namespace saucer
 
       public:
         static inline bool init{false};
+        static inline g_object_ptr<GtkCssProvider> style;
         static thread_local inline g_object_ptr<AdwApplication> application;
     };
 } // namespace saucer

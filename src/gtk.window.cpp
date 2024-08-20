@@ -24,6 +24,9 @@ namespace saucer
         if (!impl::init)
         {
             impl::application = adw_application_new("io.saucer.saucer", G_APPLICATION_DEFAULT_FLAGS);
+            impl::style       = gtk_css_provider_new();
+
+            gtk_css_provider_load_from_string(impl::style.get(), ".transparent { background-color: transparent; }");
         }
 
         if (!impl::application) [[unlikely]]
@@ -38,14 +41,11 @@ namespace saucer
             auto *const window      = ADW_APPLICATION_WINDOW(adw_application_window_new(application));
 
             self->window  = g_object_ptr<AdwApplicationWindow>::ref(window);
-            self->style   = gtk_css_provider_new();
             self->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
             self->header  = ADW_HEADER_BAR(adw_header_bar_new());
 
             gtk_box_append(self->content, GTK_WIDGET(self->header));
             adw_application_window_set_content(self->window.get(), GTK_WIDGET(self->content));
-
-            gtk_widget_add_css_class(GTK_WIDGET(self->window.get()), "window");
 
             auto *const display  = gtk_widget_get_display(GTK_WIDGET(self->window.get()));
             auto *const provider = GTK_STYLE_PROVIDER(self->style.get());
@@ -135,16 +135,6 @@ namespace saucer
     bool window::always_on_top() const // NOLINT
     {
         return {};
-    }
-
-    color window::background() const
-    {
-        if (!impl::is_thread_safe())
-        {
-            return dispatch([this] { return background(); }).get();
-        }
-
-        return m_impl->background;
     }
 
     std::string window::title() const
@@ -348,22 +338,6 @@ namespace saucer
 
     void window::set_icon(const icon &) // NOLINT
     {
-    }
-
-    void window::set_background(const color &color)
-    {
-        if (!impl::is_thread_safe())
-        {
-            return dispatch([this, color] { return set_background(color); }).get();
-        }
-
-        const auto [r, g, b, a] = color;
-        const auto css          = fmt::format(".window {{ background-color: rgba({}, {}, {}, {}); }}", r, g, b,
-                                              static_cast<float>(a) / 255.f);
-
-        gtk_css_provider_load_from_string(m_impl->style.get(), css.c_str());
-
-        m_impl->background = color;
     }
 
     void window::set_title(const std::string &title)

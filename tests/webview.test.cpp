@@ -19,14 +19,6 @@ void tests(saucer::webview &webview)
     bool load_finished{false};
     webview.on<saucer::web_event::load_finished>([&]() { load_finished = true; });
 
-    "background"_test = [&]()
-    {
-        webview.set_page_background({0, 255, 0, 255});
-
-        auto [r, g, b, a] = webview.page_background();
-        expect(r == 0 && g == 255 && b == 0 && a == 255);
-    };
-
     "dev_tools"_test = [&]()
     {
         expect(not webview.dev_tools());

@@ -175,21 +175,11 @@ namespace saucer
         return m_impl->context_menu;
     }
 
-    bool webview::force_dark_mode() const
+    color webview::background() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this] { return force_dark_mode(); }).get();
-        }
-
-        return m_impl->force_dark;
-    }
-
-    color webview::page_background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return page_background(); }).get();
+            return dispatch([this] { return background(); }).get();
         }
 
         auto *const background = m_impl->web_view.underPageBackgroundColor;
@@ -201,6 +191,16 @@ namespace saucer
             static_cast<std::uint8_t>(color.blue * 255.f),
             static_cast<std::uint8_t>(color.alpha * 255.f),
         };
+    }
+
+    bool webview::force_dark_mode() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return force_dark_mode(); }).get();
+        }
+
+        return m_impl->force_dark;
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -255,14 +255,15 @@ namespace saucer
                                                       : m_impl->appearance];
     }
 
-    void webview::set_page_background(const color &color)
+    void webview::set_background(const color &color)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, color] { return set_page_background(color); }).get();
+            return dispatch([this, color] { return set_background(color); }).get();
         }
 
         const auto [r, g, b, a] = color;
+        const auto transparent  = a < 255;
 
         auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
                                                      green:static_cast<float>(g) / 255.f
@@ -270,6 +271,7 @@ namespace saucer
                                                      alpha:static_cast<float>(a) / 255.f];
 
         [m_impl->web_view setUnderPageBackgroundColor:rgba];
+        window::m_impl->set_alpha(transparent ? 0 : 255);
 
         using func_t = void (*)(id, SEL, BOOL);
 
@@ -281,7 +283,6 @@ namespace saucer
             return;
         }
 
-        const auto transparent = a < 255;
         draw_bg(m_impl->web_view, selector, static_cast<BOOL>(!transparent));
     }
 
