@@ -35,16 +35,6 @@ namespace saucer
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
 
-            if (!window->m_impl->resizable)
-            {
-                auto [width, height] = window->size();
-
-                info->ptMaxTrackSize = {.x = width, .y = height};
-                info->ptMinTrackSize = info->ptMaxTrackSize;
-
-                return original();
-            }
-
             if (auto min_size = window->m_impl->min_size; min_size)
             {
                 auto [min_x, min_y]  = min_size.value();
@@ -90,6 +80,26 @@ namespace saucer
 
             auto [width, height] = window->size();
             window->m_events.at<window_event::resize>().fire(width, height);
+
+            break;
+        }
+        case WM_STYLECHANGED: {
+            if (w_param != GWL_STYLE)
+            {
+                break;
+            }
+
+            static constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
+            auto *const changes         = reinterpret_cast<STYLESTRUCT *>(l_param);
+
+            if (!(changes->styleOld & flags) && (changes->styleNew & flags))
+            {
+                window->m_events.at<window_event::decorated>().fire(true);
+            }
+            else if ((changes->styleOld & flags) && !(changes->styleNew & flags))
+            {
+                window->m_events.at<window_event::decorated>().fire(false);
+            }
 
             break;
         }
