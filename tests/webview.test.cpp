@@ -7,9 +7,6 @@ using namespace boost::ut::literals;
 
 void tests(saucer::webview &webview)
 {
-    // Some tests are disabled in the CI under certain circumstances (due to issues
-    // related to the non existence of a proper display server - mostly with QT6).
-
     std::string last_url{};
     webview.on<saucer::web_event::url_changed>([&](const auto &url) { last_url = url; });
 
@@ -29,41 +26,6 @@ void tests(saucer::webview &webview)
         auto [r, g, b, a] = webview.page_background();
         expect(r == 0 && g == 255 && b == 0 && a == 255);
     };
-
-    "url"_test = [&]()
-    {
-        {
-            auto guard = test::wait_guard{[&]()
-                                          {
-                                              return load_started && load_finished && dom_ready;
-                                          }};
-
-            webview.set_url("https://github.com/saucer/saucer");
-        }
-
-        expect(load_started);
-        expect(load_finished);
-
-#ifndef SAUCER_CI
-        expect(dom_ready);
-#endif
-
-        expect(webview.url() == last_url) << webview.url() << ":" << last_url;
-        expect(webview.url().contains("github.com/saucer/saucer")) << webview.url();
-    };
-
-#ifndef SAUCER_CI
-    "page_title"_test = [&]()
-    {
-        {
-            auto guard = test::title_guard{webview, "Saucer | Saucer"};
-            webview.set_url("https://saucer.github.io");
-        }
-
-        auto title = webview.page_title();
-        expect(title == "Saucer | Saucer") << title;
-    };
-#endif
 
     "dev_tools"_test = [&]()
     {
@@ -93,6 +55,37 @@ void tests(saucer::webview &webview)
 
         webview.set_force_dark_mode(false);
         expect(not webview.force_dark_mode());
+    };
+#endif
+
+    "url"_test = [&]()
+    {
+        {
+            auto guard = test::load_guard{webview, load_finished};
+            webview.set_url("https://github.com/saucer/saucer");
+        }
+
+        expect(load_started);
+        expect(load_finished);
+
+#ifndef SAUCER_CI
+        expect(dom_ready);
+#endif
+
+        expect(webview.url() == last_url) << webview.url() << ":" << last_url;
+        expect(webview.url().contains("github.com/saucer/saucer")) << webview.url();
+    };
+
+#ifndef SAUCER_CI
+    "page_title"_test = [&]()
+    {
+        {
+            auto guard = test::load_guard{webview, load_finished};
+            webview.set_url("https://saucer.github.io");
+        }
+
+        auto title = webview.page_title();
+        expect(title == "Saucer | Saucer") << title;
     };
 #endif
 
@@ -127,7 +120,7 @@ void tests(saucer::webview &webview)
         webview.clear_embedded("index.html");
 
         {
-            auto guard = test::url_guard{webview, "github"};
+            auto guard = test::load_guard{webview, load_finished};
             webview.set_url("https://github.com");
         }
 
@@ -183,7 +176,9 @@ void tests(saucer::webview &webview)
         }
 
         {
-            auto guard = test::url_guard{webview, "isocpp"};
+            auto guard      = test::url_guard{webview, "isocpp"};
+            auto load_guard = test::load_guard{webview, load_finished};
+
             webview.serve("index.html");
         }
 
@@ -194,14 +189,12 @@ void tests(saucer::webview &webview)
     "execute"_test = [&]()
     {
         {
-            auto guard = test::url_guard{webview, "saucer"};
+            auto guard = test::load_guard{webview, load_finished};
             webview.set_url("https://saucer.github.io/");
         }
 
         {
-            auto guard       = test::url_guard{webview, "github"};
-            auto title_guard = test::title_guard{webview, "GitHub"};
-
+            auto guard = test::load_guard{webview, load_finished};
             webview.execute("location.href = 'https://github.com'");
         }
 
@@ -224,8 +217,8 @@ void tests(saucer::webview &webview)
         webview.inject("location.href = 'https://github.com'", saucer::load_time::ready);
 
         {
-            auto guard       = test::url_guard{webview, "github"};
-            auto title_guard = test::title_guard{webview, "GitHub"};
+            auto guard      = test::url_guard{webview, "github"};
+            auto load_guard = test::load_guard{webview, load_finished};
 
             webview.set_url("https://google.com/");
         }
@@ -264,7 +257,9 @@ void tests(saucer::webview &webview)
                               });
 
         {
-            auto guard = test::url_guard{webview, "isocpp"};
+            auto guard      = test::url_guard{webview, "isocpp"};
+            auto load_guard = test::load_guard{webview, load_finished};
+
             webview.serve("index.html", "test");
         }
 

@@ -58,13 +58,13 @@ namespace test
         }
     };
 
-    struct title_guard : wait_guard
+    struct load_guard : wait_guard
     {
-        title_guard(saucer::webview &webview, std::string title, chrono::seconds timeout = chrono::seconds{10},
-                    std::source_location loc = std::source_location::current())
-            : wait_guard([&webview, title = std::move(title)]() { return webview.page_title().contains(title); },
-                         timeout, loc)
+        load_guard(saucer::webview &webview, bool &value, chrono::seconds timeout = chrono::seconds{10},
+                   std::source_location loc = std::source_location::current())
+            : wait_guard([&webview, &value]() { return value; }, timeout, loc)
         {
+            value = false;
         }
     };
 
