@@ -235,6 +235,26 @@ namespace saucer
         return static_cast<bool>(rtn);
     }
 
+    color webview::background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return background(); }).get();
+        }
+
+        ComPtr<ICoreWebView2Controller2> controller;
+
+        if (!SUCCEEDED(m_impl->controller.As(&controller)))
+        {
+            return {};
+        }
+
+        COREWEBVIEW2_COLOR color;
+        controller->get_DefaultBackgroundColor(&color);
+
+        return {color.R, color.G, color.B, color.A};
+    }
+
     bool webview::force_dark_mode() const
     {
         if (!window::m_impl->is_thread_safe())
@@ -264,26 +284,6 @@ namespace saucer
         }
 
         return scheme == COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK;
-    }
-
-    color webview::page_background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this]() { return page_background(); }).get();
-        }
-
-        ComPtr<ICoreWebView2Controller2> controller;
-
-        if (!SUCCEEDED(m_impl->controller.As(&controller)))
-        {
-            return {};
-        }
-
-        COREWEBVIEW2_COLOR color;
-        controller->get_DefaultBackgroundColor(&color);
-
-        return {color.R, color.G, color.B, color.A};
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -338,11 +338,11 @@ namespace saucer
                                                   : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
     }
 
-    void webview::set_page_background(const color &color)
+    void webview::set_background(const color &color)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, color]() { return set_page_background(color); }).get();
+            return dispatch([this, color]() { return set_background(color); }).get();
         }
 
         ComPtr<ICoreWebView2Controller2> controller;

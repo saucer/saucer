@@ -150,11 +150,6 @@ namespace saucer
         return GetWindowLong(m_impl->hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST;
     }
 
-    color window::background() const // NOLINT
-    {
-        return {};
-    }
-
     std::string window::title() const
     {
         if (!impl::is_thread_safe())
@@ -407,14 +402,6 @@ namespace saucer
         SendMessage(m_impl->hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(handle));
 
         DestroyIcon(handle);
-    }
-
-    void window::set_background(const color &) // NOLINT
-    {
-        // Not possible with NOREDIRECTIONBITMAP unless we draw the window content
-        // ourselves. Which is way too scuffed to implement imho (additional dependency on
-        // DirectX, lots of boilerplate), considering that the user can just
-        // use `set_page_background` to control the window background in most cases anyways.
     }
 
     void window::set_title(const std::string &title)
