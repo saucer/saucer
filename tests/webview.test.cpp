@@ -190,11 +190,13 @@ void tests(saucer::webview &webview)
     {
         {
             auto guard = test::load_guard{webview, load_finished};
-            webview.set_url("https://saucer.github.io/");
+            webview.set_url("https://isocpp.org/");
         }
 
         {
-            auto guard = test::load_guard{webview, load_finished};
+            auto guard      = test::url_guard{webview, "github"};
+            auto load_guard = test::load_guard{webview, load_finished};
+
             webview.execute("location.href = 'https://github.com'");
         }
 
@@ -203,16 +205,18 @@ void tests(saucer::webview &webview)
 
     "inject"_test = [&]()
     {
-        webview.inject("if (location.href.includes('google')) { location.href = 'https://isocpp.org'; }",
+        webview.inject("if (location.href.includes('isocpp')) { location.href = 'https://google.com'; }",
                        saucer::load_time::creation);
 
         {
-            auto guard = test::url_guard{webview, "isocpp"};
-            webview.set_url("https://google.com/");
+            auto guard      = test::url_guard{webview, "google"};
+            auto load_guard = test::load_guard{webview, load_finished};
+
+            webview.set_url("https://isocpp.org/");
         }
 
         webview.clear_scripts();
-        expect(webview.url().contains("isocpp"));
+        expect(webview.url().contains("google")) << webview.url();
 
         webview.inject("location.href = 'https://github.com'", saucer::load_time::ready);
 
@@ -220,11 +224,11 @@ void tests(saucer::webview &webview)
             auto guard      = test::url_guard{webview, "github"};
             auto load_guard = test::load_guard{webview, load_finished};
 
-            webview.set_url("https://google.com/");
+            webview.set_url("https://saucer.github.io/");
         }
 
         webview.clear_scripts();
-        expect(webview.url().contains("github"));
+        expect(webview.url().contains("github")) << webview.url();
     };
 
     "scheme"_test = [&]()
