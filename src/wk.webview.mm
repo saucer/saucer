@@ -24,12 +24,7 @@ namespace saucer
                            register_scheme("saucer");
                        });
 
-        m_impl->config = [[WKWebViewConfiguration alloc] init];
-
-        for (const auto &[name, handler] : impl::schemes)
-        {
-            [m_impl->config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
-        }
+        m_impl->config = impl::make_config(options);
 
         NSUUID *uuid;
 

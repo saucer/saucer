@@ -206,6 +206,59 @@ namespace saucer
                                         { self->m_parent->m_events.at<web_event::load_started>().fire(); }),
             "v@:@");
     }
+
+    WKWebViewConfiguration *webview::impl::make_config(const options &options)
+    {
+        auto *const config = [[WKWebViewConfiguration alloc] init];
+
+        for (const auto &flag : options.browser_flags)
+        {
+            const auto delim = flag.find('=');
+
+            if (delim == std::string::npos)
+            {
+                continue;
+            }
+
+            auto key   = flag.substr(0, delim);
+            auto value = flag.substr(delim + 1);
+
+            const auto data = fmt::format(R"json({{ "value": {} }})json", value);
+            auto *const str = [NSString stringWithUTF8String:data.c_str()];
+
+            NSError *error{};
+
+            NSDictionary *const dict =
+                [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
+                                                options:0
+                                                  error:&error];
+
+            if (error)
+            {
+                continue;
+            }
+
+            id target = config;
+
+            while (key.contains('.'))
+            {
+                const auto delim   = key.find('.');
+                const auto sub_key = key.substr(0, delim);
+
+                key    = key.substr(delim + 1);
+                target = [target valueForKey:[NSString stringWithUTF8String:sub_key.c_str()]];
+            }
+
+            [target setValue:[dict objectForKey:@"value"] forKey:[NSString stringWithUTF8String:key.c_str()]];
+        }
+
+        for (const auto &[name, handler] : schemes)
+        {
+            [config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
+        }
+
+        return config;
+    }
 } // namespace saucer
 
 @implementation MessageHandler
