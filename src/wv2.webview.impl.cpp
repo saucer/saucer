@@ -8,6 +8,7 @@
 
 #include <fmt/core.h>
 #include <fmt/xchar.h>
+#include <rebind/enum.hpp>
 
 #include <windows.h>
 #include <gdiplus.h>
@@ -151,27 +152,12 @@ namespace saucer
 
         if (!result.has_value())
         {
-            switch (result.error())
-            {
-                using enum request_error;
+            auto error = result.error();
+            auto meta  = rebind::enum_value(error);
+            auto name  = meta ? meta->name : "unknown";
 
-            case aborted:
-                environment->CreateWebResourceResponse(nullptr, 500, L"Aborted", L"", &response);
-                break;
-            case bad_url:
-                environment->CreateWebResourceResponse(nullptr, 500, L"Invalid Url", L"", &response);
-                break;
-            case denied:
-                environment->CreateWebResourceResponse(nullptr, 401, L"Unauthorized", L"", &response);
-                break;
-            case not_found:
-                environment->CreateWebResourceResponse(nullptr, 404, L"Not Found", L"", &response);
-                break;
-            default:
-            case failed:
-                environment->CreateWebResourceResponse(nullptr, 500, L"Failed", L"", &response);
-                break;
-            }
+            environment->CreateWebResourceResponse(nullptr, std::to_underlying(error),
+                                                   utils::widen(std::string{name}).c_str(), L"", &response);
 
             return args->put_Response(response.Get());
         }
@@ -189,7 +175,7 @@ namespace saucer
 
         auto combined = utils::widen(fmt::format("{}", fmt::join(headers, "\n")));
 
-        environment->CreateWebResourceResponse(buffer.Get(), 200, L"OK", combined.c_str(), &response);
+        environment->CreateWebResourceResponse(buffer.Get(), result->status, L"OK", combined.c_str(), &response);
         args->put_Response(response.Get());
 
         return S_OK;
