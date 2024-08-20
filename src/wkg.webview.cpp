@@ -260,6 +260,13 @@ namespace saucer
         auto *const inspector = webkit_web_view_get_inspector(m_impl->web_view.get());
 
         webkit_settings_set_enable_developer_extras(settings, enabled);
+
+        if (!enabled)
+        {
+            webkit_web_inspector_close(inspector);
+            return;
+        }
+
         webkit_web_inspector_show(inspector);
     }
 
