@@ -218,24 +218,11 @@ namespace saucer
         return m_impl->context_menu;
     }
 
-    bool webview::force_dark_mode() const
+    color webview::background() const
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this] { return force_dark_mode(); }).get();
-        }
-
-        AdwColorScheme scheme{};
-        g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
-
-        return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
-    }
-
-    color webview::page_background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return page_background(); }).get();
+            return dispatch([this] { return background(); }).get();
         }
 
         GdkRGBA color{};
@@ -247,6 +234,19 @@ namespace saucer
             static_cast<std::uint8_t>(color.blue * 255.f),
             static_cast<std::uint8_t>(color.alpha * 255.f),
         };
+    }
+
+    bool webview::force_dark_mode() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return force_dark_mode(); }).get();
+        }
+
+        AdwColorScheme scheme{};
+        g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
+
+        return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -291,11 +291,11 @@ namespace saucer
                      enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT, nullptr);
     }
 
-    void webview::set_page_background(const color &color)
+    void webview::set_background(const color &color)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, color] { return set_page_background(color); }).get();
+            return dispatch([this, color] { return set_background(color); }).get();
         }
 
         const auto [r, g, b, a] = color;
@@ -308,6 +308,7 @@ namespace saucer
         };
 
         webkit_web_view_set_background_color(m_impl->web_view.get(), &rgba);
+        window::m_impl->make_transparent(a < 255);
     }
 
     void webview::set_file(const fs::path &file)

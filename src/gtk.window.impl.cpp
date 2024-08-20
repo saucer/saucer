@@ -156,6 +156,17 @@ namespace saucer
         setup<window_event::close>(self);
     }
 
+    void window::impl::make_transparent(bool enabled) const
+    {
+        if (!enabled)
+        {
+            gtk_widget_remove_css_class(GTK_WIDGET(window.get()), "transparent");
+            return;
+        }
+
+        gtk_widget_add_css_class(GTK_WIDGET(window.get()), "transparent");
+    }
+
     void window::impl::update_decorations(saucer::window *self) const
     {
         auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)

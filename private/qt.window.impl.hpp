@@ -19,6 +19,9 @@ namespace saucer
         std::function<void()> on_closed;
 
       public:
+        void set_alpha(std::uint8_t alpha) const;
+
+      public:
         [[nodiscard]] static bool is_thread_safe();
 
       public:

@@ -161,6 +161,23 @@ namespace saucer
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
     }
 
+    color webview::background() const
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this] { return background(); }).get();
+        }
+
+        const auto color = m_impl->web_page->backgroundColor();
+
+        return {
+            static_cast<std::uint8_t>(color.red()),
+            static_cast<std::uint8_t>(color.green()),
+            static_cast<std::uint8_t>(color.blue()),
+            static_cast<std::uint8_t>(color.alpha()),
+        };
+    }
+
     bool webview::force_dark_mode() const
     {
         if (!window::m_impl->is_thread_safe())
@@ -174,23 +191,6 @@ namespace saucer
 #else
         return {};
 #endif
-    }
-
-    color webview::page_background() const
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this] { return page_background(); }).get();
-        }
-
-        const auto color = m_impl->web_page->backgroundColor();
-
-        return {
-            static_cast<std::uint8_t>(color.red()),
-            static_cast<std::uint8_t>(color.green()),
-            static_cast<std::uint8_t>(color.blue()),
-            static_cast<std::uint8_t>(color.alpha()),
-        };
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -233,6 +233,22 @@ namespace saucer
                                                        : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
+    void webview::set_background(const color &color)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, color] { return set_background(color); }).get();
+        }
+
+        const auto [r, g, b, a] = color;
+        const auto transparent  = a < 255;
+
+        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, transparent);
+        window::m_impl->set_alpha(transparent ? 0 : 255);
+
+        m_impl->web_page->setBackgroundColor({r, g, b, a});
+    }
+
     void webview::set_force_dark_mode(bool enabled)
     {
         if (!window::m_impl->is_thread_safe())
@@ -244,19 +260,6 @@ namespace saucer
         auto *settings = m_impl->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
 #endif
-    }
-
-    void webview::set_page_background(const color &color)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this, color] { return set_page_background(color); }).get();
-        }
-
-        const auto [r, g, b, a] = color;
-
-        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, a < 255);
-        m_impl->web_page->setBackgroundColor({r, g, b, a});
     }
 
     void webview::set_file(const fs::path &file)
