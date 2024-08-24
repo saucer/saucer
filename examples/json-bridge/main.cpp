@@ -1,5 +1,5 @@
+#include <print>
 #include <thread>
-#include <iostream>
 
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
@@ -11,7 +11,7 @@ struct custom_data
 
 auto another_func(const custom_data &data)
 {
-    std::cout << "Called from thread: " << std::this_thread::get_id() << std::endl;
+    std::println("Called from thread: {}", std::this_thread::get_id());
     return custom_data{data.field * 2};
 }
 
@@ -27,35 +27,31 @@ int main()
     webview.set_max_size(1000, 1200);
 
     webview.on<saucer::web_event::url_changed>([](const auto &url) { //
-        std::cout << "New url:" << url << std::endl;
+        std::println("New url: {}", url);
     });
 
     webview.on<saucer::window_event::resize>([](auto width, auto height) { //
-        std::cout << width << ":" << height << std::endl;
+        std::println("Resize {}:{}", width, height);
     });
 
     webview.evaluate<float>("Math.random()") | then([](auto result) { //
-        std::cout << "Random: " << result << std::endl;
+        std::println("Random: {}", result);
     });
 
     webview.evaluate<int>("Math.pow({},{})", 5, 2) | then([](auto result) { //
-        std::cout << "Pow(5,2): " << result << std::endl;
+        std::println("Pow(5,2): {}", result);
     });
 
     webview.expose("some_func", [](int param) { return param * 10; });
 
     webview.evaluate<int>("await window.saucer.call({})", saucer::make_args("some_func", std::make_tuple(10))) |
-        then([](auto result) { //
-            std::cout << "some_func: " << result << std::endl;
-        });
+        then([](auto result) { std::println("some_func: {}", result); });
 
-    std::cout << "Main thread: " << std::this_thread::get_id() << std::endl;
+    std::println("Main thread: {}", std::this_thread::get_id());
     webview.expose("another_func", another_func, saucer::launch::async);
 
     webview.evaluate<custom_data>("await window.saucer.call({}, [{}])", "another_func", custom_data{500}) |
-        then([](auto result) { //
-            std::cout << "another_func: " << result.field << std::endl;
-        });
+        then([](auto result) { std::println("another_func: {}", result.field); });
 
     webview.set_url("https://github.com/saucer/saucer");
     webview.set_dev_tools(true);
