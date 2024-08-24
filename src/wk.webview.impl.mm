@@ -200,11 +200,14 @@ namespace saucer
                                         { self->m_parent->m_events.at<web_event::load_finished>().fire(); }),
             "v@:@");
 
-        class_replaceMethod(
-            [NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
-            imp_implementationWithBlock([](MessageHandler *self, WKWebView *, WKNavigation *)
-                                        { self->m_parent->m_events.at<web_event::load_started>().fire(); }),
-            "v@:@");
+        class_replaceMethod([NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
+                            imp_implementationWithBlock(
+                                [](MessageHandler *self, WKWebView *, WKNavigation *)
+                                {
+                                    self->m_parent->m_impl->dom_loaded = false;
+                                    self->m_parent->m_events.at<web_event::load_started>().fire();
+                                }),
+                            "v@:@");
     }
 
     WKWebViewConfiguration *webview::impl::make_config(const options &options)
