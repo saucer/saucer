@@ -36,15 +36,14 @@ namespace saucer
         ComPtr<ICoreWebView2> web_view;
 
       public:
-        std::vector<std::string> scripts;
-        std::vector<std::wstring> injected;
-
-      public:
         icon favicon;
 
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
+
+      public:
+        std::vector<std::pair<script, std::wstring>> scripts;
         std::unordered_map<std::string, scheme_handler> schemes;
 
       public:

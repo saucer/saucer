@@ -80,9 +80,14 @@ namespace saucer
             {
                 m_impl->dom_loaded = true;
 
-                for (const auto &script : m_impl->scripts)
+                for (const auto &[script, id] : m_impl->scripts)
                 {
-                    execute(script);
+                    if (script.time != load_time::ready)
+                    {
+                        continue;
+                    }
+
+                    execute(script.code);
                 }
 
                 for (const auto &pending : m_impl->pending)
@@ -136,7 +141,7 @@ namespace saucer
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
-        inject(impl::inject_script(), load_time::creation);
+        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
     }
 
     webview::~webview() = default;
@@ -379,17 +384,59 @@ namespace saucer
             return dispatch([this]() { return clear_scripts(); }).get();
         }
 
-        for (const auto &script : m_impl->injected | std::views::drop(1))
+        for (auto it = m_impl->scripts.begin(); it != m_impl->scripts.end();)
         {
-            m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(script.c_str());
+            const auto &[script, id] = *it;
+
+            if (script.permanent)
+            {
+                ++it;
+                continue;
+            }
+
+            if (!id.empty())
+            {
+                m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(id.c_str());
+            }
+
+            it = m_impl->scripts.erase(it);
+        }
+    }
+
+    void webview::inject(const script &script)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, script]() { return inject(script); }).get();
         }
 
-        if (m_impl->injected.empty())
+        if (script.time == load_time::ready)
         {
+            m_impl->scripts.emplace_back(script, L"");
             return;
         }
 
-        m_impl->injected.resize(1);
+        auto callback = [this, script](auto, LPCWSTR id)
+        {
+            m_impl->scripts.emplace_back(script, id);
+            return S_OK;
+        };
+
+        auto source = script.code;
+
+        if (script.frame == web_frame::top)
+        {
+            source = fmt::format(R"js(
+            if (self === top)
+            {{
+                {}
+            }}
+            )js",
+                                 source);
+        }
+
+        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(source).c_str(),
+                                                              Callback<ScriptInjected>(callback).Get());
     }
 
     void webview::execute(const std::string &code)
@@ -406,42 +453,6 @@ namespace saucer
         }
 
         m_impl->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
-    }
-
-    void webview::inject(const std::string &code, load_time time, web_frame frame)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
-        }
-
-        if (time == load_time::ready)
-        {
-            m_impl->scripts.emplace_back(code);
-            return;
-        }
-
-        auto callback = [this](auto, LPCWSTR id)
-        {
-            m_impl->injected.emplace_back(id);
-            return S_OK;
-        };
-
-        auto source = code;
-
-        if (frame == web_frame::top)
-        {
-            source = fmt::format(R"js(
-            if (self === top)
-            {{
-                {}
-            }}
-            )js",
-                                 code);
-        }
-
-        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(source).c_str(),
-                                                              Callback<ScriptInjected>(callback).Get());
     }
 
     void webview::handle_scheme(const std::string &name, scheme_handler handler)
