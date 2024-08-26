@@ -5,6 +5,7 @@
 #include "modules/module.hpp"
 #include "serializers/glaze/glaze.hpp"
 
+#include <tuple>
 #include <future>
 #include <atomic>
 #include <memory>
@@ -57,8 +58,14 @@ namespace saucer
     using default_serializer = serializers::glaze::serializer;
 
     template <Serializer Serializer = default_serializer, Module... Modules>
-    struct smartview : public smartview_core, public Modules...
+    class smartview : public smartview_core
     {
+        std::tuple<Modules...> m_modules;
+
+      private:
+        saucer::natives natives() const;
+
+      public:
         smartview(const options & = {});
 
       public:
@@ -68,6 +75,10 @@ namespace saucer
       public:
         template <typename Return, typename... Params>
         [[sc::thread_safe]] [[nodiscard]] std::future<Return> evaluate(const std::string &code, Params &&...params);
+
+      public:
+        template <Module T>
+        auto &module();
     };
 } // namespace saucer
 

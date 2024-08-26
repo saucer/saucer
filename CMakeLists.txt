@@ -108,11 +108,24 @@ else()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
+# Setup Linkage
+# └ To make module development eaiser, all system libraries will be linked publicly if module
+#   support is enabled. 
+# --------------------------------------------------------------------------------------------------------
+
+set(saucer_linkage PRIVATE)
+
+if (saucer_modules)
+  set(saucer_linkage PUBLIC)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
 # Include directories
 # --------------------------------------------------------------------------------------------------------
 
-target_include_directories(${PROJECT_NAME} PUBLIC  "include")
-target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer" "private")
+target_include_directories(${PROJECT_NAME} PUBLIC            "include")
+target_include_directories(${PROJECT_NAME} ${saucer_linkage} "private")
+target_include_directories(${PROJECT_NAME} PRIVATE           "include/saucer")
 
 # --------------------------------------------------------------------------------------------------------
 # Setup feature macros
@@ -156,10 +169,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/latch.cpp"
     "src/requests.cpp"
 )
-
-if (saucer_modules)
-  target_sources(${PROJECT_NAME} PRIVATE "src/module.cpp")
-endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Polyfills
@@ -266,19 +275,6 @@ CPMFindPackage(
 
 target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::flagpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits tl::expected glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::lockpp cr::poolparty)
-
-# --------------------------------------------------------------------------------------------------------
-# Setup Linkage
-# └ we use conditional linkage, because we want to publicly link against qt/webview2 when module support
-#   is enabled, so that consumers of the library can easily use the undlerying API for their modules
-#   without having to link qt/webview2 themselves.
-# --------------------------------------------------------------------------------------------------------
-
-set(saucer_linkage PRIVATE)
-
-if (saucer_modules)
-  set(saucer_linkage PUBLIC)
-endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
