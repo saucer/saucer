@@ -326,6 +326,16 @@ namespace saucer
         webkit_web_view_load_uri(m_impl->web_view.get(), url.c_str());
     }
 
+    void webview::reload()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return reload(); }).get();
+        }
+
+        webkit_web_view_reload(m_impl->web_view.get());
+    }
+
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())
