@@ -81,7 +81,7 @@ static void tests(saucer::smartview<> &webview)
         last_title.clear();
 
         webview.set_url("https://saucer.github.io");
-        test::wait_for([&]() { return !last_title.empty(); });
+        test::wait_for([&last_title]() { return !last_title.empty(); });
 
         auto title = webview.page_title();
         expect(title == "Saucer | Saucer") << title;
@@ -198,7 +198,7 @@ static void tests(saucer::smartview<> &webview)
         webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = creation});
         webview.set_url("https://saucer.github.io");
 
-        test::wait_for([&state]() { return !state.empty(); });
+        test::wait_for([&state, &load_finished]() { return !state.empty() && load_finished; });
         expect(!state.empty() && state != "complete") << state;
 
         webview.clear_scripts();
