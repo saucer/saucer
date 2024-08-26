@@ -53,20 +53,21 @@ namespace saucer
             gtk_style_context_add_provider_for_display(display, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
         };
 
-        if (impl::init)
+        if (!impl::init)
+        {
+            const auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
+
+            while (!m_impl->window.get())
+            {
+                run<false>();
+            }
+
+            g_signal_handler_disconnect(impl::application.get(), id);
+        }
+        else
         {
             std::invoke(callback, nullptr, m_impl.get());
-            return;
         }
-
-        const auto id = g_signal_connect(impl::application.get(), "activate", G_CALLBACK(+callback), m_impl.get());
-
-        while (!m_impl->window.get())
-        {
-            run<false>();
-        }
-
-        g_signal_handler_disconnect(impl::application.get(), id);
 
         //? Undecorated windows would be 0x0 otherwise
 
