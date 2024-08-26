@@ -212,6 +212,18 @@ namespace saucer
 
     WKWebViewConfiguration *webview::impl::make_config(const options &options)
     {
+        static auto resolve = [](id target, NSString *key) -> id
+        {
+            @try
+            {
+                return [target valueForKey:key];
+            }
+            @catch (...)
+            {
+                return nil;
+            }
+        };
+
         auto *const config = [[WKWebViewConfiguration alloc] init];
 
         for (const auto &flag : options.browser_flags)
@@ -249,10 +261,17 @@ namespace saucer
                 const auto sub_key = key.substr(0, delim);
 
                 key    = key.substr(delim + 1);
-                target = [target valueForKey:[NSString stringWithUTF8String:sub_key.c_str()]];
+                target = resolve(target, [NSString stringWithUTF8String:sub_key.c_str()]);
             }
 
-            [target setValue:[dict objectForKey:@"value"] forKey:[NSString stringWithUTF8String:key.c_str()]];
+            auto *const selector = [NSString stringWithUTF8String:key.c_str()];
+
+            if (!resolve(target, selector))
+            {
+                continue;
+            }
+
+            [target setValue:[dict objectForKey:@"value"] forKey:selector];
         }
 
         for (const auto &[name, handler] : schemes)
