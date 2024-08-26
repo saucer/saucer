@@ -32,6 +32,9 @@ namespace saucer
         bool context_menu{false};
 
       public:
+        std::vector<script> permanent_scripts;
+
+      public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
 

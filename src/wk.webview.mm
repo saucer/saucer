@@ -72,8 +72,8 @@ namespace saucer
             set_dev_tools(false);
         };
 
-        inject(impl::inject_script(), load_time::creation);
-        inject(std::string{impl::ready_script}, load_time::ready);
+        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
+        inject({.code = std::string{impl::ready_script}, .time = load_time::ready, .permanent = true});
     }
 
     webview::~webview()
@@ -319,8 +319,41 @@ namespace saucer
 
         [m_impl->controller removeAllUserScripts];
 
-        inject(impl::inject_script(), load_time::creation);
-        inject(std::string{impl::ready_script}, load_time::ready);
+        for (const auto &script : m_impl->permanent_scripts)
+        {
+            inject(script);
+        }
+    }
+
+    void webview::inject(const script &script)
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this, script]() { return inject(script); }).get();
+        }
+
+        const auto time      = script.time == load_time::creation ? WKUserScriptInjectionTimeAtDocumentStart
+                                                                  : WKUserScriptInjectionTimeAtDocumentEnd;
+        const auto main_only = static_cast<BOOL>(script.frame == web_frame::top);
+
+        auto *const user_script =
+            [[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
+                                   injectionTime:time
+                                forMainFrameOnly:main_only];
+
+        [m_impl->controller addUserScript:user_script];
+
+        if (!script.permanent)
+        {
+            return;
+        }
+
+        if (std::ranges::find(m_impl->permanent_scripts, script) != m_impl->permanent_scripts.end())
+        {
+            return;
+        }
+
+        m_impl->permanent_scripts.emplace_back(script);
     }
 
     void webview::execute(const std::string &code)
@@ -337,23 +370,6 @@ namespace saucer
         }
 
         [m_impl->web_view evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
-    }
-
-    void webview::inject(const std::string &code, load_time time, web_frame frame)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
-        }
-
-        const auto webkit_time = time == load_time::creation ? WKUserScriptInjectionTimeAtDocumentStart
-                                                             : WKUserScriptInjectionTimeAtDocumentEnd;
-
-        auto *const script = [[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:code.c_str()]
-                                                    injectionTime:webkit_time
-                                                 forMainFrameOnly:static_cast<BOOL>(frame == web_frame::top)];
-
-        [m_impl->controller addUserScript:script];
     }
 
     void webview::handle_scheme(const std::string &name, scheme_handler handler)
