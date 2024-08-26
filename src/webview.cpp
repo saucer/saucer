@@ -13,7 +13,7 @@ namespace saucer
 
         auto handler = [this](const auto &request) -> scheme_handler::result_type
         {
-            static constexpr std::string_view prefix = "saucer://embedded/";
+            static constexpr std::string_view prefix = "/embedded/";
 
             const auto url   = request.url();
             const auto start = url.find(prefix) + prefix.size();

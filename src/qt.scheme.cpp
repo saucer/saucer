@@ -73,8 +73,10 @@ namespace saucer
             return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
         };
 
-        const auto headers = std::views::transform(result->headers, to_array);
-        request->setAdditionalResponseHeaders(QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}});
+        const auto headers   = std::views::transform(result->headers, to_array);
+        const auto converted = QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}};
+
+        request->setAdditionalResponseHeaders(converted);
 #endif
 
         const auto data = result->data;

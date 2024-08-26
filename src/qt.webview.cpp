@@ -403,10 +403,15 @@ namespace saucer
     void webview::register_scheme(const std::string &name)
     {
         auto scheme = QWebEngineUrlScheme{name.c_str()};
-        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
+        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
 
-        using Flags = QWebEngineUrlScheme::Flag;
-        scheme.setFlags(Flags::LocalScheme | Flags::LocalAccessAllowed | Flags::SecureScheme);
+        using enum QWebEngineUrlScheme::Flag;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+        scheme.setFlags(SecureScheme | FetchApiAllowed | CorsEnabled);
+#else
+        scheme.setFlags(SecureScheme | CorsEnabled);
+#endif
 
         QWebEngineUrlScheme::registerScheme(scheme);
     }
