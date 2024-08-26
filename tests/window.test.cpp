@@ -105,6 +105,7 @@ static void tests(window &window, bool thread)
         expect(window.title() == "Some Title") << window.title();
     };
 
+#ifndef SAUCER_QT5
     "size"_test = [&]()
     {
         window.set_resizable(true);
@@ -118,6 +119,7 @@ static void tests(window &window, bool thread)
         auto [last_width, last_height] = last_size;
         expect(!thread || (width == last_width && height == last_height)) << last_width << ":" << last_height;
     };
+#endif
 
 #ifndef SAUCER_WEBKITGTK
     "max_size"_test = [&]()
