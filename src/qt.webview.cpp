@@ -282,6 +282,26 @@ namespace saucer
         m_impl->web_view->setUrl(QString::fromStdString(url));
     }
 
+    void webview::back()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return back(); }).get();
+        }
+
+        m_impl->web_view->back();
+    }
+
+    void webview::forward()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return forward(); }).get();
+        }
+
+        m_impl->web_view->forward();
+    }
+
     void webview::reload()
     {
         if (!window::m_impl->is_thread_safe())
