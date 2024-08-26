@@ -43,6 +43,11 @@ namespace saucer
         handle_scheme("saucer", handler);
     }
 
+    void webview::serve(const std::string &file)
+    {
+        set_url(fmt::format("saucer://embedded/{}", file));
+    }
+
     void webview::clear_embedded()
     {
         {

@@ -326,11 +326,6 @@ namespace saucer
         webkit_web_view_load_uri(m_impl->web_view.get(), url.c_str());
     }
 
-    void webview::serve(const std::string &file)
-    {
-        set_url(fmt::format("saucer://embedded/{}", file));
-    }
-
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())
