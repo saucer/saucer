@@ -72,7 +72,7 @@ namespace saucer
             LPWSTR value{};
 
             it->GetCurrentHeader(&header, &value);
-            rtn[utils::narrow(header)] = utils::narrow(value);
+            rtn.emplace(utils::narrow(header), utils::narrow(value));
 
             CoTaskMemFree(header);
             CoTaskMemFree(value);
