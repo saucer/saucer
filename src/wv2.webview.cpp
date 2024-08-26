@@ -377,6 +377,36 @@ namespace saucer
         m_impl->web_view->Navigate(utils::widen(url).c_str());
     }
 
+    void webview::back()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return back(); }).get();
+        }
+
+        m_impl->web_view->GoBack();
+    }
+
+    void webview::forward()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return forward(); }).get();
+        }
+
+        m_impl->web_view->GoForward();
+    }
+
+    void webview::reload()
+    {
+        if (!window::m_impl->is_thread_safe())
+        {
+            return dispatch([this]() { return reload(); }).get();
+        }
+
+        m_impl->web_view->Reload();
+    }
+
     void webview::clear_scripts()
     {
         if (!window::m_impl->is_thread_safe())

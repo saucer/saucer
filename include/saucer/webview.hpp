@@ -96,7 +96,13 @@ namespace saucer
         [[sc::thread_safe]] void set_url(const std::string &url);
 
       public:
+        [[sc::thread_safe]] void back();
+        [[sc::thread_safe]] void forward();
+
+      public:
         [[sc::thread_safe]] void reload();
+
+      public:
         [[sc::thread_safe]] void embed(embedded_files files);
         [[sc::thread_safe]] void serve(const std::string &file);
 
