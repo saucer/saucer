@@ -256,7 +256,7 @@ void tests(saucer::webview &webview)
             auto guard      = test::url_guard{webview, "isocpp"};
             auto load_guard = test::load_guard{webview, load_finished};
 
-            webview.serve("index.html", "test");
+            webview.set_url("test://index.html");
         }
 
         webview.remove_scheme("test");

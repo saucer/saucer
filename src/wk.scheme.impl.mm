@@ -49,7 +49,6 @@ void saucer::init_request_objc()
                 auto *const mime   = [NSString stringWithUTF8String:result->mime.c_str()];
                 auto *const length = [NSString stringWithFormat:@"%zu", content.size()];
 
-                [headers setObject:@"*" forKey:@"Access-Control-Allow-Origin"];
                 [headers setObject:mime forKey:@"Content-Type"];
                 [headers setObject:length forKey:@"Content-Length"];
 

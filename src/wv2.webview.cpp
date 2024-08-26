@@ -372,9 +372,9 @@ namespace saucer
         m_impl->web_view->Navigate(utils::widen(url).c_str());
     }
 
-    void webview::serve(const std::string &file, const std::string &scheme)
+    void webview::serve(const std::string &file)
     {
-        set_url(fmt::format("{}://saucer/{}", scheme, file));
+        set_url(fmt::format("saucer://embedded/{}", file));
     }
 
     void webview::clear_scripts()
@@ -552,7 +552,7 @@ namespace saucer
         auto scheme                    = Make<CoreWebView2CustomSchemeRegistration>(utils::widen(name).c_str());
 
         scheme->put_TreatAsSecure(true);
-        scheme->put_HasAuthorityComponent(true); // Workaround to make JS-Fetch work
+        scheme->put_HasAuthorityComponent(true); // Required to make JS-Fetch work
         scheme->SetAllowedOrigins(1, &allowed_origins);
 
         schemes.emplace(name, std::move(scheme));

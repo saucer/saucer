@@ -107,7 +107,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void embed(embedded_files files);
-        [[sc::thread_safe]] void serve(const std::string &file, const std::string &scheme = "saucer");
+        [[sc::thread_safe]] void serve(const std::string &file);
 
       public:
         [[sc::thread_safe]] void clear_scripts();

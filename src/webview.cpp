@@ -13,8 +13,10 @@ namespace saucer
 
         auto handler = [this](const auto &request) -> scheme_handler::result_type
         {
+            static constexpr std::string_view prefix = "saucer://embedded/";
+
             const auto url   = request.url();
-            const auto start = url.find('/') + 1;
+            const auto start = url.find(prefix) + prefix.size();
 
             if (start >= url.size())
             {
@@ -32,8 +34,9 @@ namespace saucer
             const auto &data = locked->at(file);
 
             return response{
-                .data = data.content,
-                .mime = data.mime,
+                .data    = data.content,
+                .mime    = data.mime,
+                .headers = {{"Access-Control-Allow-Origin", "*"}},
             };
         };
 

@@ -16,13 +16,7 @@ namespace saucer
         auto rtn = utils::narrow(raw);
         CoTaskMemFree(raw);
 
-        auto start  = rtn.find(":");
-        auto scheme = rtn.substr(0, start);
-
-        auto offset   = rtn.find("saucer/", start);
-        auto location = rtn.substr(offset + 7);
-
-        return std::format("{}:/{}", scheme, location);
+        return rtn;
     }
 
     std::string request::method() const
