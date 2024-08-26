@@ -1,81 +1,55 @@
 #pragma once
 
-#include <chrono>
-#include <functional>
-
 #include <print>
+#include <thread>
+
+#include <chrono>
 #include <source_location>
 
 #include <boost/ut.hpp>
-#include <saucer/webview.hpp>
 
 namespace test
 {
-    namespace chrono = std::chrono;
-    using clock      = chrono::system_clock;
+    using namespace std::chrono_literals;
 
-    class wait_guard
+    template <typename T>
+    void wait_for(const T &pred, std::chrono::seconds timeout = 10s,
+                  std::source_location source = std::source_location::current())
     {
-        using pred_t = std::function<bool()>;
+        using clock      = std::chrono::system_clock;
+        const auto start = clock::now();
 
-      private:
-        pred_t m_pred;
-
-      private:
-        std::source_location m_loc;
-        std::chrono::seconds m_timeout;
-
-      public:
-        wait_guard(pred_t pred, chrono::seconds timeout = chrono::seconds{10},
-                   std::source_location loc = std::source_location::current())
-            : m_pred(std::move(pred)), m_timeout(timeout), m_loc(loc)
+        auto check = [&pred]()
         {
-        }
-
-      public:
-        ~wait_guard()
-        {
-            const auto start = chrono::system_clock::now();
-
-            while (true)
+            if constexpr (std::is_invocable_v<T>)
             {
-                const auto now = chrono::system_clock::now();
+                return std::invoke(pred);
+            }
+            else
+            {
+                return pred;
+            }
+        };
 
-                if (now - start > m_timeout)
-                {
-                    break;
-                }
+        while (true)
+        {
+            const auto now = clock::now();
 
-                if (std::invoke(m_pred))
-                {
-                    return;
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if (now - start > timeout)
+            {
+                std::println("Timeout reached: {}:{}", source.file_name(), source.line());
+                break;
             }
 
-            std::println("Timeout reached: {}:{}", m_loc.file_name(), m_loc.line());
-        }
-    };
+            if (!std::invoke(check))
+            {
+                std::this_thread::sleep_for(500ms);
+                continue;
+            }
 
-    struct load_guard : wait_guard
-    {
-        load_guard(saucer::webview &webview, bool &value, chrono::seconds timeout = chrono::seconds{10},
-                   std::source_location loc = std::source_location::current())
-            : wait_guard([&webview, &value]() { return value; }, timeout, loc)
-        {
-            value = false;
+            break;
         }
-    };
-
-    struct url_guard : wait_guard
-    {
-        url_guard(saucer::webview &webview, std::string url, chrono::seconds timeout = chrono::seconds{10},
-                  std::source_location loc = std::source_location::current())
-            : wait_guard([&webview, url = std::move(url)]() { return webview.url().contains(url); }, timeout, loc)
-        {
-        }
-    };
+    }
 
     struct runner : boost::ut::runner<>
     {

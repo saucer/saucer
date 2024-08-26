@@ -1,23 +1,32 @@
 #include "cfg.hpp"
 
-#include <saucer/webview.hpp>
+#include <saucer/smartview.hpp>
 
 using namespace boost::ut;
 using namespace boost::ut::literals;
 
-void tests(saucer::webview &webview)
+static void tests(saucer::smartview<> &webview)
 {
+    std::string last_title{};
+    webview.on<saucer::web_event::title_changed>([&](const auto &title) { last_title = title; });
+
     std::string last_url{};
     webview.on<saucer::web_event::url_changed>([&](const auto &url) { last_url = url; });
+
+    bool load_finished{false};
+    webview.on<saucer::web_event::load_finished>([&]() { load_finished = true; });
 
     bool dom_ready{false};
     webview.on<saucer::web_event::dom_ready>([&]() { dom_ready = true; });
 
     bool load_started{false};
-    webview.on<saucer::web_event::load_started>([&]() { load_started = true; });
-
-    bool load_finished{false};
-    webview.on<saucer::web_event::load_finished>([&]() { load_finished = true; });
+    webview.on<saucer::web_event::load_started>(
+        [&]()
+        {
+            load_started  = true;
+            dom_ready     = false;
+            load_finished = false;
+        });
 
     "dev_tools"_test = [&]()
     {
@@ -52,10 +61,8 @@ void tests(saucer::webview &webview)
 
     "url"_test = [&]()
     {
-        {
-            auto guard = test::load_guard{webview, load_finished};
-            webview.set_url("https://github.com/saucer/saucer");
-        }
+        webview.set_url("https://github.com/saucer/saucer");
+        test::wait_for(load_finished);
 
         expect(load_started);
         expect(load_finished);
@@ -71,10 +78,10 @@ void tests(saucer::webview &webview)
 #ifndef SAUCER_CI
     "page_title"_test = [&]()
     {
-        {
-            auto guard = test::load_guard{webview, load_finished};
-            webview.set_url("https://saucer.github.io");
-        }
+        last_title.clear();
+
+        webview.set_url("https://saucer.github.io");
+        test::wait_for([&]() { return !last_title.empty(); });
 
         auto title = webview.page_title();
         expect(title == "Saucer | Saucer") << title;
@@ -83,13 +90,16 @@ void tests(saucer::webview &webview)
 
     "embed"_test = [&]()
     {
+        bool done{false};
+        webview.expose("embed_done", [&done]() { done = true; });
+
         const std::string page = R"html(
         <!DOCTYPE html>
         <html>
             <head>
                 <title>Embedded</title>
                 <script>
-                    location.href = 'https://isocpp.org';
+                    window.saucer.exposed.embed_done();
                 </script>
             </head>
             <body>
@@ -103,37 +113,35 @@ void tests(saucer::webview &webview)
                                           .mime    = "text/html",
                                       }}});
 
-        {
-            auto guard = test::url_guard{webview, "isocpp"};
-            webview.serve("index.html");
-        }
+        webview.serve("index.html");
+        test::wait_for(done);
 
-        expect(webview.url().contains("isocpp"));
+        expect(done);
+        done = false;
+
         webview.clear_embedded("index.html");
 
-        {
-            auto guard = test::load_guard{webview, load_finished};
-            webview.set_url("https://github.com");
-        }
+        webview.set_url("https://github.com");
+        test::wait_for(load_finished);
 
-        {
-            auto guard = test::url_guard{webview, "isocpp", std::chrono::seconds{5}};
-            webview.serve("index.html");
-        }
+        webview.serve("index.html");
+        test::wait_for(done, std::chrono::seconds(5));
 
-        const auto url = webview.url();
-        expect(not url.contains("isocpp")) << url;
+        expect(not done);
     };
 
     "embed_lazy"_test = [&]()
     {
+        bool done{false};
+        webview.expose("lazy_done", [&done]() { done = true; });
+
         std::string page = R"html(
         <!DOCTYPE html>
         <html>
             <head>
                 <title>Lazy Embedded</title>
                 <script>
-                    location.href = 'https://isocpp.org';
+                    window.saucer.exposed.lazy_done();
                 </script>
             </head>
             <body>
@@ -154,81 +162,66 @@ void tests(saucer::webview &webview)
                                           .mime = "text/html",
                                       }}});
 
-        {
-            auto guard = test::url_guard{webview, "isocpp"};
-            webview.serve("index.html");
-        }
+        webview.serve("index.html");
+        test::wait_for(done);
 
+        expect(done);
         expect(called == 1);
-        expect(webview.url().contains("isocpp"));
 
-        {
-            auto guard = test::url_guard{webview, "github"};
-            webview.set_url("https://github.com");
-        }
+        done = false;
 
-        {
-            auto guard      = test::url_guard{webview, "isocpp"};
-            auto load_guard = test::load_guard{webview, load_finished};
+        webview.set_url("https://github.com");
+        test::wait_for(load_finished);
 
-            webview.serve("index.html");
-        }
+        webview.serve("index.html");
+        test::wait_for(done);
 
+        expect(done);
         expect(called == 1);
-        expect(webview.url().contains("isocpp"));
     };
 
     "execute"_test = [&]()
     {
-        {
-            auto guard = test::load_guard{webview, load_finished};
-            webview.set_url("https://isocpp.org/");
-        }
+        webview.execute("location.href = 'https://github.com'");
 
-        {
-            auto guard      = test::url_guard{webview, "github"};
-            auto load_guard = test::load_guard{webview, load_finished};
-
-            webview.execute("location.href = 'https://github.com'");
-        }
-
+        test::wait_for([&webview]() { return webview.url().contains("github"); });
         expect(webview.url().contains("github"));
     };
 
     "inject"_test = [&]()
     {
-        webview.inject("if (location.href.includes('isocpp')) { location.href = 'https://google.com'; }",
-                       saucer::load_time::creation);
+        using enum saucer::load_time;
 
-        {
-            auto guard      = test::url_guard{webview, "google"};
-            auto load_guard = test::load_guard{webview, load_finished};
+        std::string state;
+        webview.expose("inject", [&state](std::string _state) { state = std::move(_state); });
 
-            webview.set_url("https://isocpp.org/");
-        }
+        webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = creation});
+        webview.set_url("https://saucer.github.io");
 
-        webview.clear_scripts();
-        expect(webview.url().contains("google")) << webview.url();
-
-        webview.inject("location.href = 'https://github.com'", saucer::load_time::ready);
-
-        {
-            auto guard      = test::url_guard{webview, "github"};
-            auto load_guard = test::load_guard{webview, load_finished};
-
-            webview.set_url("https://saucer.github.io/");
-        }
+        test::wait_for([&state]() { return !state.empty(); });
+        expect(!state.empty() && state != "complete") << state;
 
         webview.clear_scripts();
-        expect(webview.url().contains("github")) << webview.url();
+        state.clear();
+
+        webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = ready});
+        webview.set_url("https://github.com");
+
+        test::wait_for([&state]() { return !state.empty(); }, std::chrono::seconds(10000));
+        expect(!state.empty() && state != "loading") << state;
+
+        webview.clear_scripts();
     };
 
     "scheme"_test = [&]()
     {
+        bool done{false};
+        webview.expose("scheme_done", [&done]() { done = true; });
+
         webview.handle_scheme("test",
                               [](const saucer::request &req) -> saucer::scheme_handler::result_type
                               {
-                                  expect(req.url() == "test:/index.html");
+                                  expect(req.url() == "test://index.html");
                                   expect(req.method() == "GET");
 
                                   const std::string html = R"html(
@@ -237,7 +230,7 @@ void tests(saucer::webview &webview)
                                       <head>
                                         <title>Custom Scheme</title>
                                         <script>
-                                            location.href = 'https://isocpp.org';
+                                            saucer.exposed.scheme_done();
                                         </script>
                                       </head>
                                       <body>
@@ -252,17 +245,21 @@ void tests(saucer::webview &webview)
                                   };
                               });
 
-        {
-            auto guard      = test::url_guard{webview, "isocpp"};
-            auto load_guard = test::load_guard{webview, load_finished};
+        webview.set_url("test://index.html");
+        test::wait_for(done);
 
-            webview.set_url("test://index.html");
-        }
+        expect(done);
 
         webview.remove_scheme("test");
+        done = false;
 
-        const auto url = webview.url();
-        expect(url.contains("isocpp")) << url;
+        webview.set_url("https://github.com");
+        test::wait_for(load_finished);
+
+        webview.set_url("test://index.html");
+        test::wait_for(done, std::chrono::seconds(5));
+
+        expect(not done);
     };
 
     webview.clear(saucer::web_event::load_started);
@@ -274,16 +271,15 @@ void tests(saucer::webview &webview)
 
 suite<"webview"> webview_suite = []
 {
-    saucer::webview webview{{.hardware_acceleration = false}};
+    saucer::smartview webview{{.hardware_acceleration = false}};
+
+    webview.show();
 
     const std::jthread thread{[&]()
                               {
-                                  std::this_thread::sleep_for(std::chrono::seconds(2));
-
                                   tests(webview);
                                   webview.close();
                               }};
 
-    webview.show();
     webview.run();
 };

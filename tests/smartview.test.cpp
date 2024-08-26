@@ -15,13 +15,13 @@ struct data
 
 using saucer::forget;
 
-void tests(saucer::smartview<> &webview)
+static void tests(saucer::smartview<> &webview)
 {
     "sync_methods"_test = [&]()
     {
         expect(webview.evaluate<int>("await saucer.exposed.a()").get() == 10);
         expect(webview.evaluate<int>("await saucer.exposed.b(10)").get() == 20);
-        expect(webview.evaluate<std::string>("await saucer.exposed.c('Hello C++', 20)").get() == "Hello C++20");
+        expect(webview.evaluate<std::string>("await saucer.exposed.c('Hello C++', 23)").get() == "Hello C++23");
     };
 
     "complex_param"_test = [&]()
@@ -101,10 +101,10 @@ suite<"smartview"> smartview_suite = []
     smartview.expose("h", [&]() { forget(smartview.evaluate<void>("saucer.exposed.close()")); }, saucer::launch::async);
 
     const std::jthread thread{[&]()
-                        {
-                            std::this_thread::sleep_for(std::chrono::seconds(2));
-                            tests(smartview);
-                        }};
+                              {
+                                  std::this_thread::sleep_for(std::chrono::seconds(2));
+                                  tests(smartview);
+                              }};
 
     smartview.set_url("https://saucer.github.io/");
     smartview.show();

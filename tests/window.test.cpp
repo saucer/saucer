@@ -10,9 +10,21 @@ struct window : saucer::window
     window(const saucer::options &opts) : saucer::window(opts) {}
 };
 
-void tests(window &window, bool thread)
+static void tests(window &window, bool thread)
 {
     window.show();
+
+    bool was_decorated{false};
+    window.on<saucer::window_event::decorated>([&](bool decorated) { was_decorated = decorated; });
+
+    bool was_maximized{false};
+    window.on<saucer::window_event::maximize>([&](bool maximized) { was_maximized = maximized; });
+
+    bool was_minimized{false};
+    window.on<saucer::window_event::minimize>([&](bool minimized) { was_maximized = minimized; });
+
+    std::pair<int, int> last_size;
+    window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });
 
 #if !defined(SAUCER_WEBKITGTK) && !defined(SAUCER_WEBKIT)
     "minimize"_test = [&]()
@@ -21,11 +33,13 @@ void tests(window &window, bool thread)
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         expect(window.minimized());
+        expect(!thread || was_minimized);
 
         window.set_minimized(false);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         expect(not window.minimized());
+        expect(!thread || not was_minimized);
     };
 #endif
 
@@ -35,11 +49,13 @@ void tests(window &window, bool thread)
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         expect(!thread || window.maximized());
+        expect(!thread || was_maximized);
 
         window.set_maximized(false);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         expect(!thread || not window.maximized());
+        expect(!thread || not was_maximized);
     };
 
     "resizable"_test = [&]()
@@ -57,10 +73,16 @@ void tests(window &window, bool thread)
         expect(window.decorations());
 
         window.set_decorations(false);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
         expect(not window.decorations());
+        expect(!thread || not was_decorated);
 
         window.set_decorations(true);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
         expect(window.decorations());
+        expect(!thread || was_decorated);
     };
 
 #ifndef SAUCER_WEBKITGTK
@@ -86,10 +108,15 @@ void tests(window &window, bool thread)
     "size"_test = [&]()
     {
         window.set_resizable(true);
+
         window.set_size(500, 500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         auto [width, height] = window.size();
         expect(width == 500 && height == 500) << width << ":" << height;
+
+        auto [last_width, last_height] = last_size;
+        expect(!thread || (width == last_width && height == last_height)) << last_width << ":" << last_height;
     };
 
 #ifndef SAUCER_WEBKITGTK
@@ -109,28 +136,28 @@ void tests(window &window, bool thread)
     window.clear(saucer::window_event::resize);
     window.clear(saucer::window_event::maximize);
     window.clear(saucer::window_event::minimize);
+    window.clear(saucer::window_event::decorated);
+
+    window.close();
 }
 
 suite<"window"> window_suite = []
 {
-    window window{{.hardware_acceleration = false}};
-
-    "from-main"_test = [&]()
-    {
-        tests(window, false);
-    };
+    window first{{.hardware_acceleration = false}};
+    window second{{.hardware_acceleration = false}};
 
     const std::jthread thread{[&]()
                               {
-                                  std::this_thread::sleep_for(std::chrono::seconds(2));
-
-                                  "from-thread"_test = [&]()
+                                  "from-thread"_test = [&second]()
                                   {
-                                      tests(window, true);
+                                      tests(second, true);
                                   };
-
-                                  window.close();
                               }};
 
-    window.run();
+    "from-main"_test = [&first]()
+    {
+        tests(first, false);
+    };
+
+    saucer::window::run();
 };
