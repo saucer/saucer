@@ -354,16 +354,16 @@ namespace saucer
             return dispatch([this, enabled]() { set_decorations(enabled); }).get();
         }
 
-        static constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-        auto current_style          = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        static constexpr auto flag = WS_TILEDWINDOW;
+        auto current_style         = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
 
         if (enabled)
         {
-            current_style |= flags;
+            current_style |= flag;
         }
         else
         {
-            current_style &= ~flags;
+            current_style &= ~flag;
         }
 
         m_impl->decorations = enabled;

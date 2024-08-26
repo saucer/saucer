@@ -89,16 +89,12 @@ namespace saucer
                 break;
             }
 
-            static constexpr auto flags = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-            auto *const changes         = reinterpret_cast<STYLESTRUCT *>(l_param);
+            static constexpr auto flag = WS_TILEDWINDOW;
+            auto *const changes        = reinterpret_cast<STYLESTRUCT *>(l_param);
 
-            if (!(changes->styleOld & flags) && (changes->styleNew & flags))
+            if ((changes->styleOld & flag) != (changes->styleNew & flag))
             {
-                window->m_events.at<window_event::decorated>().fire(true);
-            }
-            else if ((changes->styleOld & flags) && !(changes->styleNew & flags))
-            {
-                window->m_events.at<window_event::decorated>().fire(false);
+                window->m_events.at<window_event::decorated>().fire(changes->styleNew & flag);
             }
 
             break;
