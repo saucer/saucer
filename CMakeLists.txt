@@ -218,7 +218,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_callable_traits
-  GIT_TAG        boost-1.85.0
+  GIT_TAG        boost-1.86.0
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
 )
 
@@ -257,7 +257,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        2.0.0
+  VERSION        2.0.1
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
@@ -269,7 +269,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_preprocessor
-  GIT_TAG        boost-1.85.0
+  GIT_TAG        boost-1.86.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
