@@ -5,18 +5,24 @@
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 
+#include <algorithm>
 #include <fmt/core.h>
 
 namespace saucer
 {
-    void webview::inject(const std::string &code, load_time time, web_frame frame)
+    void webview::inject(const script &script)
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, code, time, frame] { inject(code, time, frame); }).get();
+            return dispatch([this, script] { inject(script); }).get();
         }
 
-        QWebEngineScript script;
+        if (script.permanent && !std::ranges::contains(m_impl->permanent_scripts, script))
+        {
+            m_impl->permanent_scripts.emplace_back(script);
+        }
+
+        QWebEngineScript web_script;
         bool found = false;
 
         auto check_previous = [&](const char *name)
@@ -28,38 +34,38 @@ namespace saucer
                 return;
             }
 
-            found  = true;
-            script = scripts.front();
+            found      = true;
+            web_script = scripts.front();
         };
 
-        switch (time)
+        switch (script.time)
         {
         case load_time::creation:
             check_previous("_creation");
-            script.setName("_creation");
-            script.setInjectionPoint(QWebEngineScript::DocumentCreation);
+            web_script.setName("_creation");
+            web_script.setInjectionPoint(QWebEngineScript::DocumentCreation);
             break;
 
         case load_time::ready:
             check_previous("_ready");
-            script.setName("_ready");
-            script.setInjectionPoint(QWebEngineScript::DocumentReady);
+            web_script.setName("_ready");
+            web_script.setInjectionPoint(QWebEngineScript::DocumentReady);
             break;
         }
 
         if (!found)
         {
-            script.setRunsOnSubFrames(true);
-            script.setWorldId(QWebEngineScript::MainWorld);
+            web_script.setRunsOnSubFrames(true);
+            web_script.setWorldId(QWebEngineScript::MainWorld);
         }
         else
         {
-            m_impl->web_view->page()->scripts().remove(script);
+            m_impl->web_view->page()->scripts().remove(web_script);
         }
 
-        auto source = code;
+        auto source = script.code;
 
-        if (frame == web_frame::top)
+        if (script.frame == web_frame::top)
         {
             source = fmt::format(R"js(
             if (self === top)
@@ -67,10 +73,10 @@ namespace saucer
                 {}
             }}
             )js",
-                                 code);
+                                 source);
         }
 
-        script.setSourceCode(script.sourceCode() + "\n" + QString::fromStdString(source));
-        m_impl->web_view->page()->scripts().insert(script);
+        web_script.setSourceCode(web_script.sourceCode() + "\n" + QString::fromStdString(source));
+        m_impl->web_view->page()->scripts().insert(web_script);
     }
 } // namespace saucer

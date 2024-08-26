@@ -24,7 +24,7 @@ namespace saucer
 
       public:
         bool context_menu{false};
-        std::vector<script_ptr> scripts;
+        std::vector<std::pair<script_ptr, bool>> scripts;
 
       public:
         bool dom_loaded{false};

@@ -39,17 +39,18 @@ namespace saucer
     smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
         : webview(options), m_impl(std::make_unique<impl>())
     {
+        using namespace scripts;
+
         if (!impl::pool)
         {
             impl::pool = std::make_unique<poolparty::pool<>>(options.threads);
         }
 
         m_impl->serializer = std::move(serializer);
+        auto script        = fmt::format(smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer()));
 
-        inject(fmt::format(scripts::smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer())),
-               load_time::creation);
-
-        inject(m_impl->serializer->script(), load_time::creation);
+        inject({.code = script, .time = load_time::creation, .permanent = true});
+        inject({.code = m_impl->serializer->script(), .time = load_time::creation, .permanent = true});
     }
 
     smartview_core::~smartview_core()

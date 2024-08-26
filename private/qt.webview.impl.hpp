@@ -36,6 +36,9 @@ namespace saucer
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
+
+      public:
+        std::vector<script> permanent_scripts;
         std::unordered_map<std::string, url_scheme_handler> schemes;
 
       public:

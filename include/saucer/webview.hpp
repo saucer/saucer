@@ -1,6 +1,8 @@
 #pragma once
 
 #include "icon.hpp"
+#include "script.hpp"
+
 #include "window.hpp"
 #include "scheme.hpp"
 
@@ -16,18 +18,6 @@
 namespace saucer
 {
     namespace fs = std::filesystem;
-
-    enum class load_time
-    {
-        creation,
-        ready,
-    };
-
-    enum class web_frame
-    {
-        top,
-        all,
-    };
 
     enum class web_event
     {
@@ -117,8 +107,8 @@ namespace saucer
         [[sc::thread_safe]] void clear_embedded(const std::string &file);
 
       public:
+        [[sc::thread_safe]] void inject(const script &script);
         [[sc::thread_safe]] void execute(const std::string &code);
-        [[sc::thread_safe]] void inject(const std::string &code, load_time time, web_frame frame = web_frame::top);
 
       public:
         [[sc::thread_safe]] void handle_scheme(const std::string &name, scheme_handler handler);

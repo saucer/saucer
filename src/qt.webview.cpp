@@ -62,8 +62,8 @@ namespace saucer
             set_dev_tools(false);
         };
 
-        inject(impl::inject_script(), load_time::creation);
-        inject(std::string{impl::ready_script}, load_time::ready);
+        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
+        inject({.code = std::string{impl::ready_script}, .time = load_time::ready, .permanent = true});
 
         m_impl->web_view->show();
     }
@@ -291,8 +291,10 @@ namespace saucer
 
         m_impl->web_view->page()->scripts().clear();
 
-        inject(std::string{impl::ready_script}, load_time::ready);
-        inject(impl::inject_script(), load_time::creation);
+        for (const auto &script : m_impl->permanent_scripts)
+        {
+            inject(script);
+        }
     }
 
     void webview::execute(const std::string &code)

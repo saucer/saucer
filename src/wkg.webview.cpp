@@ -110,8 +110,8 @@ namespace saucer
         g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
         gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view.get()), GTK_EVENT_CONTROLLER(controller));
 
-        inject(impl::inject_script(), load_time::creation);
-        inject(std::string{impl::ready_script}, load_time::ready);
+        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
+        inject({.code = std::string{impl::ready_script}, .time = load_time::ready, .permanent = true});
     }
 
     webview::~webview()
@@ -335,17 +335,38 @@ namespace saucer
 
         auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
 
-        for (const auto &script : m_impl->scripts | std::views::drop(2))
+        for (auto it = m_impl->scripts.begin(); it != m_impl->scripts.end();)
         {
+            const auto &[script, permanent] = *it;
+
+            if (permanent)
+            {
+                ++it;
+                continue;
+            }
+
             webkit_user_content_manager_remove_script(manager, script.get());
+            it = m_impl->scripts.erase(it);
         }
+    }
 
-        if (m_impl->scripts.empty())
+    void webview::inject(const script &script)
+    {
+        if (!window::m_impl->is_thread_safe())
         {
-            return;
+            return dispatch([this, script]() { return inject(script); }).get();
         }
 
-        m_impl->scripts.resize(2);
+        const auto time  = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
+                                                              : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
+        const auto frame = script.frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES
+                                                          : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
+
+        auto *const manager     = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
+
+        m_impl->scripts.emplace_back(user_script, script.permanent);
+        webkit_user_content_manager_add_script(manager, user_script);
     }
 
     void webview::execute(const std::string &code)
@@ -363,25 +384,6 @@ namespace saucer
 
         webkit_web_view_evaluate_javascript(m_impl->web_view.get(), code.c_str(), -1, nullptr, nullptr, nullptr,
                                             nullptr, nullptr);
-    }
-
-    void webview::inject(const std::string &code, load_time time, web_frame frame)
-    {
-        if (!window::m_impl->is_thread_safe())
-        {
-            return dispatch([this, code, time, frame]() { return inject(code, time, frame); }).get();
-        }
-
-        const auto webkit_time  = time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                              : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
-        const auto webkit_frame = frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
-                                                          : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
-
-        auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
-        auto *const script  = webkit_user_script_new(code.c_str(), webkit_frame, webkit_time, nullptr, nullptr);
-
-        m_impl->scripts.emplace_back(script);
-        webkit_user_content_manager_add_script(manager, script);
     }
 
     void webview::handle_scheme(const std::string &name, scheme_handler handler)
