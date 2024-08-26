@@ -21,7 +21,7 @@ static void tests(window &window, bool thread)
     window.on<saucer::window_event::maximize>([&](bool maximized) { was_maximized = maximized; });
 
     bool was_minimized{false};
-    window.on<saucer::window_event::minimize>([&](bool minimized) { was_maximized = minimized; });
+    window.on<saucer::window_event::minimize>([&](bool minimized) { was_minimized = minimized; });
 
     std::pair<int, int> last_size;
     window.on<saucer::window_event::resize>([&](int width, int height) { last_size = {width, height}; });

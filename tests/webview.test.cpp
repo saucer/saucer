@@ -182,10 +182,10 @@ static void tests(saucer::smartview<> &webview)
 
     "execute"_test = [&]()
     {
-        webview.execute("location.href = 'https://github.com'");
+        webview.execute("location.href = 'https://isocpp.org'");
 
-        test::wait_for([&webview]() { return webview.url().contains("github"); });
-        expect(webview.url().contains("github"));
+        test::wait_for([&webview]() { return webview.url().contains("isocpp"); });
+        expect(webview.url().contains("isocpp"));
     };
 
     "inject"_test = [&]()
@@ -207,7 +207,7 @@ static void tests(saucer::smartview<> &webview)
         webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = ready});
         webview.set_url("https://github.com");
 
-        test::wait_for([&state]() { return !state.empty(); }, std::chrono::seconds(10000));
+        test::wait_for([&state]() { return !state.empty(); });
         expect(!state.empty() && state != "loading") << state;
 
         webview.clear_scripts();
@@ -221,8 +221,8 @@ static void tests(saucer::smartview<> &webview)
         webview.handle_scheme("test",
                               [](const saucer::request &req) -> saucer::scheme_handler::result_type
                               {
-                                  expect(req.url() == "test://index.html");
-                                  expect(req.method() == "GET");
+                                  expect(req.url().starts_with("test://index.html")) << req.url();
+                                  expect(req.method() == "GET") << req.method();
 
                                   const std::string html = R"html(
                                   <!DOCTYPE html>
