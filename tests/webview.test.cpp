@@ -235,20 +235,20 @@ static void tests(saucer::smartview<> &webview)
         std::string state;
         webview.expose("inject", [&state](std::string _state) { state = std::move(_state); });
 
-        webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = creation});
+        webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = ready});
         webview.reload();
 
         test::wait_for([&state, &load_finished]() { return !state.empty() && load_finished; });
-        expect(!state.empty() && state != "complete") << state;
+        expect(!state.empty() && state != "loading") << state;
 
         webview.clear_scripts();
         state.clear();
 
-        webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = ready});
+        webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = creation});
         webview.reload();
 
         test::wait_for([&state]() { return !state.empty(); });
-        expect(!state.empty() && state != "loading") << state;
+        expect(!state.empty() && state != "complete") << state;
 
         webview.clear_scripts();
     };
