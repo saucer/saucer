@@ -96,7 +96,7 @@ static void tests(saucer::smartview<> &webview)
         webview.handle_scheme("test",
                               [](const saucer::request &req) -> saucer::scheme_handler::result_type
                               {
-                                  expect(req.url().starts_with("test://index.html")) << req.url();
+                                  expect(req.url().starts_with("test://scheme.html")) << req.url();
                                   expect(req.method() == "GET") << req.method();
 
                                   const std::string html = R"html(
@@ -120,7 +120,7 @@ static void tests(saucer::smartview<> &webview)
                                   };
                               });
 
-        webview.set_url("test://index.html");
+        webview.set_url("test://scheme.html");
         test::wait_for(done);
 
         expect(done);
@@ -154,18 +154,18 @@ static void tests(saucer::smartview<> &webview)
         </html>
         )html";
 
-        webview.embed({{"index.html", saucer::embedded_file{
+        webview.embed({{"embed.html", saucer::embedded_file{
                                           .content = saucer::make_stash(page),
                                           .mime    = "text/html",
                                       }}});
 
-        webview.serve("index.html");
+        webview.serve("embed.html");
         test::wait_for(done);
 
         expect(done) << webview.url();
         done = false;
 
-        webview.clear_embedded("index.html");
+        webview.clear_embedded("embed.html");
 
         webview.reload();
         test::wait_for(done, std::chrono::seconds(5));
@@ -195,17 +195,17 @@ static void tests(saucer::smartview<> &webview)
 
         std::size_t called = 0;
 
-        webview.embed({{"index.html", saucer::embedded_file{
-                                          .content = saucer::stash<>::lazy(
-                                              [&page, &called]()
-                                              {
-                                                  called++;
-                                                  return saucer::make_stash(page);
-                                              }),
-                                          .mime = "text/html",
-                                      }}});
+        webview.embed({{"lazy.html", saucer::embedded_file{
+                                         .content = saucer::stash<>::lazy(
+                                             [&page, &called]()
+                                             {
+                                                 called++;
+                                                 return saucer::make_stash(page);
+                                             }),
+                                         .mime = "text/html",
+                                     }}});
 
-        webview.serve("index.html");
+        webview.serve("lazy.html");
         test::wait_for(done);
 
         expect(done) << webview.url();
