@@ -52,7 +52,7 @@ namespace saucer
         {
             return (a.height() + a.width()) > (b.height() + b.width());
         };
-        std::ranges::sort(sizes, compare);
+        std::sort(sizes.begin(), sizes.end(), compare);
 
         m_impl->icon.pixmap(sizes.first()).save(path.c_str());
     }
