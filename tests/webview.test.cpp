@@ -258,6 +258,7 @@ static void tests(saucer::smartview<> &webview)
 
     webview.clear(saucer::web_event::dom_ready);
     webview.clear(saucer::web_event::url_changed);
+    webview.clear(saucer::web_event::title_changed);
 }
 
 suite<"webview"> webview_suite = []
