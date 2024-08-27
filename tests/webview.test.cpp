@@ -178,7 +178,7 @@ static void tests(saucer::smartview<> &webview)
     {
         webview.execute("location.href = 'https://isocpp.org'");
 
-        test::wait_for([&webview]() { return webview.url().contains("isocpp"); });
+        test::wait_for([&webview, &load_finished]() { return webview.url().contains("isocpp") && load_finished; });
         expect(webview.url().contains("isocpp"));
     };
 
