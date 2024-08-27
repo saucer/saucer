@@ -49,8 +49,6 @@ namespace saucer
         std::size_t threads = std::thread::hardware_concurrency();
     };
 
-    using color = std::array<std::uint8_t, 4>;
-
     class window
     {
         struct impl;
