@@ -23,7 +23,7 @@ runs:
     - name: 📋 Install Base Dependencies
       shell: bash
       if: inputs.platform == 'Linux'
-      run: "pacman --noconfirm -Syu cmake gcc git xorg-server-xvfb xorg-xwd"
+      run: "pacman --noconfirm -Syu cmake gcc git xorg-server-xvfb xorg-xwd openssh tmate"
 
     - name: 📋 Install Qt5-Dependencies
       shell: bash
