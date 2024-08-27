@@ -1,6 +1,11 @@
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      debug:
+        type: boolean
+        description: Enable Debugging
 
 name: 🧪 Tests
 
@@ -15,11 +20,11 @@ jobs:
           - Qt6
           - WebKitGtk
           - WebKit
-        
+
         config:
           - Release
           - Debug
-        
+
         include:
           - backend: Qt5
             platform: Linux
@@ -30,7 +35,7 @@ jobs:
             platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
-          
+
           - backend: WebKitGtk
             platform: Linux
             os: ubuntu-latest
@@ -39,7 +44,6 @@ jobs:
           - backend: WebKit
             platform: MacOS
             os: macos-latest
-
 
     name: ${{ matrix.backend }}-${{ matrix.config }}
 
@@ -57,6 +61,13 @@ jobs:
           platform: ${{ matrix.platform }}
           build-type: ${{ matrix.config }}
           cmake-args: -Dsaucer_tests=ON -Dsaucer_ci=ON
+
+      - name: 🐛 Debug
+        if: ${{ github.event.inputs.debug == 'true' }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          install-dependencies: false
+          limit-access-to-actor: true
 
       - name: 🧪 Test
         timeout-minutes: 10
