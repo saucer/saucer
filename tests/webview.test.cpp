@@ -121,10 +121,7 @@ static void tests(saucer::smartview<> &webview)
 
         webview.clear_embedded("index.html");
 
-        webview.set_url("https://github.com");
-        test::wait_for(load_finished);
-
-        webview.serve("index.html");
+        webview.reload();
         test::wait_for(done, std::chrono::seconds(5));
 
         expect(not done);
@@ -170,10 +167,7 @@ static void tests(saucer::smartview<> &webview)
 
         done = false;
 
-        webview.set_url("https://github.com");
-        test::wait_for(load_finished);
-
-        webview.serve("index.html");
+        webview.reload();
         test::wait_for(done);
 
         expect(done);
@@ -205,7 +199,7 @@ static void tests(saucer::smartview<> &webview)
         state.clear();
 
         webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = ready});
-        webview.set_url("https://github.com");
+        webview.reload();
 
         test::wait_for([&state]() { return !state.empty(); });
         expect(!state.empty() && state != "loading") << state;
@@ -253,10 +247,7 @@ static void tests(saucer::smartview<> &webview)
         webview.remove_scheme("test");
         done = false;
 
-        webview.set_url("https://github.com");
-        test::wait_for(load_finished);
-
-        webview.set_url("test://index.html");
+        webview.reload();
         test::wait_for(done, std::chrono::seconds(5));
 
         expect(not done);
