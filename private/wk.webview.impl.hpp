@@ -29,7 +29,7 @@ namespace saucer
 
       public:
         bool force_dark{false};
-        bool context_menu{false};
+        bool context_menu{true};
 
       public:
         std::vector<script> permanent_scripts;
