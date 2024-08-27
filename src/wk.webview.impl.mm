@@ -266,7 +266,7 @@ namespace saucer
 
             auto *const selector = [NSString stringWithUTF8String:key.c_str()];
 
-            if (!resolve(target, selector))
+            if (!resolve(target, selector) && ![target respondsToSelector:NSSelectorFromString(selector)])
             {
                 continue;
             }
