@@ -76,7 +76,7 @@ namespace saucer
     struct forget_pipe
     {
         template <typename T>
-        friend void operator|(std::future<T> future, [[maybe_unused]] forget_pipe)
+        friend void operator|(std::future<T> future, forget_pipe)
         {
             forget(std::move(future));
         }
