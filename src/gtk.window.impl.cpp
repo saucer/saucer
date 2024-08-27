@@ -22,12 +22,6 @@ namespace saucer
 
         auto *const surface = gtk_native_get_surface(gtk_widget_get_native(GTK_WIDGET(widget)));
         auto *const device  = gdk_event_get_device(event.get());
-        auto *const root    = GTK_WIDGET(gtk_widget_get_root(widget));
-
-        const graphene_point_t in{static_cast<float>(x), static_cast<float>(y)};
-        graphene_point_t out{};
-
-        std::ignore = gtk_widget_compute_point(widget, root, &in, &out);
 
         const auto button = static_cast<gint>(gdk_button_event_get_button(event.get()));
         const auto time   = gdk_event_get_time(event.get());
@@ -37,8 +31,8 @@ namespace saucer
             .surface = surface,
             .button  = button,
             .time    = time,
-            .x       = out.x,
-            .y       = out.y,
+            .x       = x,
+            .y       = y,
         };
     }
 
