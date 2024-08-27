@@ -162,7 +162,7 @@ static void tests(saucer::smartview<> &webview)
         webview.serve("index.html");
         test::wait_for(done);
 
-        expect(done);
+        expect(done) << webview.url();
         done = false;
 
         webview.clear_embedded("index.html");
@@ -208,7 +208,7 @@ static void tests(saucer::smartview<> &webview)
         webview.serve("index.html");
         test::wait_for(done);
 
-        expect(done);
+        expect(done) << webview.url();
         expect(called == 1);
 
         done = false;
@@ -216,7 +216,7 @@ static void tests(saucer::smartview<> &webview)
         webview.reload();
         test::wait_for(done);
 
-        expect(done);
+        expect(done) << webview.url();
         expect(called == 1);
     };
 
@@ -225,7 +225,7 @@ static void tests(saucer::smartview<> &webview)
         webview.execute("location.href = 'https://github.com'");
 
         test::wait_for([&webview, &load_finished]() { return webview.url().contains("github"); });
-        expect(webview.url().contains("github"));
+        expect(webview.url().contains("github")) << webview.url();
     };
 
     "inject"_test = [&]()
