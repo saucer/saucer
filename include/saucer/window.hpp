@@ -1,12 +1,15 @@
 #pragma once
 
+#include "icon.hpp"
+
 #include <string>
 #include <memory>
 
-#include <array>
-#include <vector>
+#include <set>
 #include <utility>
+#include <functional>
 
+#include <thread>
 #include <cstdint>
 #include <filesystem>
 
@@ -14,8 +17,9 @@
 
 namespace saucer
 {
-    enum class window_event : std::uint8_t
+    enum class window_event
     {
+        decorated,
         maximize,
         minimize,
         closed,
@@ -24,7 +28,7 @@ namespace saucer
         close,
     };
 
-    enum class window_edge : std::uint8_t
+    enum class window_edge
     {
         top    = 1 << 0,
         bottom = 1 << 1,
@@ -36,29 +40,39 @@ namespace saucer
     {
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
-        std::filesystem::path storage_path;
-        std::vector<std::string> chrome_flags;
-    };
 
-    using color = std::array<std::uint8_t, 4>;
+      public:
+        std::filesystem::path storage_path;
+        std::set<std::string> browser_flags;
+
+      public:
+        std::size_t threads = std::thread::hardware_concurrency();
+    };
 
     class window
     {
         struct impl;
 
       private:
+        using callback_t = std::move_only_function<void()>;
+
+      public:
         using events = ereignis::manager<                          //
-            ereignis::event<window_event::resize, void(int, int)>, //
+            ereignis::event<window_event::decorated, void(bool)>,  //
             ereignis::event<window_event::maximize, void(bool)>,   //
             ereignis::event<window_event::minimize, void(bool)>,   //
-            ereignis::event<window_event::focus, void(bool)>,      //
             ereignis::event<window_event::closed, void()>,         //
+            ereignis::event<window_event::resize, void(int, int)>, //
+            ereignis::event<window_event::focus, void(bool)>,      //
             ereignis::event<window_event::close, bool()>           //
             >;
 
       protected:
         events m_events;
         std::unique_ptr<impl> m_impl;
+
+      protected:
+        void dispatch(callback_t callback) const;
 
       protected:
         window(const options & = {});
@@ -77,7 +91,6 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
 
       public:
-        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] std::string title() const;
 
       public:
@@ -107,8 +120,8 @@ namespace saucer
         [[sc::thread_safe]] void set_always_on_top(bool enabled);
 
       public:
-        [[sc::thread_safe]] void set_title(const std::string &);
-        [[sc::thread_safe]] void set_background(const color &color);
+        [[sc::thread_safe]] void set_icon(const icon &icon);
+        [[sc::thread_safe]] void set_title(const std::string &title);
 
       public:
         [[sc::thread_safe]] void set_size(int width, int height);
@@ -120,13 +133,19 @@ namespace saucer
         [[sc::thread_safe]] void remove(window_event event, std::uint64_t id);
 
         template <window_event Event>
-        [[sc::thread_safe]] void once(events::type_t<Event> &&);
+        [[sc::thread_safe]] void once(events::type<Event>);
 
         template <window_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type_t<Event> &&);
+        [[sc::thread_safe]] std::uint64_t on(events::type<Event>);
+
+      public:
+        template <typename Callback>
+        [[sc::thread_safe]] auto dispatch(Callback &&callback) const;
 
       public:
         template <bool Blocking = true>
-        static void run();
+        [[sc::may_block]] static void run();
     };
 } // namespace saucer
+
+#include "window.inl"

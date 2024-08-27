@@ -6,30 +6,16 @@ namespace saucer
 {
     class smartview_core;
 
-    namespace native
+    struct natives
     {
-        struct window;
-        struct webview;
-    } // namespace native
-
-    class module
-    {
-      protected:
-        smartview_core *core;
+        struct window_impl;
+        struct webview_impl;
 
       public:
-        virtual ~module();
-
-      public:
-        module(smartview_core *);
-
-      protected:
-        virtual void init(native::window *, native::webview *) = 0;
+        window_impl *window;
+        webview_impl *webview;
     };
 
     template <typename T>
-    concept Module = requires() {
-        requires std::derived_from<T, module>;
-        requires std::constructible_from<T, smartview_core *>;
-    };
+    concept Module = requires(T module) { requires std::constructible_from<T, smartview_core *, natives>; };
 } // namespace saucer

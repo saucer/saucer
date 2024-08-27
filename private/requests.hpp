@@ -1,37 +1,20 @@
 #pragma once
 
+#include <string>
 #include <variant>
-#include <glaze/glaze.hpp>
+#include <optional>
 
-namespace saucer
+namespace saucer::requests
 {
-    struct resize_request
+    struct resize
     {
         int edge;
     };
 
-    struct drag_request
+    struct drag
     {
     };
 
-    using request = std::variant<resize_request, drag_request>;
-} // namespace saucer
-
-template <>
-struct glz::meta<saucer::resize_request>
-{
-    using T                     = saucer::resize_request;
-    static constexpr auto value = object( //
-        "saucer:resize", skip{},          //
-        "edge", &T::edge                  //
-    );
-};
-
-template <>
-struct glz::meta<saucer::drag_request>
-{
-    using T                     = saucer::drag_request;
-    static constexpr auto value = object( //
-        "saucer:drag", skip{}             //
-    );
-};
+    using request = std::variant<resize, drag>;
+    std::optional<request> parse(const std::string &);
+} // namespace saucer::requests

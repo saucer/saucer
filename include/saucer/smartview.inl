@@ -6,11 +6,8 @@ namespace saucer
 {
     template <Serializer Serializer, Module... Modules>
     smartview<Serializer, Modules...>::smartview(const options &options)
-        : smartview_core(std::make_unique<Serializer>(), options), Modules(this)...
+        : smartview_core(std::make_unique<Serializer>(), options), m_modules(Modules{this, natives()}...)
     {
-        (Modules::init(reinterpret_cast<saucer::native::window *>(window::m_impl.get()),
-                       reinterpret_cast<saucer::native::webview *>(webview::m_impl.get())),
-         ...);
     }
 
     template <Serializer Serializer, Module... Modules>
@@ -30,9 +27,16 @@ namespace saucer
 
     template <Serializer Serializer, Module... Modules>
     template <typename Function>
-    void smartview<Serializer, Modules...>::expose(std::string name, const Function &func, bool async)
+    void smartview<Serializer, Modules...>::expose(std::string name, Function &&func, launch policy)
     {
-        auto resolve = Serializer::serialize(func);
-        add_function(std::move(name), std::move(resolve), async);
+        auto resolve = Serializer::serialize(std::forward<Function>(func));
+        add_function(std::move(name), std::move(resolve), policy);
+    }
+
+    template <Serializer Serializer, Module... Modules>
+    template <Module T>
+    auto &smartview<Serializer, Modules...>::module()
+    {
+        return std::get<T>(m_modules);
     }
 } // namespace saucer

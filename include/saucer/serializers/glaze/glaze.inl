@@ -2,235 +2,312 @@
 
 #include "glaze.hpp"
 
-#include "../errors/bad_type.hpp"
-#include "../errors/serialize.hpp"
+#include <optional>
 
-#include <fmt/args.h>
-#include <fmt/format.h>
-#include <source_location>
+#include <fmt/core.h>
+#include <fmt/xchar.h>
 
 #include <boost/callable_traits.hpp>
 
-namespace saucer::serializers::detail::glaze
+#include <tl/expected.hpp>
+#include <rebind/name.hpp>
+
+namespace saucer::serializers::glaze
 {
-    static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
-
-    template <typename... T>
-    constexpr auto decay(const std::tuple<T...> &) -> std::tuple<std::decay_t<T>...>;
-
-    template <typename T>
-    using decay_t = decltype(decay(std::declval<T>()));
-
-    template <typename T>
-    concept GlzSerializable = requires(T &value) {
-        { glz::read<opts>(value, "") };
-    };
-
-    template <typename T>
-    struct serializable : std::false_type
+    namespace impl
     {
-    };
+        static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
-    template <>
-    struct serializable<void> : std::true_type
-    {
-    };
+        template <typename... Ts>
+        consteval auto decay_tuple_impl(const std::tuple<Ts...> &) -> std::tuple<std::decay_t<Ts>...>;
 
-    template <>
-    struct serializable<std::tuple<>> : std::true_type
-    {
-    };
+        template <typename T>
+        using decay_tuple_t = decltype(decay_tuple_impl(std::declval<T>()));
 
-    template <typename... T>
-    struct serializable<saucer::arguments<T...>> : serializable<typename saucer::arguments<T...>::underlying>
-    {
-    };
-
-    template <typename T>
-        requires GlzSerializable<T>
-    struct serializable<T> : std::true_type
-    {
-    };
-
-    template <class T>
-    inline constexpr bool serializable_v = serializable<T>::value;
-
-    template <typename T>
-    consteval auto type_name()
-    {
-#if defined(_MSC_VER) && _MSC_VER < 1936
-        const std::string_view name = __FUNCSIG__;
-#else
-        const std::string_view name = std::source_location::current().function_name();
-#endif
-
-#if defined(_MSC_VER) && !defined(__clang__)
-        const auto start = name.find("type_name<") + 10;
-        const auto end   = name.find_last_of('>') - start;
-#else
-        const auto start = name.find("T = ") + 4;
-        const auto end   = name.find_last_of(']') - start;
-#endif
-
-        return name.substr(start, end);
-    }
-
-    template <typename T>
-    serializer::error mismatch(T &tuple, const std::string &params)
-    {
-        glz::json_t json{};
-
-        if (glz::read<opts>(json, params))
+        template <typename... Ts>
+        consteval auto drop_last_impl(const std::tuple<Ts...> &tuple)
         {
-            return std::make_unique<errors::serialize>();
-        }
-
-        serializer::error rtn{};
-
-        auto match = [&]<typename O>(O &value, auto index)
-        {
-            if (rtn)
+            auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
             {
-                return;
-            }
-
-            auto current = glz::write<opts>(json[std::size_t{index}]);
-
-            if (current && !glz::read<opts>(value, current.value()))
-            {
-                return;
-            }
-
-            auto name = std::string{type_name<O>()};
-            rtn       = std::make_unique<errors::bad_type>(index, std::move(name));
-        };
-
-        auto index = 0u;
-        std::apply([&]<typename... O>(O &...args) { (match(args, index++), ...); }, tuple);
-
-        return rtn;
-    }
-} // namespace saucer::serializers::detail::glaze
-
-namespace saucer::serializers
-{
-    template <typename Function>
-    auto glaze::serialize(const Function &func)
-    {
-        using return_t  = boost::callable_traits::return_type_t<Function>;
-        using args_t    = boost::callable_traits::args_t<Function>;
-        using decayed_t = detail::glaze::decay_t<args_t>;
-
-        static_assert(detail::glaze::serializable_v<return_t> && detail::glaze::serializable_v<decayed_t>,
-                      "All arguments as well as the return type must be serializable");
-
-        return [func](function_data &data) -> function::result_type
-        {
-            const auto &message = static_cast<glaze_function_data &>(data);
-
-            decayed_t params{};
-
-            if constexpr (std::tuple_size_v<decayed_t> > 0)
-            {
-                if (glz::read<detail::glaze::opts>(params, message.params.str))
-                {
-                    return tl::make_unexpected(detail::glaze::mismatch(params, message.params.str));
-                }
-            }
-
-            std::string result{"null"};
-
-            if constexpr (!std::is_void_v<return_t>)
-            {
-                auto serialized = glz::write<detail::glaze::opts>(std::apply(func, params));
-
-                if (!serialized)
-                {
-                    return tl::make_unexpected(std::make_unique<errors::serialize>());
-                }
-
-                result = std::move(serialized.value());
-            }
-            else
-            {
-                std::apply(func, params);
-            }
-
-            auto escaped = glz::write<detail::glaze::opts>(result);
-
-            if (!escaped)
-            {
-                return tl::make_unexpected(std::make_unique<errors::serialize>());
-            }
-
-            return fmt::format("JSON.parse({})", escaped.value());
-        };
-    }
-
-    template <typename... Params>
-    auto glaze::serialize_args(const Params &...params)
-    {
-        fmt::dynamic_format_arg_store<fmt::format_context> rtn;
-
-        const auto unpack = [&]<typename T>(const T &value)
-        {
-            static_assert(detail::glaze::serializable_v<T>, "All arguments must be serializable");
-
-            const auto serialize = []<typename O>(const O &value)
-            {
-                auto json    = glz::write<detail::glaze::opts>(value).value_or("null");
-                auto escaped = glz::write<detail::glaze::opts>(json).value_or("null");
-
-                return fmt::format("JSON.parse({})", escaped);
+                return std::make_tuple(std::get<Is>(tuple)...);
             };
 
-            if constexpr (is_arguments<T>)
+            return unpack(std::make_index_sequence<sizeof...(Ts) - 1>());
+        }
+
+        template <typename T>
+        using drop_last_t = decltype(drop_last_impl(std::declval<T>()));
+
+        template <typename... Ts>
+        consteval auto last_impl(const std::tuple<Ts...> &tuple)
+        {
+            if constexpr (sizeof...(Ts) > 0)
             {
-                using underlying = typename T::underlying;
-                auto tuple       = static_cast<underlying>(value);
+                return std::get<sizeof...(Ts) - 1>(tuple);
+            }
+        }
 
-                std::vector<std::string> rtn{};
-                rtn.reserve(std::tuple_size_v<underlying>);
+        template <typename T>
+        using last_t = decltype(last_impl(std::declval<T>()));
 
-                std::apply([&](const auto &...args) { (rtn.emplace_back(serialize(args)), ...); }, tuple);
-                return fmt::format("{}", fmt::join(rtn, ", "));
+        template <typename T>
+        using args_t = decay_tuple_t<boost::callable_traits::args_t<T>>;
+
+        template <typename T>
+        using return_t = boost::callable_traits::return_type_t<T>;
+
+        template <typename T, typename Last = last_t<args_t<T>>>
+        struct meta
+        {
+            using args_t   = impl::args_t<T>;
+            using result_t = return_t<T>;
+
+          public:
+            static constexpr bool is_manual = false;
+        };
+
+        template <typename T, typename R, typename E>
+        struct meta<T, executor<R, E>>
+        {
+            using args_t     = drop_last_t<impl::args_t<T>>;
+            using result_t   = R;
+            using executor_t = executor<R, E>;
+
+          public:
+            static constexpr bool is_manual = true;
+        };
+
+        template <typename T>
+        struct serializable_impl : std::false_type
+        {
+        };
+
+        template <>
+        struct serializable_impl<void> : std::true_type
+        {
+        };
+
+        template <>
+        struct serializable_impl<std::tuple<>> : std::true_type
+        {
+        };
+
+        template <typename T>
+            requires glz::read_supported<opts.format, T>
+        struct serializable_impl<T> : std::true_type
+        {
+        };
+
+        template <typename T>
+            requires saucer::is_arguments<T>
+        struct serializable_impl<T> : serializable_impl<typename T::tuple>
+        {
+        };
+
+        template <typename T>
+        inline constexpr bool serializable = serializable_impl<T>::value;
+
+        template <typename T>
+        struct is_tuple_impl : std::false_type
+        {
+        };
+
+        template <typename... Ts>
+        struct is_tuple_impl<std::tuple<Ts...>> : std::true_type
+        {
+        };
+
+        template <typename T>
+        inline constexpr bool is_tuple = is_tuple_impl<T>::value;
+
+        template <typename T>
+            requires(not is_tuple<T>)
+        std::optional<std::string> mismatch(T &value, const glz::json_t &json)
+        {
+            auto serialized = glz::write<opts>(json).value_or("");
+
+            if (auto err = glz::read<opts>(value, serialized); !err)
+            {
+                return std::nullopt;
+            }
+
+            return fmt::format("Expected value to be '{}'", rebind::type_name<T>);
+        }
+
+        template <typename T, std::size_t I = 0>
+            requires is_tuple<T>
+        std::optional<std::string> mismatch(T &tuple, const glz::json_t &json)
+        {
+            static constexpr auto N = std::tuple_size_v<T>;
+
+            if constexpr (I < N)
+            {
+                using current_t = std::tuple_element_t<I, T>;
+                auto err        = mismatch(std::get<I>(tuple), json[I]);
+
+                if (!err.has_value())
+                {
+                    return mismatch<T, I + 1>(tuple, json);
+                }
+
+                return fmt::format("Expected parameter {} to be '{}'", I, rebind::type_name<current_t>);
             }
             else
             {
-                return serialize(value);
+                return std::nullopt;
+            }
+        }
+
+        template <typename T>
+        tl::expected<T, std::string> parse(const std::string &data)
+        {
+            T rtn{};
+
+            if (auto err = glz::read<opts>(rtn, data); !err)
+            {
+                return rtn;
+            }
+
+            glz::json_t json{};
+
+            if (auto err = glz::read<opts>(json, data); err)
+            {
+                return tl::unexpected{std::string{glz::nameof(err.ec)}};
+            }
+
+            return tl::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};
+        }
+
+        template <typename T>
+            requires(is_tuple<T> and std::tuple_size_v<T> == 0)
+        tl::expected<T, std::string> parse(const std::string &)
+        {
+            return {};
+        }
+
+        template <typename T>
+        auto serialize_arg(const T &value)
+        {
+            static_assert(serializable<T>, "Given type is not serializable");
+            return glz::write<opts>(value).value_or("null");
+        }
+
+        template <typename T>
+            requires is_arguments<T>
+        auto serialize_arg(const T &value)
+        {
+            std::vector<std::string> rtn;
+            rtn.reserve(value.size());
+
+            auto unpack = [&]<typename... Ts>(Ts &&...args)
+            {
+                (rtn.emplace_back(serialize_arg(std::forward<Ts>(args))), ...);
+            };
+            std::apply(unpack, value.as_tuple());
+
+            return fmt::format("{}", fmt::join(rtn, ", "));
+        }
+
+        template <typename T>
+        auto serialize_res(T &&callback)
+        {
+            std::string result;
+
+            if constexpr (!std::is_void_v<std::invoke_result_t<T>>)
+            {
+                result = impl::serialize_arg(std::invoke(std::forward<T>(callback)));
+            }
+            else
+            {
+                std::invoke(std::forward<T>(callback));
+            }
+
+            return result;
+        }
+    } // namespace impl
+
+    template <typename Function>
+    auto serializer::serialize(const Function &func)
+    {
+        using meta     = impl::meta<Function>;
+        using result_t = meta::result_t;
+        using args_t   = meta::args_t;
+
+        static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
+                      "All arguments as well as the result type must be serializable");
+
+        return [func](std::unique_ptr<saucer::message_data> data, const executor &exec)
+        {
+            const auto &[resolve, reject] = exec;
+
+            const auto &message = *static_cast<function_data *>(data.get());
+            const auto params   = impl::parse<args_t>(message.params.str);
+
+            if (!params)
+            {
+                return std::invoke(reject, impl::serialize_arg(params.error()));
+            }
+
+            if constexpr (meta::is_manual)
+            {
+                using executor_t = meta::executor_t;
+
+                auto exec_resolve = [resolve]<typename... Ts>(Ts &&...value)
+                {
+                    std::invoke(resolve, impl::serialize_res([&value...]() { return (value, ...); }));
+                };
+
+                auto exec_reject = [reject]<typename... Ts>(Ts &&...value)
+                {
+                    std::invoke(reject, impl::serialize_res([&value...]() { return (value, ...); }));
+                };
+
+                auto exec_param = executor_t{exec_resolve, exec_reject};
+                auto all_params = std::tuple_cat(params.value(), std::make_tuple(std::move(exec_param)));
+
+                std::apply(func, all_params);
+            }
+            else
+            {
+                std::invoke(resolve, impl::serialize_res([&]() { return std::apply(func, params.value()); }));
             }
         };
+    }
 
-        (rtn.push_back(unpack(params)), ...);
+    template <typename... Ts>
+    auto serializer::serialize_args(const Ts &...params)
+    {
+        serializer::args rtn;
+
+        rtn.reserve(sizeof...(params), 0);
+        (rtn.push_back(impl::serialize_arg(params)), ...);
 
         return rtn;
     }
 
     template <typename T>
-    auto glaze::resolve(std::shared_ptr<std::promise<T>> promise)
+    auto serializer::resolve(std::shared_ptr<std::promise<T>> promise)
     {
-        static_assert(detail::glaze::serializable_v<T>, "The promise result must be serializable");
+        static_assert(impl::serializable<T>, "The promise result must be serializable");
 
-        return [promise](result_data &data) mutable
+        return [promise](std::unique_ptr<saucer::message_data> data) mutable
         {
-            const auto &result = static_cast<glaze_result_data &>(data);
+            const auto &result = *static_cast<result_data *>(data.get());
 
             if constexpr (!std::is_void_v<T>)
             {
-                T value{};
+                auto parsed = impl::parse<T>(result.result.str);
 
-                const auto error = glz::read<detail::glaze::opts>(value, result.result.str);
-
-                if (error)
+                if (!parsed)
                 {
-                    auto code      = static_cast<std::uint32_t>(error);
-                    auto exception = std::runtime_error{std::to_string(code)};
+                    auto exception = std::runtime_error{parsed.error()};
+                    auto ptr       = std::make_exception_ptr(exception);
 
-                    promise->set_exception(std::make_exception_ptr(exception));
+                    promise->set_exception(ptr);
                     return;
                 }
 
-                promise->set_value(value);
+                promise->set_value(parsed.value());
             }
             else
             {
@@ -238,4 +315,4 @@ namespace saucer::serializers
             }
         };
     }
-} // namespace saucer::serializers
+} // namespace saucer::serializers::glaze

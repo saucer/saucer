@@ -4,21 +4,21 @@
 
 #include <glaze/glaze.hpp>
 
-namespace saucer::serializers
+namespace saucer::serializers::glaze
 {
-    struct glaze_function_data : function_data
+    struct function_data : saucer::function_data
     {
         glz::raw_json params;
     };
 
-    struct glaze_result_data : result_data
+    struct result_data : saucer::result_data
     {
         glz::raw_json result;
     };
 
-    struct glaze : serializer
+    struct serializer : saucer::serializer
     {
-        ~glaze() override;
+        ~serializer() override;
 
       public:
         [[nodiscard]] std::string script() const override;
@@ -31,13 +31,13 @@ namespace saucer::serializers
         template <typename Function>
         static auto serialize(const Function &func);
 
-        template <typename... Params>
-        static auto serialize_args(const Params &...params);
+        template <typename... Ts>
+        static auto serialize_args(const Ts &...params);
 
       public:
         template <typename T>
         static auto resolve(std::shared_ptr<std::promise<T>> promise);
     };
-} // namespace saucer::serializers
+} // namespace saucer::serializers::glaze
 
 #include "glaze.inl"

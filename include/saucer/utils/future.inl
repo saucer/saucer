@@ -2,6 +2,8 @@
 
 #include "future.hpp"
 
+#include <functional>
+
 namespace saucer
 {
     template <typename... T>
@@ -32,14 +34,11 @@ namespace saucer
     template <typename T, typename Callback>
     void then(std::future<T> future, Callback callback)
     {
-        auto fut = std::make_shared<std::future<void>>();
-
-        auto fn = [fut, future = std::move(future), callback = std::move(callback)]() mutable
-        {
-            callback(future.get());
-        };
-
-        *fut = std::async(std::launch::async, std::move(fn));
+        std::thread{[future = std::move(future), callback = std::move(callback)]() mutable
+                    {
+                        std::invoke(callback, future.get());
+                    }}
+            .detach();
     }
 
     template <typename Callback>
@@ -67,8 +66,11 @@ namespace saucer
     template <typename T>
     void forget(std::future<T> future)
     {
-        auto fut = std::make_shared<std::future<void>>();
-        *fut     = std::async(std::launch::async, [fut, future = std::move(future)]() mutable { future.get(); });
+        std::thread{[future = std::move(future)]() mutable
+                    {
+                        future.wait();
+                    }}
+            .detach();
     }
 
     struct forget_pipe

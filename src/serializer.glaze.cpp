@@ -3,10 +3,11 @@
 #include <tl/expected.hpp>
 
 template <>
-struct glz::meta<saucer::serializers::glaze_function_data>
+struct glz::meta<saucer::serializers::glaze::function_data>
 {
-    using T                     = saucer::serializers::glaze_function_data;
+    using T                     = saucer::serializers::glaze::function_data;
     static constexpr auto value = object(  //
+        "saucer:call", skip{},             //
         "id", &T::id,                      //
         "name", &T::name,                  //
         "params", glz::escaped<&T::params> //
@@ -14,25 +15,26 @@ struct glz::meta<saucer::serializers::glaze_function_data>
 };
 
 template <>
-struct glz::meta<saucer::serializers::glaze_result_data>
+struct glz::meta<saucer::serializers::glaze::result_data>
 {
-    using T                     = saucer::serializers::glaze_result_data;
+    using T                     = saucer::serializers::glaze::result_data;
     static constexpr auto value = object(  //
+        "saucer:resolve", skip{},          //
         "id", &T::id,                      //
         "result", glz::escaped<&T::result> //
     );
 };
 
-namespace saucer::serializers
+namespace saucer::serializers::glaze
 {
-    glaze::~glaze() = default;
+    serializer::~serializer() = default;
 
-    std::string glaze::script() const
+    std::string serializer::script() const
     {
         return {};
     }
 
-    std::string glaze::js_serializer() const
+    std::string serializer::js_serializer() const
     {
         return "JSON.stringify";
     }
@@ -40,31 +42,35 @@ namespace saucer::serializers
     template <typename T>
     tl::expected<T, glz::error_ctx> parse_as(const std::string &buffer)
     {
-        static constexpr auto opts = glz::opts{.error_on_missing_keys = true, .raw_string = false};
+        static constexpr auto opts = glz::opts{
+            .error_on_unknown_keys = true,
+            .error_on_missing_keys = true,
+            .raw_string            = false,
+        };
 
         T value{};
         auto error = glz::read<opts>(value, buffer);
 
         if (error)
         {
-            return tl::make_unexpected(error);
+            return tl::unexpected{error};
         }
 
         return value;
     }
 
-    std::unique_ptr<message_data> glaze::parse(const std::string &data) const
+    std::unique_ptr<message_data> serializer::parse(const std::string &data) const
     {
-        if (auto res = parse_as<glaze_function_data>(data); res.has_value())
+        if (auto res = parse_as<function_data>(data); res.has_value())
         {
-            return std::make_unique<glaze_function_data>(res.value());
+            return std::make_unique<function_data>(res.value());
         }
 
-        if (auto res = parse_as<glaze_result_data>(data); res.has_value())
+        if (auto res = parse_as<result_data>(data); res.has_value())
         {
-            return std::make_unique<glaze_result_data>(res.value());
+            return std::make_unique<result_data>(res.value());
         }
 
         return nullptr;
     }
-} // namespace saucer::serializers
+} // namespace saucer::serializers::glaze

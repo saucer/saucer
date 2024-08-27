@@ -16,7 +16,7 @@
 
 # Talk to us!
 
-Before starting to work on any patches please talk to use before hand.  
+Before starting to work on any patches please talk to us before hand.  
 This helps us prevent situations where you may want to implement a feature that is already in the works.  
 
 We're always grateful for your contributions :) We just want to make sure your hard work doesn't go to waste!
@@ -41,6 +41,7 @@ We follow a specific coding-style throughout the project:
     - Includes should be sorted by length where applicable
     - Project/Internal Headers always come first
     - System and Project Headers should be separated by a line break
+    - If applicable, separate includes into reasonable groups
 
 - Naming Convention
   - We use a "standard library-ish" naming convention
@@ -60,4 +61,4 @@ We follow a specific coding-style throughout the project:
   - Before you commit your changes make sure that there are no clang-tidy warnings and format your code with our `.clang-format` config
 
 - Annotations
-  - All functions exposed to the user should be annotated accordingly _(only if applicable)_ _[see [annotations.hpp](include/saucer/annotations.hpp), for an example see [webview.hpp](include/saucer/webview.hpp)]_
+  - All functions exposed to the user should be annotated accordingly _(only if applicable)_ _[for an example see [webview.hpp](include/saucer/webview.hpp)]_

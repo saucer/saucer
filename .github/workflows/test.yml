@@ -1,102 +1,75 @@
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      debug:
+        type: boolean
+        description: Enable Debugging
 
 name: 🧪 Tests
 
 jobs:
-  qt5-debug:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
+  run-tests:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        backend:
+          - Qt5
+          - Qt6
+          - WebKitGtk
+          - WebKit
+
+        config:
+          - Release
+          - Debug
+
+        include:
+          - backend: Qt5
+            platform: Linux
+            os: ubuntu-latest
+            container: archlinux:base-devel
+
+          - backend: Qt6
+            platform: Linux
+            os: ubuntu-latest
+            container: archlinux:base-devel
+
+          - backend: WebKitGtk
+            platform: Linux
+            os: ubuntu-latest
+            container: archlinux:base-devel
+
+          - backend: WebKit
+            platform: MacOS
+            os: macos-latest
+
+    name: ${{ matrix.backend }}-${{ matrix.config }}
+
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🛸 Setup Saucer
         uses: ./.github/actions/setup
         with:
-          backend: Qt5
-          platform: Linux
-          build-type: Debug
-          cmake-args: -Dsaucer_tests=ON
+          backend: ${{ matrix.backend }}
+          platform: ${{ matrix.platform }}
+          build-type: ${{ matrix.config }}
+          cmake-args: -Dsaucer_tests=ON -Dsaucer_ci=ON
 
-      - name: 🧪 Test
-        timeout-minutes: 10
-        uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
-
-  qt5-release:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 🛸 Setup Saucer
-        uses: ./.github/actions/setup
+      - name: 🐛 Debug
+        if: ${{ github.event.inputs.debug == 'true' }}
+        uses: mxschmitt/action-tmate@v3
         with:
-          backend: Qt5
-          platform: Linux
-          build-type: Release
-          cmake-args: -Dsaucer_tests=ON
+          install-dependencies: false
+          limit-access-to-actor: true
 
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
-
-  qt6-debug:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 🛸 Setup Saucer
-        uses: ./.github/actions/setup
-        with:
-          backend: Qt6
-          platform: Linux
-          build-type: Debug
-          cmake-args: -Dsaucer_tests=ON
-
-      - name: 🧪 Test
-        timeout-minutes: 10
-        uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
-
-  qt6-release:
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 🛸 Setup Saucer
-        uses: ./.github/actions/setup
-        with:
-          backend: Qt6
-          platform: Linux
-          build-type: Release
-          cmake-args: -Dsaucer_tests=ON
-
-      - name: 🧪 Test
-        timeout-minutes: 10
-        uses: ./.github/actions/test
-
-      - name: 🖼️ Screenshot
-        if: failure() || cancelled()
-        uses: ./.github/actions/screenshot
+        if: ${{ matrix.backend != 'WebKitGtk' && matrix.backend != 'WebKit' }}
