@@ -39,6 +39,24 @@ namespace saucer
         return m_impl->icon.isNull();
     }
 
+    void icon::save(const fs::path &path) const
+    {
+        auto sizes = m_impl->icon.availableSizes();
+
+        if (sizes.empty())
+        {
+            return;
+        }
+
+        auto compare = [](const QSize &a, const QSize &b)
+        {
+            return (a.height() + a.width()) > (b.height() + b.width());
+        };
+        std::ranges::sort(sizes, compare);
+
+        m_impl->icon.pixmap(sizes.first()).save(path.c_str());
+    }
+
     std::optional<icon> icon::from(const stash<> &ico)
     {
         QPixmap rtn{};

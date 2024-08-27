@@ -35,6 +35,7 @@ namespace saucer
 
       public:
         [[nodiscard]] bool empty() const;
+        void save(const fs::path &path) const;
 
       public:
         [[nodiscard]] static std::optional<icon> from(const stash<> &ico);

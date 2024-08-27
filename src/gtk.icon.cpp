@@ -32,9 +32,19 @@ namespace saucer
         return *this;
     }
 
-    bool icon::empty() const // NOLINT
+    bool icon::empty() const
     {
-        return false;
+        return !m_impl->texture;
+    }
+
+    void icon::save(const fs::path &path) const
+    {
+        if (!m_impl->texture)
+        {
+            return;
+        }
+
+        gdk_texture_save_to_png(m_impl->texture.get(), path.c_str());
     }
 
     std::optional<icon> icon::from(const stash<> &ico)
