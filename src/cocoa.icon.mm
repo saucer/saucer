@@ -37,6 +37,16 @@ namespace saucer
         return ![m_impl->icon isValid];
     }
 
+    void icon::save(const fs::path &path) const
+    {
+        auto *const tiff = [m_impl->icon TIFFRepresentation];
+        auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
+        auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+
+        NSError *error{};
+        [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:0 error:&error];
+    }
+
     std::optional<icon> icon::from(const stash<> &ico)
     {
         auto *const data  = [NSData dataWithBytes:ico.data() length:ico.size()];
