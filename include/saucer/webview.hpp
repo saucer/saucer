@@ -6,6 +6,8 @@
 #include "window.hpp"
 #include "scheme.hpp"
 
+#include "modules/module.hpp"
+
 #include <filesystem>
 #include <unordered_map>
 
@@ -69,6 +71,9 @@ namespace saucer
 
       public:
         ~webview() override;
+
+      public:
+        saucer::natives natives() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;

@@ -5,15 +5,6 @@
 namespace saucer
 {
     template <Serializer Serializer, Module... Modules>
-    saucer::natives smartview<Serializer, Modules...>::natives() const
-    {
-        return {
-            reinterpret_cast<natives::window_impl *>(window::m_impl.get()),
-            reinterpret_cast<natives::webview_impl *>(webview::m_impl.get()),
-        };
-    }
-
-    template <Serializer Serializer, Module... Modules>
     smartview<Serializer, Modules...>::smartview(const options &options)
         : smartview_core(std::make_unique<Serializer>(), options), m_modules(Modules{this, natives()}...)
     {

@@ -4,6 +4,14 @@
 
 namespace saucer
 {
+    saucer::natives webview::natives() const
+    {
+        return {
+            reinterpret_cast<natives::window_impl *>(window::m_impl.get()),
+            reinterpret_cast<natives::webview_impl *>(webview::m_impl.get()),
+        };
+    }
+
     void webview::embed(embedded_files files)
     {
         {

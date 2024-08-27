@@ -1,8 +1,6 @@
 #pragma once
 
 #include "webview.hpp"
-
-#include "modules/module.hpp"
 #include "serializers/glaze/glaze.hpp"
 
 #include <tuple>
@@ -61,9 +59,6 @@ namespace saucer
     class smartview : public smartview_core
     {
         std::tuple<Modules...> m_modules;
-
-      private:
-        saucer::natives natives() const;
 
       public:
         smartview(const options & = {});
