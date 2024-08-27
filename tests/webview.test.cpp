@@ -176,10 +176,10 @@ static void tests(saucer::smartview<> &webview)
 
     "execute"_test = [&]()
     {
-        webview.execute("location.href = 'https://isocpp.org'");
+        webview.execute("location.href = 'https://github.com'");
 
-        test::wait_for([&webview, &load_finished]() { return webview.url().contains("isocpp") && load_finished; });
-        expect(webview.url().contains("isocpp"));
+        test::wait_for([&webview, &load_finished]() { return webview.url().contains("github"); });
+        expect(webview.url().contains("github"));
     };
 
     "inject"_test = [&]()
@@ -190,7 +190,7 @@ static void tests(saucer::smartview<> &webview)
         webview.expose("inject", [&state](std::string _state) { state = std::move(_state); });
 
         webview.inject({.code = "window.saucer.exposed.inject(document.readyState)", .time = creation});
-        webview.set_url("https://saucer.github.io");
+        webview.reload();
 
         test::wait_for([&state, &load_finished]() { return !state.empty() && load_finished; });
         expect(!state.empty() && state != "complete") << state;
