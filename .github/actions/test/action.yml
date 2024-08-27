@@ -12,4 +12,4 @@ runs:
         export DISPLAY=:1
         export QTWEBENGINE_DISABLE_SANDBOX=1
 
-        ctest --test-dir build/tests --verbose
+        ctest --test-dir build/tests --extra-verbose
