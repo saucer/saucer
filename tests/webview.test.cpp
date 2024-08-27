@@ -88,6 +88,52 @@ static void tests(saucer::smartview<> &webview)
     };
 #endif
 
+    "scheme"_test = [&]()
+    {
+        bool done{false};
+        webview.expose("scheme_done", [&done]() { done = true; });
+
+        webview.handle_scheme("test",
+                              [](const saucer::request &req) -> saucer::scheme_handler::result_type
+                              {
+                                  expect(req.url().starts_with("test://index.html")) << req.url();
+                                  expect(req.method() == "GET") << req.method();
+
+                                  const std::string html = R"html(
+                                  <!DOCTYPE html>
+                                  <html>
+                                      <head>
+                                        <title>Custom Scheme</title>
+                                        <script>
+                                            saucer.exposed.scheme_done();
+                                        </script>
+                                      </head>
+                                      <body>
+                                        Custom Scheme Test
+                                      </body>
+                                  </html>
+                                  )html";
+
+                                  return saucer::response{
+                                      .data = saucer::make_stash(html),
+                                      .mime = "text/html",
+                                  };
+                              });
+
+        webview.set_url("test://index.html");
+        test::wait_for(done);
+
+        expect(done);
+
+        webview.remove_scheme("test");
+        done = false;
+
+        webview.reload();
+        test::wait_for(done, std::chrono::seconds(5));
+
+        expect(not done);
+    };
+
     "embed"_test = [&]()
     {
         bool done{false};
@@ -205,52 +251,6 @@ static void tests(saucer::smartview<> &webview)
         expect(!state.empty() && state != "loading") << state;
 
         webview.clear_scripts();
-    };
-
-    "scheme"_test = [&]()
-    {
-        bool done{false};
-        webview.expose("scheme_done", [&done]() { done = true; });
-
-        webview.handle_scheme("test",
-                              [](const saucer::request &req) -> saucer::scheme_handler::result_type
-                              {
-                                  expect(req.url().starts_with("test://index.html")) << req.url();
-                                  expect(req.method() == "GET") << req.method();
-
-                                  const std::string html = R"html(
-                                  <!DOCTYPE html>
-                                  <html>
-                                      <head>
-                                        <title>Custom Scheme</title>
-                                        <script>
-                                            saucer.exposed.scheme_done();
-                                        </script>
-                                      </head>
-                                      <body>
-                                        Custom Scheme Test
-                                      </body>
-                                  </html>
-                                  )html";
-
-                                  return saucer::response{
-                                      .data = saucer::make_stash(html),
-                                      .mime = "text/html",
-                                  };
-                              });
-
-        webview.set_url("test://index.html");
-        test::wait_for(done);
-
-        expect(done);
-
-        webview.remove_scheme("test");
-        done = false;
-
-        webview.reload();
-        test::wait_for(done, std::chrono::seconds(5));
-
-        expect(not done);
     };
 
     webview.clear(saucer::web_event::load_started);
