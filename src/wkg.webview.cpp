@@ -16,12 +16,15 @@ namespace saucer
         m_impl->web_view = g_object_ptr<WebKitWebView>::ref(WEBKIT_WEB_VIEW(webkit_web_view_new()));
         m_impl->settings = impl::make_settings(options);
 
+        auto *const session      = webkit_web_view_get_network_session(m_impl->web_view.get());
+        auto *const data_manager = webkit_network_session_get_website_data_manager(session);
+
+        webkit_website_data_manager_set_favicons_enabled(data_manager, true);
+
         if (options.persistent_cookies)
         {
-            auto *const session = webkit_web_view_get_network_session(m_impl->web_view.get());
             auto *const manager = webkit_network_session_get_cookie_manager(session);
-
-            auto path = options.storage_path;
+            auto path           = options.storage_path;
 
             if (path.empty())
             {
