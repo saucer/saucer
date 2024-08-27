@@ -66,11 +66,6 @@ namespace saucer
         utils::set_dpi_awareness();
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-        const auto style = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
-
-        m_impl->resizable   = style & WS_THICKFRAME;
-        m_impl->decorations = style & WS_CAPTION;
-
         impl::instances++;
     }
 
@@ -127,7 +122,7 @@ namespace saucer
             return dispatch([this]() { return resizable(); }).get();
         }
 
-        return m_impl->resizable;
+        return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & WS_THICKFRAME;
     }
 
     bool window::decorations() const
@@ -137,7 +132,7 @@ namespace saucer
             return dispatch([this]() { return decorations(); }).get();
         }
 
-        return m_impl->decorations;
+        return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & WS_CAPTION;
     }
 
     bool window::always_on_top() const
@@ -343,7 +338,6 @@ namespace saucer
             current_style &= ~flags;
         }
 
-        m_impl->resizable = enabled;
         SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
     }
 
@@ -366,7 +360,6 @@ namespace saucer
             current_style &= ~flag;
         }
 
-        m_impl->decorations = enabled;
         SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
     }
 

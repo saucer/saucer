@@ -12,11 +12,9 @@ namespace saucer
     struct window::impl
     {
         HWND hwnd;
-        UINT prev_state;
 
       public:
-        bool resizable;
-        bool decorations;
+        UINT prev_state;
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:

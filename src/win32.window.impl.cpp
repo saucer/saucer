@@ -89,7 +89,7 @@ namespace saucer
                 break;
             }
 
-            static constexpr auto flag = WS_TILEDWINDOW;
+            static constexpr auto flag = WS_CAPTION;
             auto *const changes        = reinterpret_cast<STYLESTRUCT *>(l_param);
 
             if ((changes->styleOld & flag) != (changes->styleNew & flag))
