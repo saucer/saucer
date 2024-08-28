@@ -181,6 +181,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 include("cmake/cpm.cmake")
 
 if (saucer_polyfill)
+  message(STATUS "[saucer] Using polyfills")
   set(saucer_fmt_install OFF)
 
   CPMFindPackage(
@@ -198,8 +199,8 @@ if (saucer_polyfill)
 
   link_libraries(function2::function2 jthread)
 
-  add_definitions(-include ${jthread_SOURCE_DIR}/include/jthread)
-  add_definitions(-include ${CMAKE_CURRENT_SOURCE_DIR}/polyfill/functional.hpp)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC -include ${jthread_SOURCE_DIR}/include/jthread)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC -include ${CMAKE_CURRENT_SOURCE_DIR}/polyfill/functional.hpp)
 else()
   set(saucer_fmt_install ON)
 endif()
