@@ -29,14 +29,14 @@ namespace saucer::serializers::glaze
 
       public:
         template <typename Function>
-        static auto serialize(const Function &func);
+        static auto serialize(Function &&func);
 
         template <typename... Ts>
         static auto serialize_args(const Ts &...params);
 
       public:
         template <typename T>
-        static auto resolve(std::shared_ptr<std::promise<T>> promise);
+        static auto resolve(std::promise<T> promise);
     };
 } // namespace saucer::serializers::glaze
 

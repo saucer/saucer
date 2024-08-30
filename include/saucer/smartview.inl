@@ -14,11 +14,11 @@ namespace saucer
     template <typename Return, typename... Params>
     std::future<Return> smartview<Serializer, Modules...>::evaluate(const std::string &code, Params &&...params)
     {
-        auto promise = std::make_shared<std::promise<Return>>();
-        auto rtn     = promise->get_future();
+        std::promise<Return> promise;
+        auto rtn = promise.get_future();
 
         auto args    = Serializer::serialize_args(std::forward<Params>(params)...);
-        auto resolve = Serializer::resolve(promise);
+        auto resolve = Serializer::resolve(std::move(promise));
 
         add_evaluation(std::move(resolve), fmt::vformat(code, args));
 

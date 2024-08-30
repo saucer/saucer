@@ -23,7 +23,7 @@ namespace saucer
         using args         = fmt::dynamic_format_arg_store<fmt::format_context>;
 
       public:
-        using resolver = std::function<void(std::unique_ptr<message_data>)>;
+        using resolver = std::move_only_function<void(std::unique_ptr<message_data>)>;
         using function = std::function<void(std::unique_ptr<message_data>, const executor &)>;
 
       public:
@@ -54,7 +54,7 @@ namespace saucer
             T::serialize_args(make_args(10, 15, 20))
         } -> std::convertible_to<serializer::args>;
         { //
-            T::resolve(std::declval<std::shared_ptr<std::promise<int>>>())
+            T::resolve(std::declval<std::promise<int>>())
         } -> std::convertible_to<serializer::resolver>;
     };
 } // namespace saucer

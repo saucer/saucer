@@ -227,7 +227,7 @@ namespace saucer::serializers::glaze
     } // namespace impl
 
     template <typename Function>
-    auto serializer::serialize(const Function &func)
+    auto serializer::serialize(Function &&func)
     {
         using meta     = impl::meta<Function>;
         using result_t = meta::result_t;
@@ -236,7 +236,7 @@ namespace saucer::serializers::glaze
         static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
                       "All arguments as well as the result type must be serializable");
 
-        return [func](std::unique_ptr<saucer::message_data> data, const executor &exec)
+        return [func = std::forward<Function>(func)](std::unique_ptr<saucer::message_data> data, const executor &exec)
         {
             const auto &[resolve, reject] = exec;
 
@@ -286,11 +286,11 @@ namespace saucer::serializers::glaze
     }
 
     template <typename T>
-    auto serializer::resolve(std::shared_ptr<std::promise<T>> promise)
+    auto serializer::resolve(std::promise<T> promise)
     {
         static_assert(impl::serializable<T>, "The promise result must be serializable");
 
-        return [promise](std::unique_ptr<saucer::message_data> data) mutable
+        return [promise = std::move(promise)](std::unique_ptr<saucer::message_data> data) mutable
         {
             const auto &result = *static_cast<result_data *>(data.get());
 
@@ -303,15 +303,15 @@ namespace saucer::serializers::glaze
                     auto exception = std::runtime_error{parsed.error()};
                     auto ptr       = std::make_exception_ptr(exception);
 
-                    promise->set_exception(ptr);
+                    promise.set_exception(ptr);
                     return;
                 }
 
-                promise->set_value(parsed.value());
+                promise.set_value(parsed.value());
             }
             else
             {
-                promise->set_value();
+                promise.set_value();
             }
         };
     }
