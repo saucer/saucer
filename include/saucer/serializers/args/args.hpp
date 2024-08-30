@@ -41,7 +41,7 @@ namespace saucer
     auto make_args(Ts &&...);
 
     template <typename T>
-    concept is_arguments = requires() { requires impl::is_arguments_impl<T>::value; };
+    concept is_arguments = requires() { requires impl::is_arguments_impl<std::remove_cvref_t<T>>::value; };
 } // namespace saucer
 
 #include "args.inl"

@@ -186,15 +186,15 @@ namespace saucer::serializers::glaze
         }
 
         template <typename T>
-        auto serialize_arg(const T &value)
+        auto serialize_arg(T &&value)
         {
             static_assert(serializable<T>, "Given type is not serializable");
-            return glz::write<opts>(value).value_or("null");
+            return glz::write<opts>(std::forward<T>(value)).value_or("null");
         }
 
         template <typename T>
             requires is_arguments<T>
-        auto serialize_arg(const T &value)
+        auto serialize_arg(T &&value)
         {
             std::vector<std::string> rtn;
             rtn.reserve(value.size());
@@ -275,12 +275,12 @@ namespace saucer::serializers::glaze
     }
 
     template <typename... Ts>
-    auto serializer::serialize_args(const Ts &...params)
+    auto serializer::serialize_args(Ts &&...params)
     {
         serializer::args rtn;
 
         rtn.reserve(sizeof...(params), 0);
-        (rtn.push_back(impl::serialize_arg(params)), ...);
+        (rtn.push_back(impl::serialize_arg(std::forward<Ts>(params))), ...);
 
         return rtn;
     }

@@ -32,7 +32,7 @@ namespace saucer::serializers::glaze
         static auto serialize(Function &&func);
 
         template <typename... Ts>
-        static auto serialize_args(const Ts &...params);
+        static auto serialize_args(Ts &&...params);
 
       public:
         template <typename T>
