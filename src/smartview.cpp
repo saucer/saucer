@@ -105,7 +105,7 @@ namespace saucer
             [this, id = message.id, latch = m_impl->latch](const auto &error) { reject(id, std::move(error)); },
         };
 
-        auto &[func, policy] = functions.at(message.name);
+        auto &[func, policy] = functions[message.name];
 
         if (policy == launch::sync)
         {

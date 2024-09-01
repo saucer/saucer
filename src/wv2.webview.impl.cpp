@@ -6,6 +6,8 @@
 #include "win32.window.impl.hpp"
 #include "wv2.scheme.impl.hpp"
 
+#include <cassert>
+
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 #include <rebind/enum.hpp>
@@ -68,7 +70,7 @@ namespace saucer
 
             if (!result || !SUCCEEDED(result->get_CoreWebView2(&this->web_view)))
             {
-                utils::throw_error("Failed to create webview2");
+                assert(false && "Failed to get CoreWebView2");
             }
 
             return S_OK;
@@ -78,7 +80,7 @@ namespace saucer
         {
             if (!SUCCEEDED(env->CreateCoreWebView2Controller(hwnd, Callback<ControllerCompleted>(created).Get())))
             {
-                utils::throw_error("Failed to create webview2 controller");
+                assert(false && "Failed to create WebView2 controller");
             }
 
             return S_OK;
@@ -90,7 +92,7 @@ namespace saucer
 
         if (!SUCCEEDED(status))
         {
-            utils::throw_error("Failed to create webview2");
+            assert(false && "Failed to create WebView2");
         }
 
         while (!controller)

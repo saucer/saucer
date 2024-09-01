@@ -3,6 +3,8 @@
 #include "instantiate.hpp"
 #include "qt.icon.impl.hpp"
 
+#include <cassert>
+
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 #include <flagpp/flags.hpp>
@@ -50,10 +52,7 @@ namespace saucer
                            impl::application  = std::make_unique<QApplication>(argc, static_cast<char **>(punned));
                        });
 
-        if (!impl::application) [[unlikely]]
-        {
-            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
-        }
+        assert(impl::application && "Construction outside of the main-thread is not permitted");
 
         m_impl->window = std::make_unique<impl::main_window>(this);
 

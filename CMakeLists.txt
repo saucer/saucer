@@ -200,7 +200,7 @@ if (saucer_polyfill)
   link_libraries(function2::function2 jthread)
 
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
-  target_precompile_headers(${PROJECT_NAME} PUBLIC ${jthread_SOURCE_DIR}/include/jthread)
+  target_precompile_headers(${PROJECT_NAME} PUBLIC "${jthread_SOURCE_DIR}/include/jthread")
 else()
   set(saucer_fmt_install ON)
 endif()

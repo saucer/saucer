@@ -28,17 +28,6 @@ namespace saucer
         }
     };
 
-    void utils::throw_error(const std::string &msg)
-    {
-        static constexpr auto lang    = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-        static constexpr DWORD format = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-
-        std::wstring error(1024, '\0');
-        FormatMessageW(format, nullptr, GetLastError(), lang, error.data(), static_cast<DWORD>(error.size()), nullptr);
-
-        throw std::runtime_error(fmt::format("An error occurred: {} (LastError: \"{}\")", msg, utils::narrow(error)));
-    }
-
     void utils::set_dpi_awareness()
     {
         auto shcore = library{L"Shcore.dll"};

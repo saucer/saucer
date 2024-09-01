@@ -3,6 +3,8 @@
 #include "instantiate.hpp"
 #include "cocoa.icon.impl.hpp"
 
+#include <cassert>
+
 namespace saucer
 {
     window::window(const options &) : m_impl(std::make_unique<impl>())
@@ -28,10 +30,7 @@ namespace saucer
                            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
                        });
 
-        if (!impl::application) [[unlikely]]
-        {
-            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
-        }
+        assert(impl::application && "Construction outside of the main-thread is not permitted");
 
         static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
                                      NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;

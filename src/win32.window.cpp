@@ -5,6 +5,8 @@
 
 #include "instantiate.hpp"
 
+#include <cassert>
+
 #include <fmt/core.h>
 #include <flagpp/flags.hpp>
 
@@ -32,16 +34,15 @@ namespace saucer
                            wnd_class.lpszClassName = L"Saucer";
                            wnd_class.lpfnWndProc   = impl::wnd_proc;
 
-                           if (!RegisterClassW(&wnd_class))
+                           if (RegisterClassW(&wnd_class))
                            {
-                               utils::throw_error("RegisterClassW() failed");
+                               return;
                            }
+
+                           assert(false && "RegisterClassW() failed");
                        });
 
-        if (!impl::instance) [[unlikely]]
-        {
-            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
-        }
+        assert(impl::instance && "Construction outside of the main-thread is not permitted");
 
         const auto dw_style = IsWindows8OrGreater() ? WS_EX_NOREDIRECTIONBITMAP : 0;
 
@@ -58,10 +59,7 @@ namespace saucer
                                        impl::instance,      //
                                        nullptr);
 
-        if (!m_impl->hwnd)
-        {
-            utils::throw_error("CreateWindowExW() failed");
-        }
+        assert(m_impl->hwnd && "CreateWindowExW() failed");
 
         utils::set_dpi_awareness();
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));

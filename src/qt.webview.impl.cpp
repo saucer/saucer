@@ -3,7 +3,9 @@
 #include "scripts.hpp"
 #include "qt.icon.impl.hpp"
 
+#include <cassert>
 #include <optional>
+
 #include <fmt/core.h>
 
 #include <QFile>
@@ -25,7 +27,7 @@ namespace saucer
 
         if (!qwebchannel.open(QIODevice::ReadOnly))
         {
-            throw std::runtime_error{"Failed to open required qwebchannel.js"};
+            assert(false && "Failed to open web-channel");
         }
 
         const auto content = qwebchannel.readAll().toStdString();

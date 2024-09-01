@@ -5,6 +5,8 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
+#include <cassert>
+
 #include <fmt/core.h>
 #include <flagpp/flags.hpp>
 
@@ -29,10 +31,7 @@ namespace saucer
             gtk_css_provider_load_from_string(impl::style.get(), ".transparent { background-color: transparent; }");
         }
 
-        if (!impl::application) [[unlikely]]
-        {
-            throw std::runtime_error{"Construction outside of the main-thread is not permitted"};
-        }
+        assert(impl::application && "Construction outside of the main-thread is not permitted");
 
         auto callback = [](GtkApplication *, gpointer data)
         {

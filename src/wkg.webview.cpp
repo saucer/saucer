@@ -458,7 +458,7 @@ namespace saucer
             return;
         }
 
-        m_impl->schemes.at(name)->handler = nullptr;
+        m_impl->schemes[name]->handler = nullptr;
     }
 
     void webview::clear(web_event event)
