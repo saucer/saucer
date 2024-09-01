@@ -50,6 +50,7 @@ namespace saucer
 
       public:
         static void init_objc();
+        static void init_menu();
     };
 } // namespace saucer
 

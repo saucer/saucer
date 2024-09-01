@@ -25,6 +25,8 @@ namespace saucer
                                                            delegate = nil;
                                                        }};
 
+                           impl::init_menu();
+
                            [NSApp setDelegate:delegate];
                            [NSApp activateIgnoringOtherApps:YES];
                            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
