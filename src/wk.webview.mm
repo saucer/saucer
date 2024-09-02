@@ -127,7 +127,7 @@ namespace saucer
         return false;
     }
 
-    icon webview::favicon() const // NOLINT
+    icon webview::favicon() const // NOLINT(*-static)
     {
         return {};
     }

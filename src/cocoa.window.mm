@@ -53,7 +53,7 @@ namespace saucer
         m_impl->window = nil;
     }
 
-    void window::dispatch(callback_t callback) const // NOLINT
+    void window::dispatch(callback_t callback) const // NOLINT(*-static)
     {
         auto work = [](callback_t *data)
         {

@@ -76,7 +76,7 @@ namespace saucer
 
     window::~window() = default;
 
-    void window::dispatch(callback_t callback) const // NOLINT
+    void window::dispatch(callback_t callback) const // NOLINT(*-static)
     {
         auto once = [](callback_t *data)
         {
@@ -97,7 +97,7 @@ namespace saucer
         return gtk_window_is_active(GTK_WINDOW(m_impl->window.get()));
     }
 
-    bool window::minimized() const // NOLINT
+    bool window::minimized() const // NOLINT(*-static)
     {
         return {};
     }
@@ -132,7 +132,7 @@ namespace saucer
         return gtk_window_get_decorated(GTK_WINDOW(m_impl->window.get()));
     }
 
-    bool window::always_on_top() const // NOLINT
+    bool window::always_on_top() const // NOLINT(*-static)
     {
         return {};
     }
@@ -160,7 +160,7 @@ namespace saucer
         return {width, height};
     }
 
-    std::pair<int, int> window::max_size() const // NOLINT
+    std::pair<int, int> window::max_size() const // NOLINT(*-static)
     {
         return {};
     }
@@ -208,7 +208,7 @@ namespace saucer
         gtk_window_close(GTK_WINDOW(m_impl->window.get()));
     }
 
-    void window::focus() // NOLINT
+    void window::focus() // NOLINT(*-static)
     {
     }
 
@@ -332,11 +332,11 @@ namespace saucer
         gtk_window_set_decorated(GTK_WINDOW(m_impl->window.get()), enabled);
     }
 
-    void window::set_always_on_top(bool) // NOLINT
+    void window::set_always_on_top(bool) // NOLINT(*-static)
     {
     }
 
-    void window::set_icon(const icon &) // NOLINT
+    void window::set_icon(const icon &) // NOLINT(*-static)
     {
     }
 
@@ -360,7 +360,7 @@ namespace saucer
         gtk_window_set_default_size(GTK_WINDOW(m_impl->window.get()), width, height);
     }
 
-    void window::set_max_size(int, int) // NOLINT
+    void window::set_max_size(int, int) // NOLINT(*-static)
     {
     }
 
