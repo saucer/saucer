@@ -19,7 +19,7 @@ namespace saucer
             return;
         }
 
-        auto callback = [](GtkWindow *, GParamSpec *, webview *self)
+        auto callback = [](void *, GParamSpec *, webview *self)
         {
             self->m_events.at<web_event::title_changed>().fire(self->page_title());
         };
@@ -42,7 +42,7 @@ namespace saucer
             return;
         }
 
-        auto callback = [](GtkWindow *, GParamSpec *, webview *self)
+        auto callback = [](void *, GParamSpec *, webview *self)
         {
             self->m_events.at<web_event::icon_changed>().fire(self->favicon());
         };

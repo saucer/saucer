@@ -35,6 +35,9 @@ namespace saucer
 
       public:
         [[nodiscard]] bool empty() const;
+        [[nodiscard]] stash<> data() const;
+
+      public:
         void save(const fs::path &path) const;
 
       public:

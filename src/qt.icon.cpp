@@ -1,9 +1,30 @@
 #include "qt.icon.impl.hpp"
 
+#include <cassert>
+
 #include <QPixmap>
+#include <QBuffer>
 
 namespace saucer
 {
+    std::optional<QPixmap> icon::impl::pixmap() const
+    {
+        auto sizes = icon.availableSizes();
+
+        if (sizes.empty())
+        {
+            return std::nullopt;
+        }
+
+        auto compare = [](const QSize &a, const QSize &b)
+        {
+            return (a.height() + a.width()) > (b.height() + b.width());
+        };
+        std::sort(sizes.begin(), sizes.end(), compare);
+
+        return icon.pixmap(sizes.first());
+    }
+
     icon::icon() : m_impl(std::make_unique<impl>()) {}
 
     icon::icon(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
@@ -39,22 +60,35 @@ namespace saucer
         return m_impl->icon.isNull();
     }
 
+    stash<> icon::data() const
+    {
+        auto pixmap = m_impl->pixmap();
+
+        if (!pixmap)
+        {
+            return stash<>::empty();
+        }
+
+        QByteArray bytes;
+
+        QBuffer buffer{&bytes};
+        pixmap->save(&buffer, "PNG");
+
+        return stash<>::from({bytes.begin(), bytes.end()});
+    }
+
     void icon::save(const fs::path &path) const
     {
-        auto sizes = m_impl->icon.availableSizes();
+        assert(path.extension() == ".png");
 
-        if (sizes.empty())
+        auto pixmap = m_impl->pixmap();
+
+        if (!pixmap)
         {
             return;
         }
 
-        auto compare = [](const QSize &a, const QSize &b)
-        {
-            return (a.height() + a.width()) > (b.height() + b.width());
-        };
-        std::sort(sizes.begin(), sizes.end(), compare);
-
-        m_impl->icon.pixmap(sizes.first()).save(path.c_str());
+        pixmap->save(path.c_str());
     }
 
     std::optional<icon> icon::from(const stash<> &ico)

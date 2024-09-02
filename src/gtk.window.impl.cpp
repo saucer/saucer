@@ -51,7 +51,7 @@ namespace saucer
             return;
         }
 
-        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
             auto [width, height] = self->size();
             self->m_events.at<window_event::resize>().fire(width, height);
@@ -71,7 +71,7 @@ namespace saucer
             return;
         }
 
-        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
             self->m_events.at<window_event::maximize>().fire(self->maximized());
         };
@@ -94,7 +94,7 @@ namespace saucer
             return;
         }
 
-        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
             self->m_events.at<window_event::focus>().fire(self->focused());
         };
@@ -112,7 +112,7 @@ namespace saucer
             return;
         }
 
-        auto callback = [](GtkWindow *, saucer::window *self)
+        auto callback = [](void *, saucer::window *self)
         {
             if (self->m_events.at<window_event::close>().until(true))
             {
@@ -163,7 +163,7 @@ namespace saucer
 
     void window::impl::update_decorations(saucer::window *self) const
     {
-        auto callback = [](GtkWindow *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
             const auto decorations = self->decorations();
 

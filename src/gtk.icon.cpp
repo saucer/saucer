@@ -1,5 +1,7 @@
 #include "gtk.icon.impl.hpp"
 
+#include <cassert>
+
 namespace saucer
 {
     icon::icon() : m_impl(std::make_unique<impl>()) {}
@@ -37,8 +39,25 @@ namespace saucer
         return !m_impl->texture;
     }
 
+    stash<> icon::data() const
+    {
+        if (!m_impl->texture)
+        {
+            return stash<>::empty();
+        }
+
+        const auto bytes = g_bytes_ptr{gdk_texture_save_to_png_bytes(m_impl->texture.get())};
+
+        gsize size{};
+        const auto *data = reinterpret_cast<const std::uint8_t *>(g_bytes_get_data(bytes.get(), &size));
+
+        return stash<>::from({data, data + size});
+    }
+
     void icon::save(const fs::path &path) const
     {
+        assert(path.extension() == ".png");
+
         if (!m_impl->texture)
         {
             return;

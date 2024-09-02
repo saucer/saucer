@@ -9,5 +9,8 @@ namespace saucer
     struct icon::impl
     {
         QIcon icon;
+
+      public:
+        [[nodiscard]] std::optional<QPixmap> pixmap() const;
     };
 } // namespace saucer
