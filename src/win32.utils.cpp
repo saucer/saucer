@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include <string_view>
 
-#include <windows.h>
 #include <fmt/core.h>
 
 namespace saucer
