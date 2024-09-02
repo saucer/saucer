@@ -2,14 +2,6 @@ cmake_minimum_required(VERSION 3.21)
 project(saucer LANGUAGES CXX VERSION 3.0.0)
 
 # --------------------------------------------------------------------------------------------------------
-# Check requirements
-# --------------------------------------------------------------------------------------------------------
-
-if (MSVC AND MSVC_TOOLSET_VERSION LESS 143)
-  message(WARNING "[saucer] MSVC Toolsets below 14.3 are not supported")
-endif()
-
-# --------------------------------------------------------------------------------------------------------
 # Library switches
 # --------------------------------------------------------------------------------------------------------
 
@@ -22,8 +14,35 @@ option(saucer_prefer_remote     "Prefer remote packages over local packages"    
 option(saucer_examples          "Build examples"                                   OFF)
 option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"        OFF) # See VS2022 17.10 Changelog
 
+option(saucer_no_version_check  "Skip compiler version check"                      OFF)
 option(saucer_tests             "Build tests"                                      OFF)
 option(saucer_ci                "Set when running CI-Tests"                        OFF)
+
+# --------------------------------------------------------------------------------------------------------
+# Check requirements
+# └ The main use case of this check is to prevent users from reporting
+#   issues only to find out that their compiler is too old.
+# --------------------------------------------------------------------------------------------------------
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION LESS 19.38)
+  set(saucer_cxx_outdated TRUE)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION LESS 14)
+  set(saucer_cxx_outdated TRUE)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION LESS 18)
+  set(saucer_cxx_outdated TRUE)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION LESS 15)
+  set(saucer_cxx_outdated TRUE)
+endif()
+
+if (NOT saucer_no_version_check AND saucer_cxx_outdated)
+  message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_version_check=ON'")
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Library options
