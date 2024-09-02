@@ -37,16 +37,7 @@ namespace saucer
             return stash<>::empty();
         }
 
-        STATSTG stats;
-        m_impl->body->Stat(&stats, STATFLAG_DEFAULT);
-
-        std::vector<std::uint8_t> data;
-        data.resize(stats.cbSize.QuadPart);
-
-        ULONG read{};
-        m_impl->body->Read(data.data(), static_cast<ULONG>(data.size()), &read);
-
-        return stash<>::from(std::move(data));
+        return stash<>::from(utils::read(m_impl->body.Get()));
     }
 
     std::map<std::string, std::string> request::headers() const

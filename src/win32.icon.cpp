@@ -1,11 +1,13 @@
 #include "win32.icon.impl.hpp"
-
 #include "win32.utils.hpp"
 
 #include <shlwapi.h>
 
 namespace saucer
 {
+    // https://stackoverflow.com/questions/5345803/does-gdi-have-standard-image-encoder-clsids
+    static constexpr CLSID png_encoder = {0x557cf406, 0x1a04, 0x11d3, {0x9a, 0x73, 0x00, 0x00, 0xf8, 0x1e, 0xf3, 0x2e}};
+
     icon::icon() : m_impl(std::make_unique<impl>()) {}
 
     icon::icon(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
@@ -41,6 +43,30 @@ namespace saucer
         return !m_impl->bitmap || m_impl->bitmap->GetLastStatus() != Gdiplus::Status::Ok;
     }
 
+    stash<> icon::data() const
+    {
+        if (!m_impl->bitmap)
+        {
+            return stash<>::empty();
+        }
+
+        ComPtr<IStream> stream;
+
+        if (!SUCCEEDED(CreateStreamOnHGlobal(nullptr, true, &stream)))
+        {
+            return stash<>::empty();
+        }
+
+        m_impl->bitmap->Save(stream.Get(), &png_encoder);
+
+        LARGE_INTEGER pos;
+        pos.QuadPart = 0;
+
+        stream->Seek(pos, STREAM_SEEK_SET, nullptr);
+
+        return stash<>::from(utils::read(stream.Get()));
+    }
+
     void icon::save(const fs::path &path) const
     {
         if (!m_impl->bitmap)
@@ -48,10 +74,7 @@ namespace saucer
             return;
         }
 
-        // https://stackoverflow.com/questions/5345803/does-gdi-have-standard-image-encoder-clsids
-        static const CLSID encoder = {0x557cf406, 0x1a04, 0x11d3, {0x9a, 0x73, 0x00, 0x00, 0xf8, 0x1e, 0xf3, 0x2e}};
-
-        m_impl->bitmap->Save(utils::widen(path.string()).c_str(), &encoder, nullptr);
+        m_impl->bitmap->Save(path.wstring().c_str(), &png_encoder);
     }
 
     std::optional<icon> icon::from(const stash<> &ico)

@@ -80,4 +80,18 @@ namespace saucer
 
         return out;
     }
+
+    std::vector<std::uint8_t> utils::read(IStream *stream)
+    {
+        STATSTG stats;
+        stream->Stat(&stats, STATFLAG_DEFAULT);
+
+        std::vector<std::uint8_t> data;
+        data.resize(stats.cbSize.QuadPart);
+
+        ULONG read{};
+        stream->Read(data.data(), static_cast<ULONG>(data.size()), &read);
+
+        return data;
+    }
 } // namespace saucer
