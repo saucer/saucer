@@ -1,5 +1,7 @@
 #include "cocoa.icon.impl.hpp"
 
+#include <cassert>
+
 namespace saucer
 {
     icon::icon() : m_impl(std::make_unique<impl>()) {}
@@ -34,11 +36,23 @@ namespace saucer
 
     bool icon::empty() const
     {
-        return ![m_impl->icon isValid];
+        return !m_impl->icon.isValid;
+    }
+
+    stash<> icon::data() const
+    {
+        auto *const tiff = [m_impl->icon TIFFRepresentation];
+        auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
+        auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+
+        const auto *raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
+        return stash<>::from({raw, raw + data.length});
     }
 
     void icon::save(const fs::path &path) const
     {
+        assert(path.extension() == ".png");
+
         auto *const tiff = [m_impl->icon TIFFRepresentation];
         auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
         auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
