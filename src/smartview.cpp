@@ -1,6 +1,5 @@
 #include "smartview.hpp"
 
-#include "latch.hpp"
 #include "scripts.hpp"
 
 #include "serializers/data.hpp"
@@ -29,8 +28,8 @@ namespace saucer
         lock<std::unordered_map<std::string, std::pair<function, launch>>> functions;
 
       public:
-        shared_latch latch;
         std::unique_ptr<saucer::serializer> serializer;
+        std::shared_ptr<lockpp::lock<smartview_core *>> parent;
 
       public:
         static inline std::unique_ptr<poolparty::pool<>> pool;
@@ -47,18 +46,18 @@ namespace saucer
         }
 
         m_impl->serializer = std::move(serializer);
-        auto script        = fmt::format(smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer()));
+        m_impl->parent     = std::make_shared<lockpp::lock<smartview_core *>>(this);
 
-        inject({.code = script, .time = load_time::creation, .permanent = true});
+        auto script = fmt::format(smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer()));
+
+        inject({.code = std::move(script), .time = load_time::creation, .permanent = true});
         inject({.code = m_impl->serializer->script(), .time = load_time::creation, .permanent = true});
     }
 
     smartview_core::~smartview_core()
     {
-        while (!m_impl->latch.empty())
-        {
-            run<false>();
-        }
+        auto locked = m_impl->parent->write();
+        *locked     = nullptr;
     }
 
     bool smartview_core::on_message(const std::string &message)
@@ -100,11 +99,31 @@ namespace saucer
             return reject(message.id, fmt::format("\"No exposed function '{}'\"", message.name));
         }
 
-        auto executor = serializer::executor{
-            [this, id = message.id, latch = m_impl->latch](const auto &result) { resolve(id, result); },
-            [this, id = message.id, latch = m_impl->latch](const auto &error) { reject(id, std::move(error)); },
+        auto resolve = [parent = m_impl->parent, id = message.id](const auto &result)
+        {
+            auto core = parent->read();
+
+            if (!core.value())
+            {
+                return;
+            }
+
+            core.value()->resolve(id, result);
         };
 
+        auto reject = [parent = m_impl->parent, id = message.id](const auto &error)
+        {
+            auto core = parent->read();
+
+            if (!core.value())
+            {
+                return;
+            }
+
+            core.value()->reject(id, error);
+        };
+
+        auto executor        = serializer::executor{resolve, reject};
         auto &[func, policy] = functions[message.name];
 
         if (policy == launch::sync)

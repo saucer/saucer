@@ -185,7 +185,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/smartview.cpp"
     "src/serializer.glaze.cpp"
     
-    "src/latch.cpp"
     "src/requests.cpp"
 )
 
