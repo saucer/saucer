@@ -326,6 +326,8 @@ namespace saucer
             return dispatch([this, enabled]() { return set_force_dark_mode(enabled); }).get();
         }
 
+        utils::set_immersive_dark(window::m_impl->hwnd, enabled);
+
         ComPtr<ICoreWebView2_13> webview;
 
         if (!SUCCEEDED(m_impl->web_view.As(&webview)))

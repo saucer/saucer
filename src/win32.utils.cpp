@@ -48,6 +48,24 @@ namespace saucer
         reinterpret_cast<bool(CALLBACK *)()>(func)();
     }
 
+    void utils::set_immersive_dark(HWND hwnd, bool enabled)
+    {
+        auto dwmapi = library{L"Dwmapi.dll"};
+        auto *func  = GetProcAddress(dwmapi.value(), "DwmSetWindowAttribute");
+
+        if (!func)
+        {
+            return;
+        }
+
+        static constexpr auto immersive_dark = 20;
+
+        const auto *set_attribute  = reinterpret_cast<HRESULT (*)(HWND, DWORD, LPCVOID, DWORD)>(func);
+        auto enable_immersive_dark = static_cast<BOOL>(enabled);
+
+        set_attribute(hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
+    }
+
     std::wstring utils::widen(const std::string &narrow)
     {
         auto narrow_size = static_cast<int>(narrow.size());
