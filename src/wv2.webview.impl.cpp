@@ -45,21 +45,19 @@ namespace saucer
         o_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
     }
 
-    void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::options options)
+    void webview::impl::create_webview(webview *parent, HWND hwnd, saucer::preferences preferences)
     {
-        auto flags = options.browser_flags;
-
-        if (!options.hardware_acceleration)
+        if (!preferences.hardware_acceleration)
         {
-            flags.emplace("--disable-gpu");
+            preferences.browser_flags.emplace("--disable-gpu");
         }
 
-        const auto args = fmt::format("{}", fmt::join(flags, " "));
+        const auto args = fmt::format("{}", fmt::join(preferences.browser_flags, " "));
         env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
 
-        if (options.storage_path.empty())
+        if (preferences.storage_path.empty())
         {
-            options.storage_path = std::filesystem::temp_directory_path() / "saucer";
+            preferences.storage_path = std::filesystem::temp_directory_path() / "saucer";
         }
 
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -86,9 +84,9 @@ namespace saucer
             return S_OK;
         };
 
-        auto status =
-            CreateCoreWebView2EnvironmentWithOptions(nullptr, options.storage_path.wstring().c_str(), env_options.Get(),
-                                                     Callback<EnvironmentCompleted>(completed).Get());
+        auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, preferences.storage_path.wstring().c_str(),
+                                                               env_options.Get(),
+                                                               Callback<EnvironmentCompleted>(completed).Get());
 
         if (!SUCCEEDED(status))
         {

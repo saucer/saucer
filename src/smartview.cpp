@@ -35,14 +35,14 @@ namespace saucer
         static inline std::unique_ptr<poolparty::pool<>> pool;
     };
 
-    smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const options &options)
-        : webview(options), m_impl(std::make_unique<impl>())
+    smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const preferences &preferences)
+        : webview(preferences), m_impl(std::make_unique<impl>())
     {
         using namespace scripts;
 
         if (!impl::pool)
         {
-            impl::pool = std::make_unique<poolparty::pool<>>(options.threads);
+            impl::pool = std::make_unique<poolparty::pool<>>(preferences.threads);
         }
 
         m_impl->serializer = std::move(serializer);

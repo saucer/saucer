@@ -18,7 +18,7 @@ constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
-    window::window(const options &) : m_impl(std::make_unique<impl>())
+    window::window(const preferences &) : m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
 

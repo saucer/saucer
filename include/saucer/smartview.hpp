@@ -28,7 +28,7 @@ namespace saucer
         std::atomic_uint64_t m_id_counter{0};
 
       protected:
-        smartview_core(std::unique_ptr<serializer>, const options & = {});
+        smartview_core(std::unique_ptr<serializer>, const preferences & = {});
 
       public:
         ~smartview_core() override;
@@ -61,7 +61,7 @@ namespace saucer
         std::tuple<Modules...> m_modules;
 
       public:
-        smartview(const options & = {});
+        smartview(const preferences & = {});
 
       public:
         template <typename Function>

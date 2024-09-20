@@ -11,24 +11,24 @@
 
 namespace saucer
 {
-    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &preferences) : window(preferences), m_impl(std::make_unique<impl>())
     {
         m_impl->web_view = g_object_ptr<WebKitWebView>::ref(WEBKIT_WEB_VIEW(webkit_web_view_new()));
-        m_impl->settings = impl::make_settings(options);
+        m_impl->settings = impl::make_settings(preferences);
 
         auto *const session      = webkit_web_view_get_network_session(m_impl->web_view.get());
         auto *const data_manager = webkit_network_session_get_website_data_manager(session);
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
-        if (options.persistent_cookies)
+        if (preferences.persistent_cookies)
         {
             auto *const manager = webkit_network_session_get_cookie_manager(session);
-            auto path           = options.storage_path;
+            auto path           = preferences.storage_path;
 
             if (path.empty())
             {
-                path = fs::temp_directory_path() / "saucer";
+                path = fs::current_path() / ".saucer";
             }
 
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(),
@@ -36,8 +36,8 @@ namespace saucer
         }
 
         webkit_settings_set_hardware_acceleration_policy(
-            m_impl->settings.get(), options.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
-                                                                  : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+            m_impl->settings.get(), preferences.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
+                                                                      : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
         webkit_web_view_set_settings(m_impl->web_view.get(), m_impl->settings.get());
 

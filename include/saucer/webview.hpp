@@ -67,7 +67,7 @@ namespace saucer
         virtual bool on_message(const std::string &);
 
       public:
-        webview(const options & = {});
+        webview(const preferences & = {});
 
       public:
         ~webview() override;

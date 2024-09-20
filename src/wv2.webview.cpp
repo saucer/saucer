@@ -20,14 +20,14 @@
 
 namespace saucer
 {
-    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &preferences) : window(preferences), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, []() { register_scheme("saucer"); });
 
-        auto copy = options;
+        auto copy = preferences;
 
-        if (options.persistent_cookies && options.storage_path.empty())
+        if (preferences.persistent_cookies && preferences.storage_path.empty())
         {
             copy.storage_path = fs::current_path() / ".saucer";
             SetFileAttributesW(utils::widen(copy.storage_path.string()).c_str(), FILE_ATTRIBUTE_HIDDEN);

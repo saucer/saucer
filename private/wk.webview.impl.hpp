@@ -44,7 +44,7 @@ namespace saucer
 
       public:
         static void init_objc();
-        static WKWebViewConfiguration *make_config(const options &);
+        static WKWebViewConfiguration *make_config(const preferences &);
 
       public:
         static const std::string &inject_script();

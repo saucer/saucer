@@ -43,6 +43,6 @@ namespace saucer
         static constinit std::string_view ready_script;
 
       public:
-        static WebKitSettings *make_settings(const saucer::options &);
+        static WebKitSettings *make_settings(const saucer::preferences &);
     };
 } // namespace saucer

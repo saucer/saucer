@@ -210,7 +210,7 @@ namespace saucer
                             "v@:@");
     }
 
-    WKWebViewConfiguration *webview::impl::make_config(const options &options)
+    WKWebViewConfiguration *webview::impl::make_config(const preferences &preferences)
     {
         static auto resolve = [](id target, NSString *key) -> id
         {
@@ -226,7 +226,7 @@ namespace saucer
 
         auto *const config = [[WKWebViewConfiguration alloc] init];
 
-        for (const auto &flag : options.browser_flags)
+        for (const auto &flag : preferences.browser_flags)
         {
             const auto delim = flag.find('=');
 

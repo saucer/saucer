@@ -36,7 +36,7 @@ namespace saucer
         right  = 1 << 3,
     };
 
-    struct options
+    struct preferences
     {
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
@@ -75,7 +75,7 @@ namespace saucer
         void dispatch(callback_t callback) const;
 
       protected:
-        window(const options & = {});
+        window(const preferences & = {});
 
       public:
         virtual ~window();

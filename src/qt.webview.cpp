@@ -18,22 +18,22 @@
 
 namespace saucer
 {
-    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &preferences) : window(preferences), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, []() { register_scheme("saucer"); });
 
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
-        if (!options.storage_path.empty())
+        if (!preferences.storage_path.empty())
         {
-            const auto path = QString::fromStdString(options.storage_path.string());
+            const auto path = QString::fromStdString(preferences.storage_path.string());
 
             m_impl->profile->setCachePath(path);
             m_impl->profile->setPersistentStoragePath(path);
         }
 
-        m_impl->profile->setPersistentCookiesPolicy(options.persistent_cookies
+        m_impl->profile->setPersistentCookiesPolicy(preferences.persistent_cookies
                                                         ? QWebEngineProfile::ForcePersistentCookies
                                                         : QWebEngineProfile::NoPersistentCookies);
 

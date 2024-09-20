@@ -128,12 +128,12 @@ namespace saucer
         return rtn;
     }
 
-    WebKitSettings *webview::impl::make_settings(const saucer::options &options)
+    WebKitSettings *webview::impl::make_settings(const saucer::preferences &preferences)
     {
         std::vector<GValue> values;
         std::vector<std::string> names;
 
-        for (const auto &flag : options.browser_flags)
+        for (const auto &flag : preferences.browser_flags)
         {
             const auto delim = flag.find('=');
 

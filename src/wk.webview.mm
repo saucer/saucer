@@ -13,7 +13,7 @@
 
 namespace saucer
 {
-    webview::webview(const options &options) : window(options), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &preferences) : window(preferences), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
 
@@ -24,15 +24,15 @@ namespace saucer
                            register_scheme("saucer");
                        });
 
-        m_impl->config = impl::make_config(options);
+        m_impl->config = impl::make_config(preferences);
 
         NSUUID *uuid;
 
-        if (options.persistent_cookies)
+        if (preferences.persistent_cookies)
         {
             // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            auto id = options.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", options.storage_path.string());
+            auto id = preferences.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", preferences.storage_path.string());
             auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
             unsigned char hash[32] = "";

@@ -7,7 +7,7 @@ using namespace boost::ut::literals;
 
 struct window : saucer::window
 {
-    window(const saucer::options &opts) : saucer::window(opts) {}
+    window(const saucer::preferences &prefs) : saucer::window(prefs) {}
 };
 
 static void tests(window &window, bool thread)

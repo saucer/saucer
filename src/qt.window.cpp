@@ -16,7 +16,7 @@ constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
-    window::window(const options &options) : m_impl(std::make_unique<impl>())
+    window::window(const preferences &preferences) : m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
 
@@ -30,9 +30,9 @@ namespace saucer
                            qputenv("QT_LOGGING_RULES", "*=false");
 #endif
 
-                           auto flags = options.browser_flags;
+                           auto flags = preferences.browser_flags;
 
-                           if (options.hardware_acceleration)
+                           if (preferences.hardware_acceleration)
                            {
                                flags.emplace("--enable-oop-rasterization");
                                flags.emplace("--enable-gpu-rasterization");
