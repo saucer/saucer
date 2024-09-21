@@ -55,7 +55,7 @@ namespace saucer
     {
         // https://github.com/GNOME/glib/blob/ce5e11aef4be46594941662a521c7f5e026cfce9/gio/gapplication.c#L2591
 
-        m_impl->should_quit = false; // TODO: Quit when no windows open?
+        m_impl->should_quit = false;
         auto *context       = g_main_context_default();
 
         if (!g_main_context_acquire(context))

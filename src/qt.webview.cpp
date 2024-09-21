@@ -9,6 +9,7 @@
 #include "requests.hpp"
 
 #include <fmt/core.h>
+#include <fmt/xchar.h>
 
 #include <QWebEngineScriptCollection>
 
@@ -23,19 +24,32 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, []() { register_scheme("saucer"); });
 
+        auto flags = prefs.browser_flags;
+
+        if (prefs.hardware_acceleration)
+        {
+            flags.emplace("--enable-oop-rasterization");
+            flags.emplace("--enable-gpu-rasterization");
+
+            flags.emplace("--use-gl=desktop");
+            flags.emplace("--enable-native-gpu-memory-buffers");
+        }
+
+        const auto args = fmt::format("{}", fmt::join(flags, " "));
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
+
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
         if (!prefs.storage_path.empty())
         {
-            const auto path = QString::fromStdString(preferences.storage_path.string());
+            const auto path = QString::fromStdString(prefs.storage_path.string());
 
             m_impl->profile->setCachePath(path);
             m_impl->profile->setPersistentStoragePath(path);
         }
 
-        m_impl->profile->setPersistentCookiesPolicy(preferences.persistent_cookies
-                                                        ? QWebEngineProfile::ForcePersistentCookies
-                                                        : QWebEngineProfile::NoPersistentCookies);
+        m_impl->profile->setPersistentCookiesPolicy(prefs.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
+                                                                             : QWebEngineProfile::NoPersistentCookies);
 
         m_impl->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
@@ -113,9 +127,9 @@ namespace saucer
 
     icon webview::favicon() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return favicon(); }).get();
+            return dispatch([this] { return favicon(); });
         }
 
         return {{m_impl->web_view->icon()}};
@@ -123,9 +137,9 @@ namespace saucer
 
     std::string webview::page_title() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return page_title(); }).get();
+            return dispatch([this] { return page_title(); });
         }
 
         return m_impl->web_view->title().toStdString();
@@ -133,9 +147,9 @@ namespace saucer
 
     bool webview::dev_tools() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return dev_tools(); }).get();
+            return dispatch([this] { return dev_tools(); });
         }
 
         return m_impl->dev_page != nullptr;
@@ -143,9 +157,9 @@ namespace saucer
 
     std::string webview::url() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return url(); }).get();
+            return dispatch([this] { return url(); });
         }
 
         return m_impl->web_view->url().toString().toStdString();
@@ -153,9 +167,9 @@ namespace saucer
 
     bool webview::context_menu() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return context_menu(); }).get();
+            return dispatch([this] { return context_menu(); });
         }
 
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
@@ -163,9 +177,9 @@ namespace saucer
 
     color webview::background() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return background(); }).get();
+            return dispatch([this] { return background(); });
         }
 
         const auto color = m_impl->web_page->backgroundColor();
@@ -180,9 +194,9 @@ namespace saucer
 
     bool webview::force_dark_mode() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return force_dark_mode(); }).get();
+            return dispatch([this] { return force_dark_mode(); });
         }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
@@ -195,9 +209,9 @@ namespace saucer
 
     void webview::set_dev_tools(bool enabled)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
+            return dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
         if (!m_impl->dev_page && !enabled)
@@ -224,9 +238,9 @@ namespace saucer
 
     void webview::set_context_menu(bool enabled)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_context_menu(enabled); }).get();
+            return dispatch([this, enabled] { return set_context_menu(enabled); });
         }
 
         m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
@@ -235,9 +249,9 @@ namespace saucer
 
     void webview::set_background(const color &color)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, color] { return set_background(color); }).get();
+            return dispatch([this, color] { return set_background(color); });
         }
 
         const auto [r, g, b, a] = color;
@@ -251,9 +265,9 @@ namespace saucer
 
     void webview::set_force_dark_mode(bool enabled)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_force_dark_mode(enabled); }).get();
+            return dispatch([this, enabled] { return set_force_dark_mode(enabled); });
         }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
@@ -264,9 +278,9 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, file] { return set_file(file); }).get();
+            return dispatch([this, file] { return set_file(file); });
         }
 
         m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(file.string())));
@@ -274,9 +288,9 @@ namespace saucer
 
     void webview::set_url(const std::string &url)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, url] { return set_url(url); }).get();
+            return dispatch([this, url] { return set_url(url); });
         }
 
         m_impl->web_view->setUrl(QString::fromStdString(url));
@@ -284,9 +298,9 @@ namespace saucer
 
     void webview::back()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return back(); }).get();
+            return dispatch([this]() { return back(); });
         }
 
         m_impl->web_view->back();
@@ -294,9 +308,9 @@ namespace saucer
 
     void webview::forward()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return forward(); }).get();
+            return dispatch([this]() { return forward(); });
         }
 
         m_impl->web_view->forward();
@@ -304,9 +318,9 @@ namespace saucer
 
     void webview::reload()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return reload(); }).get();
+            return dispatch([this] { return reload(); });
         }
 
         m_impl->web_view->reload();
@@ -314,9 +328,9 @@ namespace saucer
 
     void webview::clear_scripts()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return clear_scripts(); }).get();
+            return dispatch([this] { return clear_scripts(); });
         }
 
         m_impl->web_view->page()->scripts().clear();
@@ -329,9 +343,9 @@ namespace saucer
 
     void webview::execute(const std::string &code)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, code] { execute(code); }).get();
+            return dispatch([this, code] { execute(code); });
         }
 
         if (!m_impl->dom_loaded)
@@ -345,11 +359,10 @@ namespace saucer
 
     void webview::handle_scheme(const std::string &name, scheme_handler handler)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
             return dispatch([this, name, handler = std::move(handler)] mutable
-                            { return handle_scheme(name, std::move(handler)); })
-                .get();
+                            { return handle_scheme(name, std::move(handler)); });
         }
 
         if (m_impl->schemes.contains(name))
@@ -363,9 +376,9 @@ namespace saucer
 
     void webview::remove_scheme(const std::string &name)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, name] { return remove_scheme(name); }).get();
+            return dispatch([this, name] { return remove_scheme(name); });
         }
 
         const auto it = m_impl->schemes.find(name);
@@ -381,9 +394,9 @@ namespace saucer
 
     void webview::clear(web_event event)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, event] { return clear(event); }).get();
+            return dispatch([this, event] { return clear(event); });
         }
 
         m_events.clear(event);
@@ -391,9 +404,9 @@ namespace saucer
 
     void webview::remove(web_event event, std::uint64_t id)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, event, id] { return remove(event, id); }).get();
+            return dispatch([this, event, id] { return remove(event, id); });
         }
 
         m_events.remove(event, id);
@@ -402,10 +415,9 @@ namespace saucer
     template <web_event Event>
     void webview::once(events::type<Event> callback)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); })
-                .get();
+            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -415,11 +427,10 @@ namespace saucer
     template <web_event Event>
     std::uint64_t webview::on(events::type<Event> callback)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
             return dispatch([this, callback = std::move(callback)]() mutable //
-                            { return on<Event>(std::move(callback)); })
-                .get();
+                            { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

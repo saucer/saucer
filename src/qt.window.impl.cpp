@@ -18,12 +18,7 @@ namespace saucer
         window->setPalette(palette);
     }
 
-    bool window::impl::is_thread_safe()
-    {
-        return application != nullptr;
-    }
-
-    window::impl::main_window::main_window(class window *parent) : m_parent(parent) {}
+    window::impl::main_window::main_window(saucer::window *parent) : m_parent(parent) {}
 
     void window::impl::main_window::changeEvent(QEvent *event)
     {
@@ -81,12 +76,5 @@ namespace saucer
     {
         QMainWindow::resizeEvent(event);
         m_parent->m_events.at<window_event::resize>().fire(width(), height());
-    }
-
-    safe_event::safe_event(callback_t callback) : QEvent(QEvent::User), m_callback(std::move(callback)) {}
-
-    safe_event::~safe_event()
-    {
-        std::invoke(m_callback);
     }
 } // namespace saucer

@@ -16,8 +16,6 @@
 
 namespace saucer
 {
-    namespace fs = std::filesystem;
-
     enum class web_event
     {
         title_changed,

@@ -20,12 +20,6 @@ namespace saucer
 
       public:
         void set_alpha(std::uint8_t alpha) const;
-
-      public:
-        [[nodiscard]] static bool is_thread_safe();
-
-      public:
-        static thread_local inline std::unique_ptr<QApplication> application;
     };
 
     class window::impl::main_window : public QMainWindow
@@ -43,19 +37,5 @@ namespace saucer
 
       public:
         void resizeEvent(QResizeEvent *event) override;
-    };
-
-    class safe_event : public QEvent
-    {
-        using callback_t = std::move_only_function<void()>;
-
-      private:
-        callback_t m_callback;
-
-      public:
-        safe_event(callback_t callback);
-
-      public:
-        ~safe_event() override;
     };
 } // namespace saucer

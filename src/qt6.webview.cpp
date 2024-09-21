@@ -1,7 +1,5 @@
 #include "qt.webview.impl.hpp"
 
-#include "qt.window.impl.hpp"
-
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 
@@ -12,9 +10,9 @@ namespace saucer
 {
     void webview::inject(const script &script)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, script] { inject(script); }).get();
+            return dispatch([this, script] { inject(script); });
         }
 
         if (script.permanent && !std::ranges::contains(m_impl->permanent_scripts, script))
