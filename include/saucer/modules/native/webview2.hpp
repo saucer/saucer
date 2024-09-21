@@ -10,12 +10,12 @@ namespace saucer
 {
     using Microsoft::WRL::ComPtr;
 
-    struct natives::window_impl
+    struct window::impl
     {
         HWND hwnd;
     };
 
-    struct natives::webview_impl
+    struct webview::impl
     {
         ComPtr<ICoreWebView2Controller> controller;
         ComPtr<ICoreWebView2Settings> settings;

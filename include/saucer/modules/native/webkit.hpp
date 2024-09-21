@@ -7,12 +7,12 @@
 
 namespace saucer
 {
-    struct natives::window_impl
+    struct window::impl
     {
         NSWindow *window;
     };
 
-    struct natives::webview_impl
+    struct webview::impl
     {
         WKWebView *web_view;
     };

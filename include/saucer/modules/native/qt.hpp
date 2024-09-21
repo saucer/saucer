@@ -8,12 +8,12 @@
 
 namespace saucer
 {
-    struct natives::window_impl
+    struct window::impl
     {
         std::unique_ptr<QMainWindow> window;
     };
 
-    struct natives::webview_impl
+    struct webview::impl
     {
         std::unique_ptr<QWebEngineProfile> profile;
 

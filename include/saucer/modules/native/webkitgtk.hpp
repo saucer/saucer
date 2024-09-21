@@ -8,15 +8,18 @@
 
 namespace saucer
 {
-    struct natives::window_impl
+    struct window::impl
     {
-        g_object_ptr<AdwApplicationWindow> window;
+        AdwApplicationWindow *window;
+        g_object_ptr<GtkCssProvider> style;
+
+      public:
         GtkBox *content;
         AdwHeaderBar *header;
     };
 
-    struct natives::webview_impl
+    struct webview::impl
     {
-        g_object_ptr<WebKitWebView> web_view;
+        WebKitWebView *web_view;
     };
 } // namespace saucer

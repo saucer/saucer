@@ -1,6 +1,8 @@
 #pragma once
 
 #include "webview.hpp"
+
+#include "modules/module.hpp"
 #include "serializers/glaze/glaze.hpp"
 
 #include <tuple>
@@ -32,6 +34,9 @@ namespace saucer
 
       public:
         ~smartview_core() override;
+
+      public:
+        [[nodiscard]] saucer::natives natives() const;
 
       protected:
         bool on_message(const std::string &) override;

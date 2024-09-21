@@ -1,5 +1,8 @@
 #pragma once
 
+#include "../window.hpp"
+#include "../webview.hpp"
+
 #include <concepts>
 
 namespace saucer
@@ -8,12 +11,8 @@ namespace saucer
 
     struct natives
     {
-        struct window_impl;
-        struct webview_impl;
-
-      public:
-        window_impl *window;
-        webview_impl *webview;
+        window::impl *window;
+        webview::impl *webview;
     };
 
     template <typename T>
