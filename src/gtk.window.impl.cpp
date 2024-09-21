@@ -1,12 +1,10 @@
 #include "gtk.window.impl.hpp"
+#include "gtk.app.impl.hpp"
+
+#include <algorithm>
 
 namespace saucer
 {
-    bool window::impl::is_thread_safe()
-    {
-        return impl::application.get() != nullptr;
-    }
-
     std::optional<event_data> window::impl::prev_data() const
     {
         if (!prev_click)
@@ -57,8 +55,8 @@ namespace saucer
             self->m_events.at<window_event::resize>().fire(width, height);
         };
 
-        g_signal_connect(self->m_impl->window.get(), "notify::default-width", G_CALLBACK(+callback), self);
-        g_signal_connect(self->m_impl->window.get(), "notify::default-height", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->window, "notify::default-width", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->window, "notify::default-height", G_CALLBACK(+callback), self);
     }
 
     template <>
@@ -76,7 +74,7 @@ namespace saucer
             self->m_events.at<window_event::maximize>().fire(self->maximized());
         };
 
-        g_signal_connect(self->m_impl->window.get(), "notify::maximized", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->window, "notify::maximized", G_CALLBACK(+callback), self);
     }
 
     template <>
@@ -99,19 +97,32 @@ namespace saucer
             self->m_events.at<window_event::focus>().fire(self->focused());
         };
 
-        g_signal_connect(self->m_impl->window.get(), "notify::is-active", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->window, "notify::is-active", G_CALLBACK(+callback), self);
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::close>(saucer::window *self)
+    void saucer::window::impl::setup<window_event::close>(saucer::window *)
     {
-        auto &event = self->m_events.at<window_event::close>();
+    }
 
-        if (!event.empty())
+    template <>
+    void saucer::window::impl::setup<window_event::closed>(saucer::window *)
+    {
+    }
+
+    void window::impl::make_transparent(bool enabled) const
+    {
+        if (!enabled)
         {
+            gtk_widget_remove_css_class(GTK_WIDGET(window), "transparent");
             return;
         }
 
+        gtk_widget_add_css_class(GTK_WIDGET(window), "transparent");
+    }
+
+    void window::impl::track(saucer::window *self) const
+    {
         auto callback = [](void *, saucer::window *self)
         {
             if (self->m_events.at<window_event::close>().until(true))
@@ -120,45 +131,21 @@ namespace saucer
             }
 
             self->m_events.at<window_event::closed>().fire();
+
+            auto &parent    = self->m_parent;
+            auto &instances = parent->native()->instances;
+
+            instances[self->m_impl->window] = false;
+
+            if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
+            {
+                parent->quit();
+            }
+
             return false;
         };
 
-        const auto id = g_signal_connect(self->m_impl->window.get(), "close-request", G_CALLBACK(+callback), self);
-
-        auto clear = [self, id]()
-        {
-            if (!self->m_events.at<window_event::close>().empty())
-            {
-                return;
-            }
-
-            if (!self->m_events.at<window_event::closed>().empty())
-            {
-                return;
-            }
-
-            g_signal_handler_disconnect(self->m_impl->window.get(), id);
-        };
-
-        event.on_clear(clear);
-        self->m_events.at<window_event::closed>().on_clear(clear);
-    }
-
-    template <>
-    void saucer::window::impl::setup<window_event::closed>(saucer::window *self)
-    {
-        setup<window_event::close>(self);
-    }
-
-    void window::impl::make_transparent(bool enabled) const
-    {
-        if (!enabled)
-        {
-            gtk_widget_remove_css_class(GTK_WIDGET(window.get()), "transparent");
-            return;
-        }
-
-        gtk_widget_add_css_class(GTK_WIDGET(window.get()), "transparent");
+        g_signal_connect(window, "close-request", G_CALLBACK(+callback), self);
     }
 
     void window::impl::update_decorations(saucer::window *self) const
@@ -171,6 +158,6 @@ namespace saucer
             self->m_events.at<window_event::decorated>().fire(decorations);
         };
 
-        g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);
+        g_signal_connect(window, "notify::decorated", G_CALLBACK(+callback), self);
     }
 } // namespace saucer

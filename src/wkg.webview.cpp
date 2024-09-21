@@ -11,50 +11,48 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &preferences) : window(preferences), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
-        m_impl->web_view = g_object_ptr<WebKitWebView>::ref(WEBKIT_WEB_VIEW(webkit_web_view_new()));
-        m_impl->settings = impl::make_settings(preferences);
+        m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+        m_impl->settings = impl::make_settings(prefs);
 
-        auto *const session      = webkit_web_view_get_network_session(m_impl->web_view.get());
+        auto *const session      = webkit_web_view_get_network_session(m_impl->web_view);
         auto *const data_manager = webkit_network_session_get_website_data_manager(session);
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
-        if (preferences.persistent_cookies)
+        if (prefs.persistent_cookies)
         {
             auto *const manager = webkit_network_session_get_cookie_manager(session);
-            auto path           = preferences.storage_path;
+            auto path           = prefs.storage_path;
 
             if (path.empty())
             {
                 path = fs::current_path() / ".saucer";
             }
 
-            webkit_cookie_manager_set_persistent_storage(manager, path.c_str(),
-                                                         WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+            webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
         webkit_settings_set_hardware_acceleration_policy(
-            m_impl->settings.get(), preferences.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
-                                                                      : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+            m_impl->settings.get(), prefs.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
+                                                                : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
-        webkit_web_view_set_settings(m_impl->web_view.get(), m_impl->settings.get());
+        webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
 
-        gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view.get()), 1, 1);
-        gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view.get()), true);
-        gtk_widget_set_hexpand(GTK_WIDGET(m_impl->web_view.get()), true);
+        gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
+        gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view), true);
+        gtk_widget_set_hexpand(GTK_WIDGET(m_impl->web_view), true);
 
-        gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view.get()));
+        gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
 
         auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, void *data)
         {
             return !reinterpret_cast<impl *>(data)->context_menu;
         };
+        g_signal_connect(m_impl->web_view, "context-menu", G_CALLBACK(+on_context), m_impl.get());
 
-        g_signal_connect(m_impl->web_view.get(), "context-menu", G_CALLBACK(+on_context), m_impl.get());
-
-        m_impl->manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        m_impl->manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
         webkit_user_content_manager_register_script_message_handler(m_impl->manager, "saucer", nullptr);
 
         auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
@@ -94,7 +92,7 @@ namespace saucer
             self->m_events.at<web_event::load_started>().fire();
         };
 
-        g_signal_connect(m_impl->web_view.get(), "load-changed", G_CALLBACK(+on_load), this);
+        g_signal_connect(m_impl->web_view, "load-changed", G_CALLBACK(+on_load), this);
 
         auto *const controller = gtk_gesture_click_new();
 
@@ -111,7 +109,7 @@ namespace saucer
         };
 
         g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
-        gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view.get()), GTK_EVENT_CONTROLLER(controller));
+        gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view), GTK_EVENT_CONTROLLER(controller));
 
         inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
         inject({.code = std::string{impl::ready_script}, .time = load_time::ready, .permanent = true});
@@ -165,43 +163,43 @@ namespace saucer
 
     icon webview::favicon() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return favicon(); }).get();
+            return dispatch([this] { return favicon(); });
         }
 
-        return {{g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view.get()))}};
+        return {{g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view))}};
     }
 
     std::string webview::page_title() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return page_title(); }).get();
+            return dispatch([this] { return page_title(); });
         }
 
-        return webkit_web_view_get_title(m_impl->web_view.get());
+        return webkit_web_view_get_title(m_impl->web_view);
     }
 
     bool webview::dev_tools() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return dev_tools(); }).get();
+            return dispatch([this] { return dev_tools(); });
         }
 
-        auto *const settings = webkit_web_view_get_settings(m_impl->web_view.get());
+        auto *const settings = webkit_web_view_get_settings(m_impl->web_view);
         return webkit_settings_get_enable_developer_extras(settings);
     }
 
     std::string webview::url() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return url(); }).get();
+            return dispatch([this] { return url(); });
         }
 
-        const auto *rtn = webkit_web_view_get_uri(m_impl->web_view.get());
+        const auto *rtn = webkit_web_view_get_uri(m_impl->web_view);
 
         if (!rtn)
         {
@@ -213,9 +211,9 @@ namespace saucer
 
     bool webview::context_menu() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return context_menu(); }).get();
+            return dispatch([this] { return context_menu(); });
         }
 
         return m_impl->context_menu;
@@ -223,13 +221,13 @@ namespace saucer
 
     color webview::background() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return background(); }).get();
+            return dispatch([this] { return background(); });
         }
 
         GdkRGBA color{};
-        webkit_web_view_get_background_color(m_impl->web_view.get(), &color);
+        webkit_web_view_get_background_color(m_impl->web_view, &color);
 
         return {
             static_cast<std::uint8_t>(color.red * 255.f),
@@ -241,9 +239,9 @@ namespace saucer
 
     bool webview::force_dark_mode() const
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return force_dark_mode(); }).get();
+            return dispatch([this] { return force_dark_mode(); });
         }
 
         AdwColorScheme scheme{};
@@ -254,13 +252,13 @@ namespace saucer
 
     void webview::set_dev_tools(bool enabled)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_dev_tools(enabled); }).get();
+            return dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        auto *const settings  = webkit_web_view_get_settings(m_impl->web_view.get());
-        auto *const inspector = webkit_web_view_get_inspector(m_impl->web_view.get());
+        auto *const settings  = webkit_web_view_get_settings(m_impl->web_view);
+        auto *const inspector = webkit_web_view_get_inspector(m_impl->web_view);
 
         webkit_settings_set_enable_developer_extras(settings, enabled);
 
@@ -275,9 +273,9 @@ namespace saucer
 
     void webview::set_context_menu(bool enabled)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_context_menu(enabled); }).get();
+            return dispatch([this, enabled] { return set_context_menu(enabled); });
         }
 
         m_impl->context_menu = enabled;
@@ -285,9 +283,9 @@ namespace saucer
 
     void webview::set_force_dark_mode(bool enabled)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_force_dark_mode(enabled); }).get();
+            return dispatch([this, enabled] { return set_force_dark_mode(enabled); });
         }
 
         g_object_set(adw_style_manager_get_default(), "color-scheme",
@@ -296,9 +294,9 @@ namespace saucer
 
     void webview::set_background(const color &color)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, color] { return set_background(color); }).get();
+            return dispatch([this, color] { return set_background(color); });
         }
 
         const auto [r, g, b, a] = color;
@@ -310,7 +308,7 @@ namespace saucer
             .alpha = static_cast<float>(a) / 255.f,
         };
 
-        webkit_web_view_set_background_color(m_impl->web_view.get(), &rgba);
+        webkit_web_view_set_background_color(m_impl->web_view, &rgba);
         window::m_impl->make_transparent(a < 255);
     }
 
@@ -321,52 +319,52 @@ namespace saucer
 
     void webview::set_url(const std::string &url)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, url]() { return set_url(url); }).get();
+            return dispatch([this, url]() { return set_url(url); });
         }
 
-        webkit_web_view_load_uri(m_impl->web_view.get(), url.c_str());
+        webkit_web_view_load_uri(m_impl->web_view, url.c_str());
     }
 
     void webview::back()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return back(); }).get();
+            return dispatch([this]() { return back(); });
         }
 
-        webkit_web_view_go_back(m_impl->web_view.get());
+        webkit_web_view_go_back(m_impl->web_view);
     }
 
     void webview::forward()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return forward(); }).get();
+            return dispatch([this]() { return forward(); });
         }
 
-        webkit_web_view_go_forward(m_impl->web_view.get());
+        webkit_web_view_go_forward(m_impl->web_view);
     }
 
     void webview::reload()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return reload(); }).get();
+            return dispatch([this]() { return reload(); });
         }
 
-        webkit_web_view_reload(m_impl->web_view.get());
+        webkit_web_view_reload(m_impl->web_view);
     }
 
     void webview::clear_scripts()
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return clear_scripts(); }).get();
+            return dispatch([this]() { return clear_scripts(); });
         }
 
-        auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
 
         for (auto it = m_impl->scripts.begin(); it != m_impl->scripts.end();)
         {
@@ -385,17 +383,17 @@ namespace saucer
 
     void webview::inject(const script &script)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, script]() { return inject(script); }).get();
+            return dispatch([this, script]() { return inject(script); });
         }
 
         const auto time  = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
                                                               : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
-        const auto frame = script.frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES
+        const auto frame = script.frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
                                                           : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
 
-        auto *const manager     = webkit_web_view_get_user_content_manager(m_impl->web_view.get());
+        auto *const manager     = webkit_web_view_get_user_content_manager(m_impl->web_view);
         auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
 
         m_impl->scripts.emplace_back(user_script, script.permanent);
@@ -404,9 +402,9 @@ namespace saucer
 
     void webview::execute(const std::string &code)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, code]() { return execute(code); }).get();
+            return dispatch([this, code]() { return execute(code); });
         }
 
         if (!m_impl->dom_loaded)
@@ -415,17 +413,15 @@ namespace saucer
             return;
         }
 
-        webkit_web_view_evaluate_javascript(m_impl->web_view.get(), code.c_str(), -1, nullptr, nullptr, nullptr,
-                                            nullptr, nullptr);
+        webkit_web_view_evaluate_javascript(m_impl->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 
     void webview::handle_scheme(const std::string &name, scheme_handler handler)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
             return dispatch([this, name, handler = std::move(handler)] mutable
-                            { return handle_scheme(name, std::move(handler)); })
-                .get();
+                            { return handle_scheme(name, std::move(handler)); });
         }
 
         if (m_impl->schemes.contains(name))
@@ -433,7 +429,7 @@ namespace saucer
             return;
         }
 
-        auto *const context  = webkit_web_view_get_context(m_impl->web_view.get());
+        auto *const context  = webkit_web_view_get_context(m_impl->web_view);
         auto *const security = webkit_web_context_get_security_manager(context);
 
         auto state    = std::make_unique<scheme_state>(std::move(handler));
@@ -448,9 +444,9 @@ namespace saucer
 
     void webview::remove_scheme(const std::string &name)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, name] { return remove_scheme(name); }).get();
+            return dispatch([this, name] { return remove_scheme(name); });
         }
 
         if (!m_impl->schemes.contains(name))
@@ -463,9 +459,9 @@ namespace saucer
 
     void webview::clear(web_event event)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, event]() { return clear(event); }).get();
+            return dispatch([this, event]() { return clear(event); });
         }
 
         m_events.clear(event);
@@ -473,9 +469,9 @@ namespace saucer
 
     void webview::remove(web_event event, std::uint64_t id)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, event, id] { return remove(event, id); }).get();
+            return dispatch([this, event, id] { return remove(event, id); });
         }
 
         m_events.remove(event, id);
@@ -484,11 +480,9 @@ namespace saucer
     template <web_event Event>
     void webview::once(events::type<Event> callback)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable
-                            { return once<Event>(std::move(callback)); })
-                .get();
+            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -498,11 +492,10 @@ namespace saucer
     template <web_event Event>
     std::uint64_t webview::on(events::type<Event> callback)
     {
-        if (!window::m_impl->is_thread_safe())
+        if (!m_parent->thread_safe())
         {
             return dispatch([this, callback = std::move(callback)]() mutable //
-                            { return on<Event>(std::move(callback)); })
-                .get();
+                            { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

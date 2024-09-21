@@ -4,20 +4,19 @@
 
 namespace saucer
 {
-    saucer::natives webview::natives() const
+    webview::impl *webview::native() const
     {
-        return {
-            reinterpret_cast<natives::window_impl *>(window::m_impl.get()),
-            reinterpret_cast<natives::webview_impl *>(webview::m_impl.get()),
-        };
+        return m_impl.get();
     }
 
     void webview::embed(embedded_files files)
     {
+        if (!m_parent->thread_safe())
         {
-            const auto locked = m_embedded_files.write();
-            locked->merge(std::move(files));
+            return dispatch([this, files = std::move(files)]() mutable { return embed(std::move(files)); });
         }
+
+        m_embedded_files.merge(std::move(files));
 
         auto handler = [this](const auto &request) -> scheme_handler::result_type
         {
@@ -31,15 +30,14 @@ namespace saucer
                 return tl::unexpected{request_error::invalid};
             }
 
-            const auto file   = url.substr(start, url.find_first_of("#?") - start);
-            const auto locked = m_embedded_files.read();
+            const auto file = url.substr(start, url.find_first_of("#?") - start);
 
-            if (!locked->contains(file))
+            if (!m_embedded_files.contains(file))
             {
                 return tl::unexpected{request_error::not_found};
             }
 
-            const auto &data = locked->at(file);
+            const auto &data = m_embedded_files.at(file);
 
             return response{
                 .data    = data.content,
@@ -58,16 +56,22 @@ namespace saucer
 
     void webview::clear_embedded()
     {
+        if (!m_parent->thread_safe())
         {
-            const auto locked = m_embedded_files.write();
-            locked->clear();
+            return dispatch([this]() { return clear_embedded(); });
         }
+
+        m_embedded_files.clear();
         remove_scheme("saucer");
     }
 
     void webview::clear_embedded(const std::string &file)
     {
-        const auto locked = m_embedded_files.write();
-        locked->erase(file);
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this, file]() { return clear_embedded(file); });
+        }
+
+        m_embedded_files.erase(file);
     }
 } // namespace saucer

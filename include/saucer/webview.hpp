@@ -6,15 +6,12 @@
 #include "window.hpp"
 #include "scheme.hpp"
 
-#include "modules/module.hpp"
-
 #include <filesystem>
 #include <unordered_map>
 
 #include <string>
 #include <memory>
 
-#include <lockpp/lock.hpp>
 #include <ereignis/manager.hpp>
 
 namespace saucer
@@ -39,7 +36,7 @@ namespace saucer
 
     using color = std::array<std::uint8_t, 4>;
 
-    class webview : public window
+    struct webview : public window
     {
         struct impl;
 
@@ -58,7 +55,7 @@ namespace saucer
 
       private:
         events m_events;
-        lockpp::lock<embedded_files> m_embedded_files;
+        embedded_files m_embedded_files;
 
       protected:
         std::unique_ptr<impl> m_impl;
@@ -67,13 +64,13 @@ namespace saucer
         virtual bool on_message(const std::string &);
 
       public:
-        webview(const preferences & = {});
+        webview(const preferences &);
 
       public:
         ~webview() override;
 
       public:
-        saucer::natives natives() const;
+        [[nodiscard]] impl *native() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;

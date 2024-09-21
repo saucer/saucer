@@ -51,7 +51,7 @@ namespace saucer
 
       public:
         void set_wnd_proc(HWND hwnd);
-        void create_webview(webview *, HWND, saucer::preferences);
+        void create_webview(webview *, HWND, preferences);
 
       public:
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);

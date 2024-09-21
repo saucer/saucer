@@ -24,7 +24,7 @@ namespace saucer
             self->m_events.at<web_event::title_changed>().fire(self->page_title());
         };
 
-        g_signal_connect(self->m_impl->web_view.get(), "notify::title", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->web_view, "notify::title", G_CALLBACK(+callback), self);
     }
 
     template <>
@@ -47,7 +47,7 @@ namespace saucer
             self->m_events.at<web_event::icon_changed>().fire(self->favicon());
         };
 
-        g_signal_connect(self->m_impl->web_view.get(), "notify::favicon", G_CALLBACK(+callback), self);
+        g_signal_connect(self->m_impl->web_view, "notify::favicon", G_CALLBACK(+callback), self);
     }
 
     template <>
@@ -128,12 +128,12 @@ namespace saucer
         return rtn;
     }
 
-    WebKitSettings *webview::impl::make_settings(const saucer::preferences &preferences)
+    WebKitSettings *webview::impl::make_settings(const preferences &prefs)
     {
         std::vector<GValue> values;
         std::vector<std::string> names;
 
-        for (const auto &flag : preferences.browser_flags)
+        for (const auto &flag : prefs.browser_flags)
         {
             const auto delim = flag.find('=');
 

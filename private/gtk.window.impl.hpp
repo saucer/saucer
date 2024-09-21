@@ -30,7 +30,8 @@ namespace saucer
 
     struct window::impl
     {
-        g_object_ptr<AdwApplicationWindow> window;
+        AdwApplicationWindow *window;
+        g_object_ptr<GtkCssProvider> style;
 
       public:
         GtkBox *content;
@@ -46,14 +47,9 @@ namespace saucer
 
       public:
         void make_transparent(bool enabled) const;
+
+      public:
+        void track(saucer::window *) const;
         void update_decorations(saucer::window *) const;
-
-      public:
-        [[nodiscard]] static bool is_thread_safe();
-
-      public:
-        static inline bool init{false};
-        static inline g_object_ptr<GtkCssProvider> style;
-        static thread_local inline g_object_ptr<AdwApplication> application;
     };
 } // namespace saucer

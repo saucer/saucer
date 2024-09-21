@@ -12,7 +12,7 @@ namespace saucer
 
     class icon
     {
-        friend class window;
+        friend struct window;
         struct impl;
 
       private:

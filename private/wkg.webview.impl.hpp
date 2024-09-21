@@ -16,7 +16,7 @@ namespace saucer
 
     struct webview::impl
     {
-        g_object_ptr<WebKitWebView> web_view;
+        WebKitWebView *web_view;
 
       public:
         gulong message_received;
@@ -43,6 +43,6 @@ namespace saucer
         static constinit std::string_view ready_script;
 
       public:
-        static WebKitSettings *make_settings(const saucer::preferences &);
+        static WebKitSettings *make_settings(const preferences &);
     };
 } // namespace saucer

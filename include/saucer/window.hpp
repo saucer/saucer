@@ -1,13 +1,15 @@
 #pragma once
 
+#include "app.hpp"
 #include "icon.hpp"
+
+#include "utils/required.hpp"
 
 #include <string>
 #include <memory>
 
 #include <set>
 #include <utility>
-#include <functional>
 
 #include <thread>
 #include <cstdint>
@@ -17,6 +19,8 @@
 
 namespace saucer
 {
+    namespace fs = std::filesystem;
+
     enum class window_event
     {
         decorated,
@@ -38,23 +42,23 @@ namespace saucer
 
     struct preferences
     {
+        required<std::shared_ptr<application>> application;
+
+      public:
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
 
       public:
-        std::filesystem::path storage_path;
+        fs::path storage_path;
         std::set<std::string> browser_flags;
 
       public:
         std::size_t threads = std::thread::hardware_concurrency();
     };
 
-    class window
+    struct window
     {
         struct impl;
-
-      private:
-        using callback_t = std::move_only_function<void()>;
 
       public:
         using events = ereignis::manager<                          //
@@ -69,16 +73,23 @@ namespace saucer
 
       protected:
         events m_events;
+
+      protected:
         std::unique_ptr<impl> m_impl;
+        std::shared_ptr<application> m_parent;
 
       protected:
-        void dispatch(callback_t callback) const;
+        template <typename Callback>
+        [[nodiscard]] auto dispatch(Callback &&) const;
 
       protected:
-        window(const preferences & = {});
+        window(const preferences &);
 
       public:
         virtual ~window();
+
+      public:
+        [[nodiscard]] impl *native() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool focused() const;
@@ -137,14 +148,6 @@ namespace saucer
 
         template <window_event Event>
         [[sc::thread_safe]] std::uint64_t on(events::type<Event>);
-
-      public:
-        template <typename Callback>
-        [[sc::thread_safe]] auto dispatch(Callback &&callback) const;
-
-      public:
-        template <bool Blocking = true>
-        [[sc::may_block]] static void run();
     };
 } // namespace saucer
 

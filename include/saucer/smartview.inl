@@ -5,8 +5,8 @@
 namespace saucer
 {
     template <Serializer Serializer, Module... Modules>
-    smartview<Serializer, Modules...>::smartview(const preferences &preferences)
-        : smartview_core(std::make_unique<Serializer>(), preferences), m_modules(Modules{this, natives()}...)
+    smartview<Serializer, Modules...>::smartview(const preferences &prefs)
+        : smartview_core(std::make_unique<Serializer>(), prefs), m_modules(Modules{this, natives()}...)
     {
     }
 

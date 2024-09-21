@@ -181,6 +181,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_sources(${PROJECT_NAME} PRIVATE 
+    "src/app.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
     "src/serializer.glaze.cpp"

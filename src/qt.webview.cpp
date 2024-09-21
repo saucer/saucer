@@ -18,14 +18,14 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &preferences) : window(preferences), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, []() { register_scheme("saucer"); });
 
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
-        if (!preferences.storage_path.empty())
+        if (!prefs.storage_path.empty())
         {
             const auto path = QString::fromStdString(preferences.storage_path.string());
 
@@ -404,8 +404,7 @@ namespace saucer
     {
         if (!window::m_impl->is_thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable
-                            { return once<Event>(std::move(callback)); })
+            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); })
                 .get();
         }
 
