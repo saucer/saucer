@@ -2,7 +2,6 @@
 
 #include "window.hpp"
 
-#include <thread>
 #include <optional>
 
 #include <windows.h>

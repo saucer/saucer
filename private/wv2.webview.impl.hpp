@@ -47,7 +47,7 @@ namespace saucer
         std::unordered_map<std::string, scheme_handler> schemes;
 
       public:
-        void create_webview(std::shared_ptr<application>, HWND, preferences);
+        void create_webview(const std::shared_ptr<application> &, HWND, preferences);
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);
 
       public:
@@ -56,10 +56,7 @@ namespace saucer
 
       public:
         static const std::string &inject_script();
-
-      public:
-        static inline ULONG_PTR gdi_token;
-        static inline auto env_options = Make<CoreWebView2EnvironmentOptions>();
+        static ComPtr<CoreWebView2EnvironmentOptions> env_options();
 
       public:
         WNDPROC o_wnd_proc;

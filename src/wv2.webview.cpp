@@ -5,6 +5,7 @@
 
 #include "win32.utils.hpp"
 
+#include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 #include "win32.window.impl.hpp"
 
@@ -30,7 +31,11 @@ namespace saucer
         if (prefs.persistent_cookies && prefs.storage_path.empty())
         {
             copy.storage_path = fs::current_path() / ".saucer";
-            SetFileAttributesW(utils::widen(copy.storage_path.string()).c_str(), FILE_ATTRIBUTE_HIDDEN);
+
+            std::error_code ec{};
+            fs::create_directories(copy.storage_path, ec);
+
+            SetFileAttributesW(copy.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
         }
 
         m_impl->o_wnd_proc = utils::overwrite_wndproc(window::m_impl->hwnd, impl::wnd_proc);
@@ -46,10 +51,10 @@ namespace saucer
 
         m_impl->web_view->add_WebResourceRequested(Callback<ResourceRequested>(resource_requested).Get(), nullptr);
 
-        if (!impl::gdi_token)
+        if (!m_parent->native()->gdi_token)
         {
             Gdiplus::GdiplusStartupInput input{};
-            Gdiplus::GdiplusStartup(&impl::gdi_token, &input, nullptr);
+            Gdiplus::GdiplusStartup(&m_parent->native()->gdi_token, &input, nullptr);
         }
 
         auto receive_message = [this](auto, auto *args)
@@ -115,7 +120,7 @@ namespace saucer
                 return S_OK;
             };
 
-            auto icon_changed = [this, webview, icon_received](auto...)
+            auto icon_changed = [webview, icon_received](auto...)
             {
                 webview->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(icon_received).Get());
                 return S_OK;
@@ -282,7 +287,7 @@ namespace saucer
             return {};
         }
 
-        COREWEBVIEW2_PREFERRED_COLOR_SCHEME scheme;
+        COREWEBVIEW2_PREFERRED_COLOR_SCHEME scheme{};
 
         if (!SUCCEEDED(profile->get_PreferredColorScheme(&scheme)))
         {
@@ -579,7 +584,7 @@ namespace saucer
 
         ComPtr<ICoreWebView2EnvironmentOptions4> options;
 
-        if (!SUCCEEDED(impl::env_options.As(&options)))
+        if (!SUCCEEDED(impl::env_options().As(&options)))
         {
             assert(false && "Failed to query ICoreWebView2EnvironmentOptions4");
         }

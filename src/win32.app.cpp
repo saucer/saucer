@@ -1,18 +1,23 @@
 #include "win32.app.impl.hpp"
 
+#include "win32.utils.hpp"
+
 #include <cassert>
+
+#include <gdiplus.h>
 
 namespace saucer
 {
-    application::application(const options &) : m_impl(std::make_unique<impl>())
+    application::application(const options &options) : m_impl(std::make_unique<impl>())
     {
         m_impl->thread = GetCurrentThreadId();
-        m_impl->handle = GetModuleHandleW(NULL);
+        m_impl->handle = GetModuleHandleW(nullptr);
+        m_impl->id     = utils::widen(options.id.value());
 
         m_impl->wnd_class = {
             .lpfnWndProc   = impl::wnd_proc,
             .hInstance     = m_impl->handle,
-            .lpszClassName = L"Saucer",
+            .lpszClassName = m_impl->id.c_str(),
         };
 
         if (RegisterClassW(&m_impl->wnd_class))
@@ -26,6 +31,13 @@ namespace saucer
     application::~application()
     {
         UnregisterClassW(L"Saucer", m_impl->handle);
+
+        if (!m_impl->gdi_token)
+        {
+            return;
+        }
+
+        Gdiplus::GdiplusShutdown(m_impl->gdi_token);
     }
 
     void application::dispatch(callback_t callback) const
@@ -62,7 +74,7 @@ namespace saucer
             return;
         }
 
-        impl::process(msg);   
+        impl::process(msg);
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }

@@ -13,8 +13,12 @@ namespace saucer
         WNDCLASSW wnd_class;
 
       public:
-        DWORD thread;
         HMODULE handle;
+        std::wstring id;
+
+      public:
+        DWORD thread;
+        ULONG_PTR gdi_token;
 
       public:
         std::unordered_map<HWND, bool> instances;

@@ -74,7 +74,7 @@ namespace saucer
             break;
         }
         case WM_STYLECHANGED: {
-            if (w_param != GWL_STYLE)
+            if (w_param != static_cast<WPARAM>(GWL_STYLE))
             {
                 break;
             }

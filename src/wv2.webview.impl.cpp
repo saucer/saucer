@@ -1,9 +1,8 @@
 #include "wv2.webview.impl.hpp"
 
 #include "scripts.hpp"
-#include "win32.utils.hpp"
 
-#include "win32.window.impl.hpp"
+#include "win32.utils.hpp"
 #include "wv2.scheme.impl.hpp"
 
 #include <cassert>
@@ -39,7 +38,19 @@ namespace saucer
         return instance.value();
     }
 
-    void webview::impl::create_webview(std::shared_ptr<application> app, HWND hwnd, preferences prefs)
+    ComPtr<CoreWebView2EnvironmentOptions> webview::impl::env_options()
+    {
+        static ComPtr<CoreWebView2EnvironmentOptions> instance;
+
+        if (!instance)
+        {
+            instance = Make<CoreWebView2EnvironmentOptions>();
+        }
+
+        return instance;
+    }
+
+    void webview::impl::create_webview(const std::shared_ptr<application> &app, HWND hwnd, preferences prefs)
     {
         if (!prefs.hardware_acceleration)
         {
@@ -47,7 +58,7 @@ namespace saucer
         }
 
         const auto args = fmt::format("{}", fmt::join(prefs.browser_flags, " "));
-        env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
+        env_options()->put_AdditionalBrowserArguments(utils::widen(args).c_str());
 
         if (prefs.storage_path.empty())
         {
@@ -68,7 +79,7 @@ namespace saucer
             return S_OK;
         };
 
-        auto completed = [this, hwnd, created](auto, auto *env)
+        auto completed = [hwnd, created](auto, auto *env)
         {
             if (!SUCCEEDED(env->CreateCoreWebView2Controller(hwnd, Callback<ControllerCompleted>(created).Get())))
             {
@@ -79,7 +90,7 @@ namespace saucer
         };
 
         auto status =
-            CreateCoreWebView2EnvironmentWithOptions(nullptr, prefs.storage_path.wstring().c_str(), env_options.Get(),
+            CreateCoreWebView2EnvironmentWithOptions(nullptr, prefs.storage_path.wstring().c_str(), env_options().Get(),
                                                      Callback<EnvironmentCompleted>(completed).Get());
 
         if (!SUCCEEDED(status))
@@ -91,11 +102,6 @@ namespace saucer
         {
             app->run<false>();
         }
-
-        auto resource_handler = [this](auto, auto *arg)
-        {
-            return scheme_handler(arg);
-        };
 
         CoUninitialize();
     }
@@ -213,12 +219,6 @@ namespace saucer
         }
         case WM_DESTROY:
             impl->controller->Close();
-            break;
-        case WM_QUIT:
-            if (gdi_token)
-            {
-                Gdiplus::GdiplusShutdown(gdi_token);
-            }
             break;
         }
 

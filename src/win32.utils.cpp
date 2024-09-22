@@ -1,9 +1,7 @@
 #include "win32.utils.hpp"
 
-#include <stdexcept>
-#include <string_view>
-
 #include <fmt/core.h>
+#include <string_view>
 
 namespace saucer
 {
@@ -60,7 +58,7 @@ namespace saucer
 
         static constexpr auto immersive_dark = 20;
 
-        const auto *set_attribute  = reinterpret_cast<HRESULT (*)(HWND, DWORD, LPCVOID, DWORD)>(func);
+        auto *set_attribute        = reinterpret_cast<HRESULT (*)(HWND, DWORD, LPCVOID, DWORD)>(func);
         auto enable_immersive_dark = static_cast<BOOL>(enabled);
 
         set_attribute(hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));

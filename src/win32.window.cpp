@@ -11,9 +11,6 @@
 #include <fmt/core.h>
 #include <flagpp/flags.hpp>
 
-#include <winuser.h>
-#include <versionhelpers.h>
-
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
@@ -23,19 +20,17 @@ namespace saucer
     {
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
-        const auto dw_style = IsWindows8OrGreater() ? WS_EX_NOREDIRECTIONBITMAP : 0;
-
-        m_impl->hwnd = CreateWindowExW(dw_style,                   //
-                                       L"Saucer",                  //
-                                       L"Saucer Window",           //
-                                       WS_OVERLAPPEDWINDOW,        //
-                                       CW_USEDEFAULT,              //
-                                       CW_USEDEFAULT,              //
-                                       CW_USEDEFAULT,              //
-                                       CW_USEDEFAULT,              //
-                                       nullptr,                    //
-                                       nullptr,                    //
-                                       m_parent->native()->handle, //
+        m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,      //
+                                       m_parent->native()->id.c_str(), //
+                                       L"",                            //
+                                       WS_OVERLAPPEDWINDOW,            //
+                                       CW_USEDEFAULT,                  //
+                                       CW_USEDEFAULT,                  //
+                                       CW_USEDEFAULT,                  //
+                                       CW_USEDEFAULT,                  //
+                                       nullptr,                        //
+                                       nullptr,                        //
+                                       m_parent->native()->handle,     //
                                        nullptr);
 
         assert(m_impl->hwnd && "CreateWindowExW() failed");
