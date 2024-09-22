@@ -108,37 +108,37 @@ namespace saucer
 
         class_replaceMethod([SaucerView class], @selector(mouseDown:),
                             imp_implementationWithBlock(
-                                [mouse_down](SaucerView *self, NSEvent *event)
+                                [mouse_down](SaucerView *view, NSEvent *event)
                                 {
-                                    auto &impl = *self->m_parent->window::m_impl;
+                                    auto &impl = *view->m_parent->window::m_impl;
 
                                     impl.prev_click.emplace(click_event{
                                         .frame    = impl.window.frame,
                                         .position = NSEvent.mouseLocation,
                                     });
 
-                                    mouse_down(self, @selector(mouseDown:), event);
+                                    mouse_down(view, @selector(mouseDown:), event);
                                 }),
                             "v@:@");
 
         class_replaceMethod([SaucerView class], @selector(mouseUp:),
                             imp_implementationWithBlock(
-                                [mouse_up](SaucerView *self, NSEvent *event)
+                                [mouse_up](SaucerView *view, NSEvent *event)
                                 {
-                                    auto &impl = *self->m_parent->window::m_impl;
+                                    auto &impl = *view->m_parent->window::m_impl;
                                     impl.edge.reset();
 
-                                    mouse_up(self, @selector(mouseUp:), event);
+                                    mouse_up(view, @selector(mouseUp:), event);
                                 }),
                             "v@:@");
 
         class_replaceMethod([SaucerView class], @selector(mouseDragged:),
                             imp_implementationWithBlock(
-                                [mouse_dragged](SaucerView *self, NSEvent *event)
+                                [mouse_dragged](SaucerView *view, NSEvent *event)
                                 {
-                                    mouse_dragged(self, @selector(mouseDragged:), event);
+                                    mouse_dragged(view, @selector(mouseDragged:), event);
 
-                                    auto &impl = *self->m_parent->window::m_impl;
+                                    auto &impl = *view->m_parent->window::m_impl;
 
                                     if (!impl.edge || !impl.prev_click)
                                     {
@@ -181,7 +181,7 @@ namespace saucer
 
         class_replaceMethod([MessageHandler class], @selector(userContentController:didReceiveScriptMessage:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *self, WKUserContentController *, WKScriptMessage *message)
+                                [](MessageHandler *view, WKUserContentController *, WKScriptMessage *message)
                                 {
                                     const id body = message.body;
 
@@ -190,22 +190,22 @@ namespace saucer
                                         return;
                                     }
 
-                                    self->m_parent->on_message(static_cast<NSString *>(body).UTF8String);
+                                    view->m_parent->on_message(static_cast<NSString *>(body).UTF8String);
                                 }),
                             "v@:@");
 
         class_replaceMethod(
             [NavigationDelegate class], @selector(webView:didFinishNavigation:),
-            imp_implementationWithBlock([](MessageHandler *self, WKWebView *, WKNavigation *)
-                                        { self->m_parent->m_events.at<web_event::load_finished>().fire(); }),
+            imp_implementationWithBlock([](MessageHandler *view, WKWebView *, WKNavigation *)
+                                        { view->m_parent->m_events.at<web_event::load_finished>().fire(); }),
             "v@:@");
 
         class_replaceMethod([NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *self, WKWebView *, WKNavigation *)
+                                [](MessageHandler *view, WKWebView *, WKNavigation *)
                                 {
-                                    self->m_parent->m_impl->dom_loaded = false;
-                                    self->m_parent->m_events.at<web_event::load_started>().fire();
+                                    view->m_parent->m_impl->dom_loaded = false;
+                                    view->m_parent->m_events.at<web_event::load_started>().fire();
                                 }),
                             "v@:@");
     }

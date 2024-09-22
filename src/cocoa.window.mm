@@ -1,38 +1,20 @@
 #include "cocoa.window.impl.hpp"
 
 #include "instantiate.hpp"
+
+#include "cocoa.app.impl.hpp"
 #include "cocoa.icon.impl.hpp"
 
 #include <cassert>
 
 namespace saucer
 {
-    window::window(const preferences &) : m_impl(std::make_unique<impl>())
+    window::window(const preferences &prefs) : m_impl(std::make_unique<impl>()), m_parent(prefs.application.value())
     {
+        assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+
         static std::once_flag flag;
-
-        std::call_once(flag,
-                       []()
-                       {
-                           impl::init_objc();
-
-                           static auto *delegate = [[AppDelegate alloc] init];
-
-                           impl::application = app_ptr{[NSApplication sharedApplication],
-                                                       [](NSApplication *)
-                                                       {
-                                                           [NSApp terminate:nil];
-                                                           delegate = nil;
-                                                       }};
-
-                           impl::init_menu();
-
-                           [NSApp setDelegate:delegate];
-                           [NSApp activateIgnoringOtherApps:YES];
-                           [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-                       });
-
-        assert(impl::application && "Construction outside of the main-thread is not permitted");
+        std::call_once(flag, []() { impl::init_objc(); });
 
         static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
                                      NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
@@ -50,26 +32,15 @@ namespace saucer
 
     window::~window()
     {
-        m_impl->window = nil;
-    }
-
-    void window::dispatch(callback_t callback) const // NOLINT(*-static)
-    {
-        auto work = [](callback_t *data)
-        {
-            auto callback = std::unique_ptr<callback_t>{data};
-            std::invoke(*callback);
-        };
-
-        dispatch_async_f(dispatch_get_main_queue(), new callback_t{std::move(callback)},
-                         reinterpret_cast<dispatch_function_t>(+work));
+        m_impl->delegate = nil;
+        m_impl->window   = nil;
     }
 
     bool window::focused() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return focused(); }).get();
+            return dispatch([this] { return focused(); });
         }
 
         return m_impl->window.isKeyWindow;
@@ -77,9 +48,9 @@ namespace saucer
 
     bool window::minimized() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return minimized(); }).get();
+            return dispatch([this] { return minimized(); });
         }
 
         return m_impl->window.isMiniaturized;
@@ -87,9 +58,9 @@ namespace saucer
 
     bool window::maximized() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return maximized(); }).get();
+            return dispatch([this] { return maximized(); });
         }
 
         return m_impl->window.isZoomed;
@@ -97,9 +68,9 @@ namespace saucer
 
     bool window::resizable() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return resizable(); }).get();
+            return dispatch([this] { return resizable(); });
         }
 
         return m_impl->window.styleMask & NSWindowStyleMaskResizable;
@@ -107,9 +78,9 @@ namespace saucer
 
     bool window::decorations() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return decorations(); }).get();
+            return dispatch([this] { return decorations(); });
         }
 
         return m_impl->window.styleMask != NSWindowStyleMaskBorderless;
@@ -117,9 +88,9 @@ namespace saucer
 
     bool window::always_on_top() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return always_on_top(); }).get();
+            return dispatch([this] { return always_on_top(); });
         }
 
         return m_impl->window.level == kCGMaximumWindowLevelKey;
@@ -127,9 +98,9 @@ namespace saucer
 
     std::string window::title() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return title(); }).get();
+            return dispatch([this] { return title(); });
         }
 
         return m_impl->window.title.UTF8String;
@@ -137,9 +108,9 @@ namespace saucer
 
     std::pair<int, int> window::size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return size(); }).get();
+            return dispatch([this] { return size(); });
         }
 
         const auto [width, height] = m_impl->window.frame.size;
@@ -149,9 +120,9 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return max_size(); }).get();
+            return dispatch([this] { return max_size(); });
         }
 
         const auto [width, height] = m_impl->window.maxSize;
@@ -161,9 +132,9 @@ namespace saucer
 
     std::pair<int, int> window::min_size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return min_size(); }).get();
+            return dispatch([this] { return min_size(); });
         }
 
         const auto [width, height] = m_impl->window.minSize;
@@ -173,9 +144,9 @@ namespace saucer
 
     void window::hide()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return hide(); }).get();
+            return dispatch([this] { return hide(); });
         }
 
         [m_impl->window orderOut:nil];
@@ -183,19 +154,22 @@ namespace saucer
 
     void window::show()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return show(); }).get();
+            return dispatch([this] { return show(); });
         }
+
+        auto *const identifier                    = (__bridge void *)m_impl->window;
+        m_parent->native()->instances[identifier] = false;
 
         [m_impl->window makeKeyAndOrderFront:nil];
     }
 
     void window::close()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return close(); }).get();
+            return dispatch([this] { return close(); });
         }
 
         [m_impl->window close];
@@ -203,9 +177,9 @@ namespace saucer
 
     void window::focus()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return focus(); }).get();
+            return dispatch([this] { return focus(); });
         }
 
         [m_impl->window makeKeyWindow];
@@ -213,9 +187,9 @@ namespace saucer
 
     void window::start_drag()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return start_drag(); }).get();
+            return dispatch([this] { return start_drag(); });
         }
 
         [m_impl->window performWindowDragWithEvent:NSApp.currentEvent];
@@ -223,9 +197,9 @@ namespace saucer
 
     void window::start_resize(window_edge edge)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return start_drag(); }).get();
+            return dispatch([this] { return start_drag(); });
         }
 
         m_impl->edge.emplace(edge);
@@ -233,9 +207,9 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_minimized(enabled); }).get();
+            return dispatch([this, enabled] { return set_minimized(enabled); });
         }
 
         [m_impl->window setIsMiniaturized:static_cast<BOOL>(enabled)];
@@ -243,9 +217,9 @@ namespace saucer
 
     void window::set_maximized(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_maximized(enabled); }).get();
+            return dispatch([this, enabled] { return set_maximized(enabled); });
         }
 
         [m_impl->window setIsZoomed:static_cast<BOOL>(enabled)];
@@ -253,9 +227,9 @@ namespace saucer
 
     void window::set_resizable(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_resizable(enabled); }).get();
+            return dispatch([this, enabled] { return set_resizable(enabled); });
         }
 
         static constexpr auto flag = NSWindowStyleMaskResizable;
@@ -275,9 +249,9 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_decorations(enabled); }).get();
+            return dispatch([this, enabled] { return set_decorations(enabled); });
         }
 
         const auto mask = m_impl->window.styleMask;
@@ -292,9 +266,9 @@ namespace saucer
 
     void window::set_always_on_top(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_always_on_top(enabled); }).get();
+            return dispatch([this, enabled] { return set_always_on_top(enabled); });
         }
 
         m_impl->window.level = enabled ? kCGMaximumWindowLevelKey : kCGNormalWindowLevelKey;
@@ -307,13 +281,13 @@ namespace saucer
             return;
         }
 
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, icon] { return set_icon(icon); }).get();
+            return dispatch([this, icon] { return set_icon(icon); });
         }
 
         auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon];
-        auto *const tile = m_impl->application.get().dockTile;
+        auto *const tile = m_parent->native()->application.dockTile;
 
         [tile setContentView:view];
         [tile display];
@@ -321,9 +295,9 @@ namespace saucer
 
     void window::set_title(const std::string &title)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, title] { return set_title(title); }).get();
+            return dispatch([this, title] { return set_title(title); });
         }
 
         [m_impl->window setTitle:[NSString stringWithUTF8String:title.c_str()]];
@@ -331,9 +305,9 @@ namespace saucer
 
     void window::set_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, width, height] { return set_size(width, height); }).get();
+            return dispatch([this, width, height] { return set_size(width, height); });
         }
 
         auto frame = m_impl->window.frame;
@@ -344,9 +318,9 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, width, height] { return set_max_size(width, height); }).get();
+            return dispatch([this, width, height] { return set_max_size(width, height); });
         }
 
         [m_impl->window setMaxSize:{static_cast<float>(width), static_cast<float>(height)}];
@@ -354,9 +328,9 @@ namespace saucer
 
     void window::set_min_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, width, height] { return set_min_size(width, height); }).get();
+            return dispatch([this, width, height] { return set_min_size(width, height); });
         }
 
         [m_impl->window setMinSize:{static_cast<float>(width), static_cast<float>(height)}];
@@ -364,9 +338,9 @@ namespace saucer
 
     void window::clear(window_event event)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, event] { return clear(event); }).get();
+            return dispatch([this, event] { return clear(event); });
         }
 
         m_events.clear(event);
@@ -374,9 +348,9 @@ namespace saucer
 
     void window::remove(window_event event, std::uint64_t id)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, event, id] { return remove(event, id); }).get();
+            return dispatch([this, event, id] { return remove(event, id); });
         }
 
         m_events.remove(event, id);
@@ -385,11 +359,10 @@ namespace saucer
     template <window_event Event>
     void window::once(events::type<Event> callback)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
             return dispatch([this, callback = std::move(callback)]() mutable
-                            { return once<Event>(std::move(callback)); })
-                .get();
+                            { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -399,37 +372,14 @@ namespace saucer
     template <window_event Event>
     std::uint64_t window::on(events::type<Event> callback)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
             return dispatch([this, callback = std::move(callback)]() mutable //
-                            { return on<Event>(std::move(callback)); })
-                .get();
+                            { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
         return m_events.at<Event>().add(std::move(callback));
-    }
-
-    template <>
-    void window::run<true>()
-    {
-        [NSApp run];
-    }
-
-    template <>
-    void window::run<false>()
-    {
-        auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                               untilDate:[NSDate now]
-                                                  inMode:NSDefaultRunLoopMode
-                                                 dequeue:YES];
-
-        if (!event)
-        {
-            return;
-        }
-
-        [NSApp sendEvent:event];
     }
 
     INSTANTIATE_EVENTS(window, 7, window_event)

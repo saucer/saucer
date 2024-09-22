@@ -1,113 +1,76 @@
 #include "cocoa.window.impl.hpp"
 
+#include "cocoa.app.impl.hpp"
+
+#include <algorithm>
+
 #import <objc/objc-runtime.h>
 
 namespace saucer
 {
-    bool window::impl::is_thread_safe()
-    {
-        return impl::application != nullptr;
-    }
-
     void window::impl::init_objc()
     {
         class_replaceMethod(
             [WindowDelegate class], @selector(windowDidMiniaturize:),
-            imp_implementationWithBlock([](WindowDelegate *self, NSNotification *)
-                                        { self->m_parent->m_events.at<window_event::minimize>().fire(true); }),
+            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                        { delegate->m_parent->m_events.at<window_event::minimize>().fire(true); }),
             "v@:@");
 
         class_replaceMethod(
             [WindowDelegate class], @selector(windowDidDeminiaturize:),
-            imp_implementationWithBlock([](WindowDelegate *self, NSNotification *)
-                                        { self->m_parent->m_events.at<window_event::minimize>().fire(false); }),
+            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                        { delegate->m_parent->m_events.at<window_event::minimize>().fire(false); }),
             "v@:@");
-
-        class_replaceMethod([WindowDelegate class], @selector(windowWillClose:),
-                            imp_implementationWithBlock(
-                                [](WindowDelegate *self, NSNotification *)
-                                {
-                                    const auto &impl = *self->m_parent->m_impl;
-
-                                    if (impl.on_closed)
-                                    {
-                                        std::invoke(impl.on_closed);
-                                    }
-
-                                    self->m_parent->m_events.at<window_event::closed>().fire();
-                                }),
-                            "v@:@");
 
         class_replaceMethod([WindowDelegate class], @selector(windowDidResize:),
                             imp_implementationWithBlock(
-                                [](WindowDelegate *self, NSNotification *)
+                                [](WindowDelegate *delegate, NSNotification *)
                                 {
-                                    const auto [width, height] = self->m_parent->size();
-                                    self->m_parent->m_events.at<window_event::resize>().fire(width, height);
+                                    const auto [width, height] = delegate->m_parent->size();
+                                    delegate->m_parent->m_events.at<window_event::resize>().fire(width, height);
                                 }),
                             "v@:@");
 
         class_replaceMethod(
             [WindowDelegate class], @selector(windowDidBecomeKey:),
-            imp_implementationWithBlock([](WindowDelegate *self, NSNotification *)
-                                        { self->m_parent->m_events.at<window_event::focus>().fire(true); }),
+            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                        { delegate->m_parent->m_events.at<window_event::focus>().fire(true); }),
             "v@:@");
 
         class_replaceMethod(
             [WindowDelegate class], @selector(windowDidResignKey:),
-            imp_implementationWithBlock([](WindowDelegate *self, NSNotification *)
-                                        { self->m_parent->m_events.at<window_event::focus>().fire(false); }),
+            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                        { delegate->m_parent->m_events.at<window_event::focus>().fire(false); }),
             "v@:@");
 
-        class_replaceMethod(
-            [WindowDelegate class], @selector(windowShouldClose:),
-            imp_implementationWithBlock(
-                [](WindowDelegate *self, NSNotification *)
-                { return !self->m_parent->m_events.at<window_event::close>().until(true).value_or(false); }),
-            "v@:@");
-    }
+        class_replaceMethod([WindowDelegate class], @selector(windowShouldClose:),
+                            imp_implementationWithBlock(
+                                [](WindowDelegate *delegate, NSNotification *)
+                                {
+                                    auto *self = delegate->m_parent;
 
-    void saucer::window::impl::init_menu()
-    {
-        auto *const mainmenu = [NSMenu new];
+                                    if (self->m_events.at<window_event::close>().until(true))
+                                    {
+                                        return false;
+                                    }
 
-        {
-            auto *const item = [NSMenuItem new];
-            auto *const menu = [NSMenu new];
+                                    self->hide();
+                                    self->m_events.at<window_event::closed>().fire();
 
-            auto *const name = [[NSProcessInfo processInfo] processName];
+                                    auto &parent    = self->m_parent;
+                                    auto &instances = parent->native()->instances;
 
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:[@"Quit " stringByAppendingString:name]
-                                                     action:@selector(terminate:)
-                                              keyEquivalent:@"q"]];
+                                    auto *const identifier = (__bridge void *)self->m_impl->window;
+                                    instances[identifier]  = false;
 
-            [mainmenu addItem:item];
-            [mainmenu setSubmenu:menu forItem:item];
-        }
-        {
-            auto *const item = [NSMenuItem new];
-            auto *const menu = [[NSMenu alloc] initWithTitle:@"Edit"];
+                                    if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
+                                    {
+                                        parent->quit();
+                                    }
 
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"]];
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"y"]];
-
-            [menu addItem:[NSMenuItem separatorItem]];
-
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"]];
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"]];
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"]];
-
-            [menu addItem:[NSMenuItem separatorItem]];
-
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Select All"
-                                                     action:@selector(selectAll:)
-                                              keyEquivalent:@"a"]];
-
-            [mainmenu addItem:item];
-            [mainmenu setSubmenu:menu forItem:item];
-        }
-
-        [NSApp setMainMenu:mainmenu];
+                                    return false;
+                                }),
+                            "v@:@");
     }
 
     template <>
@@ -199,22 +162,6 @@ namespace saucer
                        context:(void *)context
 {
     std::invoke(m_callback);
-}
-@end
-
-@implementation AppDelegate
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
-{
-    [NSApp stop:nil];
-    return NO;
-}
-
-- (instancetype)initWithParent:(saucer::window *)parent
-{
-    self           = [super init];
-    self->m_parent = parent;
-
-    return self;
 }
 @end
 

@@ -11,7 +11,6 @@
 
 namespace saucer
 {
-    using app_ptr             = std::unique_ptr<NSApplication, std::function<void(NSApplication *)>>;
     using observer_callback_t = std::function<void()>;
 
     struct click_event
@@ -23,8 +22,6 @@ namespace saucer
     struct window::impl
     {
         NSWindow *window;
-
-      public:
         WindowDelegate *delegate;
 
       public:
@@ -43,12 +40,6 @@ namespace saucer
         void set_alpha(std::uint8_t alpha) const;
 
       public:
-        [[nodiscard]] static bool is_thread_safe();
-
-      public:
-        static thread_local inline app_ptr application;
-
-      public:
         static void init_objc();
         static void init_menu();
     };
@@ -60,14 +51,6 @@ namespace saucer
     saucer::observer_callback_t m_callback;
 }
 - (instancetype)initWithCallback:(saucer::observer_callback_t)callback;
-@end
-
-@interface AppDelegate : NSObject <NSApplicationDelegate>
-{
-  @public
-    saucer::window *m_parent;
-}
-- (instancetype)initWithParent:(saucer::window *)parent;
 @end
 
 @interface WindowDelegate : NSObject <NSWindowDelegate>
