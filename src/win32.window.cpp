@@ -1,6 +1,7 @@
 #include "win32.window.impl.hpp"
 
 #include "win32.utils.hpp"
+#include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 
 #include "instantiate.hpp"
@@ -18,71 +19,44 @@ constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
-    window::window(const preferences &) : m_impl(std::make_unique<impl>())
+    window::window(const preferences &prefs) : m_impl(std::make_unique<impl>()), m_parent(prefs.application.value())
     {
-        static std::once_flag flag;
-
-        std::call_once(flag,
-                       []()
-                       {
-                           impl::instance = GetModuleHandleW(nullptr);
-
-                           //? Register the window class, later referred to by passing `lpClassName` = "Saucer"
-                           WNDCLASSW wnd_class{};
-
-                           wnd_class.hInstance     = impl::instance;
-                           wnd_class.lpszClassName = L"Saucer";
-                           wnd_class.lpfnWndProc   = impl::wnd_proc;
-
-                           if (RegisterClassW(&wnd_class))
-                           {
-                               return;
-                           }
-
-                           assert(false && "RegisterClassW() failed");
-                       });
-
-        assert(impl::instance && "Construction outside of the main-thread is not permitted");
+        assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
         const auto dw_style = IsWindows8OrGreater() ? WS_EX_NOREDIRECTIONBITMAP : 0;
 
-        m_impl->hwnd = CreateWindowExW(dw_style,            //
-                                       L"Saucer",           //
-                                       L"Saucer Window",    //
-                                       WS_OVERLAPPEDWINDOW, //
-                                       CW_USEDEFAULT,       //
-                                       CW_USEDEFAULT,       //
-                                       CW_USEDEFAULT,       //
-                                       CW_USEDEFAULT,       //
-                                       nullptr,             //
-                                       nullptr,             //
-                                       impl::instance,      //
+        m_impl->hwnd = CreateWindowExW(dw_style,                   //
+                                       L"Saucer",                  //
+                                       L"Saucer Window",           //
+                                       WS_OVERLAPPEDWINDOW,        //
+                                       CW_USEDEFAULT,              //
+                                       CW_USEDEFAULT,              //
+                                       CW_USEDEFAULT,              //
+                                       CW_USEDEFAULT,              //
+                                       nullptr,                    //
+                                       nullptr,                    //
+                                       m_parent->native()->handle, //
                                        nullptr);
 
         assert(m_impl->hwnd && "CreateWindowExW() failed");
 
         utils::set_dpi_awareness();
-        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        m_impl->o_wnd_proc = utils::overwrite_wndproc(m_impl->hwnd, impl::wnd_proc);
 
-        impl::instances++;
+        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     }
 
     window::~window()
     {
+        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, 0);
         DestroyWindow(m_impl->hwnd);
-    }
-
-    void window::dispatch(callback_t callback) const
-    {
-        auto *message = new safe_message{std::move(callback)};
-        PostMessage(m_impl->hwnd, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
     }
 
     bool window::focused() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return focused(); }).get();
+            return dispatch([this]() { return focused(); });
         }
 
         return m_impl->hwnd == GetForegroundWindow();
@@ -90,9 +64,9 @@ namespace saucer
 
     bool window::minimized() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return minimized(); }).get();
+            return dispatch([this]() { return minimized(); });
         }
 
         return IsIconic(m_impl->hwnd);
@@ -100,9 +74,9 @@ namespace saucer
 
     bool window::maximized() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return maximized(); }).get();
+            return dispatch([this]() { return maximized(); });
         }
 
         WINDOWPLACEMENT placement;
@@ -115,9 +89,9 @@ namespace saucer
 
     bool window::resizable() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return resizable(); }).get();
+            return dispatch([this]() { return resizable(); });
         }
 
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & WS_THICKFRAME;
@@ -125,9 +99,9 @@ namespace saucer
 
     bool window::decorations() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return decorations(); }).get();
+            return dispatch([this]() { return decorations(); });
         }
 
         return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & WS_CAPTION;
@@ -135,9 +109,9 @@ namespace saucer
 
     bool window::always_on_top() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return always_on_top(); }).get();
+            return dispatch([this]() { return always_on_top(); });
         }
 
         return GetWindowLong(m_impl->hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST;
@@ -145,9 +119,9 @@ namespace saucer
 
     std::string window::title() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return title(); }).get();
+            return dispatch([this]() { return title(); });
         }
 
         std::wstring title;
@@ -160,9 +134,9 @@ namespace saucer
 
     std::pair<int, int> window::size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return size(); }).get();
+            return dispatch([this]() { return size(); });
         }
 
         RECT rect;
@@ -173,9 +147,9 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return max_size(); }).get();
+            return dispatch([this]() { return max_size(); });
         }
 
         const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
@@ -186,9 +160,9 @@ namespace saucer
 
     std::pair<int, int> window::min_size() const
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return min_size(); }).get();
+            return dispatch([this]() { return min_size(); });
         }
 
         const auto width  = GetSystemMetrics(SM_CXMINTRACK);
@@ -199,9 +173,9 @@ namespace saucer
 
     void window::hide()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { hide(); }).get();
+            return dispatch([this]() { hide(); });
         }
 
         ShowWindow(m_impl->hwnd, SW_HIDE);
@@ -209,19 +183,20 @@ namespace saucer
 
     void window::show()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { show(); }).get();
+            return dispatch([this]() { show(); });
         }
 
+        m_parent->native()->instances[m_impl->hwnd] = true;
         ShowWindow(m_impl->hwnd, SW_SHOW);
     }
 
     void window::close()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { close(); }).get();
+            return dispatch([this]() { close(); });
         }
 
         PostMessage(m_impl->hwnd, WM_CLOSE, 0, 0);
@@ -229,9 +204,9 @@ namespace saucer
 
     void window::focus()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { focus(); }).get();
+            return dispatch([this]() { focus(); });
         }
 
         SetForegroundWindow(m_impl->hwnd);
@@ -242,9 +217,9 @@ namespace saucer
 
     void window::start_drag()
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { start_drag(); }).get();
+            return dispatch([this]() { start_drag(); });
         }
 
         ReleaseCapture();
@@ -253,9 +228,9 @@ namespace saucer
 
     void window::start_resize(saucer::window_edge edge)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, edge]() { start_resize(edge); }).get();
+            return dispatch([this, edge]() { start_resize(edge); });
         }
 
         DWORD translated{};
@@ -299,9 +274,9 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { set_minimized(enabled); }).get();
+            return dispatch([this, enabled]() { set_minimized(enabled); });
         }
 
         ShowWindow(m_impl->hwnd, enabled ? SW_MINIMIZE : SW_RESTORE);
@@ -309,9 +284,9 @@ namespace saucer
 
     void window::set_maximized(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { set_maximized(enabled); }).get();
+            return dispatch([this, enabled]() { set_maximized(enabled); });
         }
 
         ShowWindow(m_impl->hwnd, enabled ? SW_MAXIMIZE : SW_RESTORE);
@@ -319,9 +294,9 @@ namespace saucer
 
     void window::set_resizable(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { set_resizable(enabled); }).get();
+            return dispatch([this, enabled]() { set_resizable(enabled); });
         }
 
         static constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
@@ -341,9 +316,9 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { set_decorations(enabled); }).get();
+            return dispatch([this, enabled]() { set_decorations(enabled); });
         }
 
         static constexpr auto flag = WS_TILEDWINDOW;
@@ -363,9 +338,9 @@ namespace saucer
 
     void window::set_always_on_top(bool enabled)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { set_always_on_top(enabled); }).get();
+            return dispatch([this, enabled]() { set_always_on_top(enabled); });
         }
 
         SetWindowPos(m_impl->hwnd, enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -378,9 +353,9 @@ namespace saucer
             return;
         }
 
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, icon]() { return set_icon(icon); }).get();
+            return dispatch([this, icon]() { return set_icon(icon); });
         }
 
         HICON handle{};
@@ -397,9 +372,9 @@ namespace saucer
 
     void window::set_title(const std::string &title)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, title]() { return set_title(title); }).get();
+            return dispatch([this, title]() { return set_title(title); });
         }
 
         SetWindowTextW(m_impl->hwnd, utils::widen(title).c_str());
@@ -407,9 +382,9 @@ namespace saucer
 
     void window::set_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, width, height]() { set_size(width, height); }).get();
+            return dispatch([this, width, height]() { set_size(width, height); });
         }
 
         SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
@@ -417,9 +392,9 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, width, height]() { set_max_size(width, height); }).get();
+            return dispatch([this, width, height]() { set_max_size(width, height); });
         }
 
         m_impl->max_size = {width, height};
@@ -427,9 +402,9 @@ namespace saucer
 
     void window::set_min_size(int width, int height)
     {
-        if (!impl::is_thread_safe())
+        if (!m_parent->thread_safe())
         {
-            return dispatch([this, width, height]() { set_min_size(width, height); }).get();
+            return dispatch([this, width, height]() { set_min_size(width, height); });
         }
 
         m_impl->min_size = {width, height};
@@ -455,32 +430,6 @@ namespace saucer
     std::uint64_t window::on(events::type<Event> callback)
     {
         return m_events.at<Event>().add(std::move(callback));
-    }
-
-    template <>
-    void window::run<true>()
-    {
-        MSG msg;
-
-        while (GetMessage(&msg, nullptr, 0, 0))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-
-    template <>
-    void window::run<false>()
-    {
-        MSG msg;
-
-        if (!PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            return;
-        }
-
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
     }
 
     INSTANTIATE_EVENTS(window, 7, window_event)

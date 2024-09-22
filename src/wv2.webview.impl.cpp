@@ -39,13 +39,7 @@ namespace saucer
         return instance.value();
     }
 
-    void webview::impl::set_wnd_proc(HWND hwnd)
-    {
-        auto ptr   = reinterpret_cast<LONG_PTR>(wnd_proc);
-        o_wnd_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
-    }
-
-    void webview::impl::create_webview(webview *parent, HWND hwnd, preferences prefs)
+    void webview::impl::create_webview(std::shared_ptr<application> app, HWND hwnd, preferences prefs)
     {
         if (!prefs.hardware_acceleration)
         {
@@ -95,7 +89,7 @@ namespace saucer
 
         while (!controller)
         {
-            parent->run<false>();
+            app->run<false>();
         }
 
         auto resource_handler = [this](auto, auto *arg)

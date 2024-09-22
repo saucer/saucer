@@ -66,6 +66,12 @@ namespace saucer
         set_attribute(hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
     }
 
+    WNDPROC utils::overwrite_wndproc(HWND hwnd, WNDPROC wndproc)
+    {
+        auto ptr = reinterpret_cast<LONG_PTR>(wndproc);
+        return reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
+    }
+
     std::wstring utils::widen(const std::string &narrow)
     {
         auto narrow_size = static_cast<int>(narrow.size());

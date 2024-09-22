@@ -1,34 +1,24 @@
 #include "win32.window.impl.hpp"
+#include "win32.app.impl.hpp"
 
 namespace saucer
 {
-    const UINT window::impl::WM_SAFE_CALL            = RegisterWindowMessageW(L"safe_call");
-    std::atomic<std::size_t> window::impl::instances = 0;
-
-    bool window::impl::is_thread_safe()
-    {
-        return instance;
-    }
-
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        if (msg == impl::WM_SAFE_CALL)
-        {
-            delete reinterpret_cast<safe_message *>(l_param);
-            return 0;
-        }
-
-        auto original = [&]()
-        {
-            return DefWindowProcW(hwnd, msg, w_param, l_param);
-        };
-
-        auto *window = reinterpret_cast<saucer::window *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        auto userdata = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+        auto *window  = reinterpret_cast<saucer::window *>(userdata);
 
         if (!window)
         {
-            return original();
+            return DefWindowProcW(hwnd, msg, w_param, l_param);
         }
+
+        const auto &impl = window->m_impl;
+
+        auto original = [&]()
+        {
+            return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
+        };
 
         switch (msg)
         {
@@ -105,25 +95,23 @@ namespace saucer
                 return 0;
             }
 
+            window->hide();
             window->m_events.at<window_event::closed>().fire();
 
-            if (--instances > 0)
+            auto &parent    = window->m_parent;
+            auto &instances = parent->native()->instances;
+
+            instances[hwnd] = false;
+
+            if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
             {
-                break;
+                parent->quit();
             }
 
-            PostQuitMessage(0);
-            break;
+            return 0;
         }
         }
 
         return original();
-    }
-
-    safe_message::safe_message(callback_t callback) : m_callback(std::move(callback)) {}
-
-    safe_message::~safe_message()
-    {
-        std::invoke(m_callback);
     }
 } // namespace saucer

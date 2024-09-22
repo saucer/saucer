@@ -47,17 +47,8 @@ namespace saucer
         std::unordered_map<std::string, scheme_handler> schemes;
 
       public:
-        WNDPROC o_wnd_proc;
-
-      public:
-        void set_wnd_proc(HWND hwnd);
-        void create_webview(webview *, HWND, preferences);
-
-      public:
+        void create_webview(std::shared_ptr<application>, HWND, preferences);
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);
-
-      public:
-        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
 
       public:
         template <web_event>
@@ -69,5 +60,9 @@ namespace saucer
       public:
         static inline ULONG_PTR gdi_token;
         static inline auto env_options = Make<CoreWebView2EnvironmentOptions>();
+
+      public:
+        WNDPROC o_wnd_proc;
+        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer

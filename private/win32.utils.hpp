@@ -10,6 +10,8 @@ namespace saucer::utils
     void set_dpi_awareness();
     void set_immersive_dark(HWND, bool);
 
+    [[nodiscard]] WNDPROC overwrite_wndproc(HWND, WNDPROC);
+
     [[nodiscard]] std::string narrow(const std::wstring &wide);
     [[nodiscard]] std::wstring widen(const std::string &narrow);
 
