@@ -1,7 +1,9 @@
 #include "qt.webview.impl.hpp"
 
 #include "scripts.hpp"
+
 #include "qt.icon.impl.hpp"
+#include "qt.navigation.impl.hpp"
 
 #include <cassert>
 #include <optional>
@@ -59,71 +61,14 @@ namespace saucer
     }
 
     template <>
-    void webview::impl::setup<web_event::title_changed>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::title_changed>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](const auto &title)
-        {
-            self->m_events.at<web_event::title_changed>().fire(title.toStdString());
-        };
-
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
-        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::load_finished>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::load_finished>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            self->m_events.at<web_event::load_finished>().fire();
-        };
-
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
-        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::icon_changed>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::icon_changed>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](const auto &favicon)
-        {
-            self->m_events.at<web_event::icon_changed>().fire(icon{{favicon}});
-        };
-
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
-        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::load_started>(webview *)
+    void webview::impl::setup<web_event::dom_ready>(webview *)
     {
     }
 
     template <>
-    void webview::impl::setup<web_event::url_changed>(webview *self)
+    void webview::impl::setup<web_event::navigated>([[maybe_unused]] webview *self)
     {
-        auto &event = self->m_events.at<web_event::url_changed>();
+        auto &event = self->m_events.at<web_event::navigated>();
 
         if (!event.empty())
         {
@@ -137,15 +82,105 @@ namespace saucer
                 return;
             }
 
-            self->m_events.at<web_event::url_changed>().fire(url.toString().toStdString());
+            self->m_events.at<web_event::navigated>().fire(url.toString().toStdString());
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
-        event.on_clear([self, id]() { self->m_impl->web_view->disconnect(id); });
+        event.on_clear([this, id]() { web_view->disconnect(id); });
     }
 
     template <>
-    void webview::impl::setup<web_event::dom_ready>(webview *)
+    void webview::impl::setup<web_event::navigate>([[maybe_unused]] webview *self)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+        auto &event = self->m_events.at<web_event::navigate>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self]<typename T>(T &req)
+        {
+            auto request = navigation{{&req}};
+
+            if (!self->m_events.at<web_event::navigate>().during(false, request).has_value())
+            {
+                return;
+            }
+
+            if constexpr (std::is_same_v<T, QWebEngineNavigationRequest>)
+            {
+                req.reject();
+            }
+        };
+
+        const auto new_id = web_view->connect(web_page.get(), &QWebEnginePage::newWindowRequested, handler);
+        const auto nav_id = web_view->connect(web_page.get(), &QWebEnginePage::navigationRequested, handler);
+
+        event.on_clear(
+            [this, new_id, nav_id]()
+            {
+                web_page->disconnect(new_id);
+                web_page->disconnect(nav_id);
+            });
+#endif
+    }
+
+    template <>
+    void webview::impl::setup<web_event::favicon>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::favicon>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](const auto &favicon)
+        {
+            self->m_events.at<web_event::favicon>().fire(icon{{favicon}});
+        };
+
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
+        event.on_clear([this, id]() { web_view->disconnect(id); });
+    }
+
+    template <>
+    void webview::impl::setup<web_event::title>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::title>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](const auto &title)
+        {
+            self->m_events.at<web_event::title>().fire(title.toStdString());
+        };
+
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
+        event.on_clear([this, id]() { web_view->disconnect(id); });
+    }
+
+    template <>
+    void webview::impl::setup<web_event::load>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::load>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            self->m_events.at<web_event::load>().fire(state::finished);
+        };
+
+        const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
+        event.on_clear([this, id]() { web_view->disconnect(id); });
     }
 } // namespace saucer

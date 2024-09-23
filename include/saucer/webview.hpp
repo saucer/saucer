@@ -1,10 +1,12 @@
 #pragma once
 
 #include "icon.hpp"
-#include "script.hpp"
 
 #include "window.hpp"
+#include "script.hpp"
+
 #include "scheme.hpp"
+#include "navigation.hpp"
 
 #include <filesystem>
 #include <unordered_map>
@@ -18,12 +20,18 @@ namespace saucer
 {
     enum class web_event
     {
-        title_changed,
-        load_finished,
-        icon_changed,
-        load_started,
-        url_changed,
         dom_ready,
+        navigated,
+        navigate,
+        favicon,
+        title,
+        load,
+    };
+
+    enum class state
+    {
+        started,
+        finished,
     };
 
     struct embedded_file
@@ -42,13 +50,13 @@ namespace saucer
         using embedded_files = std::unordered_map<std::string, embedded_file>;
 
       public:
-        using events = ereignis::manager<                                         //
-            ereignis::event<web_event::title_changed, void(const std::string &)>, //
-            ereignis::event<web_event::load_finished, void()>,                    //
-            ereignis::event<web_event::icon_changed, void(const icon &)>,         //
-            ereignis::event<web_event::load_started, void()>,                     //
-            ereignis::event<web_event::url_changed, void(const std::string &)>,   //
-            ereignis::event<web_event::dom_ready, void()>                         //
+        using events = ereignis::manager<                                     //
+            ereignis::event<web_event::dom_ready, void()>,                    //
+            ereignis::event<web_event::navigated, void(const std::string &)>, //
+            ereignis::event<web_event::navigate, bool(const navigation &)>,   //
+            ereignis::event<web_event::favicon, void(const icon &)>,          //
+            ereignis::event<web_event::title, void(const std::string &)>,     //
+            ereignis::event<web_event::load, void(const state &)>             //
             >;
 
       private:

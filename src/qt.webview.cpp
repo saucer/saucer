@@ -68,7 +68,7 @@ namespace saucer
                                   [this]()
                                   {
                                       m_impl->dom_loaded = false;
-                                      m_events.at<web_event::load_started>().fire();
+                                      m_events.at<web_event::load>().fire(state::started);
                                   });
 
         window::m_impl->on_closed = [this]

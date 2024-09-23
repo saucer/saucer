@@ -2,6 +2,9 @@
 
 #include "scripts.hpp"
 
+#include "wkg.scheme.impl.hpp"
+#include "wkg.navigation.impl.hpp"
+
 #include <regex>
 #include <optional>
 
@@ -10,32 +13,58 @@
 namespace saucer
 {
     template <>
-    void saucer::webview::impl::setup<web_event::title_changed>(webview *self)
+    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
     {
-        auto &event = self->m_events.at<web_event::title_changed>();
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::navigated>(webview *)
+    {
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::navigate>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::navigate>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](void *, GParamSpec *, webview *self)
+        auto callback = [](WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, webview *self)
         {
-            self->m_events.at<web_event::title_changed>().fire(self->page_title());
+            if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION &&
+                type != WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION)
+            {
+                return false;
+            }
+
+            auto *converted = reinterpret_cast<WebKitNavigationPolicyDecision *>(decision);
+            auto nav        = g_object_ptr<WebKitNavigationPolicyDecision>::ref(converted);
+
+            auto request = navigation{{
+                .decision = std::move(nav),
+                .type     = type,
+            }};
+
+            if (self->m_events.at<web_event::navigate>().until(true, request))
+            {
+                webkit_policy_decision_ignore(decision);
+                return true;
+            }
+
+            return false;
         };
 
-        g_signal_connect(self->m_impl->web_view, "notify::title", G_CALLBACK(+callback), self);
+        const auto id = g_signal_connect(self->m_impl->web_view, "decide-policy", G_CALLBACK(+callback), self);
+        event.on_clear([self, id]() { g_signal_handler_disconnect(self->m_impl->web_view, id); });
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::load_finished>(webview *)
+    void saucer::webview::impl::setup<web_event::favicon>(webview *self)
     {
-    }
-
-    template <>
-    void saucer::webview::impl::setup<web_event::icon_changed>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::icon_changed>();
+        auto &event = self->m_events.at<web_event::favicon>();
 
         if (!event.empty())
         {
@@ -44,24 +73,32 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, webview *self)
         {
-            self->m_events.at<web_event::icon_changed>().fire(self->favicon());
+            self->m_events.at<web_event::favicon>().fire(self->favicon());
         };
 
         g_signal_connect(self->m_impl->web_view, "notify::favicon", G_CALLBACK(+callback), self);
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::load_started>(webview *)
+    void saucer::webview::impl::setup<web_event::title>(webview *self)
     {
+        auto &event = self->m_events.at<web_event::title>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto callback = [](void *, GParamSpec *, webview *self)
+        {
+            self->m_events.at<web_event::title>().fire(self->page_title());
+        };
+
+        g_signal_connect(self->m_impl->web_view, "notify::title", G_CALLBACK(+callback), self);
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::url_changed>(webview *)
-    {
-    }
-
-    template <>
-    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
+    void saucer::webview::impl::setup<web_event::load>(webview *)
     {
     }
 

@@ -73,13 +73,13 @@ namespace saucer
 
             if (event == WEBKIT_LOAD_COMMITTED)
             {
-                self->m_events.at<web_event::url_changed>().fire(self->url());
+                self->m_events.at<web_event::navigated>().fire(self->url());
                 return;
             }
 
             if (event == WEBKIT_LOAD_FINISHED)
             {
-                self->m_events.at<web_event::load_finished>().fire();
+                self->m_events.at<web_event::load>().fire(state::finished);
                 return;
             }
 
@@ -89,7 +89,7 @@ namespace saucer
             }
 
             self->m_impl->dom_loaded = false;
-            self->m_events.at<web_event::load_started>().fire();
+            self->m_events.at<web_event::load>().fire(state::started);
         };
 
         g_signal_connect(m_impl->web_view, "load-changed", G_CALLBACK(+on_load), this);
