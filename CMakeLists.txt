@@ -6,7 +6,6 @@ project(saucer LANGUAGES CXX VERSION 3.0.0)
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_modules           "Enable smartview modules"                          ON)
-option(saucer_polyfill          "Enable polyfills. Mainly used for macOS"          OFF)
 
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
@@ -87,7 +86,7 @@ endif()
 if (saucer_backend STREQUAL "Default")
   if (WIN32)
     set(saucer_backend WebView2)
-  elseif(APPLE)
+  elseif (APPLE)
     set(saucer_backend WebKit)
   else()
     set(saucer_backend WebKitGtk)
@@ -107,7 +106,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
   
 if (PROJECT_IS_TOP_LEVEL)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX /external:anglebrackets /external:W0)
   else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
@@ -120,7 +119,7 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   target_compile_options(${PROJECT_NAME} PUBLIC -Wno-attributes=sc::)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   target_compile_options(${PROJECT_NAME} PUBLIC /wd5030)
 else()
   target_compile_options(${PROJECT_NAME} PUBLIC -Wno-unknown-attributes)
@@ -172,7 +171,6 @@ if (saucer_backend STREQUAL "WebView2")
 endif()
 
 if (saucer_backend STREQUAL "WebKit")
-  set(saucer_polyfill ON)
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT)
 endif()
 
@@ -200,16 +198,13 @@ target_sources(${PROJECT_NAME} PRIVATE
 # --------------------------------------------------------------------------------------------------------
 
 include("cmake/cpm.cmake")
+include("cmake/polyfill.cmake")
 
-if (saucer_polyfill)
-  message(STATUS "[saucer] Using polyfills for missing libc++ features")
-  set(saucer_fmt_install OFF)
+check_features()
+set(saucer_fmt_install ON)
 
-  CPMFindPackage(
-    NAME           fu2
-    VERSION        4.2.2
-    GIT_REPOSITORY "https://github.com/saucer/function2"
-  )
+if (saucer_polyfill_thread)
+  message(STATUS "[saucer] Using std::jthread polyfill")
 
   CPMFindPackage(
     NAME           jthread
@@ -218,12 +213,25 @@ if (saucer_polyfill)
     OPTIONS        "ENABLE_JTHREAD_TESTS OFF"
   )
 
-  link_libraries(function2::function2 jthread)
-
-  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
+  link_libraries(jthread)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "${jthread_SOURCE_DIR}/include/jthread")
-else()
-  set(saucer_fmt_install ON)
+
+  set(saucer_fmt_install OFF)
+endif()
+
+if (saucer_polyfill_functional)
+  message(STATUS "[saucer] Using std::move_only_function polyfill")
+
+  CPMFindPackage(
+    NAME           fu2
+    VERSION        4.2.2
+    GIT_REPOSITORY "https://github.com/saucer/function2"
+  )
+
+  link_libraries(function2::function2)
+  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
+  
+  set(saucer_fmt_install OFF)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -254,7 +262,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        4.2
+  VERSION        4.3
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
 )
 
