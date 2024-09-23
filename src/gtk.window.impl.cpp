@@ -1,4 +1,5 @@
 #include "gtk.window.impl.hpp"
+
 #include "gtk.app.impl.hpp"
 
 #include <algorithm>

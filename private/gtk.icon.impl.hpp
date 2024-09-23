@@ -1,6 +1,7 @@
 #pragma once
 
 #include "icon.hpp"
+
 #include "gtk.utils.hpp"
 
 #include <gtk/gtk.h>

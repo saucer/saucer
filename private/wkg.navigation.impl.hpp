@@ -1,7 +1,6 @@
 #pragma once
 
 #include "navigation.hpp"
-
 #include "gtk.utils.hpp"
 
 #include <webkit/webkit.h>
