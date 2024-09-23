@@ -11,6 +11,7 @@
 
 #include <tl/expected.hpp>
 #include <rebind/name.hpp>
+#include <rebind/enum.hpp>
 
 namespace saucer::serializers::glaze
 {
@@ -172,7 +173,8 @@ namespace saucer::serializers::glaze
 
             if (auto err = glz::read<opts>(json, data); err)
             {
-                return tl::unexpected{std::string{glz::nameof(err.ec)}};
+                const auto meta = rebind::enum_value(err.ec);
+                return tl::unexpected{meta ? std::string{meta->name} : "Unknown"};
             }
 
             return tl::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};
