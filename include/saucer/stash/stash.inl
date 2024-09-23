@@ -1,22 +1,12 @@
 #pragma once
 
 #include "stash.hpp"
+#include "../utils/overload.hpp"
 
 #include <functional>
 
 namespace saucer
 {
-    template <typename... Ts>
-    struct overload : Ts...
-    {
-        using Ts::operator()...;
-    };
-
-#ifdef __APPLE__
-    template <class... Ts>
-    overload(Ts...) -> overload<Ts...>;
-#endif
-
     template <typename T>
     stash<T>::stash(variant_t data) : m_data(std::move(data))
     {
