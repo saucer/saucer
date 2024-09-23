@@ -32,7 +32,7 @@ namespace saucer
 
       public:
         g_object_ptr<WebKitSettings> settings;
-        std::unordered_map<std::string, std::unique_ptr<scheme_state>> schemes;
+        std::unordered_map<std::string, std::unique_ptr<scheme::state>> schemes;
 
       public:
         template <web_event>

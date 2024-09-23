@@ -4,16 +4,18 @@
 
 #include <webkit/webkit.h>
 
-namespace saucer
+namespace saucer::scheme
 {
     struct request::impl
     {
         WebKitURISchemeRequest *request;
     };
 
-    struct scheme_state
+    struct state
     {
-        scheme_handler handler;
-        static void handle(WebKitURISchemeRequest *, scheme_state *);
+        handler handler;
+
+      public:
+        static void handle(WebKitURISchemeRequest *, state *);
     };
-} // namespace saucer
+} // namespace saucer::scheme

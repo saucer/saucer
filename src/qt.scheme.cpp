@@ -7,7 +7,7 @@
 #include <QBuffer>
 #include <QIODevice>
 
-namespace saucer
+namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
@@ -47,9 +47,9 @@ namespace saucer
     {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         auto *body = request->requestBody();
-        auto req   = saucer::request{{request, body->isReadable() ? body->readAll() : QByteArray{}}};
+        auto req   = scheme::request{{request, body->isReadable() ? body->readAll() : QByteArray{}}};
 #else
-        auto req = saucer::request{{request}};
+        auto req = scheme::request{{request}};
 #endif
 
         if (!m_callback)
@@ -89,4 +89,4 @@ namespace saucer
         connect(request, &QObject::destroyed, buffer, &QObject::deleteLater);
         request->reply(QString::fromStdString(result->mime).toUtf8(), buffer);
     }
-} // namespace saucer
+} // namespace saucer::scheme

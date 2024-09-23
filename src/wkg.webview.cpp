@@ -416,7 +416,7 @@ namespace saucer
         webkit_web_view_evaluate_javascript(m_impl->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 
-    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    void webview::handle_scheme(const std::string &name, scheme::handler handler)
     {
         if (!m_parent->thread_safe())
         {
@@ -432,8 +432,8 @@ namespace saucer
         auto *const context  = webkit_web_view_get_context(m_impl->web_view);
         auto *const security = webkit_web_context_get_security_manager(context);
 
-        auto state    = std::make_unique<scheme_state>(std::move(handler));
-        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme_state::handle);
+        auto state    = std::make_unique<scheme::state>(std::move(handler));
+        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::state::handle);
 
         webkit_web_context_register_uri_scheme(context, name.c_str(), callback, state.get(), nullptr);
         m_impl->schemes.emplace(name, std::move(state));

@@ -357,7 +357,7 @@ namespace saucer
         m_impl->web_view->page()->runJavaScript(QString::fromStdString(code));
     }
 
-    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    void webview::handle_scheme(const std::string &name, scheme::handler handler)
     {
         if (!m_parent->thread_safe())
         {

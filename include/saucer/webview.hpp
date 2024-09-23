@@ -126,7 +126,7 @@ namespace saucer
         [[sc::thread_safe]] void execute(const std::string &code);
 
       public:
-        [[sc::thread_safe]] void handle_scheme(const std::string &name, scheme_handler handler);
+        [[sc::thread_safe]] void handle_scheme(const std::string &name, scheme::handler handler);
         [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:

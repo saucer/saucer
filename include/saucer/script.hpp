@@ -30,5 +30,4 @@ namespace saucer
       public:
         bool operator==(const script &) const = default;
     };
-
 } // namespace saucer

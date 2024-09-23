@@ -10,9 +10,9 @@
 
 #include <tl/expected.hpp>
 
-namespace saucer
+namespace saucer::scheme
 {
-    enum class request_error
+    enum class error
     {
         not_found,
         invalid,
@@ -53,5 +53,5 @@ namespace saucer
         [[nodiscard]] std::map<std::string, std::string> headers() const;
     };
 
-    using scheme_handler = std::move_only_function<tl::expected<response, request_error>(const request &)>;
-} // namespace saucer
+    using handler = std::move_only_function<tl::expected<response, error>(const request &)>;
+} // namespace saucer::scheme

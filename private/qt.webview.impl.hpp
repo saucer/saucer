@@ -39,7 +39,7 @@ namespace saucer
 
       public:
         std::vector<script> permanent_scripts;
-        std::unordered_map<std::string, url_scheme_handler> schemes;
+        std::unordered_map<std::string, scheme::url_scheme_handler> schemes;
 
       public:
         template <web_event>

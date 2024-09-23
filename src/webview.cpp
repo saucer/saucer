@@ -18,7 +18,7 @@ namespace saucer
 
         m_embedded_files.merge(std::move(files));
 
-        auto handler = [this](const auto &request) -> scheme_handler::result_type
+        auto handler = [this](const auto &request) -> scheme::handler::result_type
         {
             static constexpr std::string_view prefix = "/embedded/";
 
@@ -27,19 +27,19 @@ namespace saucer
 
             if (start >= url.size())
             {
-                return tl::unexpected{request_error::invalid};
+                return tl::unexpected{scheme::error::invalid};
             }
 
             const auto file = url.substr(start, url.find_first_of("#?") - start);
 
             if (!m_embedded_files.contains(file))
             {
-                return tl::unexpected{request_error::not_found};
+                return tl::unexpected{scheme::error::not_found};
             }
 
             const auto &data = m_embedded_files.at(file);
 
-            return response{
+            return scheme::response{
                 .data    = data.content,
                 .mime    = data.mime,
                 .headers = {{"Access-Control-Allow-Origin", "*"}},

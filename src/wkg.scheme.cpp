@@ -4,7 +4,7 @@
 
 #include <rebind/enum.hpp>
 
-namespace saucer
+namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(data)) {}
 
@@ -55,9 +55,9 @@ namespace saucer
         return rtn;
     }
 
-    void scheme_state::handle(WebKitURISchemeRequest *request, scheme_state *state)
+    void state::handle(WebKitURISchemeRequest *request, state *state)
     {
-        auto req = saucer::request{{request}};
+        auto req = scheme::request{{request}};
 
         if (!state->handler)
         {
@@ -101,4 +101,4 @@ namespace saucer
 
         webkit_uri_scheme_request_finish_with_response(request, response.get());
     }
-} // namespace saucer
+} // namespace saucer::scheme

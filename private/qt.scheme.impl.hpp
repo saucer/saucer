@@ -5,7 +5,7 @@
 #include <QWebEngineUrlRequestJob>
 #include <QWebEngineUrlSchemeHandler>
 
-namespace saucer
+namespace saucer::scheme
 {
     struct request::impl
     {
@@ -15,12 +15,12 @@ namespace saucer
 
     class url_scheme_handler : public QWebEngineUrlSchemeHandler
     {
-        scheme_handler m_callback;
+        handler m_callback;
 
       public:
-        url_scheme_handler(scheme_handler callback) : m_callback(std::move(callback)) {}
+        url_scheme_handler(handler callback) : m_callback(std::move(callback)) {}
 
       public:
         void requestStarted(QWebEngineUrlRequestJob *) override;
     };
-} // namespace saucer
+} // namespace saucer::scheme
