@@ -14,44 +14,14 @@ constexpr bool flagpp::enabled<saucer::window_edge> = true;
 namespace saucer
 {
     template <>
-    void saucer::webview::impl::setup<web_event::title_changed>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::title_changed>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto *const observer =
-            [[Observer alloc] initWithCallback:[self]()
-                              {
-                                  self->m_events.at<web_event::title_changed>().fire(self->page_title());
-                              }];
-
-        [self->m_impl->web_view addObserver:observer forKeyPath:@"title" options:0 context:nullptr];
-        event.on_clear([observer, self]() { [self->m_impl->web_view removeObserver:observer forKeyPath:@"title"]; });
-    }
-
-    template <>
-    void saucer::webview::impl::setup<web_event::load_finished>(webview *)
+    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::icon_changed>(webview *)
+    void saucer::webview::impl::setup<web_event::navigated>(webview *self)
     {
-    }
-
-    template <>
-    void saucer::webview::impl::setup<web_event::load_started>(webview *)
-    {
-    }
-
-    template <>
-    void saucer::webview::impl::setup<web_event::url_changed>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::url_changed>();
+        auto &event = self->m_events.at<web_event::navigated>();
 
         if (!event.empty())
         {
@@ -60,15 +30,45 @@ namespace saucer
 
         auto *const observer = [[Observer alloc] initWithCallback:[self]()
                                                  {
-                                                     self->m_events.at<web_event::url_changed>().fire(self->url());
+                                                     self->m_events.at<web_event::navigated>().fire(self->url());
                                                  }];
 
-        [self->m_impl->web_view addObserver:observer forKeyPath:@"URL" options:0 context:nullptr];
-        event.on_clear([observer, self]() { [self->m_impl->web_view removeObserver:observer forKeyPath:@"URL"]; });
+        [web_view addObserver:observer forKeyPath:@"URL" options:0 context:nullptr];
+        event.on_clear([this, observer]() { [web_view removeObserver:observer forKeyPath:@"URL"]; });
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
+    void saucer::webview::impl::setup<web_event::navigate>(webview *)
+    {
+        // TODO: Implement Navigate
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::favicon>(webview *)
+    {
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::title>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::title>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto *const observer = [[Observer alloc] initWithCallback:[self]()
+                                                 {
+                                                     self->m_events.at<web_event::title>().fire(self->page_title());
+                                                 }];
+
+        [web_view addObserver:observer forKeyPath:@"title" options:0 context:nullptr];
+        event.on_clear([this, observer]() { [web_view removeObserver:observer forKeyPath:@"title"]; });
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::load>(webview *)
     {
     }
 
@@ -181,7 +181,7 @@ namespace saucer
 
         class_replaceMethod([MessageHandler class], @selector(userContentController:didReceiveScriptMessage:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *view, WKUserContentController *, WKScriptMessage *message)
+                                [](MessageHandler *handler, WKUserContentController *, WKScriptMessage *message)
                                 {
                                     const id body = message.body;
 
@@ -190,22 +190,22 @@ namespace saucer
                                         return;
                                     }
 
-                                    view->m_parent->on_message(static_cast<NSString *>(body).UTF8String);
+                                    handler->m_parent->on_message(static_cast<NSString *>(body).UTF8String);
                                 }),
                             "v@:@");
 
         class_replaceMethod(
             [NavigationDelegate class], @selector(webView:didFinishNavigation:),
-            imp_implementationWithBlock([](MessageHandler *view, WKWebView *, WKNavigation *)
-                                        { view->m_parent->m_events.at<web_event::load_finished>().fire(); }),
+            imp_implementationWithBlock([](MessageHandler *handler, WKWebView *, WKNavigation *)
+                                        { handler->m_parent->m_events.at<web_event::load>().fire(state::finished); }),
             "v@:@");
 
         class_replaceMethod([NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *view, WKWebView *, WKNavigation *)
+                                [](MessageHandler *handler, WKWebView *, WKNavigation *)
                                 {
-                                    view->m_parent->m_impl->dom_loaded = false;
-                                    view->m_parent->m_events.at<web_event::load_started>().fire();
+                                    handler->m_parent->m_impl->dom_loaded = false;
+                                    handler->m_parent->m_events.at<web_event::load>().fire(state::started);
                                 }),
                             "v@:@");
     }

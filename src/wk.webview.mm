@@ -402,7 +402,7 @@ namespace saucer
         [m_impl->web_view evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
     }
 
-    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    void webview::handle_scheme(const std::string &name, scheme::handler handler)
     {
         if (!m_parent->thread_safe())
         {

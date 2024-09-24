@@ -19,7 +19,12 @@ namespace saucer
         [NSApp terminate:nil];
     }
 
-    void application::dispatch(callback_t callback) const // NOLINT(*-static)
+    bool application::thread_safe() const
+    {
+        return m_impl->thread == std::this_thread::get_id();
+    }
+
+    void application::post(callback_t callback) const // NOLINT(*-static)
     {
         auto func = [](callback_t *data)
         {
@@ -29,11 +34,6 @@ namespace saucer
 
         auto *const queue = dispatch_get_main_queue();
         dispatch_async_f(queue, new callback_t{std::move(callback)}, reinterpret_cast<dispatch_function_t>(+func));
-    }
-
-    bool application::thread_safe() const
-    {
-        return m_impl->thread == std::this_thread::get_id();
     }
 
     template <>

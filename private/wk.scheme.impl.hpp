@@ -4,24 +4,24 @@
 
 #import <WebKit/WebKit.h>
 
-namespace saucer
+namespace saucer::scheme
 {
     struct request::impl
     {
-        friend void init_request_objc();
+        friend void init_objc();
 
       public:
         id<WKURLSchemeTask> task;
     };
 
-    void init_request_objc();
-} // namespace saucer
+    void init_objc();
+} // namespace saucer::scheme
 
 @interface SchemeHandler : NSObject <WKURLSchemeHandler>
 {
   @public
-    std::unordered_map<void *, saucer::scheme_handler> m_handlers;
+    std::unordered_map<void *, saucer::scheme::handler> m_handlers;
 }
-- (void)add_handler:(saucer::scheme_handler)handler webview:(WKWebView *)instance;
+- (void)add_handler:(saucer::scheme::handler)handler webview:(WKWebView *)instance;
 - (void)remove_handler:(WKWebView *)instance;
 @end

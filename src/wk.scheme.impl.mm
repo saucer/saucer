@@ -2,7 +2,7 @@
 
 #import <objc/objc-runtime.h>
 
-void saucer::init_request_objc()
+void saucer::scheme::init_objc()
 {
     static bool init = false;
 
@@ -17,7 +17,7 @@ void saucer::init_request_objc()
             [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> urlSchemeTask)
             {
                 auto *identifier = (__bridge void *)instance;
-                auto req         = saucer::request{{urlSchemeTask}};
+                auto req         = scheme::request{{urlSchemeTask}};
 
                 if (!self->m_handlers.contains(identifier))
                 {
@@ -67,9 +67,9 @@ void saucer::init_request_objc()
 }
 
 @implementation SchemeHandler
-- (void)add_handler:(saucer::scheme_handler)handler webview:(WKWebView *)instance
+- (void)add_handler:(saucer::scheme::handler)handler webview:(WKWebView *)instance
 {
-    saucer::init_request_objc();
+    saucer::scheme::init_objc();
 
     auto *id = (__bridge void *)instance;
 
