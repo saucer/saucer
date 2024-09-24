@@ -30,7 +30,7 @@ namespace saucer
 
     application::~application()
     {
-        UnregisterClassW(L"Saucer", m_impl->handle);
+        UnregisterClassW(m_impl->id.c_str(), m_impl->handle);
 
         if (!m_impl->gdi_token)
         {

@@ -1,4 +1,5 @@
 #include "win32.icon.impl.hpp"
+
 #include "win32.utils.hpp"
 
 #include <shlwapi.h>

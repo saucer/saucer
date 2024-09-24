@@ -11,7 +11,6 @@ namespace saucer::scheme
 
     struct request::impl
     {
-        ICoreWebView2WebResourceRequestedEventArgs *args;
         ComPtr<ICoreWebView2WebResourceRequest> request;
         ComPtr<IStream> body;
     };

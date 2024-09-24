@@ -130,7 +130,7 @@ namespace saucer
             return S_OK;
         }
 
-        auto req = saucer::scheme::request{{args, request, body}};
+        auto req = saucer::scheme::request{{request, body}};
 
         auto url = req.url();
         auto end = url.find(':');

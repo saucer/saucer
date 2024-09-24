@@ -1,7 +1,8 @@
 #include "win32.utils.hpp"
 
-#include <fmt/core.h>
 #include <string_view>
+
+#include <fmt/core.h>
 
 namespace saucer
 {

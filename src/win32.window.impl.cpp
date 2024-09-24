@@ -1,4 +1,5 @@
 #include "win32.window.impl.hpp"
+
 #include "win32.app.impl.hpp"
 
 namespace saucer
