@@ -3,7 +3,13 @@
 
 int main()
 {
-    saucer::webview webview;
+    auto app = saucer::application::acquire({
+        .id = "embedding",
+    });
+
+    saucer::webview webview{{
+        .application = app,
+    }};
 
     webview.set_title("Automated Embedding - 還有 Unicode！");
     webview.embed(saucer::embedded::all());
@@ -18,8 +24,9 @@ int main()
 
     webview.serve("src/index.html");
     webview.set_dev_tools(true);
+
     webview.show();
-    webview.run();
+    app->run();
 
     return 0;
 }

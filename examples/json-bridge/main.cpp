@@ -1,24 +1,29 @@
-#include <print>
-#include <thread>
-
 #include <saucer/smartview.hpp>
 #include <saucer/utils/future.hpp>
+
+#include <print>
 
 struct custom_data
 {
     int field;
 };
 
-auto another_func(const custom_data &data)
+auto func2(const custom_data &data)
 {
-    std::println("Called from thread: {}", std::this_thread::get_id());
     return custom_data{data.field * 2};
 }
 
 int main()
 {
     using saucer::then;
-    saucer::smartview webview;
+
+    auto app = saucer::application::acquire({
+        .id = "example",
+    });
+
+    saucer::smartview webview{{
+        .application = app,
+    }};
 
     webview.set_title("Hello World!");
     webview.set_size(500, 600);
@@ -26,13 +31,16 @@ int main()
     webview.set_min_size(400, 500);
     webview.set_max_size(1000, 1200);
 
-    webview.on<saucer::web_event::url_changed>([](const auto &url) { //
+    webview.on<saucer::web_event::navigated>([](const auto &url) { //
         std::println("New url: {}", url);
     });
 
     webview.on<saucer::window_event::resize>([](auto width, auto height) { //
         std::println("Resize {}:{}", width, height);
     });
+
+    webview.expose("func1", [](int param) { return param * 10; });
+    webview.expose("func2", func2, saucer::launch::async);
 
     webview.evaluate<float>("Math.random()") | then([](auto result) { //
         std::println("Random: {}", result);
@@ -42,22 +50,19 @@ int main()
         std::println("Pow(5,2): {}", result);
     });
 
-    webview.expose("some_func", [](int param) { return param * 10; });
+    webview.evaluate<int>("await saucer.call({})", saucer::make_args("func1", std::make_tuple(10))) | then([](auto res) { //
+        std::println("func1: {}", res);
+    });
 
-    webview.evaluate<int>("await window.saucer.call({})", saucer::make_args("some_func", std::make_tuple(10))) |
-        then([](auto result) { std::println("some_func: {}", result); });
-
-    std::println("Main thread: {}", std::this_thread::get_id());
-    webview.expose("another_func", another_func, saucer::launch::async);
-
-    webview.evaluate<custom_data>("await window.saucer.call({}, [{}])", "another_func", custom_data{500}) |
-        then([](auto result) { std::println("another_func: {}", result.field); });
+    webview.evaluate<custom_data>("await saucer.call({}, [{}])", "func2", custom_data{500}) | then([](auto res) { //
+        std::println("func2: {}", res.field);
+    });
 
     webview.set_url("https://github.com/saucer/saucer");
     webview.set_dev_tools(true);
 
     webview.show();
-    webview.run();
+    app->run();
 
     return 0;
 }
