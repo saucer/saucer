@@ -130,7 +130,7 @@ namespace saucer
             return S_OK;
         }
 
-        auto req = saucer::request{{args, request, body}};
+        auto req = saucer::scheme::request{{args, request, body}};
 
         auto url = req.url();
         auto end = url.find(':');
@@ -226,9 +226,14 @@ namespace saucer
     }
 
     template <>
-    void webview::impl::setup<web_event::title_changed>(webview *self)
+    void webview::impl::setup<web_event::dom_ready>(webview *)
     {
-        auto &event = self->m_events.at<web_event::title_changed>();
+    }
+
+    template <>
+    void webview::impl::setup<web_event::navigated>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::navigated>();
 
         if (!event.empty())
         {
@@ -237,69 +242,67 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->m_events.at<web_event::title_changed>().fire(self->page_title());
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &token);
-        event.on_clear([self, token]() { self->m_impl->web_view->remove_DocumentTitleChanged(token); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::load_finished>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::load_finished>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            self->m_events.at<web_event::load_finished>().fire();
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
-        event.on_clear([self, token]() { self->m_impl->web_view->remove_NavigationCompleted(token); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::icon_changed>(webview *)
-    {
-    }
-
-    template <>
-    void webview::impl::setup<web_event::load_started>(webview *)
-    {
-    }
-
-    template <>
-    void webview::impl::setup<web_event::url_changed>(webview *self)
-    {
-        auto &event = self->m_events.at<web_event::url_changed>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            self->m_events.at<web_event::url_changed>().fire(self->url());
+            self->m_events.at<web_event::navigated>().fire(self->url());
             return S_OK;
         };
 
         EventRegistrationToken token;
         web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
-        event.on_clear([self, token]() { self->m_impl->web_view->remove_SourceChanged(token); });
+
+        event.on_clear([this, token]() { web_view->remove_SourceChanged(token); });
     }
 
     template <>
-    void webview::impl::setup<web_event::dom_ready>(webview *)
+    void webview::impl::setup<web_event::navigate>(webview *)
     {
+    }
+
+    template <>
+    void webview::impl::setup<web_event::favicon>(webview *)
+    {
+    }
+
+    template <>
+    void webview::impl::setup<web_event::title>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::title>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            self->m_events.at<web_event::title>().fire(self->page_title());
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &token);
+
+        event.on_clear([this, token]() { web_view->remove_DocumentTitleChanged(token); });
+    }
+
+    template <>
+    void webview::impl::setup<web_event::load>(webview *self)
+    {
+        auto &event = self->m_events.at<web_event::load>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            self->m_events.at<web_event::load>().fire(state::finished);
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
+
+        event.on_clear([this, token]() { web_view->remove_NavigationCompleted(token); });
     }
 } // namespace saucer

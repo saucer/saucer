@@ -2,7 +2,7 @@
 
 #include "win32.utils.hpp"
 
-namespace saucer
+namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
@@ -68,4 +68,4 @@ namespace saucer
 
         return rtn;
     }
-} // namespace saucer
+} // namespace saucer::scheme

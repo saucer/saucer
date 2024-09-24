@@ -5,7 +5,7 @@
 #include <wrl.h>
 #include <WebView2.h>
 
-namespace saucer
+namespace saucer::scheme
 {
     using Microsoft::WRL::ComPtr;
 
@@ -15,4 +15,4 @@ namespace saucer
         ComPtr<ICoreWebView2WebResourceRequest> request;
         ComPtr<IStream> body;
     };
-} // namespace saucer
+} // namespace saucer::scheme

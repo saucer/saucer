@@ -8,6 +8,7 @@
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 #include "win32.window.impl.hpp"
+#include "wv2.navigation.impl.hpp"
 
 #include <ranges>
 #include <cassert>
@@ -70,15 +71,35 @@ namespace saucer
 
         m_impl->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(receive_message).Get(), nullptr);
 
-        auto navigation_start = [this](auto...)
+        auto navigations = [this]<typename T>(ICoreWebView2 *, T *req)
         {
-            m_impl->dom_loaded = false;
-            m_events.at<web_event::load_started>().fire();
+            static constexpr auto is_navigation = std::is_same_v<T, ICoreWebView2NavigationStartingEventArgs>;
+
+            if constexpr (is_navigation)
+            {
+                m_impl->dom_loaded = false;
+                m_events.at<web_event::load>().fire(state::started);
+            }
+            else
+            {
+                req->put_Handled(true);
+            }
+
+            auto request = navigation{{req}};
+
+            if (m_events.at<web_event::navigate>().until(true, request))
+            {
+                if constexpr (is_navigation)
+                {
+                    req->put_Cancel(true);
+                }
+            }
 
             return S_OK;
         };
 
-        m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigation_start).Get(), nullptr);
+        m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(navigations).Get(), nullptr);
+        m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigations).Get(), nullptr);
 
         if (ComPtr<ICoreWebView2_2> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
         {
@@ -115,7 +136,7 @@ namespace saucer
             auto icon_received = [this](auto, auto *stream)
             {
                 m_impl->favicon = icon{{std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream))}};
-                m_events.at<web_event::icon_changed>().fire(m_impl->favicon);
+                m_events.at<web_event::favicon>().fire(m_impl->favicon);
 
                 return S_OK;
             };
@@ -128,17 +149,6 @@ namespace saucer
 
             webview->add_FaviconChanged(Callback<FaviconChanged>(icon_changed).Get(), nullptr);
         }
-
-        // Ensure consistent behavior with other platforms.
-        // TODO: Window-Request Event.
-
-        auto window_request = [](auto, auto *args)
-        {
-            args->put_Handled(true);
-            return S_OK;
-        };
-
-        m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(window_request).Get(), nullptr);
 
         set_dev_tools(false);
 
@@ -493,7 +503,7 @@ namespace saucer
         m_impl->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
     }
 
-    void webview::handle_scheme(const std::string &name, scheme_handler handler)
+    void webview::handle_scheme(const std::string &name, scheme::handler handler)
     {
         if (!m_parent->thread_safe())
         {
