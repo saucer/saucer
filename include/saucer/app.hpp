@@ -25,9 +25,6 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       private:
-        void dispatch(callback_t) const;
-
-      private:
         application(const options &);
 
       public:
@@ -36,6 +33,9 @@ namespace saucer
       public:
         [[nodiscard]] impl *native() const;
         [[nodiscard]] bool thread_safe() const;
+
+      public:
+        void post(callback_t) const;
 
       public:
         template <typename Callback>

@@ -12,10 +12,7 @@ namespace saucer
         auto task = poolparty::packaged_task{std::forward<Callback>(callback)};
         auto rtn  = task.get_future();
 
-        dispatch(callback_t{[task = std::move(task)]() mutable
-                            {
-                                std::invoke(task);
-                            }});
+        post([task = std::move(task)]() mutable { std::invoke(task); });
 
         return rtn;
     }

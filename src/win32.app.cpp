@@ -40,15 +40,15 @@ namespace saucer
         Gdiplus::GdiplusShutdown(m_impl->gdi_token);
     }
 
-    void application::dispatch(callback_t callback) const
-    {
-        auto *message = new safe_message{std::move(callback)};
-        PostThreadMessageW(m_impl->thread, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
-    }
-
     bool application::thread_safe() const
     {
         return m_impl->thread == GetCurrentThreadId();
+    }
+
+    void application::post(callback_t callback) const
+    {
+        auto *message = new safe_message{std::move(callback)};
+        PostThreadMessageW(m_impl->thread, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
     }
 
     template <>
