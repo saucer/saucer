@@ -60,46 +60,56 @@ namespace saucer
 
         auto receive_message = [this](auto, auto *args)
         {
-            LPWSTR message{};
-            args->TryGetWebMessageAsString(&message);
+            LPWSTR raw{};
+            args->TryGetWebMessageAsString(&raw);
 
-            on_message(utils::narrow(message));
-            CoTaskMemFree(message);
+            std::wstring message{raw};
+            CoTaskMemFree(raw);
+
+            m_parent->post([this, message = std::move(message)]() { on_message(utils::narrow(message)); });
 
             return S_OK;
         };
 
         m_impl->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(receive_message).Get(), nullptr);
 
-        auto navigations = [this]<typename T>(ICoreWebView2 *, T *req)
+        auto new_window = [this](auto, ICoreWebView2NewWindowRequestedEventArgs *args)
         {
-            static constexpr auto is_navigation = std::is_same_v<T, ICoreWebView2NavigationStartingEventArgs>;
+            args->put_Handled(true);
 
-            if constexpr (is_navigation)
-            {
-                m_impl->dom_loaded = false;
-                m_events.at<web_event::load>().fire(state::started);
-            }
-            else
-            {
-                req->put_Handled(true);
-            }
+            ComPtr<ICoreWebView2Deferral> deferral;
+            args->GetDeferral(&deferral);
 
-            auto request = navigation{{req}};
+            auto func = [this, args, deferral]()
+            {
+                auto request = navigation{{args}};
+                m_events.at<web_event::navigate>().until(true, request);
+                deferral->Complete();
+            };
+
+            m_parent->post(func);
+
+            return S_OK;
+        };
+
+        m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(new_window).Get(), nullptr);
+
+        auto navigation_starting = [this](auto, ICoreWebView2NavigationStartingEventArgs *args)
+        {
+            m_impl->dom_loaded = false;
+            m_events.at<web_event::load>().fire(state::started);
+
+            auto request = navigation{{args}};
 
             if (m_events.at<web_event::navigate>().until(true, request))
             {
-                if constexpr (is_navigation)
-                {
-                    req->put_Cancel(true);
-                }
+                args->put_Cancel(true);
             }
 
             return S_OK;
         };
 
-        m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(navigations).Get(), nullptr);
-        m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigations).Get(), nullptr);
+        m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigation_starting).Get(), nullptr);
 
         if (ComPtr<ICoreWebView2_2> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
         {
