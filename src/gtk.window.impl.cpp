@@ -131,12 +131,13 @@ namespace saucer
                 return true;
             }
 
+            auto parent      = self->m_parent;
+            auto *identifier = self->m_impl->window;
+
             self->m_events.at<window_event::closed>().fire();
 
-            auto &parent    = self->m_parent;
-            auto &instances = parent->native()->instances;
-
-            instances[self->m_impl->window] = false;
+            auto &instances       = parent->native()->instances;
+            instances[identifier] = false;
 
             if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
             {
