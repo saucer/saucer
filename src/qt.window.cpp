@@ -30,7 +30,11 @@ namespace saucer
         m_impl->set_alpha(255);
     }
 
-    window::~window() = default;
+    window::~window()
+    {
+        m_impl->window->disconnect();
+        m_impl->window->close();
+    }
 
     bool window::focused() const
     {

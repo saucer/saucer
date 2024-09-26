@@ -87,7 +87,13 @@ namespace saucer
         m_impl->web_view->show();
     }
 
-    webview::~webview() = default;
+    webview::~webview()
+    {
+        std::invoke(window::m_impl->on_closed);
+        window::m_impl->on_closed = {};
+
+        m_impl->web_view->disconnect();
+    }
 
     bool webview::on_message(const std::string &message)
     {
