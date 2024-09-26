@@ -1,7 +1,5 @@
 #include "gtk.app.impl.hpp"
 
-#include <ranges>
-
 namespace saucer
 {
     template void application::run<true>() const;
@@ -9,12 +7,12 @@ namespace saucer
 
     application::application(const options &options) : m_impl(std::make_unique<impl>())
     {
-        const auto id = options.id.value() |
-                        std::views::transform([](const char c) { return std::isalpha(c) ? std::tolower(c) : '_'; }) |
-                        std::ranges::to<std::string>();
+        const auto id = g_application_id_is_valid(options.id.value().c_str())
+                            ? options.id.value()
+                            : std::format("app.saucer.{}", impl::fix_id(options.id.value()));
 
         m_impl->thread      = std::this_thread::get_id();
-        m_impl->application = adw_application_new(std::format("app.saucer.{}", id).c_str(), G_APPLICATION_DEFAULT_FLAGS);
+        m_impl->application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
 
         auto callback = [](GtkApplication *, application *self)
         {
