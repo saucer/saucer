@@ -162,6 +162,11 @@ namespace saucer
 
         set_dev_tools(false);
 
+        if (ComPtr<ICoreWebView2Settings2> settings; !prefs.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
+        {
+            settings->put_UserAgent(utils::widen(prefs.user_agent).c_str());
+        }
+
         if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
         {
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
@@ -577,8 +582,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable
-                            { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
