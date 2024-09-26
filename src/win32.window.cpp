@@ -43,6 +43,8 @@ namespace saucer
 
     window::~window()
     {
+        m_parent->native()->instances.erase(m_impl->hwnd);
+
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, 0);
         DestroyWindow(m_impl->hwnd);
     }

@@ -96,12 +96,12 @@ namespace saucer
                 return 0;
             }
 
+            auto parent = window->m_parent;
+
             window->hide();
             window->m_events.at<window_event::closed>().fire();
 
-            auto &parent    = window->m_parent;
             auto &instances = parent->native()->instances;
-
             instances[hwnd] = false;
 
             if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
