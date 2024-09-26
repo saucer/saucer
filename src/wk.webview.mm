@@ -32,7 +32,7 @@ namespace saucer
         {
             // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            auto id = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
+            auto id          = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
             auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
             unsigned char hash[32] = "";
@@ -63,6 +63,11 @@ namespace saucer
         m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
 
         [m_impl->web_view setNavigationDelegate:m_impl->delegate];
+
+        if (!prefs.user_agent.empty())
+        {
+            m_impl->web_view.customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
+        }
 
         [window::m_impl->window setContentView:m_impl->web_view];
         m_impl->appearance = window::m_impl->window.appearance;
@@ -276,7 +281,7 @@ namespace saucer
         using func_t = void (*)(id, SEL, BOOL);
 
         static auto *const selector = @selector(_setDrawsBackground:);
-        static auto draw_bg = reinterpret_cast<func_t>(class_getMethodImplementation([WKWebView class], selector));
+        static auto draw_bg         = reinterpret_cast<func_t>(class_getMethodImplementation([WKWebView class], selector));
 
         if (!draw_bg)
         {
@@ -366,10 +371,9 @@ namespace saucer
                                                                   : WKUserScriptInjectionTimeAtDocumentEnd;
         const auto main_only = static_cast<BOOL>(script.frame == web_frame::top);
 
-        auto *const user_script =
-            [[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
-                                   injectionTime:time
-                                forMainFrameOnly:main_only];
+        auto *const user_script = [[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
+                                                         injectionTime:time
+                                                      forMainFrameOnly:main_only];
 
         [m_impl->controller addUserScript:user_script];
 
@@ -453,7 +457,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable
+            return dispatch([this, callback = std::move(callback)]() mutable //
                             { return once<Event>(std::move(callback)); });
         }
 

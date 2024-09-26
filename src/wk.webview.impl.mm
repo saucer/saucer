@@ -1,12 +1,14 @@
 #include "wk.webview.impl.hpp"
 
 #include "scripts.hpp"
-#include "cocoa.window.impl.hpp"
 
-#import <objc/objc-runtime.h>
+#include "cocoa.window.impl.hpp"
+#include "wk.navigation.impl.hpp"
 
 #include <fmt/core.h>
 #include <flagpp/flags.hpp>
+
+#import <objc/objc-runtime.h>
 
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;
@@ -40,7 +42,6 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::navigate>(webview *)
     {
-        // TODO: Implement Navigate
     }
 
     template <>
@@ -194,6 +195,22 @@ namespace saucer
                                 }),
                             "v@:@");
 
+        class_replaceMethod([NavigationDelegate class], @selector(webView:decidePolicyForNavigationAction:decisionHandler:),
+                            imp_implementationWithBlock(
+                                [](MessageHandler *handler, WKWebView *, WKNavigationAction *action,
+                                   void (^decision)(WKNavigationActionPolicy))
+                                {
+                                    auto request = navigation{{action}};
+
+                                    if (handler->m_parent->m_events.at<web_event::navigate>().until(true, request))
+                                    {
+                                        return decision(WKNavigationActionPolicyCancel);
+                                    }
+
+                                    decision(WKNavigationActionPolicyAllow);
+                                }),
+                            "v@:@");
+
         class_replaceMethod(
             [NavigationDelegate class], @selector(webView:didFinishNavigation:),
             imp_implementationWithBlock([](MessageHandler *handler, WKWebView *, WKNavigation *)
@@ -243,10 +260,9 @@ namespace saucer
 
             NSError *error{};
 
-            NSDictionary *const dict =
-                [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
-                                                options:0
-                                                  error:&error];
+            NSDictionary *const dict = [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
+                                                                       options:0
+                                                                         error:&error];
 
             if (error)
             {
