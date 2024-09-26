@@ -16,7 +16,6 @@ namespace saucer
     application::~application()
     {
         m_impl->application = nil;
-        [NSApp terminate:nil];
     }
 
     bool application::thread_safe() const
