@@ -62,12 +62,12 @@ namespace saucer
             return;
         }
 
-        m_parent->m_events.at<window_event::closed>().fire();
-
         if (m_parent->m_impl->on_closed)
         {
             std::invoke(m_parent->m_impl->on_closed);
         }
+
+        m_parent->m_events.at<window_event::closed>().fire();
 
         QMainWindow::closeEvent(event);
     }
