@@ -50,6 +50,7 @@ namespace saucer
 
       public:
         fs::path storage_path;
+        std::string user_agent;
         std::set<std::string> browser_flags;
 
       public:
