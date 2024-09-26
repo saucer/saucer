@@ -16,8 +16,8 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, []() { impl::init_objc(); });
 
-        static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable |
-                                     NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
+        static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled |
+                                     NSWindowStyleMaskResizable;
 
         m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                      styleMask:mask
@@ -32,6 +32,9 @@ namespace saucer
 
     window::~window()
     {
+        auto *const identifier = (__bridge void *)m_impl->window;
+        m_parent->native()->instances.erase(identifier);
+
         m_impl->delegate = nil;
         m_impl->window   = nil;
     }
@@ -160,7 +163,7 @@ namespace saucer
         }
 
         auto *const identifier                    = (__bridge void *)m_impl->window;
-        m_parent->native()->instances[identifier] = false;
+        m_parent->native()->instances[identifier] = true;
 
         [m_impl->window makeKeyAndOrderFront:nil];
     }
@@ -361,8 +364,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable
-                            { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

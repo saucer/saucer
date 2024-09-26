@@ -54,14 +54,14 @@ namespace saucer
                                         return false;
                                     }
 
+                                    auto parent            = self->m_parent;
+                                    auto *const identifier = (__bridge void *)self->m_impl->window;
+
                                     self->hide();
                                     self->m_events.at<window_event::closed>().fire();
 
-                                    auto &parent    = self->m_parent;
-                                    auto &instances = parent->native()->instances;
-
-                                    auto *const identifier = (__bridge void *)self->m_impl->window;
-                                    instances[identifier]  = false;
+                                    auto &instances       = parent->native()->instances;
+                                    instances[identifier] = false;
 
                                     if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
                                     {
@@ -83,11 +83,10 @@ namespace saucer
             return;
         }
 
-        auto *const observer =
-            [[Observer alloc] initWithCallback:[self]()
-                              {
-                                  self->m_events.at<window_event::decorated>().fire(self->decorations());
-                              }];
+        auto *const observer = [[Observer alloc] initWithCallback:[self]()
+                                                 {
+                                                     self->m_events.at<window_event::decorated>().fire(self->decorations());
+                                                 }];
 
         [self->m_impl->window addObserver:observer forKeyPath:@"styleMask" options:0 context:nullptr];
         event.on_clear([observer, self]() { [self->m_impl->window removeObserver:observer forKeyPath:@"styleMask"]; });
@@ -103,11 +102,10 @@ namespace saucer
             return;
         }
 
-        auto *const observer =
-            [[Observer alloc] initWithCallback:[self]()
-                              {
-                                  self->m_events.at<window_event::maximize>().fire(self->maximized());
-                              }];
+        auto *const observer = [[Observer alloc] initWithCallback:[self]()
+                                                 {
+                                                     self->m_events.at<window_event::maximize>().fire(self->maximized());
+                                                 }];
 
         [self->m_impl->window addObserver:observer forKeyPath:@"isZoomed" options:0 context:nullptr];
         event.on_clear([observer, self]() { [self->m_impl->window removeObserver:observer forKeyPath:@"isZoomed"]; });
