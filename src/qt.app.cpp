@@ -24,15 +24,15 @@ namespace saucer
 
     application::~application() = default;
 
-    void application::dispatch(callback_t callback) const
-    {
-        auto *const event = new safe_event{std::move(callback)};
-        QApplication::postEvent(m_impl->application.get(), event);
-    }
-
     bool application::thread_safe() const
     {
         return m_impl->application->thread() == QThread::currentThread();
+    }
+
+    void application::post(callback_t callback) const
+    {
+        auto *const event = new safe_event{std::move(callback)};
+        QApplication::postEvent(m_impl->application.get(), event);
     }
 
     template <>

@@ -34,7 +34,12 @@ namespace saucer
         fut.get();
     }
 
-    void application::dispatch(callback_t callback) const // NOLINT(*-static)
+    bool application::thread_safe() const
+    {
+        return m_impl->thread == std::this_thread::get_id();
+    }
+
+    void application::post(callback_t callback) const // NOLINT(*-static)
     {
         auto once = [](callback_t *data)
         {
@@ -43,11 +48,6 @@ namespace saucer
         };
 
         g_idle_add_once(reinterpret_cast<GSourceOnceFunc>(+once), new callback_t{std::move(callback)});
-    }
-
-    bool application::thread_safe() const
-    {
-        return m_impl->thread == std::this_thread::get_id();
     }
 
     template <bool Blocking>

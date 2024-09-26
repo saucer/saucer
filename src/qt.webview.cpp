@@ -40,6 +40,11 @@ namespace saucer
 
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
+        if (!prefs.user_agent.empty())
+        {
+            m_impl->profile->setHttpUserAgent(QString::fromStdString(prefs.user_agent));
+        }
+
         if (!prefs.storage_path.empty())
         {
             const auto path = QString::fromStdString(prefs.storage_path.string());

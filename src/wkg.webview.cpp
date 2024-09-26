@@ -21,6 +21,11 @@ namespace saucer
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
+        if (!prefs.user_agent.empty())
+        {
+            webkit_settings_set_user_agent(m_impl->settings.get(), prefs.user_agent.c_str());
+        }
+
         if (prefs.persistent_cookies)
         {
             auto *const manager = webkit_network_session_get_cookie_manager(session);
