@@ -197,12 +197,12 @@ namespace saucer
 
         class_replaceMethod([NavigationDelegate class], @selector(webView:decidePolicyForNavigationAction:decisionHandler:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *handler, WKWebView *, WKNavigationAction *action,
+                                [](NavigationDelegate *delegate, WKWebView *, WKNavigationAction *action,
                                    void (^decision)(WKNavigationActionPolicy))
                                 {
                                     auto request = navigation{{action}};
 
-                                    if (handler->m_parent->m_events.at<web_event::navigate>().until(true, request))
+                                    if (delegate->m_parent->m_events.at<web_event::navigate>().until(true, request))
                                     {
                                         return decision(WKNavigationActionPolicyCancel);
                                     }
@@ -213,16 +213,16 @@ namespace saucer
 
         class_replaceMethod(
             [NavigationDelegate class], @selector(webView:didFinishNavigation:),
-            imp_implementationWithBlock([](MessageHandler *handler, WKWebView *, WKNavigation *)
-                                        { handler->m_parent->m_events.at<web_event::load>().fire(state::finished); }),
+            imp_implementationWithBlock([](NavigationDelegate *delegate, WKWebView *, WKNavigation *)
+                                        { delegate->m_parent->m_events.at<web_event::load>().fire(state::finished); }),
             "v@:@");
 
         class_replaceMethod([NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *handler, WKWebView *, WKNavigation *)
+                                [](NavigationDelegate *delegate, WKWebView *, WKNavigation *)
                                 {
-                                    handler->m_parent->m_impl->dom_loaded = false;
-                                    handler->m_parent->m_events.at<web_event::load>().fire(state::started);
+                                    delegate->m_parent->m_impl->dom_loaded = false;
+                                    delegate->m_parent->m_events.at<web_event::load>().fire(state::started);
                                 }),
                             "v@:@");
     }
@@ -347,7 +347,7 @@ namespace saucer
 {
     [super willOpenMenu:menu withEvent:event];
 
-    if (m_parent->context_menu())
+    if (!m_parent || m_parent->context_menu())
     {
         return;
     }

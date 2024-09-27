@@ -6,6 +6,7 @@
 #include "cocoa.icon.impl.hpp"
 
 #include <cassert>
+#include <rebind/enum.hpp>
 
 namespace saucer
 {
@@ -32,8 +33,12 @@ namespace saucer
 
     window::~window()
     {
-        auto *const identifier = (__bridge void *)m_impl->window;
-        m_parent->native()->instances.erase(identifier);
+        for (const auto &event : rebind::enum_fields<window_event>)
+        {
+            m_events.clear(event.value);
+        }
+
+        close();
 
         m_impl->delegate = nil;
         m_impl->window   = nil;
@@ -173,6 +178,11 @@ namespace saucer
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return close(); });
+        }
+
+        if (![m_impl->delegate windowShouldClose:m_impl->window])
+        {
+            return;
         }
 
         [m_impl->window close];

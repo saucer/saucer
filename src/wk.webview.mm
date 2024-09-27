@@ -5,11 +5,12 @@
 #include "requests.hpp"
 #include "instantiate.hpp"
 
+#include <fmt/core.h>
+#include <rebind/enum.hpp>
+
 #import <objc/objc-runtime.h>
 #import <CoreImage/CoreImage.h>
 #import <CommonCrypto/CommonCrypto.h>
-
-#include <fmt/core.h>
 
 namespace saucer
 {
@@ -83,8 +84,19 @@ namespace saucer
 
     webview::~webview()
     {
+        for (const auto &event : rebind::enum_fields<web_event>)
+        {
+            m_events.clear(event.value);
+        }
+
+        std::invoke(window::m_impl->on_closed);
+        window::m_impl->on_closed = {};
+
         [m_impl->controller removeAllScriptMessageHandlers];
         [m_impl->controller removeAllUserScripts];
+
+        [m_impl->web_view setNavigationDelegate:nil];
+        [window::m_impl->window setContentView:nil];
 
         m_impl->delegate = nil;
         m_impl->web_view = nil;

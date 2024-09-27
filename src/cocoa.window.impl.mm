@@ -48,6 +48,7 @@ namespace saucer
                                 [](WindowDelegate *delegate, NSNotification *)
                                 {
                                     auto *self = delegate->m_parent;
+                                    auto &impl = self->m_impl;
 
                                     if (self->m_events.at<window_event::close>().until(true))
                                     {
@@ -57,11 +58,16 @@ namespace saucer
                                     auto parent            = self->m_parent;
                                     auto *const identifier = (__bridge void *)self->m_impl->window;
 
+                                    if (impl->on_closed)
+                                    {
+                                        std::invoke(impl->on_closed);
+                                    }
+
                                     self->hide();
                                     self->m_events.at<window_event::closed>().fire();
 
-                                    auto &instances       = parent->native()->instances;
-                                    instances[identifier] = false;
+                                    auto &instances = parent->native()->instances;
+                                    instances.erase(identifier);
 
                                     if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
                                     {
