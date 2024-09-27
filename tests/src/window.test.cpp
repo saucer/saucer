@@ -97,11 +97,11 @@ suite<"window"> window_suite = []()
         std::pair<int, int> size;
         window->on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
 
-        window->set_size(1000, 1001);
-        wait_for([&]() { return size.first == 1000 && size.second == 1001; });
+        window->set_size(300, 400);
+        wait_for([&]() { return size.first == 300 && size.second == 400; });
 
         auto [width, height] = window->size();
-        expect(width == 1000 && height == 1001) << width << ":" << height;
+        expect(width == 300 && height == 400) << width << ":" << height;
 
         auto [last_width, last_height] = size;
         expect(width == last_width && height == last_height) << last_width << ":" << last_height;
@@ -110,18 +110,18 @@ suite<"window"> window_suite = []()
 #ifndef SAUCER_WEBKITGTK
     "max_size"_test_both = [](const auto &window)
     {
-        window->set_max_size(10, 20);
+        window->set_max_size(200, 300);
 
         auto [width, height] = window->max_size();
-        expect(width == 10 && height == 20) << width << ":" << height;
+        expect(width == 200 && height == 300) << width << ":" << height;
     };
 #endif
 
     "min_size"_test_both = [](const auto &window)
     {
-        window->set_min_size(10, 20);
+        window->set_min_size(200, 300);
 
         auto [width, height] = window->min_size();
-        expect(width == 10 && height == 20) << width << ":" << height;
+        expect(width == 200 && height == 300) << width << ":" << height;
     };
 };

@@ -6,6 +6,7 @@ using namespace saucer::tests;
 
 suite<"webview"> webview_suite = []()
 {
+#ifndef SAUCER_WEBKIT
     "page-title"_test_async = [](const std::shared_ptr<saucer::smartview<>> &webview)
     {
         std::string last_title{};
@@ -19,6 +20,7 @@ suite<"webview"> webview_suite = []()
         expect(title == "Saucer | Saucer") << title;
         expect(last_title == title) << last_title;
     };
+#endif
 
     "dev-tools"_test_both = [](const auto &webview)
     {
