@@ -42,7 +42,7 @@ namespace saucer
 
     struct preferences
     {
-        required<std::shared_ptr<application>> application;
+        required<std::shared_ptr<saucer::application>> application;
 
       public:
         bool persistent_cookies{true};

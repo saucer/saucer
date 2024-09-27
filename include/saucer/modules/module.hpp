@@ -11,8 +11,8 @@ namespace saucer
 
     struct natives
     {
-        window::impl *window;
-        webview::impl *webview;
+        saucer::window::impl *window;
+        saucer::webview::impl *webview;
     };
 
     template <typename T>
