@@ -98,7 +98,7 @@ suite<"window"> window_suite = []()
         window->on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
 
         window->set_size(1000, 1001);
-        wait_for([&size]() { return size.first == 1000 && size.second == 1001; });
+        wait_for([&]() { return size.first == 1000 && size.second == 1001; });
 
         auto [width, height] = window->size();
         expect(width == 1000 && height == 1001) << width << ":" << height;

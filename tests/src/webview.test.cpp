@@ -12,7 +12,7 @@ suite<"webview"> webview_suite = []()
         webview->on<saucer::web_event::title>([&last_title](const auto &title) { last_title = title; });
 
         webview->set_url("https://saucer.github.io");
-        wait_for([&last_title]() { return !last_title.empty(); });
+        wait_for([&]() { return !last_title.empty(); });
 
         auto title = webview->page_title();
 
@@ -43,14 +43,14 @@ suite<"webview"> webview_suite = []()
         webview->on<saucer::web_event::load>([&states](const auto &state) { states.emplace_back(state); });
 
         webview->set_url("https://github.com/saucer/saucer");
-        wait_for([&last_url]() { return !last_url.empty(); });
+        wait_for([&]() { return !last_url.empty(); });
 
         auto url = webview->url();
 
         expect(url.contains("github.com/saucer/saucer")) << url;
         expect(last_url == url) << last_url;
 
-        wait_for([&states]() { return states.size() >= 2; });
+        wait_for([&]() { return states.size() >= 2 && dom_ready; });
         expect(dom_ready);
 
         expect(states[0] == saucer::state::started);
@@ -220,10 +220,10 @@ suite<"webview"> webview_suite = []()
 
     "execute"_test_async = [](const auto &webview)
     {
-        webview->set_url("https://google.com");
+        webview->set_url("https://cppreference.com");
         webview->execute("location.href = 'https://github.com'");
 
-        wait_for([&webview]() { return webview->url().contains("github"); });
+        wait_for([&]() { return webview->url().contains("github"); });
         expect(webview->url().contains("github")) << webview->url();
     };
 
