@@ -125,6 +125,12 @@ namespace saucer
 
     webview::~webview()
     {
+        for (const auto &[name, _] : impl::schemes)
+        {
+            remove_scheme(name);
+        }
+
+        gtk_box_remove(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
         g_signal_handler_disconnect(m_impl->manager, m_impl->message_received);
     }
 

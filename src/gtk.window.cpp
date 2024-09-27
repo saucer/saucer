@@ -4,6 +4,7 @@
 #include "gtk.app.impl.hpp"
 
 #include <fmt/core.h>
+#include <rebind/enum.hpp>
 #include <flagpp/flags.hpp>
 
 #include <cassert>
@@ -46,7 +47,10 @@ namespace saucer
 
     window::~window()
     {
-        m_parent->native()->instances.erase(m_impl->window);
+        for (const auto &event : rebind::enum_fields<window_event>)
+        {
+            m_events.clear(event.value);
+        }
 
         gtk_window_close(GTK_WINDOW(m_impl->window));
         gtk_window_destroy(GTK_WINDOW(m_impl->window));

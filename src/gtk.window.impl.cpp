@@ -56,8 +56,15 @@ namespace saucer
             self->m_events.at<window_event::resize>().fire(width, height);
         };
 
-        g_signal_connect(self->m_impl->window, "notify::default-width", G_CALLBACK(+callback), self);
-        g_signal_connect(self->m_impl->window, "notify::default-height", G_CALLBACK(+callback), self);
+        const auto width  = g_signal_connect(window, "notify::default-width", G_CALLBACK(+callback), self);
+        const auto height = g_signal_connect(window, "notify::default-height", G_CALLBACK(+callback), self);
+
+        event.on_clear(
+            [this, width, height]()
+            {
+                g_signal_handler_disconnect(window, width);
+                g_signal_handler_disconnect(window, height);
+            });
     }
 
     template <>
@@ -75,7 +82,8 @@ namespace saucer
             self->m_events.at<window_event::maximize>().fire(self->maximized());
         };
 
-        g_signal_connect(self->m_impl->window, "notify::maximized", G_CALLBACK(+callback), self);
+        const auto id = g_signal_connect(window, "notify::maximized", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(window, id); });
     }
 
     template <>
@@ -98,7 +106,8 @@ namespace saucer
             self->m_events.at<window_event::focus>().fire(self->focused());
         };
 
-        g_signal_connect(self->m_impl->window, "notify::is-active", G_CALLBACK(+callback), self);
+        const auto id = g_signal_connect(window, "notify::is-active", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(window, id); });
     }
 
     template <>
@@ -136,8 +145,8 @@ namespace saucer
 
             self->m_events.at<window_event::closed>().fire();
 
-            auto &instances       = parent->native()->instances;
-            instances[identifier] = false;
+            auto &instances = parent->native()->instances;
+            instances.erase(identifier);
 
             if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
             {

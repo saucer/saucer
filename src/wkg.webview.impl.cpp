@@ -57,8 +57,8 @@ namespace saucer
             return false;
         };
 
-        const auto id = g_signal_connect(self->m_impl->web_view, "decide-policy", G_CALLBACK(+callback), self);
-        event.on_clear([self, id]() { g_signal_handler_disconnect(self->m_impl->web_view, id); });
+        const auto id = g_signal_connect(web_view, "decide-policy", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(web_view, id); });
     }
 
     template <>
@@ -76,7 +76,8 @@ namespace saucer
             self->m_events.at<web_event::favicon>().fire(self->favicon());
         };
 
-        g_signal_connect(self->m_impl->web_view, "notify::favicon", G_CALLBACK(+callback), self);
+        const auto id = g_signal_connect(web_view, "notify::favicon", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(web_view, id); });
     }
 
     template <>
@@ -94,7 +95,8 @@ namespace saucer
             self->m_events.at<web_event::title>().fire(self->page_title());
         };
 
-        g_signal_connect(self->m_impl->web_view, "notify::title", G_CALLBACK(+callback), self);
+        const auto id = g_signal_connect(web_view, "notify::title", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(web_view, id); });
     }
 
     template <>
