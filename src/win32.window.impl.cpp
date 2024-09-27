@@ -102,7 +102,7 @@ namespace saucer
             window->m_events.at<window_event::closed>().fire();
 
             auto &instances = parent->native()->instances;
-            instances[hwnd] = false;
+            instances.erase(hwnd);
 
             if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
             {

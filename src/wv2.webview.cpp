@@ -175,7 +175,10 @@ namespace saucer
         inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
     }
 
-    webview::~webview() = default;
+    webview::~webview()
+    {
+        std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd, m_impl->o_wnd_proc);
+    }
 
     bool webview::on_message(const std::string &message)
     {

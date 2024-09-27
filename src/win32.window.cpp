@@ -43,7 +43,7 @@ namespace saucer
 
     window::~window()
     {
-        m_parent->native()->instances.erase(m_impl->hwnd);
+        close();
 
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, 0);
         DestroyWindow(m_impl->hwnd);
@@ -196,7 +196,7 @@ namespace saucer
             return dispatch([this]() { close(); });
         }
 
-        PostMessage(m_impl->hwnd, WM_CLOSE, 0, 0);
+        SendMessage(m_impl->hwnd, WM_CLOSE, 0, 0);
     }
 
     void window::focus()
@@ -220,7 +220,7 @@ namespace saucer
         }
 
         ReleaseCapture();
-        PostMessage(m_impl->hwnd, WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
+        SendMessage(m_impl->hwnd, WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
     }
 
     void window::start_resize(saucer::window_edge edge)
@@ -266,7 +266,7 @@ namespace saucer
         }
 
         ReleaseCapture();
-        PostMessage(m_impl->hwnd, WM_SYSCOMMAND, translated, 0);
+        SendMessage(m_impl->hwnd, WM_SYSCOMMAND, translated, 0);
     }
 
     void window::set_minimized(bool enabled)
