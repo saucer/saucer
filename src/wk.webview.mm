@@ -84,6 +84,11 @@ namespace saucer
 
     webview::~webview()
     {
+        for (const auto &[name, _] : impl::schemes)
+        {
+            remove_scheme(name);
+        }
+
         for (const auto &event : rebind::enum_fields<web_event>)
         {
             m_events.clear(event.value);

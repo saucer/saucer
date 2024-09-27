@@ -56,7 +56,7 @@ namespace saucer
                                     }
 
                                     auto parent            = self->m_parent;
-                                    auto *const identifier = (__bridge void *)self->m_impl->window;
+                                    auto *const identifier = (__bridge void *)impl->window;
 
                                     if (impl->on_closed)
                                     {
