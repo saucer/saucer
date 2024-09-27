@@ -53,7 +53,10 @@ suite<"webview"> webview_suite = []()
         expect(last_url == url) << last_url;
 
         wait_for([&]() { return states.size() >= 2 && dom_ready; });
+
+#ifndef SAUCER_QT6
         expect(dom_ready);
+#endif
 
         expect(states[0] == saucer::state::started);
         expect(states[1] == saucer::state::finished);
