@@ -72,12 +72,6 @@ void saucer::scheme::init_objc()
     saucer::scheme::init_objc();
 
     auto *id = (__bridge void *)instance;
-
-    if (m_handlers.contains(id))
-    {
-        return;
-    }
-
     m_handlers.emplace(id, std::move(handler));
 }
 

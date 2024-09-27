@@ -32,7 +32,6 @@ namespace saucer
 
       public:
         g_object_ptr<WebKitSettings> settings;
-        std::unordered_map<std::string, std::unique_ptr<scheme::state>> schemes;
 
       public:
         template <web_event>
@@ -40,9 +39,10 @@ namespace saucer
 
       public:
         static const std::string &inject_script();
-        static constinit std::string_view ready_script;
+        static WebKitSettings *make_settings(const preferences &);
 
       public:
-        static WebKitSettings *make_settings(const preferences &);
+        static constinit std::string_view ready_script;
+        static inline std::unordered_map<std::string, std::unique_ptr<scheme::scheme_handler>> schemes;
     };
 } // namespace saucer

@@ -11,11 +11,15 @@ namespace saucer::scheme
         WebKitURISchemeRequest *request;
     };
 
-    struct state
+    class scheme_handler
     {
-        handler handler;
+        std::unordered_map<WebKitWebView *, handler> m_handlers;
 
       public:
-        static void handle(WebKitURISchemeRequest *, state *);
+        void add_handler(WebKitWebView *, handler);
+        void remove_handler(WebKitWebView *);
+
+      public:
+        static void handle(WebKitURISchemeRequest *, scheme_handler *);
     };
 } // namespace saucer::scheme

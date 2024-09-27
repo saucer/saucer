@@ -13,6 +13,9 @@ namespace saucer
 {
     webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
+        static std::once_flag flag;
+        std::call_once(flag, []() { register_scheme("saucer"); });
+
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
         m_impl->settings = impl::make_settings(prefs);
 
@@ -429,22 +432,12 @@ namespace saucer
                             { return handle_scheme(name, std::move(handler)); });
         }
 
-        if (m_impl->schemes.contains(name))
+        if (!impl::schemes.contains(name))
         {
             return;
         }
 
-        auto *const context  = webkit_web_view_get_context(m_impl->web_view);
-        auto *const security = webkit_web_context_get_security_manager(context);
-
-        auto state    = std::make_unique<scheme::state>(std::move(handler));
-        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::state::handle);
-
-        webkit_web_context_register_uri_scheme(context, name.c_str(), callback, state.get(), nullptr);
-        m_impl->schemes.emplace(name, std::move(state));
-
-        webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
-        webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
+        impl::schemes[name]->add_handler(m_impl->web_view, std::move(handler));
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -454,12 +447,12 @@ namespace saucer
             return dispatch([this, name] { return remove_scheme(name); });
         }
 
-        if (!m_impl->schemes.contains(name))
+        if (!impl::schemes.contains(name))
         {
             return;
         }
 
-        m_impl->schemes[name]->handler = nullptr;
+        impl::schemes[name]->remove_handler(m_impl->web_view);
     }
 
     void webview::clear(web_event event)
@@ -507,9 +500,24 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    void webview::register_scheme(const std::string &)
+    void webview::register_scheme(const std::string &name)
     {
-        //? Registering schemes before hand is not required for webkit.
+        if (impl::schemes.contains(name))
+        {
+            return;
+        }
+
+        auto *const context  = webkit_web_context_get_default();
+        auto *const security = webkit_web_context_get_security_manager(context);
+
+        auto handler  = std::make_unique<scheme::scheme_handler>();
+        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::scheme_handler::handle);
+
+        webkit_web_context_register_uri_scheme(context, name.c_str(), callback, handler.get(), nullptr);
+        impl::schemes.emplace(name, std::move(handler));
+
+        webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
+        webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
     }
 
     INSTANTIATE_EVENTS(webview, 6, web_event)
