@@ -9,6 +9,7 @@
 #include <cassert>
 
 #include <fmt/core.h>
+#include <rebind/enum.hpp>
 #include <flagpp/flags.hpp>
 
 template <>
@@ -43,6 +44,11 @@ namespace saucer
 
     window::~window()
     {
+        for (const auto &event : rebind::enum_fields<window_event>)
+        {
+            m_events.clear(event.value);
+        }
+
         close();
 
         SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, 0);
