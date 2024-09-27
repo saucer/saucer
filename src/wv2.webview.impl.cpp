@@ -153,8 +153,7 @@ namespace saucer
         if (!result.has_value())
         {
             auto error = result.error();
-            auto meta  = rebind::enum_value(error);
-            auto name  = meta ? meta->name : "unknown";
+            auto name  = rebind::find_enum_name(error).value_or("Unknown");
 
             environment->CreateWebResourceResponse(nullptr, std::to_underlying(error),
                                                    utils::widen(std::string{name}).c_str(), L"", &response);

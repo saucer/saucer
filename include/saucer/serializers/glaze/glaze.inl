@@ -173,8 +173,7 @@ namespace saucer::serializers::glaze
 
             if (auto err = glz::read<opts>(json, data); err)
             {
-                const auto meta = rebind::enum_value(err.ec);
-                return tl::unexpected{meta ? std::string{meta->name} : "Unknown"};
+                return tl::unexpected{std::string{rebind::find_enum_name(err.ec).value_or("Unknown")}};
             }
 
             return tl::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};

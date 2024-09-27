@@ -31,10 +31,9 @@ namespace saucer::scheme
         if (!result.has_value())
         {
             static auto quark = webkit_network_error_quark();
-            auto error        = result.error();
 
-            auto meta = rebind::enum_value(error);
-            auto name = meta ? meta->name : "unknown";
+            auto error = result.error();
+            auto name  = rebind::find_enum_name(error).value_or("unknown");
 
             auto *const err = g_error_new(quark, std::to_underlying(result.error()), "%s", std::string{name}.c_str());
             webkit_uri_scheme_request_finish_error(request, err);
