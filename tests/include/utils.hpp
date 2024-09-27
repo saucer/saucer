@@ -1,19 +1,19 @@
 #pragma once
 
-#include <print>
 #include <thread>
+#include <print>
 
+#include <functional>
 #include <chrono>
+
 #include <source_location>
 
-#include <boost/ut.hpp>
-
-namespace test
+namespace saucer::tests
 {
     using namespace std::chrono_literals;
 
     template <typename T>
-    void wait_for(const T &pred, std::chrono::seconds timeout = 10s,
+    void wait_for(const T &pred, std::chrono::seconds timeout = 5s,
                   std::source_location source = std::source_location::current())
     {
         using clock      = std::chrono::system_clock;
@@ -37,7 +37,7 @@ namespace test
 
             if (now - start > timeout)
             {
-                std::println("Timeout reached: {}:{}", source.file_name(), source.line());
+                std::println("[{}:{}] Timeout reached", source.file_name(), source.line());
                 break;
             }
 
@@ -50,20 +50,4 @@ namespace test
             break;
         }
     }
-
-    struct runner : boost::ut::runner<>
-    {
-        using boost::ut::runner<>::on;
-        using boost::ut::runner<>::run;
-
-        template <class... Ts>
-        auto on(boost::ut::events::test<Ts...> test)
-        {
-            std::println("|- {}", test.name);
-            return boost::ut::runner<>::on(test);
-        }
-    };
-} // namespace test
-
-template <class... Ts>
-inline auto boost::ut::cfg<boost::ut::override, Ts...> = test::runner{};
+} // namespace saucer::tests
