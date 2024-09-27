@@ -97,11 +97,11 @@ suite<"window"> window_suite = []()
         std::pair<int, int> size;
         window->on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
 
-        window->set_size(300, 400);
-        wait_for([&]() { return size.first == 300 && size.second == 400; });
+        window->set_size(400, 500);
+        wait_for([&]() { return size.first == 400 && size.second == 500; });
 
         auto [width, height] = window->size();
-        expect(width == 300 && height == 400) << width << ":" << height;
+        expect(width == 400 && height == 500) << width << ":" << height;
 
         auto [last_width, last_height] = size;
         expect(width == last_width && height == last_height) << last_width << ":" << last_height;
