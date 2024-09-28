@@ -20,7 +20,9 @@ namespace saucer
     }
 
     template <typename T, auto Ref, auto Unref>
-    ref_ptr<T, Ref, Unref>::ref_ptr() = default;
+    ref_ptr<T, Ref, Unref>::ref_ptr() : m_data(nullptr)
+    {
+    }
 
     template <typename T, auto Ref, auto Unref>
     ref_ptr<T, Ref, Unref>::ref_ptr(T *data) : m_data(data)
@@ -28,9 +30,8 @@ namespace saucer
     }
 
     template <typename T, auto Ref, auto Unref>
-    ref_ptr<T, Ref, Unref>::ref_ptr(const ref_ptr &other) : m_data(other.m_data)
+    ref_ptr<T, Ref, Unref>::ref_ptr(const ref_ptr &other) : m_data(perform<Ref>(other.m_data))
     {
-        perform<Ref>(m_data);
     }
 
     template <typename T, auto Ref, auto Unref>
@@ -49,8 +50,7 @@ namespace saucer
     {
         if (this != &other)
         {
-            reset(other.m_data);
-            perform<Ref>(other.m_data);
+            reset(perform<Ref>(other.m_data));
         }
 
         return *this;
@@ -89,7 +89,6 @@ namespace saucer
     template <typename T, auto Ref, auto Unref>
     ref_ptr<T, Ref, Unref> ref_ptr<T, Ref, Unref>::ref(T *data)
     {
-        perform<Ref>(data);
-        return data;
+        return perform<Ref>(data);
     }
 } // namespace saucer
