@@ -2,6 +2,8 @@
 
 #include "window.hpp"
 
+#include "cocoa.utils.hpp"
+
 #include <optional>
 #include <functional>
 
@@ -22,7 +24,7 @@ namespace saucer
     struct window::impl
     {
         NSWindow *window;
-        WindowDelegate *delegate;
+        objc_ptr<WindowDelegate> delegate;
 
       public:
         NSWindowStyleMask prev_mask;

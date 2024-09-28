@@ -26,7 +26,7 @@ namespace saucer::tests
             };
         };
 
-        template <typename T = saucer::smartview<>>
+        template <typename T>
         std::shared_ptr<T> get(std::shared_ptr<saucer::application> app)
         {
             if (!app->thread_safe())

@@ -11,8 +11,11 @@ namespace saucer
         NSApplication *application;
 
       public:
+        NSAutoreleasePool *pool;
+
+      public:
         std::thread::id thread;
-        std::unordered_map<void *, bool> instances;
+        std::unordered_map<NSWindow *, bool> instances;
 
       public:
         static void init_menu();

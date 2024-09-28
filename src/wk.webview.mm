@@ -27,51 +27,58 @@ namespace saucer
 
         m_impl->config = impl::make_config(prefs);
 
-        NSUUID *uuid;
-
-        if (prefs.persistent_cookies)
+        @autoreleasepool
         {
-            // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
+            NSUUID *uuid{};
 
-            auto id          = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
-            auto *const data = [NSString stringWithUTF8String:id.c_str()];
+            if (prefs.persistent_cookies)
+            {
+                // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            unsigned char hash[32] = "";
-            CC_SHA256(data.UTF8String, [data lengthOfBytesUsingEncoding:NSUTF8StringEncoding], hash);
+                auto id = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
+                auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
-            auto top = hash | std::views::drop(16) | std::ranges::to<std::vector<unsigned char>>();
+                unsigned char hash[32] = "";
+                CC_SHA256(data.UTF8String, [data lengthOfBytesUsingEncoding:NSUTF8StringEncoding], hash);
 
-            top[6] &= 0x0F;
-            top[6] |= 0x50;
+                auto top = hash | std::views::drop(16) | std::ranges::to<std::vector<unsigned char>>();
 
-            top[8] &= 0x3F;
-            top[8] |= 0x80;
+                top[6] &= 0x0F;
+                top[6] |= 0x50;
 
-            uuid = [[NSUUID alloc] initWithUUIDBytes:top.data()];
+                top[8] &= 0x3F;
+                top[8] |= 0x80;
+
+                uuid = [[NSUUID alloc] initWithUUIDBytes:top.data()];
+            }
+            else
+            {
+                uuid = [[NSUUID alloc] init];
+            }
+
+            auto *const store = [WKWebsiteDataStore dataStoreForIdentifier:uuid];
+            [uuid autorelease];
+
+            [m_impl->config.get() setWebsiteDataStore:store];
+
+            m_impl->controller = m_impl->config.get().userContentController;
+
+            auto *const handler = [[[MessageHandler alloc] initWithParent:this] autorelease];
+            [m_impl->controller addScriptMessageHandler:handler name:@"saucer"];
+
+            m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:m_impl->config.get() frame:NSZeroRect];
+            m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
+
+            [m_impl->web_view.get() setNavigationDelegate:m_impl->delegate.get()];
+
+            if (!prefs.user_agent.empty())
+            {
+                m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
+            }
+
+            window::m_impl->window.contentView = m_impl->web_view.get();
+            m_impl->appearance                 = window::m_impl->window.appearance;
         }
-        else
-        {
-            uuid = [[NSUUID alloc] init];
-        }
-
-        auto *const store = [WKWebsiteDataStore dataStoreForIdentifier:uuid];
-        [m_impl->config setWebsiteDataStore:store];
-
-        m_impl->controller = m_impl->config.userContentController;
-        [m_impl->controller addScriptMessageHandler:[[MessageHandler alloc] initWithParent:this] name:@"saucer"];
-
-        m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:m_impl->config frame:NSZeroRect];
-        m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
-
-        [m_impl->web_view setNavigationDelegate:m_impl->delegate];
-
-        if (!prefs.user_agent.empty())
-        {
-            m_impl->web_view.customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
-        }
-
-        [window::m_impl->window setContentView:m_impl->web_view];
-        m_impl->appearance = window::m_impl->window.appearance;
 
         window::m_impl->on_closed = [this]
         {
@@ -94,18 +101,17 @@ namespace saucer
             m_events.clear(event.value);
         }
 
+        @autoreleasepool
+        {
+            [m_impl->controller removeAllScriptMessageHandlers];
+            [m_impl->controller removeAllUserScripts];
+
+            m_impl->web_view.get().navigationDelegate = nil;
+            window::m_impl->window.contentView        = nil;
+        }
+
         std::invoke(window::m_impl->on_closed);
         window::m_impl->on_closed = {};
-
-        [m_impl->controller removeAllScriptMessageHandlers];
-        [m_impl->controller removeAllUserScripts];
-
-        [m_impl->web_view setNavigationDelegate:nil];
-        [window::m_impl->window setContentView:nil];
-
-        m_impl->delegate = nil;
-        m_impl->web_view = nil;
-        m_impl->config   = nil;
     }
 
     bool webview::on_message(const std::string &message)
@@ -161,7 +167,7 @@ namespace saucer
             return dispatch([this] { return page_title(); });
         }
 
-        return m_impl->web_view.title.UTF8String;
+        return m_impl->web_view.get().title.UTF8String;
     }
 
     bool webview::dev_tools() const
@@ -171,7 +177,7 @@ namespace saucer
             return dispatch([this] { return dev_tools(); });
         }
 
-        auto *const settings = m_impl->config.preferences;
+        auto *const settings = m_impl->config.get().preferences;
         auto *const enabled  = reinterpret_cast<NSNumber *>([settings valueForKey:@"developerExtrasEnabled"]);
 
         return enabled.boolValue;
@@ -184,7 +190,7 @@ namespace saucer
             return dispatch([this] { return url(); });
         }
 
-        return m_impl->web_view.URL.absoluteString.UTF8String;
+        return m_impl->web_view.get().URL.absoluteString.UTF8String;
     }
 
     bool webview::context_menu() const
@@ -204,15 +210,18 @@ namespace saucer
             return dispatch([this] { return background(); });
         }
 
-        auto *const background = m_impl->web_view.underPageBackgroundColor;
-        auto *const color      = [[CIColor alloc] initWithColor:background];
+        @autoreleasepool
+        {
+            auto *const background = m_impl->web_view.get().underPageBackgroundColor;
+            auto *const color      = [[[CIColor alloc] initWithColor:background] autorelease];
 
-        return {
-            static_cast<std::uint8_t>(color.red * 255.f),
-            static_cast<std::uint8_t>(color.green * 255.f),
-            static_cast<std::uint8_t>(color.blue * 255.f),
-            static_cast<std::uint8_t>(color.alpha * 255.f),
-        };
+            return {
+                static_cast<std::uint8_t>(color.red * 255.f),
+                static_cast<std::uint8_t>(color.green * 255.f),
+                static_cast<std::uint8_t>(color.blue * 255.f),
+                static_cast<std::uint8_t>(color.alpha * 255.f),
+            };
+        }
     }
 
     bool webview::force_dark_mode() const
@@ -232,13 +241,16 @@ namespace saucer
             return dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        auto *const settings = m_impl->config.preferences;
-        [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
+        @autoreleasepool
+        {
+            auto *const settings = m_impl->config.get().preferences;
+            [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
+        }
 
         // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/_WKInspector.mm.auto.html
         // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/WKWebView.mm.auto.html
 
-        const id inspector = [m_impl->web_view valueForKey:@"_inspector"];
+        const id inspector = [m_impl->web_view.get() valueForKey:@"_inspector"];
 
         if (!inspector)
         {
@@ -273,8 +285,13 @@ namespace saucer
 
         m_impl->force_dark = enabled;
 
-        [window::m_impl->window setAppearance:enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
-                                                      : m_impl->appearance];
+        @autoreleasepool
+        {
+            auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
+                                             : m_impl->appearance;
+
+            [window::m_impl->window setAppearance:appearance];
+        }
     }
 
     void webview::set_background(const color &color)
@@ -287,12 +304,16 @@ namespace saucer
         const auto [r, g, b, a] = color;
         const auto transparent  = a < 255;
 
-        auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
-                                                     green:static_cast<float>(g) / 255.f
-                                                      blue:static_cast<float>(b) / 255.f
-                                                     alpha:static_cast<float>(a) / 255.f];
+        @autoreleasepool
+        {
+            auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
+                                                         green:static_cast<float>(g) / 255.f
+                                                          blue:static_cast<float>(b) / 255.f
+                                                         alpha:static_cast<float>(a) / 255.f];
 
-        [m_impl->web_view setUnderPageBackgroundColor:rgba];
+            [m_impl->web_view.get() setUnderPageBackgroundColor:rgba];
+        }
+
         window::m_impl->set_alpha(transparent ? 0 : 255);
 
         using func_t = void (*)(id, SEL, BOOL);
@@ -305,7 +326,7 @@ namespace saucer
             return;
         }
 
-        draw_bg(m_impl->web_view, selector, static_cast<BOOL>(!transparent));
+        draw_bg(m_impl->web_view.get(), selector, static_cast<BOOL>(!transparent));
     }
 
     void webview::set_file(const fs::path &file)
@@ -315,8 +336,11 @@ namespace saucer
             return dispatch([this, file] { return set_file(file); });
         }
 
-        auto *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
-        [m_impl->web_view loadFileURL:url allowingReadAccessToURL:url.URLByDeletingLastPathComponent];
+        @autoreleasepool
+        {
+            auto *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
+            [m_impl->web_view.get() loadFileURL:url allowingReadAccessToURL:url.URLByDeletingLastPathComponent];
+        }
     }
 
     void webview::set_url(const std::string &url)
@@ -326,10 +350,13 @@ namespace saucer
             return dispatch([this, url] { return set_url(url); });
         }
 
-        auto *const request = [[NSURLRequest alloc]
-            initWithURL:[[NSURL alloc] initWithString:[[NSString alloc] initWithUTF8String:url.c_str()]]];
+        @autoreleasepool
+        {
+            auto *const ns_url  = [NSURL URLWithString:[NSString stringWithUTF8String:url.c_str()]];
+            auto *const request = [NSURLRequest requestWithURL:ns_url];
 
-        [m_impl->web_view loadRequest:request];
+            [m_impl->web_view.get() loadRequest:request];
+        }
     }
 
     void webview::back()
@@ -339,7 +366,7 @@ namespace saucer
             return dispatch([this]() { return back(); });
         }
 
-        [m_impl->web_view goBack];
+        [m_impl->web_view.get() goBack];
     }
 
     void webview::forward()
@@ -349,7 +376,7 @@ namespace saucer
             return dispatch([this]() { return forward(); });
         }
 
-        [m_impl->web_view goForward];
+        [m_impl->web_view.get() goForward];
     }
 
     void webview::reload()
@@ -359,7 +386,7 @@ namespace saucer
             return dispatch([this]() { return reload(); });
         }
 
-        [m_impl->web_view reload];
+        [m_impl->web_view.get() reload];
     }
 
     void webview::clear_scripts()
@@ -388,11 +415,15 @@ namespace saucer
                                                                   : WKUserScriptInjectionTimeAtDocumentEnd;
         const auto main_only = static_cast<BOOL>(script.frame == web_frame::top);
 
-        auto *const user_script = [[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
-                                                         injectionTime:time
-                                                      forMainFrameOnly:main_only];
+        @autoreleasepool
+        {
+            auto *const user_script =
+                [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
+                                        injectionTime:time
+                                     forMainFrameOnly:main_only] autorelease];
 
-        [m_impl->controller addUserScript:user_script];
+            [m_impl->controller addUserScript:user_script];
+        }
 
         if (!script.permanent)
         {
@@ -420,7 +451,10 @@ namespace saucer
             return;
         }
 
-        [m_impl->web_view evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
+        @autoreleasepool
+        {
+            [m_impl->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
+        }
     }
 
     void webview::handle_scheme(const std::string &name, scheme::handler handler)
@@ -436,7 +470,7 @@ namespace saucer
             return;
         }
 
-        [impl::schemes[name] add_handler:std::move(handler) webview:m_impl->web_view];
+        [impl::schemes[name].get() add_handler:std::move(handler) webview:m_impl->web_view.get()];
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -446,7 +480,7 @@ namespace saucer
             return dispatch([this, name] { return remove_scheme(name); });
         }
 
-        [impl::schemes[name] remove_handler:m_impl->web_view];
+        [impl::schemes[name].get() remove_handler:m_impl->web_view.get()];
     }
 
     void webview::clear(web_event event)

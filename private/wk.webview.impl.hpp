@@ -2,6 +2,7 @@
 
 #include "webview.hpp"
 
+#include "cocoa.utils.hpp"
 #include "wk.scheme.impl.hpp"
 #include "cocoa.window.impl.hpp"
 
@@ -17,15 +18,15 @@ namespace saucer
 {
     struct webview::impl
     {
-        WKWebView *web_view;
+        objc_ptr<WKWebViewConfiguration> config;
+        objc_ptr<WKWebView> web_view;
+
+      public:
+        objc_ptr<NavigationDelegate> delegate;
+        WKUserContentController *controller;
 
       public:
         NSAppearance *appearance;
-        NavigationDelegate *delegate;
-
-      public:
-        WKWebViewConfiguration *config;
-        WKUserContentController *controller;
 
       public:
         bool force_dark{false};
@@ -51,7 +52,7 @@ namespace saucer
         static constinit std::string_view ready_script;
 
       public:
-        static inline std::unordered_map<std::string, SchemeHandler *> schemes;
+        static inline std::unordered_map<std::string, objc_ptr<SchemeHandler>> schemes;
     };
 } // namespace saucer
 

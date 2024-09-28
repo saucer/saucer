@@ -2,12 +2,14 @@
 
 #include "icon.hpp"
 
+#include "cocoa.utils.hpp"
+
 #import <Cocoa/Cocoa.h>
 
 namespace saucer
 {
     struct icon::impl
     {
-        NSImage *icon;
+        objc_ptr<NSImage> icon;
     };
 } // namespace saucer

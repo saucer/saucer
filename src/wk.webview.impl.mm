@@ -30,13 +30,14 @@ namespace saucer
             return;
         }
 
-        auto *const observer = [[Observer alloc] initWithCallback:[self]()
-                                                 {
-                                                     self->m_events.at<web_event::navigated>().fire(self->url());
-                                                 }];
+        const objc_ptr<Observer> observer =
+            [[Observer alloc] initWithCallback:[self]()
+                              {
+                                  self->m_events.at<web_event::navigated>().fire(self->url());
+                              }];
 
-        [web_view addObserver:observer forKeyPath:@"URL" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [web_view removeObserver:observer forKeyPath:@"URL"]; });
+        [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
+        event.on_clear([this, observer]() { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
     }
 
     template <>
@@ -59,13 +60,14 @@ namespace saucer
             return;
         }
 
-        auto *const observer = [[Observer alloc] initWithCallback:[self]()
-                                                 {
-                                                     self->m_events.at<web_event::title>().fire(self->page_title());
-                                                 }];
+        const objc_ptr<Observer> observer =
+            [[Observer alloc] initWithCallback:[self]()
+                              {
+                                  self->m_events.at<web_event::title>().fire(self->page_title());
+                              }];
 
-        [web_view addObserver:observer forKeyPath:@"title" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [web_view removeObserver:observer forKeyPath:@"title"]; });
+        [web_view.get() addObserver:observer.get() forKeyPath:@"title" options:0 context:nullptr];
+        event.on_clear([this, observer]() { [web_view.get() removeObserver:observer.get() forKeyPath:@"title"]; });
     }
 
     template <>
@@ -243,56 +245,60 @@ namespace saucer
 
         auto *const config = [[WKWebViewConfiguration alloc] init];
 
-        for (const auto &flag : prefs.browser_flags)
+        @autoreleasepool
         {
-            const auto delim = flag.find('=');
-
-            if (delim == std::string::npos)
+            for (const auto &flag : prefs.browser_flags)
             {
-                continue;
+                const auto delim = flag.find('=');
+
+                if (delim == std::string::npos)
+                {
+                    continue;
+                }
+
+                auto key   = flag.substr(0, delim);
+                auto value = flag.substr(delim + 1);
+
+                const auto data = fmt::format(R"json({{ "value": {} }})json", value);
+                auto *const str = [NSString stringWithUTF8String:data.c_str()];
+
+                NSError *error{};
+
+                NSDictionary *const dict =
+                    [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
+                                                    options:0
+                                                      error:&error];
+
+                if (error)
+                {
+                    continue;
+                }
+
+                id target = config;
+
+                while (key.contains('.'))
+                {
+                    const auto delim   = key.find('.');
+                    const auto sub_key = key.substr(0, delim);
+
+                    key    = key.substr(delim + 1);
+                    target = resolve(target, [NSString stringWithUTF8String:sub_key.c_str()]);
+                }
+
+                auto *const selector = [NSString stringWithUTF8String:key.c_str()];
+
+                if (!resolve(target, selector) && ![target respondsToSelector:NSSelectorFromString(selector)])
+                {
+                    continue;
+                }
+
+                [target setValue:[dict objectForKey:@"value"] forKey:selector];
             }
 
-            auto key   = flag.substr(0, delim);
-            auto value = flag.substr(delim + 1);
-
-            const auto data = fmt::format(R"json({{ "value": {} }})json", value);
-            auto *const str = [NSString stringWithUTF8String:data.c_str()];
-
-            NSError *error{};
-
-            NSDictionary *const dict = [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
-                                                                       options:0
-                                                                         error:&error];
-
-            if (error)
+            for (const auto &[name, handler] : schemes)
             {
-                continue;
+                [config setURLSchemeHandler:handler.get() forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
             }
-
-            id target = config;
-
-            while (key.contains('.'))
-            {
-                const auto delim   = key.find('.');
-                const auto sub_key = key.substr(0, delim);
-
-                key    = key.substr(delim + 1);
-                target = resolve(target, [NSString stringWithUTF8String:sub_key.c_str()]);
-            }
-
-            auto *const selector = [NSString stringWithUTF8String:key.c_str()];
-
-            if (!resolve(target, selector) && ![target respondsToSelector:NSSelectorFromString(selector)])
-            {
-                continue;
-            }
-
-            [target setValue:[dict objectForKey:@"value"] forKey:selector];
-        }
-
-        for (const auto &[name, handler] : schemes)
-        {
-            [config setURLSchemeHandler:handler forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
         }
 
         return config;

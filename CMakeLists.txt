@@ -338,7 +338,6 @@ if (saucer_backend STREQUAL "WebKit")
   find_library(webkit WebKit REQUIRED)
   find_library(cimage CoreImage REQUIRED)
 
-  target_compile_options(${PROJECT_NAME} PRIVATE "-fobjc-arc")
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} ${cocoa} ${webkit} ${cimage})
 endif()
 

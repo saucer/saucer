@@ -56,7 +56,7 @@ namespace saucer
                                     }
 
                                     auto parent            = self->m_parent;
-                                    auto *const identifier = (__bridge void *)impl->window;
+                                    auto *const identifier = impl->window;
 
                                     if (impl->on_closed)
                                     {
@@ -89,13 +89,14 @@ namespace saucer
             return;
         }
 
-        auto *const observer = [[Observer alloc] initWithCallback:[self]()
-                                                 {
-                                                     self->m_events.at<window_event::decorated>().fire(self->decorations());
-                                                 }];
+        const objc_ptr<Observer> observer =
+            [[Observer alloc] initWithCallback:[self]()
+                              {
+                                  self->m_events.at<window_event::decorated>().fire(self->decorations());
+                              }];
 
-        [self->m_impl->window addObserver:observer forKeyPath:@"styleMask" options:0 context:nullptr];
-        event.on_clear([observer, self]() { [self->m_impl->window removeObserver:observer forKeyPath:@"styleMask"]; });
+        [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];
+        event.on_clear([this, observer]() { [window removeObserver:observer.get() forKeyPath:@"styleMask"]; });
     }
 
     template <>
@@ -108,13 +109,14 @@ namespace saucer
             return;
         }
 
-        auto *const observer = [[Observer alloc] initWithCallback:[self]()
-                                                 {
-                                                     self->m_events.at<window_event::maximize>().fire(self->maximized());
-                                                 }];
+        const objc_ptr<Observer> observer =
+            [[Observer alloc] initWithCallback:[self]()
+                              {
+                                  self->m_events.at<window_event::maximize>().fire(self->maximized());
+                              }];
 
-        [self->m_impl->window addObserver:observer forKeyPath:@"isZoomed" options:0 context:nullptr];
-        event.on_clear([observer, self]() { [self->m_impl->window removeObserver:observer forKeyPath:@"isZoomed"]; });
+        [window addObserver:observer.get() forKeyPath:@"isZoomed" options:0 context:nullptr];
+        event.on_clear([this, observer]() { [window removeObserver:observer.get() forKeyPath:@"isZoomed"]; });
     }
 
     template <>
@@ -144,10 +146,13 @@ namespace saucer
 
     void saucer::window::impl::set_alpha(std::uint8_t alpha) const
     {
-        auto *const background = window.backgroundColor;
-        auto *const color      = [background colorWithAlphaComponent:static_cast<float>(alpha) / 255.f];
+        @autoreleasepool
+        {
+            auto *const background = window.backgroundColor;
+            auto *const color      = [background colorWithAlphaComponent:static_cast<float>(alpha) / 255.f];
 
-        [window setBackgroundColor:color];
+            [window setBackgroundColor:color];
+        }
     }
 } // namespace saucer
 

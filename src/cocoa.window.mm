@@ -20,15 +20,18 @@ namespace saucer
         static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled |
                                      NSWindowStyleMaskResizable;
 
-        m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                     styleMask:mask
-                                                       backing:NSBackingStoreBuffered
-                                                         defer:NO];
+        @autoreleasepool
+        {
+            m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                         styleMask:mask
+                                                           backing:NSBackingStoreBuffered
+                                                             defer:NO];
 
-        m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
+            m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
 
-        [m_impl->window setDelegate:m_impl->delegate];
-        [m_impl->window center];
+            [m_impl->window setDelegate:m_impl->delegate.get()];
+            [m_impl->window center];
+        }
     }
 
     window::~window()
@@ -38,10 +41,11 @@ namespace saucer
             m_events.clear(event.value);
         }
 
-        close();
-
-        m_impl->delegate = nil;
-        m_impl->window   = nil;
+        @autoreleasepool
+        {
+            close();
+            [m_impl->window close];
+        }
     }
 
     bool window::focused() const
@@ -122,7 +126,6 @@ namespace saucer
         }
 
         const auto [width, height] = m_impl->window.frame.size;
-
         return {width, height};
     }
 
@@ -134,7 +137,6 @@ namespace saucer
         }
 
         const auto [width, height] = m_impl->window.maxSize;
-
         return {width, height};
     }
 
@@ -146,7 +148,6 @@ namespace saucer
         }
 
         const auto [width, height] = m_impl->window.minSize;
-
         return {width, height};
     }
 
@@ -167,9 +168,7 @@ namespace saucer
             return dispatch([this] { return show(); });
         }
 
-        auto *const identifier                    = (__bridge void *)m_impl->window;
-        m_parent->native()->instances[identifier] = true;
-
+        m_parent->native()->instances[m_impl->window] = true;
         [m_impl->window makeKeyAndOrderFront:nil];
     }
 
@@ -180,12 +179,7 @@ namespace saucer
             return dispatch([this] { return close(); });
         }
 
-        if (![m_impl->delegate windowShouldClose:m_impl->window])
-        {
-            return;
-        }
-
-        [m_impl->window close];
+        [m_impl->delegate.get() windowShouldClose:m_impl->window];
     }
 
     void window::focus()
@@ -299,11 +293,14 @@ namespace saucer
             return dispatch([this, icon] { return set_icon(icon); });
         }
 
-        auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon];
-        auto *const tile = m_parent->native()->application.dockTile;
+        @autoreleasepool
+        {
+            auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon.get()];
+            auto *const tile = m_parent->native()->application.dockTile;
 
-        [tile setContentView:view];
-        [tile display];
+            [tile setContentView:view];
+            [tile display];
+        }
     }
 
     void window::set_title(const std::string &title)

@@ -4,6 +4,8 @@ namespace saucer
 {
     application::application(const options &) : m_impl(std::make_unique<impl>())
     {
+        m_impl->pool = [[NSAutoreleasePool alloc] init];
+
         m_impl->thread      = std::this_thread::get_id();
         m_impl->application = [NSApplication sharedApplication];
 
@@ -15,7 +17,7 @@ namespace saucer
 
     application::~application()
     {
-        m_impl->application = nil;
+        [m_impl->pool drain];
     }
 
     bool application::thread_safe() const
@@ -25,14 +27,18 @@ namespace saucer
 
     void application::post(callback_t callback) const // NOLINT(*-static)
     {
-        auto func = [](callback_t *data)
-        {
-            auto callback = std::unique_ptr<callback_t>{data};
-            std::invoke(*callback);
-        };
-
         auto *const queue = dispatch_get_main_queue();
-        dispatch_async_f(queue, new callback_t{std::move(callback)}, reinterpret_cast<dispatch_function_t>(+func));
+        auto *const ptr   = new callback_t{std::move(callback)};
+
+        dispatch_async(queue,
+                       [ptr]()
+                       {
+                           @autoreleasepool
+                           {
+                               auto callback = std::unique_ptr<callback_t>{ptr};
+                               std::invoke(*callback);
+                           }
+                       });
     }
 
     template <>
@@ -44,10 +50,15 @@ namespace saucer
     template <>
     void application::run<false>() const // NOLINT(*-static)
     {
-        auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                               untilDate:[NSDate now]
-                                                  inMode:NSDefaultRunLoopMode
-                                                 dequeue:YES];
+        NSEvent *event{};
+
+        @autoreleasepool
+        {
+            event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                       untilDate:[NSDate now]
+                                          inMode:NSDefaultRunLoopMode
+                                         dequeue:YES];
+        }
 
         if (!event)
         {
