@@ -4,8 +4,6 @@ namespace saucer
 {
     application::application(const options &) : m_impl(std::make_unique<impl>())
     {
-        m_impl->pool = [[NSAutoreleasePool alloc] init];
-
         m_impl->thread      = std::this_thread::get_id();
         m_impl->application = [NSApplication sharedApplication];
 
@@ -15,10 +13,7 @@ namespace saucer
         impl::init_menu();
     }
 
-    application::~application()
-    {
-        [m_impl->pool drain];
-    }
+    application::~application() = default;
 
     bool application::thread_safe() const
     {
@@ -33,11 +28,10 @@ namespace saucer
         dispatch_async(queue,
                        [ptr]()
                        {
-                           @autoreleasepool
-                           {
-                               auto callback = std::unique_ptr<callback_t>{ptr};
-                               std::invoke(*callback);
-                           }
+                           const autorelease_guard guard{};
+
+                           auto callback = std::unique_ptr<callback_t>{ptr};
+                           std::invoke(*callback);
                        });
     }
 
@@ -50,15 +44,12 @@ namespace saucer
     template <>
     void application::run<false>() const // NOLINT(*-static)
     {
-        NSEvent *event{};
+        const autorelease_guard guard{};
 
-        @autoreleasepool
-        {
-            event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                       untilDate:[NSDate now]
-                                          inMode:NSDefaultRunLoopMode
-                                         dequeue:YES];
-        }
+        auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                               untilDate:[NSDate now]
+                                                  inMode:NSDefaultRunLoopMode
+                                                 dequeue:YES];
 
         if (!event)
         {

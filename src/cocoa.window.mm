@@ -20,36 +20,36 @@ namespace saucer
         static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled |
                                      NSWindowStyleMaskResizable;
 
-        @autoreleasepool
-        {
-            m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                         styleMask:mask
-                                                           backing:NSBackingStoreBuffered
-                                                             defer:NO];
+        const autorelease_guard guard{};
 
-            m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
+        m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                     styleMask:mask
+                                                       backing:NSBackingStoreBuffered
+                                                         defer:NO];
 
-            [m_impl->window setDelegate:m_impl->delegate.get()];
-            [m_impl->window center];
-        }
+        m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
+
+        [m_impl->window setDelegate:m_impl->delegate.get()];
+        [m_impl->window center];
     }
 
     window::~window()
     {
+        const autorelease_guard guard{};
+
         for (const auto &event : rebind::enum_fields<window_event>)
         {
             m_events.clear(event.value);
         }
 
-        @autoreleasepool
-        {
-            close();
-            [m_impl->window close];
-        }
+        close();
+        [m_impl->window close];
     }
 
     bool window::focused() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return focused(); });
@@ -60,6 +60,8 @@ namespace saucer
 
     bool window::minimized() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return minimized(); });
@@ -70,6 +72,8 @@ namespace saucer
 
     bool window::maximized() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return maximized(); });
@@ -80,6 +84,8 @@ namespace saucer
 
     bool window::resizable() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return resizable(); });
@@ -90,6 +96,8 @@ namespace saucer
 
     bool window::decorations() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return decorations(); });
@@ -100,6 +108,8 @@ namespace saucer
 
     bool window::always_on_top() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return always_on_top(); });
@@ -110,6 +120,8 @@ namespace saucer
 
     std::string window::title() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return title(); });
@@ -120,6 +132,8 @@ namespace saucer
 
     std::pair<int, int> window::size() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return size(); });
@@ -131,6 +145,8 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return max_size(); });
@@ -142,6 +158,8 @@ namespace saucer
 
     std::pair<int, int> window::min_size() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return min_size(); });
@@ -153,6 +171,8 @@ namespace saucer
 
     void window::hide()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return hide(); });
@@ -163,6 +183,8 @@ namespace saucer
 
     void window::show()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return show(); });
@@ -174,6 +196,8 @@ namespace saucer
 
     void window::close()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return close(); });
@@ -184,6 +208,8 @@ namespace saucer
 
     void window::focus()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return focus(); });
@@ -194,6 +220,8 @@ namespace saucer
 
     void window::start_drag()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return start_drag(); });
@@ -214,6 +242,8 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, enabled] { return set_minimized(enabled); });
@@ -234,6 +264,8 @@ namespace saucer
 
     void window::set_resizable(bool enabled)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, enabled] { return set_resizable(enabled); });
@@ -256,6 +288,8 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, enabled] { return set_decorations(enabled); });
@@ -273,6 +307,8 @@ namespace saucer
 
     void window::set_always_on_top(bool enabled)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, enabled] { return set_always_on_top(enabled); });
@@ -283,6 +319,8 @@ namespace saucer
 
     void window::set_icon(const icon &icon)
     {
+        const autorelease_guard guard{};
+
         if (icon.empty())
         {
             return;
@@ -293,18 +331,17 @@ namespace saucer
             return dispatch([this, icon] { return set_icon(icon); });
         }
 
-        @autoreleasepool
-        {
-            auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon.get()];
-            auto *const tile = m_parent->native()->application.dockTile;
+        auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon.get()];
+        auto *const tile = m_parent->native()->application.dockTile;
 
-            [tile setContentView:view];
-            [tile display];
-        }
+        [tile setContentView:view];
+        [tile display];
     }
 
     void window::set_title(const std::string &title)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, title] { return set_title(title); });
@@ -315,6 +352,8 @@ namespace saucer
 
     void window::set_size(int width, int height)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, width, height] { return set_size(width, height); });
@@ -328,6 +367,8 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, width, height] { return set_max_size(width, height); });
@@ -338,6 +379,8 @@ namespace saucer
 
     void window::set_min_size(int width, int height)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, width, height] { return set_min_size(width, height); });

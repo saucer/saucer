@@ -146,13 +146,12 @@ namespace saucer
 
     void saucer::window::impl::set_alpha(std::uint8_t alpha) const
     {
-        @autoreleasepool
-        {
-            auto *const background = window.backgroundColor;
-            auto *const color      = [background colorWithAlphaComponent:static_cast<float>(alpha) / 255.f];
+        const autorelease_guard guard{};
 
-            [window setBackgroundColor:color];
-        }
+        auto *const background = window.backgroundColor;
+        auto *const color      = [background colorWithAlphaComponent:static_cast<float>(alpha) / 255.f];
+
+        [window setBackgroundColor:color];
     }
 } // namespace saucer
 

@@ -113,6 +113,8 @@ namespace saucer
                             imp_implementationWithBlock(
                                 [mouse_down](SaucerView *view, NSEvent *event)
                                 {
+                                    const autorelease_guard guard{};
+
                                     auto &impl = *view->m_parent->window::m_impl;
 
                                     impl.prev_click.emplace(click_event{
@@ -128,6 +130,8 @@ namespace saucer
                             imp_implementationWithBlock(
                                 [mouse_up](SaucerView *view, NSEvent *event)
                                 {
+                                    const autorelease_guard guard{};
+
                                     auto &impl = *view->m_parent->window::m_impl;
                                     impl.edge.reset();
 
@@ -139,6 +143,8 @@ namespace saucer
                             imp_implementationWithBlock(
                                 [mouse_dragged](SaucerView *view, NSEvent *event)
                                 {
+                                    const autorelease_guard guard{};
+
                                     mouse_dragged(view, @selector(mouseDragged:), event);
 
                                     auto &impl = *view->m_parent->window::m_impl;
@@ -202,6 +208,8 @@ namespace saucer
                                 [](NavigationDelegate *delegate, WKWebView *, WKNavigationAction *action,
                                    void (^decision)(WKNavigationActionPolicy))
                                 {
+                                    const autorelease_guard guard{};
+
                                     auto request = navigation{{action}};
 
                                     if (delegate->m_parent->m_events.at<web_event::navigate>().until(true, request))
@@ -231,6 +239,8 @@ namespace saucer
 
     WKWebViewConfiguration *webview::impl::make_config(const preferences &prefs)
     {
+        const autorelease_guard guard{};
+
         static auto resolve = [](id target, NSString *key) -> id
         {
             @try
@@ -245,60 +255,56 @@ namespace saucer
 
         auto *const config = [[WKWebViewConfiguration alloc] init];
 
-        @autoreleasepool
+        for (const auto &flag : prefs.browser_flags)
         {
-            for (const auto &flag : prefs.browser_flags)
+            const auto delim = flag.find('=');
+
+            if (delim == std::string::npos)
             {
-                const auto delim = flag.find('=');
-
-                if (delim == std::string::npos)
-                {
-                    continue;
-                }
-
-                auto key   = flag.substr(0, delim);
-                auto value = flag.substr(delim + 1);
-
-                const auto data = fmt::format(R"json({{ "value": {} }})json", value);
-                auto *const str = [NSString stringWithUTF8String:data.c_str()];
-
-                NSError *error{};
-
-                NSDictionary *const dict =
-                    [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
-                                                    options:0
-                                                      error:&error];
-
-                if (error)
-                {
-                    continue;
-                }
-
-                id target = config;
-
-                while (key.contains('.'))
-                {
-                    const auto delim   = key.find('.');
-                    const auto sub_key = key.substr(0, delim);
-
-                    key    = key.substr(delim + 1);
-                    target = resolve(target, [NSString stringWithUTF8String:sub_key.c_str()]);
-                }
-
-                auto *const selector = [NSString stringWithUTF8String:key.c_str()];
-
-                if (!resolve(target, selector) && ![target respondsToSelector:NSSelectorFromString(selector)])
-                {
-                    continue;
-                }
-
-                [target setValue:[dict objectForKey:@"value"] forKey:selector];
+                continue;
             }
 
-            for (const auto &[name, handler] : schemes)
+            auto key   = flag.substr(0, delim);
+            auto value = flag.substr(delim + 1);
+
+            const auto data = fmt::format(R"json({{ "value": {} }})json", value);
+            auto *const str = [NSString stringWithUTF8String:data.c_str()];
+
+            NSError *error{};
+
+            NSDictionary *const dict = [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]
+                                                                       options:0
+                                                                         error:&error];
+
+            if (error)
             {
-                [config setURLSchemeHandler:handler.get() forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
+                continue;
             }
+
+            id target = config;
+
+            while (key.contains('.'))
+            {
+                const auto delim   = key.find('.');
+                const auto sub_key = key.substr(0, delim);
+
+                key    = key.substr(delim + 1);
+                target = resolve(target, [NSString stringWithUTF8String:sub_key.c_str()]);
+            }
+
+            auto *const selector = [NSString stringWithUTF8String:key.c_str()];
+
+            if (!resolve(target, selector) && ![target respondsToSelector:NSSelectorFromString(selector)])
+            {
+                continue;
+            }
+
+            [target setValue:[dict objectForKey:@"value"] forKey:selector];
+        }
+
+        for (const auto &[name, handler] : schemes)
+        {
+            [config setURLSchemeHandler:handler.get() forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
         }
 
         return config;
@@ -351,6 +357,8 @@ namespace saucer
 
 - (void)willOpenMenu:(NSMenu *)menu withEvent:(NSEvent *)event
 {
+    const saucer::autorelease_guard guard{};
+
     [super willOpenMenu:menu withEvent:event];
 
     if (!m_parent || m_parent->context_menu())

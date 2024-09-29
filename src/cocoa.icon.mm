@@ -41,60 +41,56 @@ namespace saucer
 
     stash<> icon::data() const
     {
-        @autoreleasepool
-        {
-            auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
-            auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
-            auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+        const autorelease_guard guard{};
 
-            const auto *raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
-            return stash<>::from({raw, raw + data.length});
-        }
+        auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
+        auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
+        auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+
+        const auto *raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
+        return stash<>::from({raw, raw + data.length});
     }
 
     void icon::save(const fs::path &path) const
     {
-        @autoreleasepool
-        {
-            assert(path.extension() == ".png");
+        assert(path.extension() == ".png");
 
-            auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
-            auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
-            auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+        const autorelease_guard guard{};
 
-            NSError *error{};
-            [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:0 error:&error];
-        }
+        auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
+        auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
+        auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+
+        NSError *error{};
+        [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:0 error:&error];
     }
 
     std::optional<icon> icon::from(const stash<> &ico)
     {
-        @autoreleasepool
+        const autorelease_guard guard{};
+
+        auto *const data  = [NSData dataWithBytes:ico.data() length:ico.size()];
+        auto *const image = [[NSImage alloc] initWithData:data];
+
+        if (!image)
         {
-            auto *const data  = [NSData dataWithBytes:ico.data() length:ico.size()];
-            auto *const image = [[NSImage alloc] initWithData:data];
-
-            if (!image)
-            {
-                return std::nullopt;
-            }
-
-            return icon{{image}};
+            return std::nullopt;
         }
+
+        return icon{{image}};
     }
 
     std::optional<icon> icon::from(const fs::path &file)
     {
-        @autoreleasepool
+        const autorelease_guard guard{};
+
+        auto *const image = [[NSImage alloc] initWithContentsOfFile:[NSString stringWithUTF8String:file.c_str()]];
+
+        if (!image)
         {
-            auto *const image = [[NSImage alloc] initWithContentsOfFile:[NSString stringWithUTF8String:file.c_str()]];
-
-            if (!image)
-            {
-                return std::nullopt;
-            }
-
-            return icon{{image}};
+            return std::nullopt;
         }
+
+        return icon{{image}};
     }
 } // namespace saucer

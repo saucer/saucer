@@ -1,5 +1,7 @@
 #include "app.hpp"
 
+#include "cocoa.utils.hpp"
+
 #include <unordered_map>
 
 #import <Cocoa/Cocoa.h>
@@ -11,7 +13,7 @@ namespace saucer
         NSApplication *application;
 
       public:
-        NSAutoreleasePool *pool;
+        autorelease_guard pool;
 
       public:
         std::thread::id thread;

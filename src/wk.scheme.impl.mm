@@ -1,5 +1,7 @@
 #include "wk.scheme.impl.hpp"
 
+#include "cocoa.utils.hpp"
+
 #import <objc/objc-runtime.h>
 
 void saucer::scheme::init_objc()
@@ -16,6 +18,8 @@ void saucer::scheme::init_objc()
         imp_implementationWithBlock(
             [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> urlSchemeTask)
             {
+                const autorelease_guard guard{};
+
                 if (!self->m_handlers.contains(instance))
                 {
                     return;
@@ -24,43 +28,40 @@ void saucer::scheme::init_objc()
                 auto req    = scheme::request{{urlSchemeTask}};
                 auto result = std::invoke(self->m_handlers[instance], req);
 
-                @autoreleasepool
+                if (!result.has_value())
                 {
-                    if (!result.has_value())
-                    {
-                        [urlSchemeTask didFailWithError:[NSError errorWithDomain:NSURLErrorDomain
-                                                                            code:std::to_underlying(result.error())
-                                                                        userInfo:nil]];
+                    [urlSchemeTask didFailWithError:[NSError errorWithDomain:NSURLErrorDomain
+                                                                        code:std::to_underlying(result.error())
+                                                                    userInfo:nil]];
 
-                        return;
-                    }
-
-                    auto content = result->data;
-
-                    auto *const data = [NSData dataWithBytes:content.data() length:static_cast<NSInteger>(content.size())];
-                    auto *const headers = [[[NSMutableDictionary<NSString *, NSString *> alloc] init] autorelease];
-
-                    for (const auto &[key, value] : result->headers)
-                    {
-                        [headers setObject:[NSString stringWithUTF8String:value.c_str()]
-                                    forKey:[NSString stringWithUTF8String:key.c_str()]];
-                    }
-
-                    auto *const mime   = [NSString stringWithUTF8String:result->mime.c_str()];
-                    auto *const length = [NSString stringWithFormat:@"%zu", content.size()];
-
-                    [headers setObject:mime forKey:@"Content-Type"];
-                    [headers setObject:length forKey:@"Content-Length"];
-
-                    auto *const response = [[[NSHTTPURLResponse alloc] initWithURL:urlSchemeTask.request.URL
-                                                                        statusCode:result->status
-                                                                       HTTPVersion:nil
-                                                                      headerFields:headers] autorelease];
-
-                    [urlSchemeTask didReceiveResponse:response];
-                    [urlSchemeTask didReceiveData:data];
-                    [urlSchemeTask didFinish];
+                    return;
                 }
+
+                auto content = result->data;
+
+                auto *const data    = [NSData dataWithBytes:content.data() length:static_cast<NSInteger>(content.size())];
+                auto *const headers = [[[NSMutableDictionary<NSString *, NSString *> alloc] init] autorelease];
+
+                for (const auto &[key, value] : result->headers)
+                {
+                    [headers setObject:[NSString stringWithUTF8String:value.c_str()]
+                                forKey:[NSString stringWithUTF8String:key.c_str()]];
+                }
+
+                auto *const mime   = [NSString stringWithUTF8String:result->mime.c_str()];
+                auto *const length = [NSString stringWithFormat:@"%zu", content.size()];
+
+                [headers setObject:mime forKey:@"Content-Type"];
+                [headers setObject:length forKey:@"Content-Length"];
+
+                auto *const response = [[[NSHTTPURLResponse alloc] initWithURL:urlSchemeTask.request.URL
+                                                                    statusCode:result->status
+                                                                   HTTPVersion:nil
+                                                                  headerFields:headers] autorelease];
+
+                [urlSchemeTask didReceiveResponse:response];
+                [urlSchemeTask didReceiveData:data];
+                [urlSchemeTask didFinish];
             }),
         "v@:@");
 

@@ -5,8 +5,9 @@
 #include "requests.hpp"
 #include "instantiate.hpp"
 
+#include <algorithm>
+
 #include <fmt/core.h>
-#include <rebind/enum.hpp>
 
 #import <objc/objc-runtime.h>
 #import <CoreImage/CoreImage.h>
@@ -17,7 +18,6 @@ namespace saucer
     webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-
         std::call_once(flag,
                        []()
                        {
@@ -25,60 +25,59 @@ namespace saucer
                            register_scheme("saucer");
                        });
 
+        const autorelease_guard guard{};
+
         m_impl->config = impl::make_config(prefs);
 
-        @autoreleasepool
+        NSUUID *uuid{};
+
+        if (prefs.persistent_cookies)
         {
-            NSUUID *uuid{};
+            // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            if (prefs.persistent_cookies)
-            {
-                // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
+            auto id          = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
+            auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
-                auto id = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
-                auto *const data = [NSString stringWithUTF8String:id.c_str()];
+            unsigned char hash[32] = "";
+            CC_SHA256(data.UTF8String, [data lengthOfBytesUsingEncoding:NSUTF8StringEncoding], hash);
 
-                unsigned char hash[32] = "";
-                CC_SHA256(data.UTF8String, [data lengthOfBytesUsingEncoding:NSUTF8StringEncoding], hash);
+            auto top = hash | std::views::drop(16) | std::ranges::to<std::vector<unsigned char>>();
 
-                auto top = hash | std::views::drop(16) | std::ranges::to<std::vector<unsigned char>>();
+            top[6] &= 0x0F;
+            top[6] |= 0x50;
 
-                top[6] &= 0x0F;
-                top[6] |= 0x50;
+            top[8] &= 0x3F;
+            top[8] |= 0x80;
 
-                top[8] &= 0x3F;
-                top[8] |= 0x80;
-
-                uuid = [[NSUUID alloc] initWithUUIDBytes:top.data()];
-            }
-            else
-            {
-                uuid = [[NSUUID alloc] init];
-            }
-
-            auto *const store = [WKWebsiteDataStore dataStoreForIdentifier:uuid];
-            [uuid autorelease];
-
-            [m_impl->config.get() setWebsiteDataStore:store];
-
-            m_impl->controller = m_impl->config.get().userContentController;
-
-            auto *const handler = [[[MessageHandler alloc] initWithParent:this] autorelease];
-            [m_impl->controller addScriptMessageHandler:handler name:@"saucer"];
-
-            m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:m_impl->config.get() frame:NSZeroRect];
-            m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
-
-            [m_impl->web_view.get() setNavigationDelegate:m_impl->delegate.get()];
-
-            if (!prefs.user_agent.empty())
-            {
-                m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
-            }
-
-            window::m_impl->window.contentView = m_impl->web_view.get();
-            m_impl->appearance                 = window::m_impl->window.appearance;
+            uuid = [[NSUUID alloc] initWithUUIDBytes:top.data()];
         }
+        else
+        {
+            uuid = [[NSUUID alloc] init];
+        }
+
+        auto *const store = [WKWebsiteDataStore dataStoreForIdentifier:uuid];
+        [uuid autorelease];
+
+        [m_impl->config.get() setWebsiteDataStore:store];
+
+        m_impl->controller = m_impl->config.get().userContentController;
+
+        auto *const handler = [[[MessageHandler alloc] initWithParent:this] autorelease];
+        [m_impl->controller addScriptMessageHandler:handler name:@"saucer"];
+
+        m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:m_impl->config.get() frame:NSZeroRect];
+        m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
+
+        [m_impl->web_view.get() setNavigationDelegate:m_impl->delegate.get()];
+
+        if (!prefs.user_agent.empty())
+        {
+            m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
+        }
+
+        window::m_impl->window.contentView = m_impl->web_view.get();
+        m_impl->appearance                 = window::m_impl->window.appearance;
 
         window::m_impl->on_closed = [this]
         {
@@ -91,27 +90,20 @@ namespace saucer
 
     webview::~webview()
     {
+        const autorelease_guard guard{};
+
         for (const auto &[name, _] : impl::schemes)
         {
             remove_scheme(name);
         }
 
-        for (const auto &event : rebind::enum_fields<web_event>)
-        {
-            m_events.clear(event.value);
-        }
-
-        @autoreleasepool
-        {
-            [m_impl->controller removeAllScriptMessageHandlers];
-            [m_impl->controller removeAllUserScripts];
-
-            m_impl->web_view.get().navigationDelegate = nil;
-            window::m_impl->window.contentView        = nil;
-        }
-
         std::invoke(window::m_impl->on_closed);
         window::m_impl->on_closed = {};
+
+        [m_impl->controller removeAllScriptMessageHandlers];
+        [m_impl->controller removeAllUserScripts];
+
+        window::m_impl->window.contentView = nil;
     }
 
     bool webview::on_message(const std::string &message)
@@ -162,6 +154,8 @@ namespace saucer
 
     std::string webview::page_title() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return page_title(); });
@@ -172,6 +166,8 @@ namespace saucer
 
     bool webview::dev_tools() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return dev_tools(); });
@@ -185,6 +181,8 @@ namespace saucer
 
     std::string webview::url() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return url(); });
@@ -195,6 +193,8 @@ namespace saucer
 
     bool webview::context_menu() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return context_menu(); });
@@ -205,23 +205,22 @@ namespace saucer
 
     color webview::background() const
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this] { return background(); });
         }
 
-        @autoreleasepool
-        {
-            auto *const background = m_impl->web_view.get().underPageBackgroundColor;
-            auto *const color      = [[[CIColor alloc] initWithColor:background] autorelease];
+        auto *const background = m_impl->web_view.get().underPageBackgroundColor;
+        auto *const color      = [[[CIColor alloc] initWithColor:background] autorelease];
 
-            return {
-                static_cast<std::uint8_t>(color.red * 255.f),
-                static_cast<std::uint8_t>(color.green * 255.f),
-                static_cast<std::uint8_t>(color.blue * 255.f),
-                static_cast<std::uint8_t>(color.alpha * 255.f),
-            };
-        }
+        return {
+            static_cast<std::uint8_t>(color.red * 255.f),
+            static_cast<std::uint8_t>(color.green * 255.f),
+            static_cast<std::uint8_t>(color.blue * 255.f),
+            static_cast<std::uint8_t>(color.alpha * 255.f),
+        };
     }
 
     bool webview::force_dark_mode() const
@@ -236,16 +235,15 @@ namespace saucer
 
     void webview::set_dev_tools(bool enabled)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
-        @autoreleasepool
-        {
-            auto *const settings = m_impl->config.get().preferences;
-            [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
-        }
+        auto *const settings = m_impl->config.get().preferences;
+        [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
 
         // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/_WKInspector.mm.auto.html
         // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/WKWebView.mm.auto.html
@@ -278,6 +276,8 @@ namespace saucer
 
     void webview::set_force_dark_mode(bool enabled)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, enabled] { return set_force_dark_mode(enabled); });
@@ -285,17 +285,16 @@ namespace saucer
 
         m_impl->force_dark = enabled;
 
-        @autoreleasepool
-        {
-            auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
-                                             : m_impl->appearance;
+        auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
+                                         : m_impl->appearance;
 
-            [window::m_impl->window setAppearance:appearance];
-        }
+        [window::m_impl->window setAppearance:appearance];
     }
 
     void webview::set_background(const color &color)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, color] { return set_background(color); });
@@ -304,15 +303,12 @@ namespace saucer
         const auto [r, g, b, a] = color;
         const auto transparent  = a < 255;
 
-        @autoreleasepool
-        {
-            auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
-                                                         green:static_cast<float>(g) / 255.f
-                                                          blue:static_cast<float>(b) / 255.f
-                                                         alpha:static_cast<float>(a) / 255.f];
+        auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
+                                                     green:static_cast<float>(g) / 255.f
+                                                      blue:static_cast<float>(b) / 255.f
+                                                     alpha:static_cast<float>(a) / 255.f];
 
-            [m_impl->web_view.get() setUnderPageBackgroundColor:rgba];
-        }
+        [m_impl->web_view.get() setUnderPageBackgroundColor:rgba];
 
         window::m_impl->set_alpha(transparent ? 0 : 255);
 
@@ -331,36 +327,36 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, file] { return set_file(file); });
         }
 
-        @autoreleasepool
-        {
-            auto *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
-            [m_impl->web_view.get() loadFileURL:url allowingReadAccessToURL:url.URLByDeletingLastPathComponent];
-        }
+        auto *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
+        [m_impl->web_view.get() loadFileURL:url allowingReadAccessToURL:url.URLByDeletingLastPathComponent];
     }
 
     void webview::set_url(const std::string &url)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, url] { return set_url(url); });
         }
 
-        @autoreleasepool
-        {
-            auto *const ns_url  = [NSURL URLWithString:[NSString stringWithUTF8String:url.c_str()]];
-            auto *const request = [NSURLRequest requestWithURL:ns_url];
+        auto *const ns_url  = [NSURL URLWithString:[NSString stringWithUTF8String:url.c_str()]];
+        auto *const request = [NSURLRequest requestWithURL:ns_url];
 
-            [m_impl->web_view.get() loadRequest:request];
-        }
+        [m_impl->web_view.get() loadRequest:request];
     }
 
     void webview::back()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this]() { return back(); });
@@ -371,6 +367,8 @@ namespace saucer
 
     void webview::forward()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this]() { return forward(); });
@@ -381,6 +379,8 @@ namespace saucer
 
     void webview::reload()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this]() { return reload(); });
@@ -391,21 +391,21 @@ namespace saucer
 
     void webview::clear_scripts()
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this]() { return clear_scripts(); });
         }
 
         [m_impl->controller removeAllUserScripts];
-
-        for (const auto &script : m_impl->permanent_scripts)
-        {
-            inject(script);
-        }
+        std::ranges::for_each(m_impl->permanent_scripts, [this](const auto &script) { inject(script); });
     }
 
     void webview::inject(const script &script)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, script]() { return inject(script); });
@@ -415,15 +415,11 @@ namespace saucer
                                                                   : WKUserScriptInjectionTimeAtDocumentEnd;
         const auto main_only = static_cast<BOOL>(script.frame == web_frame::top);
 
-        @autoreleasepool
-        {
-            auto *const user_script =
-                [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
-                                        injectionTime:time
-                                     forMainFrameOnly:main_only] autorelease];
+        auto *const user_script = [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
+                                                          injectionTime:time
+                                                       forMainFrameOnly:main_only] autorelease];
 
-            [m_impl->controller addUserScript:user_script];
-        }
+        [m_impl->controller addUserScript:user_script];
 
         if (!script.permanent)
         {
@@ -440,6 +436,8 @@ namespace saucer
 
     void webview::execute(const std::string &code)
     {
+        const autorelease_guard guard{};
+
         if (!m_parent->thread_safe())
         {
             return dispatch([this, code]() { return execute(code); });
@@ -451,10 +449,7 @@ namespace saucer
             return;
         }
 
-        @autoreleasepool
-        {
-            [m_impl->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
-        }
+        [m_impl->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
     }
 
     void webview::handle_scheme(const std::string &name, scheme::handler handler)

@@ -4,6 +4,12 @@
 
 #include <utility>
 
+extern "C"
+{
+    void *objc_autoreleasePoolPush(void);
+    void objc_autoreleasePoolPop(void *pool);
+}
+
 namespace saucer
 {
     template <typename T>
@@ -20,13 +26,12 @@ namespace saucer
     template <typename T>
     T *objc_ptr<T>::release(T *ptr)
     {
-        // clang-format off
-        // NOLINTNEXTLINE(*-around-statements)
-        if (ptr) @autoreleasepool
+        const autorelease_guard guard{};
+
+        if (ptr)
         {
             [ptr release];
         }
-        // clang-format on
 
         return ptr;
     }
@@ -101,5 +106,12 @@ namespace saucer
     objc_ptr<T> objc_ptr<T>::ref(T *data)
     {
         return retain(data);
+    }
+
+    inline autorelease_guard::autorelease_guard() : m_pool(objc_autoreleasePoolPush()) {}
+
+    inline autorelease_guard::~autorelease_guard()
+    {
+        objc_autoreleasePoolPop(m_pool);
     }
 } // namespace saucer

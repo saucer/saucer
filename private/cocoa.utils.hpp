@@ -36,6 +36,17 @@ namespace saucer
       public:
         static objc_ptr ref(T *data);
     };
+
+    class [[maybe_unused]] autorelease_guard
+    {
+        void *m_pool;
+
+      public:
+        autorelease_guard();
+
+      public:
+        ~autorelease_guard();
+    };
 } // namespace saucer
 
 #include "cocoa.utils.inl"
