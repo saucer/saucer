@@ -40,6 +40,12 @@ namespace saucer
         right  = 1 << 3,
     };
 
+    enum class policy
+    {
+        allow,
+        block,
+    };
+
     struct preferences
     {
         required<std::shared_ptr<saucer::application>> application;
@@ -69,7 +75,7 @@ namespace saucer
             ereignis::event<window_event::closed, void()>,         //
             ereignis::event<window_event::resize, void(int, int)>, //
             ereignis::event<window_event::focus, void(bool)>,      //
-            ereignis::event<window_event::close, bool()>           //
+            ereignis::event<window_event::close, policy()>         //
             >;
 
       protected:

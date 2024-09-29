@@ -56,7 +56,7 @@ namespace saucer
 
     void window::impl::main_window::closeEvent(QCloseEvent *event)
     {
-        if (m_parent->m_events.at<window_event::close>().until(true))
+        if (m_parent->m_events.at<window_event::close>().until(policy::block))
         {
             event->ignore();
             return;

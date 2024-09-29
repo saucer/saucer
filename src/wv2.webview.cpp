@@ -83,7 +83,7 @@ namespace saucer
             auto func = [this, args, deferral]()
             {
                 auto request = navigation{{args}};
-                m_events.at<web_event::navigate>().until(true, request);
+                m_events.at<web_event::navigate>().until(policy::block, request);
                 deferral->Complete();
             };
 
@@ -101,7 +101,7 @@ namespace saucer
 
             auto request = navigation{{args}};
 
-            if (m_events.at<web_event::navigate>().until(true, request))
+            if (m_events.at<web_event::navigate>().until(policy::block, request))
             {
                 args->put_Cancel(true);
             }

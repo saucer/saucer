@@ -212,7 +212,7 @@ namespace saucer
 
                                     auto request = navigation{{action}};
 
-                                    if (delegate->m_parent->m_events.at<web_event::navigate>().until(true, request))
+                                    if (delegate->m_parent->m_events.at<web_event::navigate>().until(policy::block, request))
                                     {
                                         return decision(WKNavigationActionPolicyCancel);
                                     }

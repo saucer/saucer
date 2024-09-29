@@ -135,7 +135,7 @@ namespace saucer
     {
         auto callback = [](void *, saucer::window *self)
         {
-            if (self->m_events.at<window_event::close>().until(true))
+            if (self->m_events.at<window_event::close>().until(policy::block))
             {
                 return true;
             }

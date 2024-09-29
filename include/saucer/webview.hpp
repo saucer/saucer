@@ -53,7 +53,7 @@ namespace saucer
         using events = ereignis::manager<                                     //
             ereignis::event<web_event::dom_ready, void()>,                    //
             ereignis::event<web_event::navigated, void(const std::string &)>, //
-            ereignis::event<web_event::navigate, bool(const navigation &)>,   //
+            ereignis::event<web_event::navigate, policy(const navigation &)>, //
             ereignis::event<web_event::favicon, void(const icon &)>,          //
             ereignis::event<web_event::title, void(const std::string &)>,     //
             ereignis::event<web_event::load, void(const state &)>             //

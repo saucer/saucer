@@ -48,7 +48,7 @@ namespace saucer
                 .type     = type,
             }};
 
-            if (self->m_events.at<web_event::navigate>().until(true, request))
+            if (self->m_events.at<web_event::navigate>().until(policy::block, request))
             {
                 webkit_policy_decision_ignore(decision);
                 return true;

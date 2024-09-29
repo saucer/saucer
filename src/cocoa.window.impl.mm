@@ -50,7 +50,7 @@ namespace saucer
                                     auto *self = delegate->m_parent;
                                     auto &impl = self->m_impl;
 
-                                    if (self->m_events.at<window_event::close>().until(true))
+                                    if (self->m_events.at<window_event::close>().until(policy::block))
                                     {
                                         return false;
                                     }

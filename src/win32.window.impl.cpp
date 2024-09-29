@@ -91,7 +91,7 @@ namespace saucer
             break;
         }
         case WM_CLOSE: {
-            if (window->m_events.at<window_event::close>().until(true))
+            if (window->m_events.at<window_event::close>().until(policy::block))
             {
                 return 0;
             }

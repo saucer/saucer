@@ -104,7 +104,7 @@ namespace saucer
         {
             auto request = navigation{{&req}};
 
-            if (!self->m_events.at<web_event::navigate>().during(false, request).has_value())
+            if (!self->m_events.at<web_event::navigate>().during(policy::allow, request).has_value())
             {
                 return;
             }
