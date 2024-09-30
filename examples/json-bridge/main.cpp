@@ -39,7 +39,7 @@ int main()
         std::println("Resize {}:{}", width, height);
     });
 
-    webview.expose("func1", [](int param) { return param * 10; });
+    webview.expose("func1", [](int a, int b) { return a + b; });
     webview.expose("func2", func2, saucer::launch::async);
 
     webview.evaluate<float>("Math.random()") | then([](auto result) { //
@@ -50,11 +50,11 @@ int main()
         std::println("Pow(5,2): {}", result);
     });
 
-    webview.evaluate<int>("await saucer.call({})", saucer::make_args("func1", std::make_tuple(10))) | then([](auto res) { //
+    webview.evaluate<int>("await saucer.exposed.func1({})", saucer::make_args(5, 5)) | then([](auto res) { //
         std::println("func1: {}", res);
     });
 
-    webview.evaluate<custom_data>("await saucer.call({}, [{}])", "func2", custom_data{500}) | then([](auto res) { //
+    webview.evaluate<custom_data>("await saucer.exposed.func2({})", custom_data{500}) | then([](auto res) { //
         std::println("func2: {}", res.field);
     });
 
