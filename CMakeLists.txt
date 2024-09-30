@@ -208,13 +208,12 @@ if (saucer_polyfill_thread)
 
   CPMFindPackage(
     NAME           jthread
-    GIT_TAG        V23.03.0
-    GIT_REPOSITORY "https://github.com/StirlingLabs/jthread"
-    OPTIONS        "ENABLE_JTHREAD_TESTS OFF"
+    VERSION        24.00.0
+    GIT_REPOSITORY "https://github.com/saucer/jthread"
   )
 
-  link_libraries(jthread)
-  target_precompile_headers(${PROJECT_NAME} PUBLIC "${jthread_SOURCE_DIR}/include/jthread")
+  link_libraries(nonstd::jthread)
+  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/jthread.hpp")
 
   set(saucer_fmt_install OFF)
 endif()
