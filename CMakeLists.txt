@@ -15,7 +15,6 @@ option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"     
 
 option(saucer_no_version_check  "Skip compiler version check"                      OFF)
 option(saucer_tests             "Build tests"                                      OFF)
-option(saucer_ci                "Set when running CI-Tests"                        OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
@@ -150,10 +149,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE           "include/saucer")
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_tests)
-  if (saucer_ci)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_CI)
-  endif()
-  
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_TESTS)
 endif()
 
