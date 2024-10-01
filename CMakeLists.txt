@@ -274,7 +274,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        3.6.0
+  VERSION        3.6.1
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
