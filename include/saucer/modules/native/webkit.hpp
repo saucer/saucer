@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cocoa.utils.hpp>
 #include <saucer/modules/module.hpp>
 
 #import <Cocoa/Cocoa.h>
@@ -14,6 +15,7 @@ namespace saucer
 
     struct webview::impl
     {
-        WKWebView *web_view;
+        objc_ptr<WKWebViewConfiguration> config;
+        objc_ptr<WKWebView> web_view;
     };
 } // namespace saucer
