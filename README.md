@@ -16,7 +16,7 @@
 
 ### Documentation
 
-Our documentation can be found [here](https://saucer.github.io/).
+The documentation can be found [here](https://saucer.github.io/).
 
 ### Examples
 
