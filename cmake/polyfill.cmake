@@ -27,12 +27,27 @@ function(check_features)
         has_move_only_function
     )
 
+    check_cxx_source_compiles(
+        "#include <expected>
+
+        int main()
+        {
+            std::expected<int, int> e{};
+            return 0;
+        }"
+        has_expected
+    )
+
     if (NOT has_jthread)
         set(saucer_polyfill_thread ON PARENT_SCOPE)
     endif()
 
     if (NOT has_move_only_function)
         set(saucer_polyfill_functional ON PARENT_SCOPE)
+    endif()
+
+    if (NOT has_expected)
+        set(saucer_polyfill_expected ON PARENT_SCOPE)
     endif()
 endfunction()
 

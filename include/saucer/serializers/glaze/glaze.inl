@@ -3,13 +3,13 @@
 #include "glaze.hpp"
 
 #include <optional>
+#include <expected>
 
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 
 #include <boost/callable_traits.hpp>
 
-#include <tl/expected.hpp>
 #include <rebind/name.hpp>
 #include <rebind/enum.hpp>
 
@@ -160,7 +160,7 @@ namespace saucer::serializers::glaze
         }
 
         template <typename T>
-        tl::expected<T, std::string> parse(const std::string &data)
+        std::expected<T, std::string> parse(const std::string &data)
         {
             T rtn{};
 
@@ -173,15 +173,15 @@ namespace saucer::serializers::glaze
 
             if (auto err = glz::read<opts>(json, data); err)
             {
-                return tl::unexpected{std::string{rebind::find_enum_name(err.ec).value_or("Unknown")}};
+                return std::unexpected{std::string{rebind::find_enum_name(err.ec).value_or("Unknown")}};
             }
 
-            return tl::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};
+            return std::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};
         }
 
         template <typename T>
             requires(is_tuple<T> and std::tuple_size_v<T> == 0)
-        tl::expected<T, std::string> parse(const std::string &)
+        std::expected<T, std::string> parse(const std::string &)
         {
             return {};
         }

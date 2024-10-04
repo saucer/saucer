@@ -6,9 +6,8 @@
 #include <string>
 
 #include <memory>
+#include <expected>
 #include <functional>
-
-#include <tl/expected.hpp>
 
 namespace saucer::scheme
 {
@@ -53,5 +52,5 @@ namespace saucer::scheme
         [[nodiscard]] std::map<std::string, std::string> headers() const;
     };
 
-    using handler = std::move_only_function<tl::expected<response, error>(const request &)>;
+    using handler = std::move_only_function<std::expected<response, error>(const request &)>;
 } // namespace saucer::scheme

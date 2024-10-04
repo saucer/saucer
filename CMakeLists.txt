@@ -228,6 +228,23 @@ if (saucer_polyfill_functional)
   set(saucer_fmt_install OFF)
 endif()
 
+if (saucer_polyfill_expected)
+  message(STATUS "[saucer] Using std::expected polyfill")
+
+  CPMFindPackage(
+    NAME             tl-expected
+    VERSION          1.1.0
+    GIT_REPOSITORY   "https://github.com/TartanLlama/expected"
+    OPTIONS          "EXPECTED_BUILD_TESTS OFF"
+    EXCLUDE_FROM_ALL ON
+  )
+
+  link_libraries(tl::expected)
+  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/expected.hpp")
+  
+  set(saucer_fmt_install OFF)
+endif()
+
 # --------------------------------------------------------------------------------------------------------
 # Setup Dependencies
 # --------------------------------------------------------------------------------------------------------
@@ -244,14 +261,6 @@ CPMFindPackage(
   NAME           boost_callable_traits
   GIT_TAG        boost-1.86.0
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
-)
-
-CPMFindPackage(
-  NAME             tl-expected
-  VERSION          1.1.0
-  GIT_REPOSITORY   "https://github.com/TartanLlama/expected"
-  OPTIONS          "EXPECTED_BUILD_TESTS OFF"
-  EXCLUDE_FROM_ALL ON
 )
 
 CPMFindPackage(
@@ -298,7 +307,7 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits tl::expected glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
+target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends

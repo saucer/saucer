@@ -1,6 +1,6 @@
 #include "serializers/glaze/glaze.hpp"
 
-#include <tl/expected.hpp>
+#include <expected>
 
 template <>
 struct glz::meta<saucer::serializers::glaze::function_data>
@@ -40,7 +40,7 @@ namespace saucer::serializers::glaze
     }
 
     template <typename T>
-    tl::expected<T, glz::error_ctx> parse_as(const std::string &buffer)
+    std::expected<T, glz::error_ctx> parse_as(const std::string &buffer)
     {
         static constexpr auto opts = glz::opts{
             .error_on_unknown_keys = true,
@@ -53,7 +53,7 @@ namespace saucer::serializers::glaze
 
         if (error)
         {
-            return tl::unexpected{error};
+            return std::unexpected{error};
         }
 
         return value;
