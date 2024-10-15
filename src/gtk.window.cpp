@@ -8,6 +8,7 @@
 #include <flagpp/flags.hpp>
 
 #include <cassert>
+#include <string_view>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -29,7 +30,14 @@ namespace saucer
         m_impl->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
 
         gtk_box_append(m_impl->content, GTK_WIDGET(m_impl->header));
-        gtk_css_provider_load_from_string(m_impl->style.get(), ".transparent { background-color: transparent; }");
+
+        static constexpr std::string_view css = ".transparent { background-color: transparent; }";
+
+#if GTK_CHECK_VERSION(4, 10, 0)
+        gtk_css_provider_load_from_string(m_impl->style.get(), css.data());
+#else
+        gtk_css_provider_load_from_data(m_impl->style.get(), css.data(), css.size());
+#endif
 
         gtk_window_set_hide_on_close(GTK_WINDOW(m_impl->window), true);
         adw_application_window_set_content(m_impl->window, GTK_WIDGET(m_impl->content));
