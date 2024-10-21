@@ -192,7 +192,7 @@ namespace saucer
 
         const auto &impl = web_view->m_impl;
 
-        auto original = [&]()
+        auto original = [&]
         {
             return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
         };

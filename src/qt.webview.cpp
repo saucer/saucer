@@ -70,7 +70,7 @@ namespace saucer
         m_impl->channel->registerObject("saucer", m_impl->channel_obj.get());
 
         m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::loadStarted,
-                                  [this]()
+                                  [this]
                                   {
                                       m_impl->dom_loaded = false;
                                       m_events.at<web_event::load>().fire(state::started);
@@ -440,7 +440,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return on<Event>(std::move(callback)); });
         }
 

@@ -110,7 +110,7 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<window_event::maximize>().fire(self->maximized());
                               }];

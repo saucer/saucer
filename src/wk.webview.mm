@@ -19,7 +19,7 @@ namespace saucer
     {
         static std::once_flag flag;
         std::call_once(flag,
-                       []()
+                       []
                        {
                            impl::init_objc();
                            register_scheme("saucer");
@@ -503,7 +503,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return once<Event>(std::move(callback)); });
         }
 
@@ -516,7 +516,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return on<Event>(std::move(callback)); });
         }
 

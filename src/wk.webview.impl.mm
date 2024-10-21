@@ -31,7 +31,7 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<web_event::navigated>().fire(self->url());
                               }];
@@ -61,7 +61,7 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<web_event::title>().fire(self->page_title());
                               }];

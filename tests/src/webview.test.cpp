@@ -4,7 +4,7 @@
 using namespace boost::ut;
 using namespace saucer::tests;
 
-suite<"webview"> webview_suite = []()
+suite<"webview"> webview_suite = []
 {
 #ifndef SAUCER_WEBKIT
     "page-title"_test_async = [](const std::shared_ptr<saucer::smartview<>> &webview)
@@ -203,7 +203,7 @@ suite<"webview"> webview_suite = []()
 
         webview->embed({{"embed.html", saucer::embedded_file{
                                            .content = saucer::stash<>::lazy(
-                                               [&page, &called]()
+                                               [&page, &called]
                                                {
                                                    called++;
                                                    return saucer::make_stash(page);

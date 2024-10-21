@@ -60,7 +60,7 @@ namespace saucer
         const auto height = g_signal_connect(window.get(), "notify::default-height", G_CALLBACK(+callback), self);
 
         event.on_clear(
-            [this, width, height]()
+            [this, width, height]
             {
                 g_signal_handler_disconnect(window.get(), width);
                 g_signal_handler_disconnect(window.get(), height);

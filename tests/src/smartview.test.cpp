@@ -9,7 +9,7 @@ struct some_struct
     int x;
 };
 
-suite<"smartview"> smartview_suite = []()
+suite<"smartview"> smartview_suite = []
 {
     using string_vec = std::vector<std::string>;
 

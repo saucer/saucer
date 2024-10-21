@@ -72,9 +72,10 @@ namespace saucer
             ComPtr<ICoreWebView2Deferral> deferral;
             args->GetDeferral(&deferral);
 
-            auto func = [this, args, deferral]()
+            auto func = [this, args, deferral]
             {
                 auto request = navigation{{args}};
+
                 m_events.at<web_event::navigate>().until(policy::block, request);
                 deferral->Complete();
             };
@@ -511,7 +512,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name, handler = std::move(handler)]() mutable
+            return dispatch([this, name, handler = std::move(handler)] mutable
                             { return handle_scheme(name, std::move(handler)); });
         }
 
@@ -583,7 +584,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return on<Event>(std::move(callback)); });
         }
 

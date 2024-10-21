@@ -19,7 +19,7 @@ namespace saucer::tests
         using clock      = std::chrono::system_clock;
         const auto start = clock::now();
 
-        auto check = [&pred]()
+        auto check = [&pred]
         {
             if constexpr (std::is_invocable_v<T>)
             {

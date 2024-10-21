@@ -119,7 +119,7 @@ namespace saucer
         const auto nav_id = web_view->connect(web_page.get(), &QWebEnginePage::navigationRequested, handler);
 
         event.on_clear(
-            [this, new_id, nav_id]()
+            [this, new_id, nav_id]
             {
                 web_page->disconnect(new_id);
                 web_page->disconnect(nav_id);

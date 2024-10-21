@@ -56,7 +56,7 @@ namespace saucer
     template <typename Callback>
     stash<T> stash<T>::lazy(Callback callback)
     {
-        auto fn = [callback = std::move(callback)]()
+        auto fn = [callback = std::move(callback)]
         {
             return std::make_shared<stash>(std::invoke(callback));
         };

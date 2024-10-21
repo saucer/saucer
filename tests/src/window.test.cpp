@@ -4,7 +4,7 @@
 using namespace boost::ut;
 using namespace saucer::tests;
 
-suite<"window"> window_suite = []()
+suite<"window"> window_suite = []
 {
 #ifndef SAUCER_WEBKITGTK
     "minimize"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)

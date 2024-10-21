@@ -54,7 +54,7 @@ namespace saucer::tests
           public:
             constexpr auto operator=(std::function<void(std::shared_ptr<T>)> test) // NOLINT(*-assign*)
             {
-                return boost::ut::test(name) = [test = std::move(test)]()
+                return boost::ut::test(name) = [test = std::move(test)]
                 {
                     auto app = saucer::application::acquire({""});
 
