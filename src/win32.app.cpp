@@ -20,12 +20,13 @@ namespace saucer
             .lpszClassName = m_impl->id.c_str(),
         };
 
-        if (RegisterClassW(&m_impl->wnd_class))
+        if (!RegisterClassW(&m_impl->wnd_class))
         {
-            return;
+            assert(false && "RegisterClassW() failed");
         }
 
-        assert(false && "RegisterClassW() failed");
+        Gdiplus::GdiplusStartupInput input{};
+        Gdiplus::GdiplusStartup(&m_impl->gdi_token, &input, nullptr);
     }
 
     application::~application()
