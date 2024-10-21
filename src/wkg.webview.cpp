@@ -65,11 +65,8 @@ namespace saucer
 
         auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
         {
-            auto *const raw = jsc_value_to_string(value);
-            std::string message{raw};
-            g_free(raw);
-
-            reinterpret_cast<webview *>(data)->on_message(message);
+            utils::custom_ptr<char, g_free> raw{jsc_value_to_string(value)};
+            reinterpret_cast<webview *>(data)->on_message(raw.get());
         };
 
         m_impl->message_received =

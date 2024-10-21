@@ -56,14 +56,14 @@ namespace saucer
             self->m_events.at<window_event::resize>().fire(width, height);
         };
 
-        const auto width  = g_signal_connect(window, "notify::default-width", G_CALLBACK(+callback), self);
-        const auto height = g_signal_connect(window, "notify::default-height", G_CALLBACK(+callback), self);
+        const auto width  = g_signal_connect(window.get(), "notify::default-width", G_CALLBACK(+callback), self);
+        const auto height = g_signal_connect(window.get(), "notify::default-height", G_CALLBACK(+callback), self);
 
         event.on_clear(
             [this, width, height]()
             {
-                g_signal_handler_disconnect(window, width);
-                g_signal_handler_disconnect(window, height);
+                g_signal_handler_disconnect(window.get(), width);
+                g_signal_handler_disconnect(window.get(), height);
             });
     }
 
@@ -82,8 +82,8 @@ namespace saucer
             self->m_events.at<window_event::maximize>().fire(self->maximized());
         };
 
-        const auto id = g_signal_connect(window, "notify::maximized", G_CALLBACK(+callback), self);
-        event.on_clear([this, id]() { g_signal_handler_disconnect(window, id); });
+        const auto id = g_signal_connect(window.get(), "notify::maximized", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(window.get(), id); });
     }
 
     template <>
@@ -106,8 +106,8 @@ namespace saucer
             self->m_events.at<window_event::focus>().fire(self->focused());
         };
 
-        const auto id = g_signal_connect(window, "notify::is-active", G_CALLBACK(+callback), self);
-        event.on_clear([this, id]() { g_signal_handler_disconnect(window, id); });
+        const auto id = g_signal_connect(window.get(), "notify::is-active", G_CALLBACK(+callback), self);
+        event.on_clear([this, id]() { g_signal_handler_disconnect(window.get(), id); });
     }
 
     template <>
@@ -124,11 +124,11 @@ namespace saucer
     {
         if (!enabled)
         {
-            gtk_widget_remove_css_class(GTK_WIDGET(window), "transparent");
+            gtk_widget_remove_css_class(GTK_WIDGET(window.get()), "transparent");
             return;
         }
 
-        gtk_widget_add_css_class(GTK_WIDGET(window), "transparent");
+        gtk_widget_add_css_class(GTK_WIDGET(window.get()), "transparent");
     }
 
     void window::impl::track(saucer::window *self) const
@@ -141,7 +141,7 @@ namespace saucer
             }
 
             auto parent      = self->m_parent;
-            auto *identifier = self->m_impl->window;
+            auto *identifier = self->m_impl->window.get();
 
             self->m_events.at<window_event::closed>().fire();
 
@@ -156,7 +156,7 @@ namespace saucer
             return false;
         };
 
-        g_signal_connect(window, "close-request", G_CALLBACK(+callback), self);
+        g_signal_connect(window.get(), "close-request", G_CALLBACK(+callback), self);
     }
 
     void window::impl::update_decorations(saucer::window *self) const
@@ -169,6 +169,6 @@ namespace saucer
             self->m_events.at<window_event::decorated>().fire(decorations);
         };
 
-        g_signal_connect(window, "notify::decorated", G_CALLBACK(+callback), self);
+        g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);
     }
 } // namespace saucer

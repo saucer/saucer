@@ -2,8 +2,20 @@
 
 #include <gtk/gtk.h>
 
+#include <memory>
+
 namespace saucer::utils
 {
+    template <auto Deleter>
+    struct custom_deleter
+    {
+        template <typename T>
+        constexpr void operator()(T *ptr) const;
+    };
+
+    template <typename T, auto Deleter>
+    using custom_ptr = std::unique_ptr<T, custom_deleter<Deleter>>;
+
     template <typename T, auto Ref, auto Unref>
     class ref_ptr
     {

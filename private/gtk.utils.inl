@@ -7,6 +7,13 @@
 
 namespace saucer::utils
 {
+    template <auto Deleter>
+    template <typename T>
+    constexpr void custom_deleter<Deleter>::operator()(T *ptr) const
+    {
+        Deleter(ptr);
+    }
+
     template <typename T, auto Ref, auto Unref>
     template <auto Action>
     T *ref_ptr<T, Ref, Unref>::perform(T *data)

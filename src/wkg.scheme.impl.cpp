@@ -35,9 +35,11 @@ namespace saucer::scheme
             auto error = result.error();
             auto name  = rebind::find_enum_name(error).value_or("unknown");
 
-            auto *const err = g_error_new(quark, std::to_underlying(result.error()), "%s", std::string{name}.c_str());
-            webkit_uri_scheme_request_finish_error(request, err);
-            g_error_free(err);
+            utils::custom_ptr<GError, g_error_free> err{
+                g_error_new(quark, std::to_underlying(result.error()), "%s", std::string{name}.c_str()),
+            };
+
+            webkit_uri_scheme_request_finish_error(request, err.get());
 
             return;
         }
