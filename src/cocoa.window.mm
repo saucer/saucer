@@ -46,6 +46,18 @@ namespace saucer
         [m_impl->window close];
     }
 
+    bool window::visible() const
+    {
+        const autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this] { return visible(); });
+        }
+
+        return m_impl->window.isVisible;
+    }
+
     bool window::focused() const
     {
         const autorelease_guard guard{};
