@@ -12,7 +12,7 @@ namespace saucer
 {
     struct click_event
     {
-        g_event_ptr event;
+        utils::g_event_ptr event;
         GtkEventController *controller;
     };
 
@@ -33,7 +33,7 @@ namespace saucer
     struct window::impl
     {
         AdwApplicationWindow *window;
-        g_object_ptr<GtkCssProvider> style;
+        utils::g_object_ptr<GtkCssProvider> style;
 
       public:
         GtkBox *content;

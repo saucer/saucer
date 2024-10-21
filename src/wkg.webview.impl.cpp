@@ -41,7 +41,7 @@ namespace saucer
             }
 
             auto *converted = reinterpret_cast<WebKitNavigationPolicyDecision *>(decision);
-            auto nav        = g_object_ptr<WebKitNavigationPolicyDecision>::ref(converted);
+            auto nav        = utils::g_object_ptr<WebKitNavigationPolicyDecision>::ref(converted);
 
             auto request = navigation{{
                 .decision = std::move(nav),

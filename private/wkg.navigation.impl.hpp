@@ -9,7 +9,7 @@ namespace saucer
 {
     struct navigation::impl
     {
-        g_object_ptr<WebKitNavigationPolicyDecision> decision;
+        utils::g_object_ptr<WebKitNavigationPolicyDecision> decision;
 
       public:
         WebKitPolicyDecisionType type;

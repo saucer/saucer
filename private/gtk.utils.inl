@@ -5,7 +5,7 @@
 #include <utility>
 #include <functional>
 
-namespace saucer
+namespace saucer::utils
 {
     template <typename T, auto Ref, auto Unref>
     template <auto Action>
@@ -91,4 +91,4 @@ namespace saucer
     {
         return perform<Ref>(data);
     }
-} // namespace saucer
+} // namespace saucer::utils

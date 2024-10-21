@@ -20,14 +20,14 @@ namespace saucer::scheme
 
     stash<> request::content() const
     {
-        const auto stream = g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request)};
+        const auto stream = utils::g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request)};
 
         if (!stream)
         {
             return stash<>::empty();
         }
 
-        const auto content = g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
+        const auto content = utils::g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
 
         if (!content)
         {

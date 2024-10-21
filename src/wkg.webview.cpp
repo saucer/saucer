@@ -111,7 +111,7 @@ namespace saucer
             auto *const event      = gtk_event_controller_get_current_event(controller);
 
             self->window::m_impl->prev_click.emplace(click_event{
-                .event      = g_event_ptr::ref(event),
+                .event      = utils::g_event_ptr::ref(event),
                 .controller = controller,
             });
         };
@@ -182,7 +182,7 @@ namespace saucer
             return dispatch([this] { return favicon(); });
         }
 
-        return {{g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view))}};
+        return {{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view))}};
     }
 
     std::string webview::page_title() const

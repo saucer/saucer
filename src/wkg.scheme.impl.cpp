@@ -45,10 +45,10 @@ namespace saucer::scheme
         const auto data = result->data;
         const auto size = static_cast<gssize>(data.size());
 
-        const auto bytes  = g_bytes_ptr{g_bytes_new(data.data(), size)};
-        const auto stream = g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
+        const auto bytes  = utils::g_bytes_ptr{g_bytes_new(data.data(), size)};
+        const auto stream = utils::g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
 
-        const auto response = g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
+        const auto res = utils::g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
         auto *const headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
 
         for (const auto &[name, value] : result->headers)
@@ -56,10 +56,10 @@ namespace saucer::scheme
             soup_message_headers_append(headers, name.c_str(), value.c_str());
         }
 
-        webkit_uri_scheme_response_set_content_type(response.get(), result->mime.c_str());
-        webkit_uri_scheme_response_set_status(response.get(), result->status, "");
-        webkit_uri_scheme_response_set_http_headers(response.get(), headers);
+        webkit_uri_scheme_response_set_content_type(res.get(), result->mime.c_str());
+        webkit_uri_scheme_response_set_status(res.get(), result->status, "");
+        webkit_uri_scheme_response_set_http_headers(res.get(), headers);
 
-        webkit_uri_scheme_request_finish_with_response(request, response.get());
+        webkit_uri_scheme_request_finish_with_response(request, res.get());
     }
 } // namespace saucer::scheme

@@ -11,7 +11,7 @@ namespace saucer
     struct window::impl
     {
         AdwApplicationWindow *window;
-        g_object_ptr<GtkCssProvider> style;
+        utils::g_object_ptr<GtkCssProvider> style;
 
       public:
         GtkBox *content;

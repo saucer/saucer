@@ -10,6 +10,6 @@ namespace saucer
 {
     struct icon::impl
     {
-        g_object_ptr<GdkTexture> texture;
+        utils::g_object_ptr<GdkTexture> texture;
     };
 } // namespace saucer
