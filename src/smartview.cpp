@@ -139,7 +139,7 @@ namespace saucer
             return std::invoke(func, std::move(data), executor);
         }
 
-        m_impl->pool->emplace([func, data = std::move(data), executor = std::move(executor)] mutable
+        m_impl->pool->emplace([func, data = std::move(data), executor = std::move(executor)]() mutable
                               { std::invoke(func, std::move(data), executor); });
     }
 

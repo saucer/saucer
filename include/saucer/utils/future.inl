@@ -34,7 +34,7 @@ namespace saucer
     template <typename T, typename Callback>
     void then(std::future<T> future, Callback callback)
     {
-        std::thread{[future = std::move(future), callback = std::move(callback)] mutable
+        std::thread{[future = std::move(future), callback = std::move(callback)]() mutable
                     {
                         std::invoke(callback, future.get());
                     }}
@@ -66,7 +66,7 @@ namespace saucer
     template <typename T>
     void forget(std::future<T> future)
     {
-        std::thread{[future = std::move(future)] mutable
+        std::thread{[future = std::move(future)]() mutable
                     {
                         future.wait();
                     }}
