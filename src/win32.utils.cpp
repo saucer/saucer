@@ -1,43 +1,21 @@
 #include "win32.utils.hpp"
 
-#include <string_view>
-
 #include <fmt/core.h>
 
 namespace saucer
 {
-    class library
-    {
-        HMODULE m_module;
-
-      public:
-        library(std::wstring_view name) : m_module(LoadLibraryW(name.data())) {}
-
-      public:
-        ~library()
-        {
-            FreeLibrary(m_module);
-        }
-
-      public:
-        [[nodiscard]] HMODULE value() const
-        {
-            return m_module;
-        }
-    };
-
     void utils::set_dpi_awareness()
     {
-        auto shcore = library{L"Shcore.dll"};
+        module_handle module{LoadLibraryW(L"Shcore.dll")};
 
-        if (auto *func = GetProcAddress(shcore.value(), "SetProcessDpiAwareness"); func)
+        if (auto *func = GetProcAddress(module.get(), "SetProcessDpiAwareness"); func)
         {
             reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(func)(2);
             return;
         }
 
-        auto user32 = library{L"user32.dll"};
-        auto *func  = GetProcAddress(user32.value(), "SetProcessDPIAware");
+        module     = LoadLibraryW(L"user32.dll");
+        auto *func = GetProcAddress(module.get(), "SetProcessDPIAware");
 
         if (!func)
         {
@@ -49,8 +27,8 @@ namespace saucer
 
     void utils::set_immersive_dark(HWND hwnd, bool enabled)
     {
-        auto dwmapi = library{L"Dwmapi.dll"};
-        auto *func  = GetProcAddress(dwmapi.value(), "DwmSetWindowAttribute");
+        module_handle dwmapi{LoadLibraryW(L"Dwmapi.dll")};
+        auto *func = GetProcAddress(dwmapi.get(), "DwmSetWindowAttribute");
 
         if (!func)
         {

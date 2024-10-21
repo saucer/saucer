@@ -34,12 +34,12 @@ namespace saucer
                                        m_parent->native()->handle,     //
                                        nullptr);
 
-        assert(m_impl->hwnd && "CreateWindowExW() failed");
+        assert(m_impl->hwnd.get() && "CreateWindowExW() failed");
 
         utils::set_dpi_awareness();
-        m_impl->o_wnd_proc = utils::overwrite_wndproc(m_impl->hwnd, impl::wnd_proc);
+        m_impl->o_wnd_proc = utils::overwrite_wndproc(m_impl->hwnd.get(), impl::wnd_proc);
 
-        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     }
 
     window::~window()
@@ -51,8 +51,7 @@ namespace saucer
 
         close();
 
-        SetWindowLongPtrW(m_impl->hwnd, GWLP_USERDATA, 0);
-        DestroyWindow(m_impl->hwnd);
+        SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, 0);
     }
 
     bool window::focused() const
@@ -62,7 +61,7 @@ namespace saucer
             return dispatch([this]() { return focused(); });
         }
 
-        return m_impl->hwnd == GetForegroundWindow();
+        return m_impl->hwnd.get() == GetForegroundWindow();
     }
 
     bool window::minimized() const
@@ -72,7 +71,7 @@ namespace saucer
             return dispatch([this]() { return minimized(); });
         }
 
-        return IsIconic(m_impl->hwnd);
+        return IsIconic(m_impl->hwnd.get());
     }
 
     bool window::maximized() const
@@ -85,7 +84,7 @@ namespace saucer
         WINDOWPLACEMENT placement;
         placement.length = sizeof(WINDOWPLACEMENT);
 
-        GetWindowPlacement(m_impl->hwnd, &placement);
+        GetWindowPlacement(m_impl->hwnd.get(), &placement);
 
         return placement.showCmd == SW_SHOWMAXIMIZED;
     }
@@ -97,7 +96,7 @@ namespace saucer
             return dispatch([this]() { return resizable(); });
         }
 
-        return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & WS_THICKFRAME;
+        return GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
     }
 
     bool window::decorations() const
@@ -107,7 +106,7 @@ namespace saucer
             return dispatch([this]() { return decorations(); });
         }
 
-        return GetWindowLongW(m_impl->hwnd, GWL_STYLE) & WS_CAPTION;
+        return GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE) & WS_CAPTION;
     }
 
     bool window::always_on_top() const
@@ -117,7 +116,7 @@ namespace saucer
             return dispatch([this]() { return always_on_top(); });
         }
 
-        return GetWindowLong(m_impl->hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST;
+        return GetWindowLong(m_impl->hwnd.get(), GWL_EXSTYLE) & WS_EX_TOPMOST;
     }
 
     std::string window::title() const
@@ -129,8 +128,8 @@ namespace saucer
 
         std::wstring title;
 
-        title.resize(GetWindowTextLengthW(m_impl->hwnd));
-        GetWindowTextW(m_impl->hwnd, title.data(), static_cast<int>(title.capacity()));
+        title.resize(GetWindowTextLengthW(m_impl->hwnd.get()));
+        GetWindowTextW(m_impl->hwnd.get(), title.data(), static_cast<int>(title.capacity()));
 
         return utils::narrow(title);
     }
@@ -143,7 +142,7 @@ namespace saucer
         }
 
         RECT rect;
-        GetWindowRect(m_impl->hwnd, &rect);
+        GetWindowRect(m_impl->hwnd.get(), &rect);
 
         return {rect.right - rect.left, rect.bottom - rect.top};
     }
@@ -181,7 +180,7 @@ namespace saucer
             return dispatch([this]() { hide(); });
         }
 
-        ShowWindow(m_impl->hwnd, SW_HIDE);
+        ShowWindow(m_impl->hwnd.get(), SW_HIDE);
     }
 
     void window::show()
@@ -191,8 +190,8 @@ namespace saucer
             return dispatch([this]() { show(); });
         }
 
-        m_parent->native()->instances[m_impl->hwnd] = true;
-        ShowWindow(m_impl->hwnd, SW_SHOW);
+        m_parent->native()->instances[m_impl->hwnd.get()] = true;
+        ShowWindow(m_impl->hwnd.get(), SW_SHOW);
     }
 
     void window::close()
@@ -202,7 +201,7 @@ namespace saucer
             return dispatch([this]() { close(); });
         }
 
-        SendMessage(m_impl->hwnd, WM_CLOSE, 0, 0);
+        SendMessage(m_impl->hwnd.get(), WM_CLOSE, 0, 0);
     }
 
     void window::focus()
@@ -212,7 +211,7 @@ namespace saucer
             return dispatch([this]() { focus(); });
         }
 
-        SetForegroundWindow(m_impl->hwnd);
+        SetForegroundWindow(m_impl->hwnd.get());
     }
 
     // Kudos to Qt for serving as a really good reference here:
@@ -226,7 +225,7 @@ namespace saucer
         }
 
         ReleaseCapture();
-        SendMessage(m_impl->hwnd, WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
+        SendMessage(m_impl->hwnd.get(), WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
     }
 
     void window::start_resize(saucer::window_edge edge)
@@ -272,7 +271,7 @@ namespace saucer
         }
 
         ReleaseCapture();
-        SendMessage(m_impl->hwnd, WM_SYSCOMMAND, translated, 0);
+        SendMessage(m_impl->hwnd.get(), WM_SYSCOMMAND, translated, 0);
     }
 
     void window::set_minimized(bool enabled)
@@ -282,7 +281,7 @@ namespace saucer
             return dispatch([this, enabled]() { set_minimized(enabled); });
         }
 
-        ShowWindow(m_impl->hwnd, enabled ? SW_MINIMIZE : SW_RESTORE);
+        ShowWindow(m_impl->hwnd.get(), enabled ? SW_MINIMIZE : SW_RESTORE);
     }
 
     void window::set_maximized(bool enabled)
@@ -292,7 +291,7 @@ namespace saucer
             return dispatch([this, enabled]() { set_maximized(enabled); });
         }
 
-        ShowWindow(m_impl->hwnd, enabled ? SW_MAXIMIZE : SW_RESTORE);
+        ShowWindow(m_impl->hwnd.get(), enabled ? SW_MAXIMIZE : SW_RESTORE);
     }
 
     void window::set_resizable(bool enabled)
@@ -303,7 +302,7 @@ namespace saucer
         }
 
         static constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-        auto current_style          = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        auto current_style          = GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE);
 
         if (enabled)
         {
@@ -314,7 +313,7 @@ namespace saucer
             current_style &= ~flags;
         }
 
-        SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
+        SetWindowLongW(m_impl->hwnd.get(), GWL_STYLE, current_style);
     }
 
     void window::set_decorations(bool enabled)
@@ -325,7 +324,7 @@ namespace saucer
         }
 
         static constexpr auto flag = WS_TILEDWINDOW;
-        auto current_style         = GetWindowLongW(m_impl->hwnd, GWL_STYLE);
+        auto current_style         = GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE);
 
         if (enabled)
         {
@@ -336,7 +335,7 @@ namespace saucer
             current_style &= ~flag;
         }
 
-        SetWindowLongW(m_impl->hwnd, GWL_STYLE, current_style);
+        SetWindowLongW(m_impl->hwnd.get(), GWL_STYLE, current_style);
     }
 
     void window::set_always_on_top(bool enabled)
@@ -346,7 +345,7 @@ namespace saucer
             return dispatch([this, enabled]() { set_always_on_top(enabled); });
         }
 
-        SetWindowPos(m_impl->hwnd, enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        SetWindowPos(m_impl->hwnd.get(), enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 
     void window::set_icon(const icon &icon)
@@ -361,16 +360,12 @@ namespace saucer
             return dispatch([this, icon]() { return set_icon(icon); });
         }
 
-        HICON handle{};
-
-        if (icon.m_impl->bitmap->GetHICON(&handle) != Gdiplus::Status::Ok)
+        if (icon.m_impl->bitmap->GetHICON(&m_impl->icon.reset()) != Gdiplus::Status::Ok)
         {
             return;
         }
 
-        SendMessage(m_impl->hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(handle));
-
-        DestroyIcon(handle);
+        SendMessage(m_impl->hwnd.get(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(m_impl->icon.get()));
     }
 
     void window::set_title(const std::string &title)
@@ -380,7 +375,7 @@ namespace saucer
             return dispatch([this, title]() { return set_title(title); });
         }
 
-        SetWindowTextW(m_impl->hwnd, utils::widen(title).c_str());
+        SetWindowTextW(m_impl->hwnd.get(), utils::widen(title).c_str());
     }
 
     void window::set_size(int width, int height)
@@ -390,7 +385,7 @@ namespace saucer
             return dispatch([this, width, height]() { set_size(width, height); });
         }
 
-        SetWindowPos(m_impl->hwnd, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
+        SetWindowPos(m_impl->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
     }
 
     void window::set_max_size(int width, int height)

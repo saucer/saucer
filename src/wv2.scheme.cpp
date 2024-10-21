@@ -10,24 +10,18 @@ namespace saucer::scheme
 
     std::string request::url() const
     {
-        LPWSTR raw{};
-        m_impl->request->get_Uri(&raw);
+        utils::string_handle raw;
+        m_impl->request->get_Uri(&raw.reset());
 
-        auto rtn = utils::narrow(raw);
-        CoTaskMemFree(raw);
-
-        return rtn;
+        return utils::narrow(raw.get());
     }
 
     std::string request::method() const
     {
-        LPWSTR raw{};
-        m_impl->request->get_Method(&raw);
+        utils::string_handle raw;
+        m_impl->request->get_Method(&raw.reset());
 
-        auto rtn = utils::narrow(raw);
-        CoTaskMemFree(raw);
-
-        return rtn;
+        return utils::narrow(raw.get());
     }
 
     stash<> request::content() const
@@ -53,14 +47,11 @@ namespace saucer::scheme
 
         while ((it->get_HasCurrentHeader(&empty), empty))
         {
-            LPWSTR header{};
-            LPWSTR value{};
+            utils::string_handle header;
+            utils::string_handle value;
 
-            it->GetCurrentHeader(&header, &value);
-            rtn.emplace(utils::narrow(header), utils::narrow(value));
-
-            CoTaskMemFree(header);
-            CoTaskMemFree(value);
+            it->GetCurrentHeader(&header.reset(), &value.reset());
+            rtn.emplace(utils::narrow(header.get()), utils::narrow(value.get()));
 
             BOOL has_next{};
             it->MoveNext(&has_next);

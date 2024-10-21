@@ -39,8 +39,8 @@ namespace saucer
             SetFileAttributesW(copy.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
         }
 
-        m_impl->o_wnd_proc = utils::overwrite_wndproc(window::m_impl->hwnd, impl::wnd_proc);
-        m_impl->create_webview(m_parent, window::m_impl->hwnd, std::move(copy));
+        m_impl->o_wnd_proc = utils::overwrite_wndproc(window::m_impl->hwnd.get(), impl::wnd_proc);
+        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), std::move(copy));
 
         m_impl->web_view->get_Settings(&m_impl->settings);
 
@@ -52,21 +52,13 @@ namespace saucer
 
         m_impl->web_view->add_WebResourceRequested(Callback<ResourceRequested>(resource_requested).Get(), nullptr);
 
-        if (!m_parent->native()->gdi_token)
-        {
-            Gdiplus::GdiplusStartupInput input{};
-            Gdiplus::GdiplusStartup(&m_parent->native()->gdi_token, &input, nullptr);
-        }
-
         auto receive_message = [this](auto, auto *args)
         {
-            LPWSTR raw{};
-            args->TryGetWebMessageAsString(&raw);
+            utils::string_handle raw;
+            args->TryGetWebMessageAsString(&raw.reset());
 
-            std::wstring message{raw};
-            CoTaskMemFree(raw);
-
-            m_parent->post([this, message = std::move(message)]() { on_message(utils::narrow(message)); });
+            auto message = utils::narrow(raw.get());
+            m_parent->post([this, message = std::move(message)]() { on_message(message); });
 
             return S_OK;
         };
@@ -177,7 +169,7 @@ namespace saucer
 
     webview::~webview()
     {
-        std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd, m_impl->o_wnd_proc);
+        std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd.get(), m_impl->o_wnd_proc);
     }
 
     bool webview::on_message(const std::string &message)
@@ -223,13 +215,10 @@ namespace saucer
             return dispatch([this]() { return page_title(); });
         }
 
-        LPWSTR title{};
-        m_impl->web_view->get_DocumentTitle(&title);
+        utils::string_handle title;
+        m_impl->web_view->get_DocumentTitle(&title.reset());
 
-        auto rtn = utils::narrow(title);
-        CoTaskMemFree(title);
-
-        return rtn;
+        return utils::narrow(title.get());
     }
 
     bool webview::dev_tools() const
@@ -252,13 +241,10 @@ namespace saucer
             return dispatch([this]() { return url(); });
         }
 
-        LPWSTR url{};
-        m_impl->web_view->get_Source(&url);
+        utils::string_handle url;
+        m_impl->web_view->get_Source(&url.reset());
 
-        auto rtn = utils::narrow(url);
-        CoTaskMemFree(url);
-
-        return rtn;
+        return utils::narrow(url.get());
     }
 
     bool webview::context_menu() const
@@ -359,7 +345,7 @@ namespace saucer
             return dispatch([this, enabled]() { return set_force_dark_mode(enabled); });
         }
 
-        utils::set_immersive_dark(window::m_impl->hwnd, enabled);
+        utils::set_immersive_dark(window::m_impl->hwnd.get(), enabled);
 
         ComPtr<ICoreWebView2_13> webview;
 

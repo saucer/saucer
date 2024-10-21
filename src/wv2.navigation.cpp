@@ -17,13 +17,10 @@ namespace saucer
     {
         auto visitor = [](auto *request)
         {
-            LPWSTR raw{};
-            request->get_Uri(&raw);
+            utils::string_handle raw;
+            request->get_Uri(&raw.reset());
 
-            auto rtn = utils::narrow(raw);
-            CoTaskMemFree(raw);
-
-            return rtn;
+            return utils::narrow(raw.get());
         };
 
         return std::visit(visitor, m_impl->request);
