@@ -318,7 +318,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits glaze::glaze
 if (saucer_backend MATCHES "^Qt.$")
   file(GLOB qt_sources 
     "src/qt.*cpp"
-    "private/qt.*hpp"
+    "private/saucer/qt.*hpp"
     "src/qt${QT_VERSION}.*cpp"
   )
 
