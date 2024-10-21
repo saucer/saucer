@@ -13,7 +13,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, files = std::move(files)] mutable { return embed(std::move(files)); });
+            return dispatch([this, files = std::move(files)]() mutable { return embed(std::move(files)); });
         }
 
         m_embedded_files.merge(std::move(files));

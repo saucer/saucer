@@ -512,7 +512,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name, handler = std::move(handler)] mutable
+            return dispatch([this, name, handler = std::move(handler)]() mutable
                             { return handle_scheme(name, std::move(handler)); });
         }
 
@@ -572,7 +572,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -584,7 +584,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)] mutable //
+            return dispatch([this, callback = std::move(callback)]() mutable //
                             { return on<Event>(std::move(callback)); });
         }
 
