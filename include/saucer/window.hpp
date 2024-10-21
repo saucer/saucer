@@ -99,7 +99,10 @@ namespace saucer
         [[nodiscard]] impl *native() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] bool visible() const;
         [[sc::thread_safe]] [[nodiscard]] bool focused() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] bool minimized() const;
         [[sc::thread_safe]] [[nodiscard]] bool maximized() const;
 

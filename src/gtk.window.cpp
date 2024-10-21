@@ -63,6 +63,16 @@ namespace saucer
         gtk_window_close(GTK_WINDOW(m_impl->window.get()));
     }
 
+    bool window::visible() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this] { return visible(); });
+        }
+
+        return gtk_widget_is_visible(GTK_WIDGET(m_impl->window.get()));
+    }
+
     bool window::focused() const
     {
         if (!m_parent->thread_safe())
