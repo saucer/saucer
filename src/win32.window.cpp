@@ -54,6 +54,16 @@ namespace saucer
         SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, 0);
     }
 
+    bool window::visible() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this]() { return visible(); });
+        }
+
+        return IsWindowVisible(m_impl->hwnd.get());
+    }
+
     bool window::focused() const
     {
         if (!m_parent->thread_safe())
