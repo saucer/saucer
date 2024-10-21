@@ -1,5 +1,6 @@
 #pragma once
 
+#include <saucer/win32.utils.hpp>
 #include <saucer/modules/module.hpp>
 
 #include <wrl.h>
@@ -12,7 +13,7 @@ namespace saucer
 
     struct window::impl
     {
-        HWND hwnd;
+        utils::win_handle<HWND, DestroyWindow> hwnd;
     };
 
     struct webview::impl

@@ -30,14 +30,9 @@ namespace saucer
         double y;
     };
 
-    using window_ptr = utils::custom_ptr<AdwApplicationWindow, [](auto *window)
-                                         {
-                                             gtk_window_destroy(GTK_WINDOW(window));
-                                         }>;
-
     struct window::impl
     {
-        window_ptr window;
+        utils::custom_ptr<AdwApplicationWindow, gtk_window_destroy> window;
         utils::g_object_ptr<GtkCssProvider> style;
 
       public:
