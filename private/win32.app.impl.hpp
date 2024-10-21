@@ -2,9 +2,12 @@
 
 #include "app.hpp"
 
+#include "win32.utils.hpp"
+
 #include <unordered_map>
 
 #include <windows.h>
+#include <gdiplus.h>
 
 namespace saucer
 {
@@ -18,7 +21,7 @@ namespace saucer
 
       public:
         DWORD thread;
-        ULONG_PTR gdi_token;
+        utils::win_handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
         std::unordered_map<HWND, bool> instances;

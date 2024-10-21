@@ -13,14 +13,14 @@ namespace saucer::utils
     }
 
     template <typename T, auto Release>
-    win_handle<T, Release>::win_handle(win_handle &&other) noexcept : m_handle(std::exchange(other.m_handle, nullptr))
+    win_handle<T, Release>::win_handle(win_handle &&other) noexcept : m_handle(std::exchange(other.m_handle, empty))
     {
     }
 
     template <typename T, auto Release>
     win_handle<T, Release>::~win_handle()
     {
-        reset(nullptr);
+        reset(empty);
     }
 
     template <typename T, auto Release>
@@ -28,7 +28,7 @@ namespace saucer::utils
     {
         if (this != &other)
         {
-            reset(std::exchange(other.m_handle, nullptr));
+            reset(std::exchange(other.m_handle, empty));
         }
 
         return *this;

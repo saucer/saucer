@@ -10,6 +10,9 @@ namespace saucer::utils
     template <typename T, auto Release>
     class win_handle
     {
+        static constexpr T empty = {};
+
+      private:
         T m_handle;
 
       public:
@@ -29,7 +32,7 @@ namespace saucer::utils
         [[nodiscard]] const T &get() const;
 
       public:
-        T &reset(T other = nullptr);
+        T &reset(T other = empty);
     };
 
     using string_handle = win_handle<LPWSTR, CoTaskMemFree>;

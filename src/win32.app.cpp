@@ -4,8 +4,6 @@
 
 #include <cassert>
 
-#include <gdiplus.h>
-
 namespace saucer
 {
     application::application(const options &options) : m_impl(std::make_unique<impl>())
@@ -26,19 +24,12 @@ namespace saucer
         }
 
         Gdiplus::GdiplusStartupInput input{};
-        Gdiplus::GdiplusStartup(&m_impl->gdi_token, &input, nullptr);
+        Gdiplus::GdiplusStartup(&m_impl->gdi_token.reset(), &input, nullptr);
     }
 
     application::~application()
     {
         UnregisterClassW(m_impl->id.c_str(), m_impl->handle);
-
-        if (!m_impl->gdi_token)
-        {
-            return;
-        }
-
-        Gdiplus::GdiplusShutdown(m_impl->gdi_token);
     }
 
     bool application::thread_safe() const
