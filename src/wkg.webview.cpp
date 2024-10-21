@@ -14,7 +14,7 @@ namespace saucer
     webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-        std::call_once(flag, []() { register_scheme("saucer"); });
+        std::call_once(flag, [] { register_scheme("saucer"); });
 
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
         m_impl->settings = impl::make_settings(prefs);
@@ -332,7 +332,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, url]() { return set_url(url); });
+            return dispatch([this, url] { return set_url(url); });
         }
 
         webkit_web_view_load_uri(m_impl->web_view, url.c_str());
@@ -342,7 +342,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return back(); });
+            return dispatch([this] { return back(); });
         }
 
         webkit_web_view_go_back(m_impl->web_view);
@@ -352,7 +352,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return forward(); });
+            return dispatch([this] { return forward(); });
         }
 
         webkit_web_view_go_forward(m_impl->web_view);
@@ -362,7 +362,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return reload(); });
+            return dispatch([this] { return reload(); });
         }
 
         webkit_web_view_reload(m_impl->web_view);
@@ -372,7 +372,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return clear_scripts(); });
+            return dispatch([this] { return clear_scripts(); });
         }
 
         auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
@@ -396,7 +396,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, script]() { return inject(script); });
+            return dispatch([this, script] { return inject(script); });
         }
 
         const auto time  = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
@@ -415,7 +415,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, code]() { return execute(code); });
+            return dispatch([this, code] { return execute(code); });
         }
 
         if (!m_impl->dom_loaded)
@@ -462,7 +462,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, event]() { return clear(event); });
+            return dispatch([this, event] { return clear(event); });
         }
 
         m_events.clear(event);
@@ -483,7 +483,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

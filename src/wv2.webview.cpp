@@ -25,7 +25,7 @@ namespace saucer
     webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-        std::call_once(flag, []() { register_scheme("saucer"); });
+        std::call_once(flag, [] { register_scheme("saucer"); });
 
         auto copy = prefs;
 
@@ -58,7 +58,7 @@ namespace saucer
             args->TryGetWebMessageAsString(&raw.reset());
 
             auto message = utils::narrow(raw.get());
-            m_parent->post([this, message = std::move(message)]() { on_message(message); });
+            m_parent->post([this, message = std::move(message)] { on_message(message); });
 
             return S_OK;
         };
@@ -202,7 +202,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return favicon(); });
+            return dispatch([this] { return favicon(); });
         }
 
         return m_impl->favicon;
@@ -212,7 +212,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return page_title(); });
+            return dispatch([this] { return page_title(); });
         }
 
         utils::string_handle title;
@@ -225,7 +225,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return dev_tools(); });
+            return dispatch([this] { return dev_tools(); });
         }
 
         BOOL rtn{false};
@@ -238,7 +238,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return url(); });
+            return dispatch([this] { return url(); });
         }
 
         utils::string_handle url;
@@ -251,7 +251,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return context_menu(); });
+            return dispatch([this] { return context_menu(); });
         }
 
         BOOL rtn{false};
@@ -264,7 +264,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return background(); });
+            return dispatch([this] { return background(); });
         }
 
         ComPtr<ICoreWebView2Controller2> controller;
@@ -284,7 +284,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return force_dark_mode(); });
+            return dispatch([this] { return force_dark_mode(); });
         }
 
         ComPtr<ICoreWebView2_13> webview;
@@ -315,7 +315,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { return set_dev_tools(enabled); });
+            return dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
         m_impl->settings->put_AreDevToolsEnabled(enabled);
@@ -332,7 +332,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { return set_context_menu(enabled); });
+            return dispatch([this, enabled] { return set_context_menu(enabled); });
         }
 
         m_impl->settings->put_AreDefaultContextMenusEnabled(enabled);
@@ -342,7 +342,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled]() { return set_force_dark_mode(enabled); });
+            return dispatch([this, enabled] { return set_force_dark_mode(enabled); });
         }
 
         utils::set_immersive_dark(window::m_impl->hwnd.get(), enabled);
@@ -369,7 +369,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, color]() { return set_background(color); });
+            return dispatch([this, color] { return set_background(color); });
         }
 
         ComPtr<ICoreWebView2Controller2> controller;
@@ -393,7 +393,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, url]() { return set_url(url); });
+            return dispatch([this, url] { return set_url(url); });
         }
 
         m_impl->web_view->Navigate(utils::widen(url).c_str());
@@ -403,7 +403,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return back(); });
+            return dispatch([this] { return back(); });
         }
 
         m_impl->web_view->GoBack();
@@ -413,7 +413,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return forward(); });
+            return dispatch([this] { return forward(); });
         }
 
         m_impl->web_view->GoForward();
@@ -423,7 +423,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return reload(); });
+            return dispatch([this] { return reload(); });
         }
 
         m_impl->web_view->Reload();
@@ -433,7 +433,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return clear_scripts(); });
+            return dispatch([this] { return clear_scripts(); });
         }
 
         for (auto it = m_impl->scripts.begin(); it != m_impl->scripts.end();)
@@ -459,7 +459,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, script]() { return inject(script); });
+            return dispatch([this, script] { return inject(script); });
         }
 
         if (script.time == load_time::ready)
@@ -495,7 +495,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, code]() { return execute(code); });
+            return dispatch([this, code] { return execute(code); });
         }
 
         if (!m_impl->dom_loaded)
@@ -530,7 +530,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name]() { return remove_scheme(name); });
+            return dispatch([this, name] { return remove_scheme(name); });
         }
 
         auto it = m_impl->schemes.find(name);
@@ -550,7 +550,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, event]() { return clear(event); });
+            return dispatch([this, event] { return clear(event); });
         }
 
         m_events.clear(event);
@@ -560,7 +560,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, event, id]() { return remove(event, id); });
+            return dispatch([this, event, id] { return remove(event, id); });
         }
 
         m_events.remove(event, id);
@@ -571,7 +571,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

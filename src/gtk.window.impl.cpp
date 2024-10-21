@@ -83,7 +83,7 @@ namespace saucer
         };
 
         const auto id = g_signal_connect(window.get(), "notify::maximized", G_CALLBACK(+callback), self);
-        event.on_clear([this, id]() { g_signal_handler_disconnect(window.get(), id); });
+        event.on_clear([this, id] { g_signal_handler_disconnect(window.get(), id); });
     }
 
     template <>
@@ -107,7 +107,7 @@ namespace saucer
         };
 
         const auto id = g_signal_connect(window.get(), "notify::is-active", G_CALLBACK(+callback), self);
-        event.on_clear([this, id]() { g_signal_handler_disconnect(window.get(), id); });
+        event.on_clear([this, id] { g_signal_handler_disconnect(window.get(), id); });
     }
 
     template <>

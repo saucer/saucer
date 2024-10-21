@@ -22,7 +22,7 @@ namespace saucer
     webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-        std::call_once(flag, []() { register_scheme("saucer"); });
+        std::call_once(flag, [] { register_scheme("saucer"); });
 
         auto flags = prefs.browser_flags;
 
@@ -311,7 +311,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return back(); });
+            return dispatch([this] { return back(); });
         }
 
         m_impl->web_view->back();
@@ -321,7 +321,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return forward(); });
+            return dispatch([this] { return forward(); });
         }
 
         m_impl->web_view->forward();
@@ -428,7 +428,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

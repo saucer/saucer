@@ -37,7 +37,7 @@ namespace saucer
                               }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
+        event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
     }
 
     template <>
@@ -67,7 +67,7 @@ namespace saucer
                               }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"title" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [web_view.get() removeObserver:observer.get() forKeyPath:@"title"]; });
+        event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"title"]; });
     }
 
     template <>

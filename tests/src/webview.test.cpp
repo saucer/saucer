@@ -13,7 +13,7 @@ suite<"webview"> webview_suite = []()
         webview->on<saucer::web_event::title>([&last_title](const auto &title) { last_title = title; });
 
         webview->set_url("https://saucer.github.io");
-        wait_for([&]() { return !last_title.empty(); });
+        wait_for([&] { return !last_title.empty(); });
 
         auto title = webview->page_title();
 
@@ -39,20 +39,20 @@ suite<"webview"> webview_suite = []()
         webview->on<saucer::web_event::navigated>([&last_url](const auto &url) { last_url = url; });
 
         bool dom_ready{false};
-        webview->on<saucer::web_event::dom_ready>([&dom_ready]() { dom_ready = true; });
+        webview->on<saucer::web_event::dom_ready>([&dom_ready] { dom_ready = true; });
 
         std::vector<saucer::state> states;
         webview->on<saucer::web_event::load>([&states](const auto &state) { states.emplace_back(state); });
 
         webview->set_url("https://github.com/saucer/saucer");
-        wait_for([&]() { return !last_url.empty(); });
+        wait_for([&] { return !last_url.empty(); });
 
         auto url = webview->url();
 
         expect(url.contains("github.com/saucer/saucer")) << url;
         expect(last_url == url) << last_url;
 
-        wait_for([&]() { return states.size() >= 2 && dom_ready; });
+        wait_for([&] { return states.size() >= 2 && dom_ready; });
 
 #ifndef SAUCER_QT6
         expect(dom_ready);
@@ -97,7 +97,7 @@ suite<"webview"> webview_suite = []()
     "scheme"_test_async = [](const auto &webview)
     {
         bool finished{false};
-        webview->expose("finish", [&finished]() { finished = true; });
+        webview->expose("finish", [&finished] { finished = true; });
 
         webview->handle_scheme("test",
                                [](const saucer::scheme::request &req) -> saucer::scheme::handler::result_type
@@ -143,7 +143,7 @@ suite<"webview"> webview_suite = []()
     "embed"_test_async = [](const auto &webview)
     {
         bool finished{false};
-        webview->expose("finish", [&finished]() { finished = true; });
+        webview->expose("finish", [&finished] { finished = true; });
 
         const std::string page = R"html(
             <!DOCTYPE html>
@@ -182,7 +182,7 @@ suite<"webview"> webview_suite = []()
     "embed_lazy"_test_async = [](const auto &webview)
     {
         bool finished{false};
-        webview->expose("finish", [&finished]() { finished = true; });
+        webview->expose("finish", [&finished] { finished = true; });
 
         const std::string page = R"html(
             <!DOCTYPE html>
@@ -228,7 +228,7 @@ suite<"webview"> webview_suite = []()
         webview->set_url("https://cppreference.com");
         webview->execute("location.href = 'https://github.com'");
 
-        wait_for([&]() { return webview->url().contains("github"); });
+        wait_for([&] { return webview->url().contains("github"); });
         expect(webview->url().contains("github")) << webview->url();
     };
 
@@ -238,7 +238,7 @@ suite<"webview"> webview_suite = []()
         webview->expose("push_state", [&](const std::string &state) { states.emplace_back(state); });
 
         bool finished{false};
-        webview->expose("finish", [&]() { finished = true; });
+        webview->expose("finish", [&] { finished = true; });
 
         webview->inject({
             .code = "saucer.exposed.push_state(document.readyState)",

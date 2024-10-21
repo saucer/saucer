@@ -386,7 +386,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

@@ -72,7 +72,7 @@ suite<"smartview"> smartview_suite = []()
         smartview->set_url("https://saucer.github.io");
 
         smartview->evaluate<void>("saucer.exposed.sum(10, 5).then(res => saucer.exposed.resolve(res))").get();
-        wait_for([&]() { return result.has_value(); });
+        wait_for([&] { return result.has_value(); });
 
         expect(std::holds_alternative<int>(result.value()));
         expect(std::get<int>(result.value()) == 15);
@@ -80,7 +80,7 @@ suite<"smartview"> smartview_suite = []()
         result.reset();
 
         smartview->evaluate<void>("saucer.exposed.sum(-10, -5).then(() => {{}}, res => saucer.exposed.reject(res))").get();
-        wait_for([&]() { return result.has_value(); });
+        wait_for([&] { return result.has_value(); });
 
         expect(std::holds_alternative<std::string>(result.value()));
         expect(std::get<std::string>(result.value()) == "Not positive");

@@ -19,7 +19,7 @@ namespace saucer::tests
             {
                 if (!app->thread_safe())
                 {
-                    return app->dispatch([this, ptr]() { return (*this)(ptr); }).get();
+                    return app->dispatch([this, ptr] { return (*this)(ptr); }).get();
                 }
 
                 delete ptr;
@@ -31,7 +31,7 @@ namespace saucer::tests
         {
             if (!app->thread_safe())
             {
-                return app->dispatch([app]() { return get<T>(app); }).get();
+                return app->dispatch([app] { return get<T>(app); }).get();
             }
 
             auto *ptr = new T{{.application = app}};

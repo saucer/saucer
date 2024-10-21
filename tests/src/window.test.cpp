@@ -22,7 +22,7 @@ suite<"window"> window_suite = []()
 
         window->set_minimized(false);
 
-        wait_for([&]() { return !minimized; });
+        wait_for([&] { return !minimized; });
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         expect(not window->minimized());
@@ -45,7 +45,7 @@ suite<"window"> window_suite = []()
 
         window->set_maximized(false);
 
-        wait_for([&]() { return !maximized; });
+        wait_for([&] { return !maximized; });
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         expect(not window->maximized());
@@ -69,7 +69,7 @@ suite<"window"> window_suite = []()
         expect(window->decorations());
 
         window->set_decorations(false);
-        wait_for([&]() { return !decorated; });
+        wait_for([&] { return !decorated; });
 
         expect(not window->decorations());
         expect(not decorated);
@@ -98,7 +98,7 @@ suite<"window"> window_suite = []()
         window->on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
 
         window->set_size(400, 500);
-        wait_for([&]() { return size.first == 400 && size.second == 500; });
+        wait_for([&] { return size.first == 400 && size.second == 500; });
 
         auto [width, height] = window->size();
         expect(width == 400 && height == 500) << width << ":" << height;

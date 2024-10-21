@@ -248,7 +248,7 @@ namespace saucer
         EventRegistrationToken token;
         web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
 
-        event.on_clear([this, token]() { web_view->remove_SourceChanged(token); });
+        event.on_clear([this, token] { web_view->remove_SourceChanged(token); });
     }
 
     template <>
@@ -280,7 +280,7 @@ namespace saucer
         EventRegistrationToken token;
         web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &token);
 
-        event.on_clear([this, token]() { web_view->remove_DocumentTitleChanged(token); });
+        event.on_clear([this, token] { web_view->remove_DocumentTitleChanged(token); });
     }
 
     template <>
@@ -302,6 +302,6 @@ namespace saucer
         EventRegistrationToken token;
         web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
 
-        event.on_clear([this, token]() { web_view->remove_NavigationCompleted(token); });
+        event.on_clear([this, token] { web_view->remove_NavigationCompleted(token); });
     }
 } // namespace saucer
