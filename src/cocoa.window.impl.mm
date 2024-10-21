@@ -90,13 +90,13 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<window_event::decorated>().fire(self->decorations());
                               }];
 
         [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [window removeObserver:observer.get() forKeyPath:@"styleMask"]; });
+        event.on_clear([this, observer] { [window removeObserver:observer.get() forKeyPath:@"styleMask"]; });
     }
 
     template <>
@@ -110,13 +110,13 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<window_event::maximize>().fire(self->maximized());
                               }];
 
         [window addObserver:observer.get() forKeyPath:@"isZoomed" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [window removeObserver:observer.get() forKeyPath:@"isZoomed"]; });
+        event.on_clear([this, observer] { [window removeObserver:observer.get() forKeyPath:@"isZoomed"]; });
     }
 
     template <>

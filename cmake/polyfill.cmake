@@ -10,7 +10,7 @@ function(check_features)
 
         int main()
         {
-            std::jthread t{[](){}};
+            std::jthread t{[]{}};
             return 0;
         }"
         has_jthread
@@ -21,7 +21,7 @@ function(check_features)
 
         int main()
         {
-            std::move_only_function<void()> f{[](){}};
+            std::move_only_function<void()> f{[]{}};
             return 0;
         }"
         has_move_only_function

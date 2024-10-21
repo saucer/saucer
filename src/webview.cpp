@@ -13,7 +13,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, files = std::move(files)]() mutable { return embed(std::move(files)); });
+            return dispatch([this, files = std::move(files)] mutable { return embed(std::move(files)); });
         }
 
         m_embedded_files.merge(std::move(files));
@@ -58,7 +58,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return clear_embedded(); });
+            return dispatch([this] { return clear_embedded(); });
         }
 
         m_embedded_files.clear();
@@ -69,7 +69,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, file]() { return clear_embedded(file); });
+            return dispatch([this, file] { return clear_embedded(file); });
         }
 
         m_embedded_files.erase(file);

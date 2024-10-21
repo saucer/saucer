@@ -31,13 +31,13 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<web_event::navigated>().fire(self->url());
                               }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
+        event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
     }
 
     template <>
@@ -61,13 +61,13 @@ namespace saucer
         }
 
         const objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]()
+            [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<web_event::title>().fire(self->page_title());
                               }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"title" options:0 context:nullptr];
-        event.on_clear([this, observer]() { [web_view.get() removeObserver:observer.get() forKeyPath:@"title"]; });
+        event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"title"]; });
     }
 
     template <>

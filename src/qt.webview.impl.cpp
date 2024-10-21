@@ -86,7 +86,7 @@ namespace saucer
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
-        event.on_clear([this, id]() { web_view->disconnect(id); });
+        event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
     template <>
@@ -119,7 +119,7 @@ namespace saucer
         const auto nav_id = web_view->connect(web_page.get(), &QWebEnginePage::navigationRequested, handler);
 
         event.on_clear(
-            [this, new_id, nav_id]()
+            [this, new_id, nav_id]
             {
                 web_page->disconnect(new_id);
                 web_page->disconnect(nav_id);
@@ -143,7 +143,7 @@ namespace saucer
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
-        event.on_clear([this, id]() { web_view->disconnect(id); });
+        event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
     template <>
@@ -162,7 +162,7 @@ namespace saucer
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
-        event.on_clear([this, id]() { web_view->disconnect(id); });
+        event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
     template <>
@@ -181,6 +181,6 @@ namespace saucer
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
-        event.on_clear([this, id]() { web_view->disconnect(id); });
+        event.on_clear([this, id] { web_view->disconnect(id); });
     }
 } // namespace saucer

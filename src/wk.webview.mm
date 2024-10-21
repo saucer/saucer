@@ -19,7 +19,7 @@ namespace saucer
     {
         static std::once_flag flag;
         std::call_once(flag,
-                       []()
+                       []
                        {
                            impl::init_objc();
                            register_scheme("saucer");
@@ -359,7 +359,7 @@ namespace saucer
 
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return back(); });
+            return dispatch([this] { return back(); });
         }
 
         [m_impl->web_view.get() goBack];
@@ -371,7 +371,7 @@ namespace saucer
 
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return forward(); });
+            return dispatch([this] { return forward(); });
         }
 
         [m_impl->web_view.get() goForward];
@@ -383,7 +383,7 @@ namespace saucer
 
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return reload(); });
+            return dispatch([this] { return reload(); });
         }
 
         [m_impl->web_view.get() reload];
@@ -395,7 +395,7 @@ namespace saucer
 
         if (!m_parent->thread_safe())
         {
-            return dispatch([this]() { return clear_scripts(); });
+            return dispatch([this] { return clear_scripts(); });
         }
 
         [m_impl->controller removeAllUserScripts];
@@ -408,7 +408,7 @@ namespace saucer
 
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, script]() { return inject(script); });
+            return dispatch([this, script] { return inject(script); });
         }
 
         const auto time      = script.time == load_time::creation ? WKUserScriptInjectionTimeAtDocumentStart
@@ -440,7 +440,7 @@ namespace saucer
 
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, code]() { return execute(code); });
+            return dispatch([this, code] { return execute(code); });
         }
 
         if (!m_impl->dom_loaded)
@@ -482,7 +482,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, event]() { return clear(event); });
+            return dispatch([this, event] { return clear(event); });
         }
 
         m_events.clear(event);
@@ -503,7 +503,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return once<Event>(std::move(callback)); });
         }
 
@@ -516,7 +516,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return on<Event>(std::move(callback)); });
         }
 

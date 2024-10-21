@@ -19,7 +19,7 @@ namespace saucer::tests
             {
                 if (!app->thread_safe())
                 {
-                    return app->dispatch([this, ptr]() { return (*this)(ptr); }).get();
+                    return app->dispatch([this, ptr] { return (*this)(ptr); }).get();
                 }
 
                 delete ptr;
@@ -31,7 +31,7 @@ namespace saucer::tests
         {
             if (!app->thread_safe())
             {
-                return app->dispatch([app]() { return get<T>(app); }).get();
+                return app->dispatch([app] { return get<T>(app); }).get();
             }
 
             auto *ptr = new T{{.application = app}};
@@ -54,7 +54,7 @@ namespace saucer::tests
           public:
             constexpr auto operator=(std::function<void(std::shared_ptr<T>)> test) // NOLINT(*-assign*)
             {
-                return boost::ut::test(name) = [test = std::move(test)]()
+                return boost::ut::test(name) = [test = std::move(test)]
                 {
                     auto app = saucer::application::acquire({""});
 

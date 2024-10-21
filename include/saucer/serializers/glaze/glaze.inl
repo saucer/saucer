@@ -255,12 +255,12 @@ namespace saucer::serializers::glaze
 
                 auto exec_resolve = [resolve]<typename... Ts>(Ts &&...value)
                 {
-                    std::invoke(resolve, impl::serialize_res([&value...]() { return (value, ...); }));
+                    std::invoke(resolve, impl::serialize_res([&value...] { return (value, ...); }));
                 };
 
                 auto exec_reject = [reject]<typename... Ts>(Ts &&...value)
                 {
-                    std::invoke(reject, impl::serialize_res([&value...]() { return (value, ...); }));
+                    std::invoke(reject, impl::serialize_res([&value...] { return (value, ...); }));
                 };
 
                 auto exec_param = executor_t{exec_resolve, exec_reject};
@@ -270,7 +270,7 @@ namespace saucer::serializers::glaze
             }
             else
             {
-                std::invoke(resolve, impl::serialize_res([&]() { return std::apply(func, params.value()); }));
+                std::invoke(resolve, impl::serialize_res([&] { return std::apply(func, params.value()); }));
             }
         };
     }

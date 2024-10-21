@@ -15,7 +15,7 @@ namespace saucer
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
         static std::once_flag flag;
-        std::call_once(flag, []() { impl::init_objc(); });
+        std::call_once(flag, [] { impl::init_objc(); });
 
         static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled |
                                      NSWindowStyleMaskResizable;
@@ -414,7 +414,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
+            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -426,7 +426,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)]() mutable //
+            return dispatch([this, callback = std::move(callback)] mutable //
                             { return on<Event>(std::move(callback)); });
         }
 

@@ -25,7 +25,7 @@ namespace saucer
 
     application::~application()
     {
-        auto fut = dispatch([this]() { g_application_quit(G_APPLICATION(m_impl->application)); });
+        auto fut = dispatch([this] { g_application_quit(G_APPLICATION(m_impl->application)); });
         {
             g_application_run(G_APPLICATION(m_impl->application), 0, nullptr);
         }
@@ -87,7 +87,7 @@ namespace saucer
     {
         if (!thread_safe())
         {
-            return dispatch([this]() { return quit(); }).get();
+            return dispatch([this] { return quit(); }).get();
         }
 
         m_impl->should_quit = true;

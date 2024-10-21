@@ -26,7 +26,7 @@ namespace saucer
         auto *const ptr   = new callback_t{std::move(callback)};
 
         dispatch_async(queue,
-                       [ptr]()
+                       [ptr]
                        {
                            const autorelease_guard guard{};
 
