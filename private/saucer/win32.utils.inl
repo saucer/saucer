@@ -5,7 +5,9 @@
 namespace saucer::utils
 {
     template <typename T, auto Release>
-    win_handle<T, Release>::win_handle() = default;
+    win_handle<T, Release>::win_handle() : m_handle(empty)
+    {
+    }
 
     template <typename T, auto Release>
     win_handle<T, Release>::win_handle(T handle) : m_handle(handle)
