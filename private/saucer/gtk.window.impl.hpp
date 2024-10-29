@@ -7,6 +7,7 @@
 #include <optional>
 
 #include <adwaita.h>
+#include <saucer/utils/handle.hpp>
 
 namespace saucer
 {
@@ -32,7 +33,7 @@ namespace saucer
 
     struct window::impl
     {
-        utils::custom_ptr<AdwApplicationWindow, gtk_window_destroy> window;
+        utils::handle<GtkWindow *, gtk_window_destroy> window;
         utils::g_object_ptr<GtkCssProvider> style;
 
       public:

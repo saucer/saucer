@@ -8,6 +8,7 @@
 #include "instantiate.hpp"
 
 #include <fmt/core.h>
+#include <saucer/utils/handle.hpp>
 
 namespace saucer
 {
@@ -65,7 +66,7 @@ namespace saucer
 
         auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
         {
-            utils::custom_ptr<char, g_free> raw{jsc_value_to_string(value)};
+            utils::handle<char *, g_free> raw{jsc_value_to_string(value)};
             reinterpret_cast<webview *>(data)->on_message(raw.get());
         };
 

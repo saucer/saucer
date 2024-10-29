@@ -1,6 +1,7 @@
 #pragma once
 
 #include <saucer/gtk.utils.hpp>
+#include <saucer/utils/handle.hpp>
 #include <saucer/modules/module.hpp>
 
 #include <adwaita.h>
@@ -10,7 +11,7 @@ namespace saucer
 {
     struct window::impl
     {
-        utils::custom_ptr<AdwApplicationWindow, gtk_window_destroy> window;
+        utils::handle<GtkWindow *, gtk_window_destroy> window;
         utils::g_object_ptr<GtkCssProvider> style;
 
       public:

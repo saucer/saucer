@@ -8,7 +8,6 @@
 #include <flagpp/flags.hpp>
 
 #include <cassert>
-#include <string_view>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -23,24 +22,17 @@ namespace saucer
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
         auto *const application = GTK_APPLICATION(m_parent->native()->application);
-        m_impl->window.reset(ADW_APPLICATION_WINDOW(adw_application_window_new(application)));
+        m_impl->window.reset(GTK_WINDOW(adw_application_window_new(application)));
 
         m_impl->style   = gtk_css_provider_new();
         m_impl->header  = ADW_HEADER_BAR(adw_header_bar_new());
         m_impl->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
 
         gtk_box_append(m_impl->content, GTK_WIDGET(m_impl->header));
-
-        static constexpr std::string_view css = ".transparent { background-color: transparent; }";
-
-#if GTK_CHECK_VERSION(4, 10, 0)
-        gtk_css_provider_load_from_string(m_impl->style.get(), css.data());
-#else
-        gtk_css_provider_load_from_data(m_impl->style.get(), css.data(), css.size());
-#endif
+        gtk_css_provider_load_from_string(m_impl->style.get(), ".transparent { background-color: transparent; }");
 
         gtk_window_set_hide_on_close(GTK_WINDOW(m_impl->window.get()), true);
-        adw_application_window_set_content(m_impl->window.get(), GTK_WIDGET(m_impl->content));
+        adw_application_window_set_content(ADW_APPLICATION_WINDOW(m_impl->window.get()), GTK_WIDGET(m_impl->content));
 
         auto *const display  = gtk_widget_get_display(GTK_WIDGET(m_impl->window.get()));
         auto *const provider = GTK_STYLE_PROVIDER(m_impl->style.get());

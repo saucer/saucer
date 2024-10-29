@@ -99,7 +99,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 add_library(${PROJECT_NAME} STATIC)
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS saucer)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
@@ -254,6 +254,12 @@ endif()
 include("cmake/nuget.cmake")
 
 CPMFindPackage(
+  NAME           utils
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/saucer/utils"
+)
+
+CPMFindPackage(
   NAME           lockpp
   VERSION        3.0
   GIT_REPOSITORY "https://github.com/Curve/lockpp"
@@ -309,7 +315,7 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
+target_link_libraries(${PROJECT_NAME} PUBLIC  saucer::utils boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
