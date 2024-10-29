@@ -11,8 +11,16 @@ namespace saucer
     }
 
     template <Serializer Serializer, Module... Modules>
+    template <typename... Params>
+    void smartview<Serializer, Modules...>::execute(std::string_view code, Params &&...params)
+    {
+        auto args = Serializer::serialize_args(std::forward<Params>(params)...);
+        webview::execute(fmt::vformat(code, args));
+    }
+
+    template <Serializer Serializer, Module... Modules>
     template <typename Return, typename... Params>
-    std::future<Return> smartview<Serializer, Modules...>::evaluate(const std::string &code, Params &&...params)
+    std::future<Return> smartview<Serializer, Modules...>::evaluate(std::string_view code, Params &&...params)
     {
         std::promise<Return> promise;
         auto rtn = promise.get_future();

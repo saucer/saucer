@@ -172,7 +172,7 @@ namespace saucer
             locked->emplace(id, std::move(resolve));
         }
 
-        execute(fmt::format(
+        webview::execute(fmt::format(
             R"(
                 (async () =>
                     window.saucer.internal.resolve({}, {})
@@ -183,7 +183,7 @@ namespace saucer
 
     void smartview_core::reject(std::uint64_t id, const std::string &reason)
     {
-        execute(fmt::format(
+        webview::execute(fmt::format(
             R"(
                 window.saucer.internal.rpc[{0}].reject({1});
                 delete window.saucer.internal.rpc[{0}];
@@ -193,7 +193,7 @@ namespace saucer
 
     void smartview_core::resolve(std::uint64_t id, const std::string &result)
     {
-        execute(fmt::format(
+        webview::execute(fmt::format(
             R"(
                 window.saucer.internal.rpc[{0}].resolve({1});
                 delete window.saucer.internal.rpc[{0}];

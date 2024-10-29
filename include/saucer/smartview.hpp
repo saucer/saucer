@@ -5,11 +5,14 @@
 #include "modules/module.hpp"
 #include "serializers/glaze/glaze.hpp"
 
-#include <tuple>
 #include <future>
 #include <atomic>
-#include <memory>
+
 #include <string>
+#include <memory>
+
+#include <tuple>
+#include <string_view>
 
 namespace saucer
 {
@@ -73,8 +76,12 @@ namespace saucer
         [[sc::thread_safe]] void expose(std::string name, Function &&func, launch policy = launch::sync);
 
       public:
+        template <typename... Params>
+        [[sc::thread_safe]] void execute(std::string_view code, Params &&...params);
+
+      public:
         template <typename Return, typename... Params>
-        [[sc::thread_safe]] [[nodiscard]] std::future<Return> evaluate(const std::string &code, Params &&...params);
+        [[sc::thread_safe]] [[nodiscard]] std::future<Return> evaluate(std::string_view code, Params &&...params);
 
       public:
         template <Module T>
