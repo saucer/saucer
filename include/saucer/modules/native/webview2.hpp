@@ -13,7 +13,7 @@ namespace saucer
 
     struct window::impl
     {
-        utils::win_handle<HWND, DestroyWindow> hwnd;
+        utils::handle<HWND, DestroyWindow> hwnd;
     };
 
     struct webview::impl

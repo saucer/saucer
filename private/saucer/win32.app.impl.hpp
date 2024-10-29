@@ -21,7 +21,7 @@ namespace saucer
 
       public:
         DWORD thread;
-        utils::win_handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
+        utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
         std::unordered_map<HWND, bool> instances;

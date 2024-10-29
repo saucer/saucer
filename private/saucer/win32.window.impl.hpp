@@ -12,11 +12,11 @@ namespace saucer
 {
     struct window::impl
     {
-        utils::win_handle<HWND, DestroyWindow> hwnd;
+        utils::handle<HWND, DestroyWindow> hwnd;
 
       public:
         UINT prev_state;
-        utils::win_handle<HICON, DestroyIcon> icon;
+        utils::handle<HICON, DestroyIcon> icon;
         std::optional<std::pair<int, int>> max_size, min_size;
 
       public:
