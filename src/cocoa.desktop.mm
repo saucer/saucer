@@ -12,7 +12,7 @@ namespace saucer
 
     void desktop::open(const std::string &uri)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const workspace = [NSWorkspace sharedWorkspace];
         auto *const str       = [NSString stringWithUTF8String:uri.c_str()];

@@ -41,7 +41,7 @@ namespace saucer
 
     stash<> icon::data() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
         auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
@@ -55,7 +55,7 @@ namespace saucer
     {
         assert(path.extension() == ".png");
 
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
         auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
@@ -67,7 +67,7 @@ namespace saucer
 
     std::optional<icon> icon::from(const stash<> &ico)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const data  = [NSData dataWithBytes:ico.data() length:ico.size()];
         auto *const image = [[NSImage alloc] initWithData:data];
@@ -82,7 +82,7 @@ namespace saucer
 
     std::optional<icon> icon::from(const fs::path &file)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const image = [[NSImage alloc] initWithContentsOfFile:[NSString stringWithUTF8String:file.c_str()]];
 

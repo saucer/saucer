@@ -20,7 +20,7 @@ namespace saucer
         static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled |
                                      NSWindowStyleMaskResizable;
 
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                      styleMask:mask
@@ -35,7 +35,7 @@ namespace saucer
 
     window::~window()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         for (const auto &event : rebind::enum_fields<window_event>)
         {
@@ -48,7 +48,7 @@ namespace saucer
 
     bool window::visible() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -60,7 +60,7 @@ namespace saucer
 
     bool window::focused() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -72,7 +72,7 @@ namespace saucer
 
     bool window::minimized() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -84,7 +84,7 @@ namespace saucer
 
     bool window::maximized() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -96,7 +96,7 @@ namespace saucer
 
     bool window::resizable() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -108,7 +108,7 @@ namespace saucer
 
     bool window::decorations() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -120,7 +120,7 @@ namespace saucer
 
     bool window::always_on_top() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -132,7 +132,7 @@ namespace saucer
 
     std::string window::title() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -144,7 +144,7 @@ namespace saucer
 
     std::pair<int, int> window::size() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -157,7 +157,7 @@ namespace saucer
 
     std::pair<int, int> window::max_size() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -170,7 +170,7 @@ namespace saucer
 
     std::pair<int, int> window::min_size() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -183,7 +183,7 @@ namespace saucer
 
     void window::hide()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -195,7 +195,7 @@ namespace saucer
 
     void window::show()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -208,7 +208,7 @@ namespace saucer
 
     void window::close()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -220,7 +220,7 @@ namespace saucer
 
     void window::focus()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -232,7 +232,7 @@ namespace saucer
 
     void window::start_drag()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -254,7 +254,7 @@ namespace saucer
 
     void window::set_minimized(bool enabled)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -276,7 +276,7 @@ namespace saucer
 
     void window::set_resizable(bool enabled)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -300,7 +300,7 @@ namespace saucer
 
     void window::set_decorations(bool enabled)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -319,7 +319,7 @@ namespace saucer
 
     void window::set_always_on_top(bool enabled)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -331,7 +331,7 @@ namespace saucer
 
     void window::set_icon(const icon &icon)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (icon.empty())
         {
@@ -352,7 +352,7 @@ namespace saucer
 
     void window::set_title(const std::string &title)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -364,7 +364,7 @@ namespace saucer
 
     void window::set_size(int width, int height)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -379,7 +379,7 @@ namespace saucer
 
     void window::set_max_size(int width, int height)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -391,7 +391,7 @@ namespace saucer
 
     void window::set_min_size(int width, int height)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {

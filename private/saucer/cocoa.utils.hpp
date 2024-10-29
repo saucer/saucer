@@ -1,41 +1,23 @@
 #pragma once
 
-namespace saucer
+#include <saucer/utils/ref_ptr.hpp>
+
+namespace saucer::utils
 {
     template <typename T>
-    class objc_ptr
+    constexpr auto objc_retain(T *ptr)
     {
-        T *m_data;
-
-      private:
-        static T *retain(T *);
-        static T *release(T *);
-
-      public:
-        objc_ptr();
-
-      public:
-        objc_ptr(T *data);
-        objc_ptr(const objc_ptr &other);
-        objc_ptr(objc_ptr &&other) noexcept;
-
-      public:
-        ~objc_ptr();
-
-      public:
-        objc_ptr &operator=(const objc_ptr &other);
-        objc_ptr &operator=(objc_ptr &&other) noexcept;
-
-      public:
-        [[nodiscard]] T *get() const;
-        [[nodiscard]] explicit operator bool() const;
-
-      public:
-        void reset(T *other = nullptr);
-
-      public:
-        static objc_ptr ref(T *data);
+        [ptr retain];
     };
+
+    template <typename T>
+    constexpr auto objc_release(T *ptr)
+    {
+        [ptr release];
+    };
+
+    template <typename T>
+    using objc_ptr = ref_ptr<T, objc_retain<T>, objc_release<T>>;
 
     class [[maybe_unused]] autorelease_guard
     {
@@ -47,6 +29,6 @@ namespace saucer
       public:
         ~autorelease_guard();
     };
-} // namespace saucer
+} // namespace saucer::utils
 
 #include "cocoa.utils.inl"

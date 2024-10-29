@@ -28,7 +28,7 @@ namespace saucer
         dispatch_async(queue,
                        [ptr]
                        {
-                           const autorelease_guard guard{};
+                           const utils::autorelease_guard guard{};
 
                            auto callback = std::unique_ptr<callback_t>{ptr};
                            std::invoke(*callback);
@@ -44,7 +44,7 @@ namespace saucer
     template <>
     void application::run<false>() const // NOLINT(*-static)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                untilDate:[NSDate now]

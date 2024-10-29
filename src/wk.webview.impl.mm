@@ -30,7 +30,7 @@ namespace saucer
             return;
         }
 
-        const objc_ptr<Observer> observer =
+        const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<web_event::navigated>().fire(self->url());
@@ -60,7 +60,7 @@ namespace saucer
             return;
         }
 
-        const objc_ptr<Observer> observer =
+        const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
                                   self->m_events.at<web_event::title>().fire(self->page_title());
@@ -113,7 +113,7 @@ namespace saucer
                             imp_implementationWithBlock(
                                 [mouse_down](SaucerView *view, NSEvent *event)
                                 {
-                                    const autorelease_guard guard{};
+                                    const utils::autorelease_guard guard{};
 
                                     auto &impl = *view->m_parent->window::m_impl;
 
@@ -130,7 +130,7 @@ namespace saucer
                             imp_implementationWithBlock(
                                 [mouse_up](SaucerView *view, NSEvent *event)
                                 {
-                                    const autorelease_guard guard{};
+                                    const utils::autorelease_guard guard{};
 
                                     auto &impl = *view->m_parent->window::m_impl;
                                     impl.edge.reset();
@@ -143,7 +143,7 @@ namespace saucer
                             imp_implementationWithBlock(
                                 [mouse_dragged](SaucerView *view, NSEvent *event)
                                 {
-                                    const autorelease_guard guard{};
+                                    const utils::autorelease_guard guard{};
 
                                     mouse_dragged(view, @selector(mouseDragged:), event);
 
@@ -208,7 +208,7 @@ namespace saucer
                                 [](NavigationDelegate *delegate, WKWebView *, WKNavigationAction *action,
                                    void (^decision)(WKNavigationActionPolicy))
                                 {
-                                    const autorelease_guard guard{};
+                                    const utils::autorelease_guard guard{};
 
                                     auto request = navigation{{action}};
 
@@ -239,7 +239,7 @@ namespace saucer
 
     WKWebViewConfiguration *webview::impl::make_config(const preferences &prefs)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         static auto resolve = [](id target, NSString *key) -> id
         {
@@ -357,7 +357,7 @@ namespace saucer
 
 - (void)willOpenMenu:(NSMenu *)menu withEvent:(NSEvent *)event
 {
-    const saucer::autorelease_guard guard{};
+    const saucer::utils::autorelease_guard guard{};
 
     [super willOpenMenu:menu withEvent:event];
 

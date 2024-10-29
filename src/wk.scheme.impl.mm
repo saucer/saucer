@@ -18,7 +18,7 @@ void saucer::scheme::init_objc()
         imp_implementationWithBlock(
             [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> urlSchemeTask)
             {
-                const autorelease_guard guard{};
+                const utils::autorelease_guard guard{};
 
                 if (!self->m_handlers.contains(instance))
                 {

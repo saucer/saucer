@@ -25,7 +25,7 @@ namespace saucer
                            register_scheme("saucer");
                        });
 
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         m_impl->config = impl::make_config(prefs);
 
@@ -90,7 +90,7 @@ namespace saucer
 
     webview::~webview()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         for (const auto &[name, _] : impl::schemes)
         {
@@ -154,7 +154,7 @@ namespace saucer
 
     std::string webview::page_title() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -166,7 +166,7 @@ namespace saucer
 
     bool webview::dev_tools() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -181,7 +181,7 @@ namespace saucer
 
     std::string webview::url() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -193,7 +193,7 @@ namespace saucer
 
     bool webview::context_menu() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -205,7 +205,7 @@ namespace saucer
 
     color webview::background() const
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -235,7 +235,7 @@ namespace saucer
 
     void webview::set_dev_tools(bool enabled)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -276,7 +276,7 @@ namespace saucer
 
     void webview::set_force_dark_mode(bool enabled)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -293,7 +293,7 @@ namespace saucer
 
     void webview::set_background(const color &color)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -327,7 +327,7 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -340,7 +340,7 @@ namespace saucer
 
     void webview::set_url(const std::string &url)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -355,7 +355,7 @@ namespace saucer
 
     void webview::back()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -367,7 +367,7 @@ namespace saucer
 
     void webview::forward()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -379,7 +379,7 @@ namespace saucer
 
     void webview::reload()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -391,7 +391,7 @@ namespace saucer
 
     void webview::clear_scripts()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -404,7 +404,7 @@ namespace saucer
 
     void webview::inject(const script &script)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
@@ -436,7 +436,7 @@ namespace saucer
 
     void webview::execute(const std::string &code)
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {

@@ -6,7 +6,7 @@ namespace saucer
 {
     void application::impl::init_menu()
     {
-        const autorelease_guard guard{};
+        const utils::autorelease_guard guard{};
 
         auto *const mainmenu = [[NSMenu new] autorelease];
         {

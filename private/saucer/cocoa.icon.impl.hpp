@@ -10,6 +10,6 @@ namespace saucer
 {
     struct icon::impl
     {
-        objc_ptr<NSImage> icon;
+        utils::objc_ptr<NSImage> icon;
     };
 } // namespace saucer

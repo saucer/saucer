@@ -15,7 +15,7 @@ namespace saucer
 
     struct webview::impl
     {
-        objc_ptr<WKWebViewConfiguration> config;
-        objc_ptr<WKWebView> web_view;
+        utils::objc_ptr<WKWebViewConfiguration> config;
+        utils::objc_ptr<WKWebView> web_view;
     };
 } // namespace saucer

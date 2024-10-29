@@ -13,7 +13,7 @@ namespace saucer
         NSApplication *application;
 
       public:
-        autorelease_guard pool;
+        utils::autorelease_guard pool;
 
       public:
         std::thread::id thread;

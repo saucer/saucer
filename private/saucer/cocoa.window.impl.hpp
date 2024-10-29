@@ -24,7 +24,7 @@ namespace saucer
     struct window::impl
     {
         NSWindow *window;
-        objc_ptr<WindowDelegate> delegate;
+        utils::objc_ptr<WindowDelegate> delegate;
 
       public:
         NSWindowStyleMask prev_mask;
