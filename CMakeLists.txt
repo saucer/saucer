@@ -106,7 +106,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
   
 if (PROJECT_IS_TOP_LEVEL)
   if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX /external:anglebrackets /external:W0)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX /external:anglebrackets /external:w)
   else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
   endif()
