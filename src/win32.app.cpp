@@ -23,6 +23,21 @@ namespace saucer
             assert(false && "RegisterClassW() failed");
         }
 
+        m_impl->msg_window = CreateWindowEx(0,                  //
+                                            m_impl->id.c_str(), //
+                                            L"",                //
+                                            0,                  //
+                                            0,                  //
+                                            0,                  //
+                                            0,                  //
+                                            0,                  //
+                                            HWND_MESSAGE,       //
+                                            nullptr,            //
+                                            m_impl->handle,     //
+                                            nullptr);
+
+        assert(m_impl->msg_window.get() && "Failed to register message only window");
+
         Gdiplus::GdiplusStartupInput input{};
         Gdiplus::GdiplusStartup(&m_impl->gdi_token.reset(), &input, nullptr);
     }
@@ -40,7 +55,7 @@ namespace saucer
     void application::post(callback_t callback) const
     {
         auto *message = new safe_message{std::move(callback)};
-        PostThreadMessageW(m_impl->thread, impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
+        PostMessageW(m_impl->msg_window.get(), impl::WM_SAFE_CALL, 0, reinterpret_cast<LPARAM>(message));
     }
 
     template <>
@@ -50,7 +65,6 @@ namespace saucer
 
         while (GetMessage(&msg, nullptr, 0, 0))
         {
-            impl::process(msg);
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
@@ -66,7 +80,6 @@ namespace saucer
             return;
         }
 
-        impl::process(msg);
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
