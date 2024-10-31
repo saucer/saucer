@@ -43,6 +43,7 @@ namespace saucer
         m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), std::move(copy));
 
         m_impl->web_view->get_Settings(&m_impl->settings);
+        m_impl->settings->put_IsStatusBarEnabled(false);
 
         auto resource_requested = [this](auto, auto *args)
         {
