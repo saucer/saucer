@@ -22,7 +22,7 @@ namespace saucer
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
         auto *const application = GTK_APPLICATION(m_parent->native<false>()->application);
-        m_impl->window.reset(ADW_APPLICATION_WINDOW(adw_application_window_new(application)));
+        m_impl->window.reset(GTK_WINDOW(adw_application_window_new(application)));
 
         m_impl->style   = gtk_css_provider_new();
         m_impl->header  = ADW_HEADER_BAR(adw_header_bar_new());
@@ -398,5 +398,5 @@ namespace saucer
         return m_events.at<Event>().add(std::move(callback));
     }
 
-    INSTANTIATE_EVENTS(window, 7, window_event)
+    SAUCER_INSTANTIATE_EVENTS(7, window, window_event);
 } // namespace saucer

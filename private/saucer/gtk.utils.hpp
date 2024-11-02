@@ -1,7 +1,8 @@
 #pragma once
 
+#include "ref_ptr.hpp"
+
 #include <gtk/gtk.h>
-#include <saucer/utils/ref_ptr.hpp>
 
 namespace saucer::utils
 {

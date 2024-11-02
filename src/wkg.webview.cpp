@@ -4,11 +4,11 @@
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
 
+#include "handle.hpp"
 #include "requests.hpp"
 #include "instantiate.hpp"
 
 #include <fmt/core.h>
-#include <saucer/utils/handle.hpp>
 
 namespace saucer
 {
@@ -523,5 +523,5 @@ namespace saucer
         webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
     }
 
-    INSTANTIATE_EVENTS(webview, 6, web_event)
+    SAUCER_INSTANTIATE_EVENTS(6, webview, web_event);
 } // namespace saucer

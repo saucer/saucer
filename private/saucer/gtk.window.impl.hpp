@@ -2,12 +2,12 @@
 
 #include "window.hpp"
 
+#include "handle.hpp"
 #include "gtk.utils.hpp"
 
 #include <optional>
 
 #include <adwaita.h>
-#include <saucer/utils/handle.hpp>
 
 namespace saucer
 {

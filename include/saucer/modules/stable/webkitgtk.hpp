@@ -20,7 +20,7 @@ namespace saucer
     template <>
     struct stable<window>
     {
-        AdwApplicationWindow *window;
+        GtkWindow *window;
     };
 
     template <>
