@@ -19,7 +19,7 @@ namespace saucer
         WebKitWebView *web_view;
 
       public:
-        gulong message_received;
+        gulong msg_received;
         WebKitUserContentManager *manager;
 
       public:

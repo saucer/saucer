@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(saucer LANGUAGES CXX VERSION 4.2.0)
+project(saucer LANGUAGES CXX VERSION 5.0.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Library switches
@@ -172,9 +172,9 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_sources(${PROJECT_NAME} PRIVATE 
+    "src/module/unstable.cpp"
+
     "src/app.cpp"
-    
-    "src/window.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
     
@@ -318,7 +318,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC  saucer::utils boost_callable_trait
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_backend MATCHES "^Qt.$")
-  file(GLOB qt_sources 
+  file(GLOB_RECURSE qt_sources 
     "src/qt.*cpp"
     "private/saucer/qt.*hpp"
     "src/qt${QT_VERSION}.*cpp"
@@ -349,7 +349,7 @@ if (saucer_backend STREQUAL "WebKit")
 endif()
 
 if (saucer_backend STREQUAL "WebKitGtk")
-  file(GLOB gtk_sources 
+  file(GLOB_RECURSE gtk_sources 
     "src/gtk.*cpp"
     "src/wkg.*cpp"
   )
@@ -365,7 +365,7 @@ if (saucer_backend STREQUAL "WebKitGtk")
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
-  file(GLOB win_sources 
+  file(GLOB_RECURSE win_sources 
     "src/win32.*cpp"
     "src/wv2.*cpp"
   )

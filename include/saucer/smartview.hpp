@@ -38,9 +38,6 @@ namespace saucer
       public:
         ~smartview_core() override;
 
-      public:
-        [[nodiscard]] saucer::natives natives() const;
-
       protected:
         bool on_message(const std::string &) override;
 
@@ -63,12 +60,9 @@ namespace saucer
 
     using default_serializer = serializers::glaze::serializer;
 
-    template <Serializer Serializer = default_serializer, Module... Modules>
-    class smartview : public smartview_core
+    template <Serializer Serializer = default_serializer>
+    struct smartview : public smartview_core
     {
-        std::tuple<Modules...> m_modules;
-
-      public:
         smartview(const preferences &);
 
       public:
@@ -82,10 +76,6 @@ namespace saucer
       public:
         template <typename Return, typename... Params>
         [[sc::thread_safe]] [[nodiscard]] std::future<Return> evaluate(std::string_view code, Params &&...params);
-
-      public:
-        template <Module T>
-        auto &module();
     };
 } // namespace saucer
 

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "icon.hpp"
-
+#include "modules/module.hpp"
 #include "window.hpp"
+
+#include "icon.hpp"
 #include "script.hpp"
 
 #include "scheme.hpp"
@@ -42,11 +43,12 @@ namespace saucer
 
     using color = std::array<std::uint8_t, 4>;
 
-    struct webview : public window
+    struct webview : window, extensible<webview>
     {
         struct impl;
 
       private:
+        using window::m_parent;
         using embedded_files = std::unordered_map<std::string, embedded_file>;
 
       public:
@@ -76,7 +78,8 @@ namespace saucer
         ~webview() override;
 
       public:
-        [[nodiscard]] impl *native() const;
+        template <bool Stable = true>
+        [[nodiscard]] natives<webview, Stable> native() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;

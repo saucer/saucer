@@ -1,9 +1,10 @@
 #pragma once
 
+#include "utils/required.hpp"
+#include "modules/module.hpp"
+
 #include "app.hpp"
 #include "icon.hpp"
-
-#include "utils/required.hpp"
 
 #include <string>
 #include <memory>
@@ -96,7 +97,8 @@ namespace saucer
         virtual ~window();
 
       public:
-        [[nodiscard]] impl *native() const;
+        template <bool Stable = true>
+        [[nodiscard]] natives<window, Stable> native() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool visible() const;

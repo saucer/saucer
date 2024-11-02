@@ -4,23 +4,22 @@
 
 namespace saucer
 {
-    template <Serializer Serializer, Module... Modules>
-    smartview<Serializer, Modules...>::smartview(const preferences &prefs)
-        : smartview_core(std::make_unique<Serializer>(), prefs), m_modules(Modules{this, natives()}...)
+    template <Serializer Serializer>
+    smartview<Serializer>::smartview(const preferences &prefs) : smartview_core(std::make_unique<Serializer>(), prefs)
     {
     }
 
-    template <Serializer Serializer, Module... Modules>
+    template <Serializer Serializer>
     template <typename... Params>
-    void smartview<Serializer, Modules...>::execute(std::string_view code, Params &&...params)
+    void smartview<Serializer>::execute(std::string_view code, Params &&...params)
     {
         auto args = Serializer::serialize_args(std::forward<Params>(params)...);
         webview::execute(fmt::vformat(code, args));
     }
 
-    template <Serializer Serializer, Module... Modules>
+    template <Serializer Serializer>
     template <typename Return, typename... Params>
-    std::future<Return> smartview<Serializer, Modules...>::evaluate(std::string_view code, Params &&...params)
+    std::future<Return> smartview<Serializer>::evaluate(std::string_view code, Params &&...params)
     {
         std::promise<Return> promise;
         auto rtn = promise.get_future();
@@ -33,18 +32,11 @@ namespace saucer
         return rtn;
     }
 
-    template <Serializer Serializer, Module... Modules>
+    template <Serializer Serializer>
     template <typename Function>
-    void smartview<Serializer, Modules...>::expose(std::string name, Function &&func, launch policy)
+    void smartview<Serializer>::expose(std::string name, Function &&func, launch policy)
     {
         auto resolve = Serializer::serialize(std::forward<Function>(func));
         add_function(std::move(name), std::move(resolve), policy);
-    }
-
-    template <Serializer Serializer, Module... Modules>
-    template <Module T>
-    auto &smartview<Serializer, Modules...>::module()
-    {
-        return std::get<T>(m_modules);
     }
 } // namespace saucer

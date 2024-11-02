@@ -60,14 +60,6 @@ namespace saucer
         *locked     = nullptr;
     }
 
-    saucer::natives smartview_core::natives() const
-    {
-        return {
-            .window  = window::native(),
-            .webview = webview::native(),
-        };
-    }
-
     bool smartview_core::on_message(const std::string &message)
     {
         if (webview::on_message(message))

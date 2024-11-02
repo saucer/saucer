@@ -12,7 +12,7 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &prefs) : window(prefs), extensible(this), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
@@ -70,8 +70,7 @@ namespace saucer
             reinterpret_cast<webview *>(data)->on_message(raw.get());
         };
 
-        m_impl->message_received =
-            g_signal_connect(m_impl->manager, "script-message-received", G_CALLBACK(+on_message), this);
+        m_impl->msg_received = g_signal_connect(m_impl->manager, "script-message-received", G_CALLBACK(+on_message), this);
 
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
         {
@@ -129,7 +128,7 @@ namespace saucer
         }
 
         gtk_box_remove(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
-        g_signal_handler_disconnect(m_impl->manager, m_impl->message_received);
+        g_signal_handler_disconnect(m_impl->manager, m_impl->msg_received);
     }
 
     bool webview::on_message(const std::string &message)

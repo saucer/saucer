@@ -5,11 +5,6 @@
 
 namespace saucer
 {
-    application::impl *application::native() const
-    {
-        return m_impl.get();
-    }
-
     std::shared_ptr<application> application::acquire(const options &options)
     {
         static lockpp::lock<std::weak_ptr<application>> instance;

@@ -4,11 +4,6 @@
 
 namespace saucer
 {
-    webview::impl *webview::native() const
-    {
-        return m_impl.get();
-    }
-
     void webview::embed(embedded_files files)
     {
         if (!m_parent->thread_safe())

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils/required.hpp"
+#include "modules/module.hpp"
 
 #include <string>
 #include <memory>
@@ -14,7 +15,7 @@ namespace saucer
         required<std::string> id;
     };
 
-    struct application
+    struct application : extensible<application>
     {
         struct impl;
 
@@ -31,7 +32,10 @@ namespace saucer
         ~application();
 
       public:
-        [[nodiscard]] impl *native() const;
+        template <bool Stable = true>
+        [[nodiscard]] natives<application, Stable> native() const;
+
+      public:
         [[nodiscard]] bool thread_safe() const;
 
       public:
