@@ -94,6 +94,8 @@ if (saucer_backend STREQUAL "Default")
   message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
 endif()
 
+set(saucer_real_backend "${saucer_backend}" CACHE STRING "The actual backend used")
+
 # --------------------------------------------------------------------------------------------------------
 # Setup Library
 # --------------------------------------------------------------------------------------------------------
