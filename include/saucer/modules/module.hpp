@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <unordered_map>
 
 #include <memory>
 #include <optional>
@@ -40,8 +41,11 @@ namespace saucer
     template <typename T>
     class extensible
     {
+        using module_map = std::unordered_map<std::size_t, erased_module>;
+
+      private:
         T *m_parent;
-        std::unordered_map<std::size_t, erased_module> m_modules;
+        module_map m_modules;
 
       public:
         extensible(T *parent);
