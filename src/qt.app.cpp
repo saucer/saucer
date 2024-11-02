@@ -4,7 +4,7 @@
 
 namespace saucer
 {
-    application::application(const options &options) : m_impl(std::make_unique<impl>())
+    application::application(const options &options) : extensible(this), m_impl(std::make_unique<impl>())
     {
         m_impl->id = options.id.value();
 
