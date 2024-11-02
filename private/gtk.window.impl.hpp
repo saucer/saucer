@@ -2,8 +2,8 @@
 
 #include "window.hpp"
 
+#include "handle.hpp"
 #include "gtk.utils.hpp"
-#include "utils/handle.hpp"
 
 #include <optional>
 

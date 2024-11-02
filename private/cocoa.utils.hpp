@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/ref_ptr.hpp"
+#include "ref_ptr.hpp"
 
 namespace saucer::utils
 {

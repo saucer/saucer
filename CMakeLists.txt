@@ -94,8 +94,6 @@ if (saucer_backend STREQUAL "Default")
   message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
 endif()
 
-set(saucer_real_backend "${saucer_backend}" CACHE STRING "The actual backend used")
-
 # --------------------------------------------------------------------------------------------------------
 # Setup Library
 # --------------------------------------------------------------------------------------------------------
@@ -138,11 +136,9 @@ endif()
 # Include directories
 # --------------------------------------------------------------------------------------------------------
 
-target_include_directories(${PROJECT_NAME} PUBLIC            "include")
-target_include_directories(${PROJECT_NAME} ${saucer_linkage} "shared")
+target_include_directories(${PROJECT_NAME} PUBLIC "include")
 
 target_include_directories(${PROJECT_NAME} PRIVATE "private")
-target_include_directories(${PROJECT_NAME} PRIVATE "shared/utils")
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 
 # --------------------------------------------------------------------------------------------------------
@@ -251,6 +247,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 include("cmake/nuget.cmake")
+include("cmake/module.cmake")
 
 CPMFindPackage(
   NAME           lockpp
@@ -307,8 +304,8 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
+target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends

@@ -4,9 +4,9 @@
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
 
+#include "handle.hpp"
 #include "requests.hpp"
 #include "instantiate.hpp"
-#include "utils/handle.hpp"
 
 #include <fmt/core.h>
 
