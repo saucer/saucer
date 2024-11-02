@@ -18,14 +18,6 @@ namespace saucer
 
     template <typename Callback>
     then_pipe<Callback> then(Callback);
-
-    template <typename T>
-    [[deprecated("When discarding smartview::evaluate results, consider using smartview::execute instead.")]]
-    void forget(std::future<T>);
-
-    struct forget_pipe;
-
-    forget_pipe forget();
 } // namespace saucer
 
 #include "future.inl"

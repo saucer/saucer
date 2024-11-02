@@ -62,28 +62,4 @@ namespace saucer
     {
         return then_pipe{std::move(callback)};
     }
-
-    template <typename T>
-    void forget(std::future<T> future)
-    {
-        std::thread{[future = std::move(future)]() mutable
-                    {
-                        future.wait();
-                    }}
-            .detach();
-    }
-
-    struct forget_pipe
-    {
-        template <typename T>
-        friend void operator|(std::future<T> future, forget_pipe)
-        {
-            forget(std::move(future));
-        }
-    };
-
-    inline forget_pipe forget()
-    {
-        return forget_pipe{};
-    }
 } // namespace saucer
