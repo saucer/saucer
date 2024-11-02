@@ -138,11 +138,10 @@ endif()
 # Include directories
 # --------------------------------------------------------------------------------------------------------
 
-target_include_directories(${PROJECT_NAME} PUBLIC            "include")
-target_include_directories(${PROJECT_NAME} ${saucer_linkage} "private")
+target_include_directories(${PROJECT_NAME} PUBLIC  "include")
 
-target_include_directories(${PROJECT_NAME} PRIVATE           "private/saucer")
-target_include_directories(${PROJECT_NAME} PRIVATE           "include/saucer")
+target_include_directories(${PROJECT_NAME} PRIVATE "private/saucer")
+target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 
 # --------------------------------------------------------------------------------------------------------
 # Setup feature macros
