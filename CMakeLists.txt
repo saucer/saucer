@@ -5,7 +5,7 @@ project(saucer LANGUAGES CXX VERSION 5.0.0)
 # Library switches
 # --------------------------------------------------------------------------------------------------------
 
-option(saucer_modules           "Enable smartview modules"                          ON)
+option(saucer_modules           "Enable module support"                             ON)
 
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
@@ -304,8 +304,8 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
-target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_preprocessor cr::lockpp cr::flagpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC  boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
