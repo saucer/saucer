@@ -1,10 +1,9 @@
 #pragma once
 
 #include <type_traits>
-#include <unordered_map>
 
+#include <memory>
 #include <optional>
-#include <functional>
 
 namespace saucer
 {
@@ -20,7 +19,7 @@ namespace saucer
     class erased_module
     {
         std::size_t m_id;
-        std::function<void *()> m_value;
+        std::shared_ptr<void> m_value;
 
       private:
         erased_module() = default;

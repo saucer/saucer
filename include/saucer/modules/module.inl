@@ -29,7 +29,7 @@ namespace saucer
             return std::nullopt;
         }
 
-        return reinterpret_cast<T *>(m_value());
+        return reinterpret_cast<T *>(m_value.get());
     }
 
     template <typename T>
@@ -43,14 +43,8 @@ namespace saucer
     {
         erased_module rtn;
 
-        // std::function is often implemented with SBO, we're abusing this here so that we don't have to handle that logic
-        // ourselves.
-
         rtn.m_id    = id_of<T>();
-        rtn.m_value = [storage = T{std::forward<Ts>(args)...}]() mutable
-        {
-            return &storage;
-        };
+        rtn.m_value = std::make_shared<T>(std::forward<Ts>(args)...);
 
         return rtn;
     }
