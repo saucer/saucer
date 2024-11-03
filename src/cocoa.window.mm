@@ -202,7 +202,7 @@ namespace saucer
             return dispatch([this] { return show(); });
         }
 
-        m_parent->native()->instances[m_impl->window] = true;
+        m_parent->native<false>()->instances[m_impl->window] = true;
         [m_impl->window makeKeyAndOrderFront:nil];
     }
 
@@ -344,7 +344,7 @@ namespace saucer
         }
 
         auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon.get()];
-        auto *const tile = m_parent->native()->application.dockTile;
+        auto *const tile = m_parent->native<false>()->application.dockTile;
 
         [tile setContentView:view];
         [tile display];

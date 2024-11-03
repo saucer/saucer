@@ -66,7 +66,7 @@ namespace saucer
                                     self->hide();
                                     self->m_events.at<window_event::closed>().fire();
 
-                                    auto &instances = parent->native()->instances;
+                                    auto &instances = parent->native<false>()->instances;
                                     instances.erase(identifier);
 
                                     if (!std::ranges::any_of(instances | std::views::values, std::identity{}))

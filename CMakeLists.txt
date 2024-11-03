@@ -329,7 +329,7 @@ endif()
 if (saucer_backend STREQUAL "WebKit")
   enable_language(OBJCXX)
 
-  file(GLOB cocoa_sources 
+  file(GLOB_RECURSE cocoa_sources 
     "src/cocoa.*mm"
     "src/wk.*mm"
   )

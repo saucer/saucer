@@ -15,7 +15,7 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs) : window(prefs), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &prefs) : window(prefs), extensible(this), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag,
