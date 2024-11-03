@@ -2,7 +2,7 @@
 
 namespace saucer::utils
 {
-    template <typename T, auto Release, T Empty = {}>
+    template <typename T, auto Release, T Empty = T{}>
     class handle
     {
         T m_handle{Empty};

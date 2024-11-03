@@ -21,17 +21,17 @@ namespace saucer
     {
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
-        m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,      //
-                                       m_parent->native()->id.c_str(), //
-                                       L"",                            //
-                                       WS_OVERLAPPEDWINDOW,            //
-                                       CW_USEDEFAULT,                  //
-                                       CW_USEDEFAULT,                  //
-                                       CW_USEDEFAULT,                  //
-                                       CW_USEDEFAULT,                  //
-                                       nullptr,                        //
-                                       nullptr,                        //
-                                       m_parent->native()->handle,     //
+        m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,             //
+                                       m_parent->native<false>()->id.c_str(), //
+                                       L"",                                   //
+                                       WS_OVERLAPPEDWINDOW,                   //
+                                       CW_USEDEFAULT,                         //
+                                       CW_USEDEFAULT,                         //
+                                       CW_USEDEFAULT,                         //
+                                       CW_USEDEFAULT,                         //
+                                       nullptr,                               //
+                                       nullptr,                               //
+                                       m_parent->native<false>()->handle,     //
                                        nullptr);
 
         assert(m_impl->hwnd.get() && "CreateWindowExW() failed");
@@ -200,7 +200,7 @@ namespace saucer
             return dispatch([this] { show(); });
         }
 
-        m_parent->native()->instances[m_impl->hwnd.get()] = true;
+        m_parent->native<false>()->instances[m_impl->hwnd.get()] = true;
         ShowWindow(m_impl->hwnd.get(), SW_SHOW);
     }
 

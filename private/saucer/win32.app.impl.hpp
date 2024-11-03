@@ -17,17 +17,17 @@ namespace saucer
 
       public:
         HMODULE handle;
-        std::wstring id;
+        utils::handle<HWND, DestroyWindow> msg_window;
 
       public:
         DWORD thread;
-        utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
+        std::wstring id;
 
       public:
         std::unordered_map<HWND, bool> instances;
+        utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
-        static void process(MSG);
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
 
       public:

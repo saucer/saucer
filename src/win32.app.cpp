@@ -6,7 +6,7 @@
 
 namespace saucer
 {
-    application::application(const options &options) : m_impl(std::make_unique<impl>())
+    application::application(const options &options) : extensible(this), m_impl(std::make_unique<impl>())
     {
         m_impl->thread = GetCurrentThreadId();
         m_impl->handle = GetModuleHandleW(nullptr);
@@ -38,12 +38,15 @@ namespace saucer
 
         assert(m_impl->msg_window.get() && "Failed to register message only window");
 
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
         Gdiplus::GdiplusStartupInput input{};
         Gdiplus::GdiplusStartup(&m_impl->gdi_token.reset(), &input, nullptr);
     }
 
     application::~application()
     {
+        CoUninitialize();
         UnregisterClassW(m_impl->id.c_str(), m_impl->handle);
     }
 

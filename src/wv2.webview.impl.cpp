@@ -65,8 +65,6 @@ namespace saucer
             prefs.storage_path = std::filesystem::temp_directory_path() / "saucer";
         }
 
-        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-
         auto created = [this](auto, auto *result)
         {
             controller = result;
@@ -102,8 +100,6 @@ namespace saucer
         {
             app->run<false>();
         }
-
-        CoUninitialize();
     }
 
     HRESULT webview::impl::scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *args)
