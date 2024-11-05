@@ -12,19 +12,19 @@
 namespace saucer
 {
     template <>
-    struct stable<application>
+    struct stable_natives<application>
     {
         AdwApplication *application;
     };
 
     template <>
-    struct stable<window>
+    struct stable_natives<window>
     {
         GtkWindow *window;
     };
 
     template <>
-    struct stable<webview>
+    struct stable_natives<webview>
     {
         WebKitWebView *webview;
     };

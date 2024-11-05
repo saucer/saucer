@@ -12,19 +12,19 @@
 namespace saucer
 {
     template <>
-    struct stable<application>
+    struct stable_natives<application>
     {
         QApplication *application;
     };
 
     template <>
-    struct stable<window>
+    struct stable_natives<window>
     {
         QMainWindow *window;
     };
 
     template <>
-    struct stable<webview>
+    struct stable_natives<webview>
     {
         QWebEngineView *webview;
     };

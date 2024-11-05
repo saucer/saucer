@@ -12,19 +12,19 @@
 namespace saucer
 {
     template <>
-    struct stable<application>
+    struct stable_natives<application>
     {
         NSApplication *application;
     };
 
     template <>
-    struct stable<window>
+    struct stable_natives<window>
     {
         NSWindow *window;
     };
 
     template <>
-    struct stable<webview>
+    struct stable_natives<webview>
     {
         WKWebView *webview;
     };

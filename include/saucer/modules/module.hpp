@@ -9,10 +9,10 @@
 namespace saucer
 {
     template <typename T>
-    struct stable;
+    struct stable_natives;
 
     template <typename T, bool Stable>
-    using natives = std::conditional_t<Stable, stable<T>, typename T::impl *>;
+    using natives = std::conditional_t<Stable, stable_natives<T>, typename T::impl *>;
 
     template <typename S, typename T, typename... Ts>
     concept Module = requires() { requires std::constructible_from<S, T *, Ts...>; };

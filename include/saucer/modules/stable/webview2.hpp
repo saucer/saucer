@@ -12,19 +12,19 @@
 namespace saucer
 {
     template <>
-    struct stable<application>
+    struct stable_natives<application>
     {
         WNDCLASSW wnd_class;
     };
 
     template <>
-    struct stable<window>
+    struct stable_natives<window>
     {
         HWND hwnd;
     };
 
     template <>
-    struct stable<webview>
+    struct stable_natives<webview>
     {
         ICoreWebView2 *webview;
         ICoreWebView2Controller *controller;
