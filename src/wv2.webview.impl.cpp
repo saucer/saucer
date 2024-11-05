@@ -203,15 +203,10 @@ namespace saucer
         case WM_SHOWWINDOW:
             impl->controller->put_IsVisible(static_cast<BOOL>(w_param));
             break;
-        case WM_SIZE: {
-            if (w_param == SIZE_MAXIMIZED || w_param == SIZE_RESTORED)
-            {
-                impl->controller->put_IsVisible(true);
-            }
-
+        case WM_SIZE:
+            impl->controller->put_IsVisible(w_param != SIZE_MINIMIZED);
             impl->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
             break;
-        }
         case WM_DESTROY:
             impl->controller->Close();
             break;
