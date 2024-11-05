@@ -22,20 +22,24 @@ option(saucer_tests             "Build tests"                                   
 #   issues only to find out that their compiler is too old.
 # --------------------------------------------------------------------------------------------------------
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION LESS 19.38)
-  set(saucer_cxx_outdated TRUE)
-endif()
+macro(saucer_mark_outdated)
+  if (${ARGN})
+    set(saucer_cxx_outdated TRUE)
+  else()
+    set(saucer_cxx_outdated FALSE)
+  endif()
+endmacro()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION LESS 14)
-  set(saucer_cxx_outdated TRUE)
-endif()
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION LESS 18)
-  set(saucer_cxx_outdated TRUE)
-endif()
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION LESS 15)
-  set(saucer_cxx_outdated TRUE)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 19.38)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 14)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 17)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 18)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 15)
 endif()
 
 if (NOT saucer_no_version_check AND saucer_cxx_outdated)
