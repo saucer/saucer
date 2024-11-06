@@ -48,8 +48,10 @@ namespace saucer
         struct impl;
 
       private:
-        using window::m_parent;
         using embedded_files = std::unordered_map<std::string, embedded_file>;
+
+      protected:
+        using window::m_parent;
 
       public:
         using events = ereignis::manager<                                     //
