@@ -85,7 +85,7 @@ namespace saucer::traits
     template <typename T, typename Result = result_t<T>, typename Last = last_t<args_t<T>>>
     struct resolver
     {
-        using args_t     = args_t<T>;
+        using args_t     = traits::args_t<T>;
         using error_t    = void;
         using result_t   = Result;
         using executor_t = executor<Result, void>;
@@ -102,7 +102,7 @@ namespace saucer::traits
     template <typename T, typename Result, typename R, typename E>
     struct resolver<T, Result, executor<R, E>>
     {
-        using args_t     = drop_last_t<args_t<T>>;
+        using args_t     = drop_last_t<traits::args_t<T>>;
         using error_t    = E;
         using result_t   = R;
         using executor_t = executor<R, E>;
@@ -117,7 +117,7 @@ namespace saucer::traits
     template <typename T, typename R, typename E, typename Last>
     struct resolver<T, std::expected<R, E>, Last>
     {
-        using args_t     = args_t<T>;
+        using args_t     = traits::args_t<T>;
         using error_t    = E;
         using result_t   = R;
         using executor_t = executor<R, E>;
