@@ -5,6 +5,11 @@
 
 namespace saucer
 {
+    poolparty::pool<> &application::pool()
+    {
+        return m_pool;
+    }
+
     std::shared_ptr<application> application::acquire(const options &options)
     {
         static lockpp::lock<std::weak_ptr<application>> instance;

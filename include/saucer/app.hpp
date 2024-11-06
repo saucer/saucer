@@ -3,16 +3,22 @@
 #include "utils/required.hpp"
 #include "modules/module.hpp"
 
+#include <functional>
+
 #include <string>
 #include <memory>
+#include <thread>
 
-#include <functional>
+#include <poolparty/pool.hpp>
 
 namespace saucer
 {
     struct options
     {
         required<std::string> id;
+
+      public:
+        std::size_t threads = std::thread::hardware_concurrency();
     };
 
     struct application : extensible<application>
@@ -23,6 +29,7 @@ namespace saucer
         using callback_t = std::move_only_function<void()>;
 
       private:
+        poolparty::pool<> m_pool;
         std::unique_ptr<impl> m_impl;
 
       private:
@@ -30,6 +37,9 @@ namespace saucer
 
       public:
         ~application();
+
+      public:
+        [[nodiscard]] poolparty::pool<> &pool();
 
       public:
         template <bool Stable = true>

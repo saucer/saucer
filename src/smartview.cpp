@@ -9,7 +9,6 @@
 #include <lockpp/lock.hpp>
 
 #include <fmt/core.h>
-#include <poolparty/pool.hpp>
 
 namespace saucer
 {
@@ -29,10 +28,7 @@ namespace saucer
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
-        std::shared_ptr<lockpp::lock<smartview_core *>> parent;
-
-      public:
-        static inline std::unique_ptr<poolparty::pool<>> pool;
+        std::shared_ptr<lockpp::lock<smartview_core *>> self;
     };
 
     smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const preferences &prefs)
@@ -40,13 +36,8 @@ namespace saucer
     {
         using namespace scripts;
 
-        if (!impl::pool)
-        {
-            impl::pool = std::make_unique<poolparty::pool<>>(prefs.threads);
-        }
-
         m_impl->serializer = std::move(serializer);
-        m_impl->parent     = std::make_shared<lockpp::lock<smartview_core *>>(this);
+        m_impl->self       = std::make_shared<lockpp::lock<smartview_core *>>(this);
 
         auto script = fmt::format(smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer()));
 
@@ -56,7 +47,7 @@ namespace saucer
 
     smartview_core::~smartview_core()
     {
-        auto locked = m_impl->parent->write();
+        auto locked = m_impl->self->write();
         *locked     = nullptr;
     }
 
@@ -99,7 +90,7 @@ namespace saucer
             return reject(message.id, fmt::format("\"No exposed function '{}'\"", message.name));
         }
 
-        auto resolve = [parent = m_impl->parent, id = message.id](const auto &result)
+        auto resolve = [parent = m_impl->self, id = message.id](const auto &result)
         {
             auto core = parent->read();
 
@@ -111,7 +102,7 @@ namespace saucer
             core.value()->resolve(id, result);
         };
 
-        auto reject = [parent = m_impl->parent, id = message.id](const auto &error)
+        auto reject = [parent = m_impl->self, id = message.id](const auto &error)
         {
             auto core = parent->read();
 
@@ -123,7 +114,7 @@ namespace saucer
             core.value()->reject(id, error);
         };
 
-        auto executor        = serializer::executor{resolve, reject};
+        auto executor        = serializer::executor{std::move(resolve), std::move(reject)};
         auto &[func, policy] = functions[message.name];
 
         if (policy == launch::sync)
@@ -131,8 +122,8 @@ namespace saucer
             return std::invoke(func, std::move(data), executor);
         }
 
-        m_impl->pool->emplace([func, data = std::move(data), executor = std::move(executor)]() mutable
-                              { std::invoke(func, std::move(data), executor); });
+        m_parent->pool().emplace([func = std::move(func), data = std::move(data), executor = std::move(executor)]() mutable
+                                 { std::invoke(func, std::move(data), executor); });
     }
 
     void smartview_core::resolve(std::unique_ptr<message_data> data)

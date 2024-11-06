@@ -12,7 +12,6 @@
 #include <set>
 #include <utility>
 
-#include <thread>
 #include <cstdint>
 #include <filesystem>
 
@@ -59,9 +58,6 @@ namespace saucer
         fs::path storage_path;
         std::string user_agent;
         std::set<std::string> browser_flags;
-
-      public:
-        std::size_t threads = std::thread::hardware_concurrency();
     };
 
     struct window
