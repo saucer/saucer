@@ -6,11 +6,11 @@
 
 namespace saucer
 {
-    application::application(const options &options) : extensible(this), m_impl(std::make_unique<impl>())
+    application::application(const options &opts) : extensible(this), m_pool(opts.threads), m_impl(std::make_unique<impl>())
     {
         m_impl->thread = GetCurrentThreadId();
         m_impl->handle = GetModuleHandleW(nullptr);
-        m_impl->id     = utils::widen(options.id.value());
+        m_impl->id     = utils::widen(opts.id.value());
 
         m_impl->wnd_class = {
             .lpfnWndProc   = impl::wnd_proc,

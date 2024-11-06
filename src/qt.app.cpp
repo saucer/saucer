@@ -4,9 +4,9 @@
 
 namespace saucer
 {
-    application::application(const options &options) : extensible(this), m_impl(std::make_unique<impl>())
+    application::application(const options &opts) : extensible(this), m_pool(opts.threads), m_impl(std::make_unique<impl>())
     {
-        m_impl->id = options.id.value();
+        m_impl->id = opts.id.value();
 
         m_impl->argv = {m_impl->id.data()};
         m_impl->argc = static_cast<int>(m_impl->argv.size());
