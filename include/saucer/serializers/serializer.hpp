@@ -24,7 +24,7 @@ namespace saucer
 
       public:
         using resolver = std::move_only_function<void(std::unique_ptr<message_data>)>;
-        using function = std::function<void(std::unique_ptr<message_data>, const executor &)>;
+        using function = std::function<void(std::unique_ptr<message_data>, executor)>;
 
       public:
         virtual ~serializer() = default;

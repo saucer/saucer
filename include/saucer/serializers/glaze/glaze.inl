@@ -1,14 +1,13 @@
 #pragma once
 
 #include "glaze.hpp"
+#include "../../utils/traits.hpp"
 
 #include <optional>
 #include <expected>
 
 #include <fmt/core.h>
 #include <fmt/xchar.h>
-
-#include <boost/callable_traits.hpp>
 
 #include <rebind/name.hpp>
 #include <rebind/enum.hpp>
@@ -18,65 +17,6 @@ namespace saucer::serializers::glaze
     namespace impl
     {
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
-
-        template <typename... Ts>
-        consteval auto decay_tuple_impl(const std::tuple<Ts...> &) -> std::tuple<std::decay_t<Ts>...>;
-
-        template <typename T>
-        using decay_tuple_t = decltype(decay_tuple_impl(std::declval<T>()));
-
-        template <typename... Ts>
-        consteval auto drop_last_impl(const std::tuple<Ts...> &tuple)
-        {
-            auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
-            {
-                return std::make_tuple(std::get<Is>(tuple)...);
-            };
-
-            return unpack(std::make_index_sequence<sizeof...(Ts) - 1>());
-        }
-
-        template <typename T>
-        using drop_last_t = decltype(drop_last_impl(std::declval<T>()));
-
-        template <typename... Ts>
-        consteval auto last_impl(const std::tuple<Ts...> &tuple)
-        {
-            if constexpr (sizeof...(Ts) > 0)
-            {
-                return std::get<sizeof...(Ts) - 1>(tuple);
-            }
-        }
-
-        template <typename T>
-        using last_t = decltype(last_impl(std::declval<T>()));
-
-        template <typename T>
-        using args_t = decay_tuple_t<boost::callable_traits::args_t<T>>;
-
-        template <typename T>
-        using return_t = boost::callable_traits::return_type_t<T>;
-
-        template <typename T, typename Last = last_t<args_t<T>>>
-        struct meta
-        {
-            using args_t   = impl::args_t<T>;
-            using result_t = return_t<T>;
-
-          public:
-            static constexpr bool is_manual = false;
-        };
-
-        template <typename T, typename R, typename E>
-        struct meta<T, executor<R, E>>
-        {
-            using args_t     = drop_last_t<impl::args_t<T>>;
-            using result_t   = R;
-            using executor_t = executor<R, E>;
-
-          public:
-            static constexpr bool is_manual = true;
-        };
 
         template <typename T>
         struct serializable_impl : std::false_type
@@ -230,48 +170,38 @@ namespace saucer::serializers::glaze
     template <typename Function>
     auto serializer::serialize(Function &&func)
     {
-        using meta     = impl::meta<Function>;
-        using result_t = meta::result_t;
-        using args_t   = meta::args_t;
+        using callable_t = traits::callable<Function>;
+        using result_t   = callable_t::result_t;
+        using args_t     = callable_t::args_t;
 
         static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
-                      "All arguments as well as the result type must be serializable");
+                      "All arguments as well as the result must be serializable");
 
-        return [func = std::forward<Function>(func)](std::unique_ptr<saucer::message_data> data, const executor &exec)
+        return [func = callable_t::convert(std::forward<Function>(func))](std::unique_ptr<saucer::message_data> data,
+                                                                          executor exec)
         {
-            const auto &[resolve, reject] = exec;
-
             const auto &message = *static_cast<function_data *>(data.get());
             const auto params   = impl::parse<args_t>(message.params.str);
 
             if (!params)
             {
-                return std::invoke(reject, impl::serialize_arg(params.error()));
+                return std::invoke(exec.reject, impl::serialize_arg(params.error()));
             }
 
-            if constexpr (meta::is_manual)
+            auto resolve = [resolve = std::move(exec.resolve)]<typename... Ts>(Ts &&...value)
             {
-                using executor_t = meta::executor_t;
+                std::invoke(resolve, impl::serialize_res([&value...] { return (value, ...); }));
+            };
 
-                auto exec_resolve = [resolve]<typename... Ts>(Ts &&...value)
-                {
-                    std::invoke(resolve, impl::serialize_res([&value...] { return (value, ...); }));
-                };
-
-                auto exec_reject = [reject]<typename... Ts>(Ts &&...value)
-                {
-                    std::invoke(reject, impl::serialize_res([&value...] { return (value, ...); }));
-                };
-
-                auto exec_param = executor_t{exec_resolve, exec_reject};
-                auto all_params = std::tuple_cat(params.value(), std::make_tuple(std::move(exec_param)));
-
-                std::apply(func, all_params);
-            }
-            else
+            auto reject = [reject = std::move(exec.reject)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(resolve, impl::serialize_res([&] { return std::apply(func, params.value()); }));
-            }
+                std::invoke(reject, impl::serialize_res([&value...] { return (value, ...); }));
+            };
+
+            auto exec_param = typename callable_t::executor_t{std::move(resolve), std::move(reject)};
+            auto all_params = std::tuple_cat(std::move(params.value()), std::make_tuple(std::move(exec_param)));
+
+            std::apply(func, all_params);
         };
     }
 
