@@ -83,7 +83,7 @@ namespace saucer::traits
     using result_t = boost::callable_traits::return_type_t<T>;
 
     template <typename T, typename Result = result_t<T>, typename Last = last_t<args_t<T>>>
-    struct callable
+    struct resolver
     {
         using args_t     = args_t<T>;
         using error_t    = void;
@@ -100,7 +100,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename Result, typename R, typename E>
-    struct callable<T, Result, executor<R, E>>
+    struct resolver<T, Result, executor<R, E>>
     {
         using args_t     = drop_last_t<args_t<T>>;
         using error_t    = E;
@@ -115,7 +115,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename R, typename E, typename Last>
-    struct callable<T, std::expected<R, E>, Last>
+    struct resolver<T, std::expected<R, E>, Last>
     {
         using args_t     = args_t<T>;
         using error_t    = E;
