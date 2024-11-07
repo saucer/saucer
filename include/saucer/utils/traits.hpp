@@ -149,22 +149,14 @@ namespace saucer::traits
             return impl::make_callable<Executor, Args>(
                 [callable = std::forward<T>(callable)]<typename... Ts>(auto &&executor, Ts &&...args)
                 {
-                    [[maybe_unused]] auto result =
-                        std::invoke(callable, std::forward<Ts>(args)...).transform(executor.resolve);
-
-                    if (result.has_value())
-                    {
-                        return;
-                    }
-
-                    if constexpr (std::is_void_v<E>)
-                    {
-                        std::invoke(executor.reject);
-                    }
-                    else
-                    {
-                        std::invoke(executor.reject, result.error());
-                    }
+                    std::invoke(callable, std::forward<Ts>(args)...)
+                        .transform(executor.resolve)
+                        .transform_error(
+                            [&executor]<typename... Us>(Us &&...args)
+                            {
+                                std::invoke(executor.reject, std::forward<Us>(args)...);
+                                return std::nullopt;
+                            });
                 });
         }
     };
