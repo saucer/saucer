@@ -27,6 +27,10 @@ namespace saucer
     template <typename T, typename E = std::string>
     struct executor
     {
+        using result = T;
+        using error  = E;
+
+      public:
         std::function<impl::func_with_arg_t<void, T>> resolve;
         std::function<impl::func_with_arg_t<void, E>> reject;
     };

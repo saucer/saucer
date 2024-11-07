@@ -15,7 +15,7 @@ namespace saucer
     using natives = std::conditional_t<Stable, stable_natives<T>, typename T::impl *>;
 
     template <typename S, typename T, typename... Ts>
-    concept Module = requires() { requires std::constructible_from<S, T *, Ts...>; };
+    concept Module = std::constructible_from<S, T *, Ts...>;
 
     class erased_module
     {

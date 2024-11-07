@@ -39,8 +39,7 @@ namespace saucer::serializers::glaze
         {
         };
 
-        template <typename T>
-            requires saucer::is_arguments<T>
+        template <Arguments T>
         struct serializable_impl<T> : serializable_impl<typename T::tuple>
         {
         };
@@ -126,79 +125,67 @@ namespace saucer::serializers::glaze
             return {};
         }
 
+        constexpr auto serialize()
+        {
+            return "";
+        }
+
         template <typename T>
-        auto serialize_arg(T &&value)
+        auto serialize(T &&value)
         {
             static_assert(serializable<T>, "Given type is not serializable");
             return glz::write<opts>(std::forward<T>(value)).value_or("null");
         }
 
-        template <typename T>
-            requires is_arguments<T>
-        auto serialize_arg(T &&value)
+        template <Arguments T>
+        auto serialize(T &&value)
         {
             std::vector<std::string> rtn;
             rtn.reserve(value.size());
 
             auto unpack = [&]<typename... Ts>(Ts &&...args)
             {
-                (rtn.emplace_back(serialize_arg(std::forward<Ts>(args))), ...);
+                (rtn.emplace_back(serialize(std::forward<Ts>(args))), ...);
             };
             std::apply(unpack, value.as_tuple());
 
             return fmt::format("{}", fmt::join(rtn, ", "));
-        }
-
-        template <typename T>
-        auto serialize_res(T &&callback)
-        {
-            std::string result;
-
-            if constexpr (!std::is_void_v<std::invoke_result_t<T>>)
-            {
-                result = impl::serialize_arg(std::invoke(std::forward<T>(callback)));
-            }
-            else
-            {
-                std::invoke(std::forward<T>(callback));
-            }
-
-            return result;
         }
     } // namespace impl
 
     template <typename Function>
     auto serializer::serialize(Function &&func)
     {
-        using resolver_t = traits::resolver<Function>;
-        using result_t   = resolver_t::result_t;
-        using args_t     = resolver_t::args_t;
+        using resolver  = traits::resolver<Function>;
+        using converter = resolver::converter;
+        using result    = resolver::result;
+        using args      = resolver::args;
 
-        static_assert(impl::serializable<result_t> && impl::serializable<args_t>,
+        static_assert(impl::serializable<result> && impl::serializable<args>,
                       "All arguments as well as the result must be serializable");
 
-        return [resolver = resolver_t::convert(std::forward<Function>(func))](std::unique_ptr<saucer::message_data> data,
-                                                                              executor exec)
+        return [resolver = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::message_data> data,
+                                                                             executor exec)
         {
             const auto &message = *static_cast<function_data *>(data.get());
-            const auto params   = impl::parse<args_t>(message.params.str);
+            const auto params   = impl::parse<args>(message.params.str);
 
             if (!params)
             {
-                return std::invoke(exec.reject, impl::serialize_arg(params.error()));
+                return std::invoke(exec.reject, impl::serialize(params.error()));
             }
 
             auto resolve = [resolve = std::move(exec.resolve)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(resolve, impl::serialize_res([&value...] { return (value, ...); }));
+                std::invoke(resolve, impl::serialize(value...));
             };
 
             auto reject = [reject = std::move(exec.reject)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(reject, impl::serialize_res([&value...] { return (value, ...); }));
+                std::invoke(reject, impl::serialize(value...));
             };
 
-            auto exec_param = typename resolver_t::executor_t{std::move(resolve), std::move(reject)};
+            auto exec_param = typename resolver::executor{std::move(resolve), std::move(reject)};
             auto all_params = std::tuple_cat(std::move(params.value()), std::make_tuple(std::move(exec_param)));
 
             std::apply(resolver, all_params);
@@ -211,7 +198,7 @@ namespace saucer::serializers::glaze
         serializer::args rtn;
 
         rtn.reserve(sizeof...(params), 0);
-        (rtn.push_back(impl::serialize_arg(std::forward<Ts>(params))), ...);
+        (rtn.push_back(impl::serialize(std::forward<Ts>(params))), ...);
 
         return rtn;
     }
