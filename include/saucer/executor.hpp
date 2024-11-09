@@ -7,31 +7,26 @@ namespace saucer
 {
     namespace impl
     {
-        template <typename Result, typename T>
-        consteval auto func_with_arg()
+        template <typename R, typename T>
+        struct fn_with_arg
         {
-            if constexpr (std::is_void_v<T>)
-            {
-                return std::type_identity<Result()>{};
-            }
-            else
-            {
-                return std::type_identity<Result(T)>{};
-            }
-        }
+            using type = R(T);
+        };
 
-        template <typename Result, typename T>
-        using func_with_arg_t = decltype(func_with_arg<Result, T>())::type;
+        template <typename R>
+        struct fn_with_arg<R, void>
+        {
+            using type = R();
+        };
+
+        template <typename R, typename T>
+        using fn_with_arg_t = fn_with_arg<R, T>::type;
     } // namespace impl
 
     template <typename T, typename E = std::string>
     struct executor
     {
-        using result = T;
-        using error  = E;
-
-      public:
-        std::function<impl::func_with_arg_t<void, T>> resolve;
-        std::function<impl::func_with_arg_t<void, E>> reject;
+        std::function<impl::fn_with_arg_t<void, T>> resolve;
+        std::function<impl::fn_with_arg_t<void, E>> reject;
     };
 } // namespace saucer

@@ -53,21 +53,6 @@ namespace saucer::traits
                 return std::type_identity<void>{};
             }
         }
-
-        template <typename Executor, typename Args, typename Callable>
-        constexpr auto make_callable(Callable &&callable)
-        {
-            auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
-            {
-                return [callable = std::forward<Callable>(callable)](std::tuple_element_t<Is, Args>... args,
-                                                                     const Executor &executor)
-                {
-                    return std::invoke(callable, executor, std::forward<decltype(args)>(args)...);
-                };
-            };
-
-            return unpack(std::make_index_sequence<std::tuple_size_v<Args>>());
-        }
     } // namespace impl
 
     template <typename T, template <typename...> typename Transform>
@@ -116,41 +101,39 @@ namespace saucer::traits
         }
     };
 
-    template <typename T, typename Executor, typename Args, typename Result>
-    struct converter<T, Executor, Args, false, Result>
+    template <typename T, typename R, typename E, typename... Ts, typename Result>
+    struct converter<T, executor<R, E>, std::tuple<Ts...>, false, Result>
     {
         static decltype(auto) convert(T &&callable)
-            requires std::same_as<Result, typename Executor::result>
+            requires std::same_as<Result, R>
         {
-            return impl::make_callable<Executor, Args>(
-                [callable = std::forward<T>(callable)]<typename... Ts>(auto &&executor, Ts &&...args)
+            return [callable = std::forward<T>(callable)](Ts... args, auto &&executor)
+            {
+                if constexpr (std::is_void_v<Result>)
                 {
-                    if constexpr (std::is_void_v<Result>)
-                    {
-                        std::invoke(callable, std::forward<Ts>(args)...);
-                        std::invoke(executor.resolve);
-                    }
-                    else
-                    {
-                        std::invoke(executor.resolve, std::invoke(callable, std::forward<Ts>(args)...));
-                    }
-                });
+                    std::invoke(callable, std::forward<Ts>(args)...);
+                    std::invoke(executor.resolve);
+                }
+                else
+                {
+                    std::invoke(executor.resolve, std::invoke(callable, std::forward<Ts>(args)...));
+                }
+            };
         }
     };
 
-    template <typename T, typename Args, typename R, typename E>
-    struct converter<T, executor<R, E>, Args, false, std::expected<R, E>>
+    template <typename T, typename... Ts, typename R, typename E>
+    struct converter<T, executor<R, E>, std::tuple<Ts...>, false, std::expected<R, E>>
     {
         static decltype(auto) convert(T &&callable)
         {
-            return impl::make_callable<executor<R, E>, Args>(
-                [callable = std::forward<T>(callable)]<typename... Ts>(auto &&executor, Ts &&...args)
-                {
-                    std::invoke(callable, std::forward<Ts>(args)...)
-                        .transform(executor.resolve)
-                        .transform_error([&executor]<typename... Us>(Us &&...args)
-                                         { return std::invoke(executor.reject, std::forward<Us>(args)...), 0; });
-                });
+            return [callable = std::forward<T>(callable)](Ts... args, auto &&executor)
+            {
+                std::invoke(callable, std::forward<Ts>(args)...)
+                    .transform(executor.resolve)
+                    .transform_error([&executor]<typename... Us>(Us &&...args)
+                                     { return std::invoke(executor.reject, std::forward<Us>(args)...), 0; });
+            };
         }
     };
 
