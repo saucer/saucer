@@ -88,20 +88,36 @@ namespace saucer::traits
     template <typename T, typename O>
     using tuple_cat_t = decltype(std::tuple_cat(std::declval<T>(), std::declval<O>()));
 
+    template <typename T, typename... Ts>
+    using tuple_add_t = tuple_cat_t<T, std::tuple<Ts...>>;
+
     template <typename T, template <typename...> typename Transform = std::decay_t>
     using args_t = transform_tuple_t<boost::callable_traits::args_t<T>, Transform>;
 
     template <typename T>
     using result_t = boost::callable_traits::return_type_t<T>;
 
-    template <typename T,                                                                          //
-              typename Executor,                                                                   //
-              typename Args,                                                                       //
-              typename ExtArgs = tuple_cat_t<Args, std::tuple<Executor>>,                          //
-              auto HasExecutor = can_apply<T, ExtArgs>,                                            //
-              typename Result  = apply_result_t<T, std::conditional_t<HasExecutor, ExtArgs, Args>> //
+    template <typename T,                                                                                                  //
+              typename Executor,                                                                                           //
+              typename Args,                                                                                               //
+              bool TakesExecutor = can_apply<T, tuple_add_t<Args, Executor>>,                                              //
+              typename Result    = apply_result_t<T, std::conditional_t<TakesExecutor, tuple_add_t<Args, Executor>, Args>> //
               >
     struct converter
+    {
+    };
+
+    template <typename T, typename Executor, typename Args>
+    struct converter<T, Executor, Args, true, void>
+    {
+        static decltype(auto) convert(T &&callable)
+        {
+            return std::forward<T>(callable);
+        }
+    };
+
+    template <typename T, typename Executor, typename Args, typename Result>
+    struct converter<T, Executor, Args, false, Result>
     {
         static decltype(auto) convert(T &&callable)
             requires std::same_as<Result, typename Executor::result>
@@ -122,41 +138,18 @@ namespace saucer::traits
         }
     };
 
-    template <typename T,        //
-              typename Executor, //
-              typename Args,     //
-              typename ExtArgs   //
-              >
-    struct converter<T, Executor, Args, ExtArgs, true, void>
+    template <typename T, typename Args, typename R, typename E>
+    struct converter<T, executor<R, E>, Args, false, std::expected<R, E>>
     {
         static decltype(auto) convert(T &&callable)
         {
-            return std::forward<T>(callable);
-        }
-    };
-
-    template <typename T,            //
-              typename Executor,     //
-              typename Args,         //
-              typename ExtArgs,      //
-              typename R, typename E //
-              >
-    struct converter<T, Executor, Args, ExtArgs, false, std::expected<R, E>>
-    {
-        static decltype(auto) convert(T &&callable)
-            requires std::same_as<R, typename Executor::result> and std::same_as<E, typename Executor::error>
-        {
-            return impl::make_callable<Executor, Args>(
+            return impl::make_callable<executor<R, E>, Args>(
                 [callable = std::forward<T>(callable)]<typename... Ts>(auto &&executor, Ts &&...args)
                 {
                     std::invoke(callable, std::forward<Ts>(args)...)
                         .transform(executor.resolve)
-                        .transform_error(
-                            [&executor]<typename... Us>(Us &&...args)
-                            {
-                                std::invoke(executor.reject, std::forward<Us>(args)...);
-                                return std::nullopt;
-                            });
+                        .transform_error([&executor]<typename... Us>(Us &&...args)
+                                         { return std::invoke(executor.reject, std::forward<Us>(args)...), 0; });
                 });
         }
     };
