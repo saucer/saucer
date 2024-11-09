@@ -35,6 +35,12 @@ namespace saucer
         finished,
     };
 
+    enum class launch
+    {
+        sync,
+        async,
+    };
+
     struct embedded_file
     {
         stash<> content;
@@ -72,6 +78,7 @@ namespace saucer
 
       protected:
         virtual bool on_message(const std::string &);
+        void handle_scheme(const std::string &, scheme::resolver &&, launch);
 
       public:
         webview(const preferences &);
@@ -116,7 +123,7 @@ namespace saucer
         [[sc::thread_safe]] void reload();
 
       public:
-        [[sc::thread_safe]] void embed(embedded_files files);
+        [[sc::thread_safe]] void embed(embedded_files files, launch policy = launch::sync);
         [[sc::thread_safe]] void serve(const std::string &file);
 
       public:
@@ -131,7 +138,8 @@ namespace saucer
         [[sc::thread_safe]] void execute(const std::string &code);
 
       public:
-        [[sc::thread_safe]] void handle_scheme(const std::string &name, scheme::handler handler);
+        template <typename T>
+        [[sc::thread_safe]] void handle_scheme(const std::string &name, T &&handler, launch policy = launch::sync);
         [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:
@@ -153,3 +161,5 @@ namespace saucer
         [[sc::before_init]] static void register_scheme(const std::string &name);
     };
 } // namespace saucer
+
+#include "webview.inl"

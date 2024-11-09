@@ -4,7 +4,7 @@
 
 namespace saucer
 {
-    void webview::embed(embedded_files files)
+    void webview::embed(embedded_files files, launch policy)
     {
         if (!m_parent->thread_safe())
         {
@@ -13,7 +13,7 @@ namespace saucer
 
         m_embedded_files.merge(std::move(files));
 
-        auto handler = [this](const auto &request) -> scheme::handler::result_type
+        auto func = [this](const auto &request) -> std::expected<scheme::response, scheme::error>
         {
             static constexpr std::string_view prefix = "/embedded/";
 
@@ -41,7 +41,7 @@ namespace saucer
             };
         };
 
-        handle_scheme("saucer", handler);
+        handle_scheme("saucer", func, policy);
     }
 
     void webview::serve(const std::string &file)

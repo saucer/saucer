@@ -43,6 +43,6 @@ namespace saucer
 
       public:
         static constinit std::string_view ready_script;
-        static inline std::unordered_map<std::string, std::unique_ptr<scheme::scheme_handler>> schemes;
+        static inline std::unordered_map<std::string, std::unique_ptr<scheme::handler>> schemes;
     };
 } // namespace saucer

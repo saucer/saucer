@@ -100,7 +100,7 @@ suite<"webview"> webview_suite = []
         webview->expose("finish", [&finished] { finished = true; });
 
         webview->handle_scheme("test",
-                               [](const saucer::scheme::request &req) -> saucer::scheme::handler::result_type
+                               [](const auto &req)
                                {
                                    expect(req.url().starts_with("test://scheme.html")) << req.url();
                                    expect(req.method() == "GET") << req.method();

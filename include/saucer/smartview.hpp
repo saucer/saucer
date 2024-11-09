@@ -2,7 +2,6 @@
 
 #include "webview.hpp"
 
-#include "modules/module.hpp"
 #include "serializers/glaze/glaze.hpp"
 
 #include <future>
@@ -11,17 +10,10 @@
 #include <string>
 #include <memory>
 
-#include <tuple>
 #include <string_view>
 
 namespace saucer
 {
-    enum class launch
-    {
-        sync,
-        async,
-    };
-
     class smartview_core : public webview
     {
         struct impl;

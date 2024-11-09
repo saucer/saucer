@@ -427,12 +427,12 @@ namespace saucer
         webkit_web_view_evaluate_javascript(m_impl->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::handler handler)
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver, launch policy)
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name, handler = std::move(handler)] mutable
-                            { return handle_scheme(name, std::move(handler)); });
+            return dispatch([this, name, handler = std::move(resolver), policy] mutable
+                            { return handle_scheme(name, std::move(handler), policy); });
         }
 
         if (!impl::schemes.contains(name))
@@ -440,7 +440,8 @@ namespace saucer
             return;
         }
 
-        impl::schemes[name]->add_handler(m_impl->web_view, std::move(handler));
+        impl::schemes[name]->add_callback(m_impl->web_view,
+                                          {.app = m_parent.get(), .policy = policy, .resolver = std::move(resolver)});
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -455,7 +456,7 @@ namespace saucer
             return;
         }
 
-        impl::schemes[name]->remove_handler(m_impl->web_view);
+        impl::schemes[name]->del_callback(m_impl->web_view);
     }
 
     void webview::clear(web_event event)
@@ -513,8 +514,8 @@ namespace saucer
         auto *const context  = webkit_web_context_get_default();
         auto *const security = webkit_web_context_get_security_manager(context);
 
-        auto handler  = std::make_unique<scheme::scheme_handler>();
-        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::scheme_handler::handle);
+        auto handler  = std::make_unique<scheme::handler>();
+        auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::handler::handle);
 
         webkit_web_context_register_uri_scheme(context, name.c_str(), callback, handler.get(), nullptr);
         impl::schemes.emplace(name, std::move(handler));

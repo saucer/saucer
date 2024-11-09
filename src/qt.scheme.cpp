@@ -1,5 +1,7 @@
 #include "qt.scheme.impl.hpp"
 
+#include <lockpp/lock.hpp>
+
 #include <ranges>
 #include <QtGlobal>
 
@@ -11,16 +13,34 @@ namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
+    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
+
+    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+
     request::~request() = default;
 
     std::string request::url() const
     {
-        return m_impl->request->requestUrl().toString().toStdString();
+        const auto request = m_impl->request->write();
+
+        if (!request.value())
+        {
+            return {};
+        }
+
+        return request.value()->requestUrl().toString().toStdString();
     }
 
     std::string request::method() const
     {
-        return m_impl->request->requestMethod().toStdString();
+        const auto request = m_impl->request->write();
+
+        if (!request.value())
+        {
+            return {};
+        }
+
+        return request.value()->requestMethod().toStdString();
     }
 
     stash<> request::content() const
@@ -31,7 +51,14 @@ namespace saucer::scheme
 
     std::map<std::string, std::string> request::headers() const
     {
-        const auto headers = m_impl->request->requestHeaders();
+        const auto request = m_impl->request->write();
+
+        if (!request.value())
+        {
+            return {};
+        }
+
+        const auto headers = request.value()->requestHeaders();
 
         auto transform = [&headers](auto &item)
         {
@@ -43,50 +70,91 @@ namespace saucer::scheme
                | std::ranges::to<std::map<std::string, std::string>>();
     }
 
-    void url_scheme_handler::requestStarted(QWebEngineUrlRequestJob *request)
+    handler::handler(application *app, launch policy, scheme::resolver resolver)
+        : app(app), policy(policy), resolver(std::move(resolver))
     {
+    }
+
+    handler::handler(handler &&other) noexcept
+        : app(std::exchange(other.app, nullptr)), policy(other.policy), resolver(std::move(other.resolver))
+    {
+    }
+
+    void handler::requestStarted(QWebEngineUrlRequestJob *raw)
+    {
+        if (!resolver)
+        {
+            return;
+        }
+
+        auto request = std::make_shared<lockpp::lock<QWebEngineUrlRequestJob *>>(raw);
+        auto content = QByteArray{};
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-        auto *body = request->requestBody();
-        auto req   = scheme::request{{request, body->isReadable() ? body->readAll() : QByteArray{}}};
-#else
-        auto req = scheme::request{{request}};
+        auto *const body = raw->requestBody();
+
+        if (raw->requestBody())
+        {
+            content = body->readAll();
+        }
 #endif
 
-        if (!m_callback)
+        auto resolve = [request](const scheme::response &response)
         {
-            return;
-        }
+            const auto req = request->write();
 
-        auto result = std::invoke(m_callback, req);
-
-        if (!result.has_value())
-        {
-            const auto offset = std::to_underlying(result.error()) + 1;
-            request->fail(static_cast<QWebEngineUrlRequestJob::Error>(offset));
-
-            return;
-        }
+            if (!req.value())
+            {
+                return;
+            }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
-        auto to_array = [](auto &item)
-        {
-            return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
-        };
+            auto to_array = [](auto &item)
+            {
+                return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
+            };
 
-        const auto headers   = std::views::transform(result->headers, to_array);
-        const auto converted = QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}};
+            const auto headers   = std::views::transform(response.headers, to_array);
+            const auto converted = QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}};
 
-        request->setAdditionalResponseHeaders(converted);
+            req.value()->setAdditionalResponseHeaders(converted);
 #endif
 
-        const auto data = result->data;
-        auto *buffer    = new QBuffer{};
+            const auto data = response.data;
+            auto *buffer    = new QBuffer{};
 
-        buffer->open(QIODevice::WriteOnly);
-        buffer->write(reinterpret_cast<const char *>(data.data()), static_cast<std::int64_t>(data.size()));
-        buffer->close();
+            buffer->open(QIODevice::WriteOnly);
+            buffer->write(reinterpret_cast<const char *>(data.data()), static_cast<std::int64_t>(data.size()));
+            buffer->close();
 
-        connect(request, &QObject::destroyed, buffer, &QObject::deleteLater);
-        request->reply(QString::fromStdString(result->mime).toUtf8(), buffer);
+            connect(req.value(), &QObject::destroyed, buffer, &QObject::deleteLater);
+            req.value()->reply(QString::fromStdString(response.mime).toUtf8(), buffer);
+        };
+
+        auto reject = [request](const scheme::error &error)
+        {
+            const auto req = request->write();
+
+            if (!req.value())
+            {
+                return;
+            }
+
+            const auto offset = std::to_underlying(error) + 1;
+            req.value()->fail(static_cast<QWebEngineUrlRequestJob::Error>(offset));
+        };
+
+        auto executor = scheme::executor{resolve, reject};
+        auto req      = scheme::request{{request, std::move(content)}};
+
+        connect(raw, &QObject::destroyed, [request]() { request->assign(nullptr); });
+
+        if (policy != launch::async)
+        {
+            return std::invoke(resolver, req, executor);
+        }
+
+        app->pool().emplace([resolver = resolver, executor = std::move(executor), req = std::move(req)]() mutable
+                            { std::invoke(resolver, req, executor); });
     }
 } // namespace saucer::scheme

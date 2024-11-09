@@ -2,23 +2,34 @@
 
 #include "scheme.hpp"
 
+#include "webview.hpp"
+
 #include <QWebEngineUrlRequestJob>
 #include <QWebEngineUrlSchemeHandler>
+
+#include <lockpp/lock.hpp>
 
 namespace saucer::scheme
 {
     struct request::impl
     {
-        QWebEngineUrlRequestJob *request;
+        std::shared_ptr<lockpp::lock<QWebEngineUrlRequestJob *>> request;
         QByteArray body;
     };
 
-    class url_scheme_handler : public QWebEngineUrlSchemeHandler
+    class handler : public QWebEngineUrlSchemeHandler
     {
-        handler m_callback;
+        application *app;
+
+      private:
+        launch policy;
+        scheme::resolver resolver;
 
       public:
-        url_scheme_handler(handler callback) : m_callback(std::move(callback)) {}
+        handler(application *, launch, scheme::resolver);
+
+      public:
+        handler(handler &&) noexcept;
 
       public:
         void requestStarted(QWebEngineUrlRequestJob *) override;

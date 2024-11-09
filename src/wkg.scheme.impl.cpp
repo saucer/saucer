@@ -7,62 +7,71 @@
 
 namespace saucer::scheme
 {
-    void scheme_handler::add_handler(WebKitWebView *id, handler handler)
+    void handler::add_callback(WebKitWebView *id, callback callback)
     {
-        m_handlers.emplace(id, std::move(handler));
+        m_callbacks.emplace(id, std::move(callback));
     }
 
-    void scheme_handler::remove_handler(WebKitWebView *id)
+    void handler::del_callback(WebKitWebView *id)
     {
-        m_handlers.erase(id);
+        m_callbacks.erase(id);
     }
 
-    void scheme_handler::handle(WebKitURISchemeRequest *request, scheme_handler *state)
+    void handler::handle(WebKitURISchemeRequest *raw, handler *state)
     {
-        auto req               = scheme::request{{request}};
-        auto *const identifier = webkit_uri_scheme_request_get_web_view(request);
+        auto request           = utils::g_object_ptr<WebKitURISchemeRequest>::ref(raw);
+        auto *const identifier = webkit_uri_scheme_request_get_web_view(request.get());
 
-        if (!state->m_handlers.contains(identifier))
+        if (!state->m_callbacks.contains(identifier))
         {
             return;
         }
 
-        auto result = std::invoke(state->m_handlers[identifier], req);
+        auto resolve = [request](const scheme::response &response)
+        {
+            const auto data = response.data;
+            const auto size = static_cast<gssize>(data.size());
 
-        if (!result.has_value())
+            auto bytes  = utils::g_bytes_ptr{g_bytes_new(data.data(), size)};
+            auto stream = utils::g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
+
+            auto res = utils::g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
+            auto *const headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
+
+            for (const auto &[name, value] : response.headers)
+            {
+                soup_message_headers_append(headers, name.c_str(), value.c_str());
+            }
+
+            webkit_uri_scheme_response_set_content_type(res.get(), response.mime.c_str());
+            webkit_uri_scheme_response_set_status(res.get(), response.status, "");
+            webkit_uri_scheme_response_set_http_headers(res.get(), headers);
+
+            webkit_uri_scheme_request_finish_with_response(request.get(), res.get());
+        };
+
+        auto reject = [request](const scheme::error &error)
         {
             static auto quark = webkit_network_error_quark();
 
-            auto error = result.error();
-            auto name  = rebind::find_enum_name(error).value_or("unknown");
+            auto value = std::to_underlying(error);
+            auto name  = std::string{rebind::find_enum_name(error).value_or("unknown")};
+            auto err   = utils::handle<GError *, g_error_free>{g_error_new(quark, value, "%s", name.c_str())};
 
-            utils::handle<GError *, g_error_free> err{
-                g_error_new(quark, std::to_underlying(result.error()), "%s", std::string{name}.c_str()),
-            };
+            webkit_uri_scheme_request_finish_error(request.get(), err.get());
+        };
 
-            webkit_uri_scheme_request_finish_error(request, err.get());
+        auto &[app, policy, resolver] = state->m_callbacks.at(identifier);
 
-            return;
-        }
+        auto executor = scheme::executor{resolve, reject};
+        auto req      = scheme::request{{request}};
 
-        const auto data = result->data;
-        const auto size = static_cast<gssize>(data.size());
-
-        const auto bytes  = utils::g_bytes_ptr{g_bytes_new(data.data(), size)};
-        const auto stream = utils::g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
-
-        const auto res = utils::g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
-        auto *const headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
-
-        for (const auto &[name, value] : result->headers)
+        if (policy != launch::async)
         {
-            soup_message_headers_append(headers, name.c_str(), value.c_str());
+            return std::invoke(resolver, req, executor);
         }
 
-        webkit_uri_scheme_response_set_content_type(res.get(), result->mime.c_str());
-        webkit_uri_scheme_response_set_status(res.get(), result->status, "");
-        webkit_uri_scheme_response_set_http_headers(res.get(), headers);
-
-        webkit_uri_scheme_request_finish_with_response(request, res.get());
+        app->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
+                            { std::invoke(resolver, req, executor); });
     }
 } // namespace saucer::scheme

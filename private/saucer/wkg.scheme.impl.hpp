@@ -2,24 +2,36 @@
 
 #include "scheme.hpp"
 
+#include "webview.hpp"
+#include "gtk.utils.hpp"
+
 #include <webkit/webkit.h>
 
 namespace saucer::scheme
 {
     struct request::impl
     {
-        WebKitURISchemeRequest *request;
+        utils::g_object_ptr<WebKitURISchemeRequest> request;
     };
 
-    class scheme_handler
+    struct callback
     {
-        std::unordered_map<WebKitWebView *, handler> m_handlers;
+        application *app;
 
       public:
-        void add_handler(WebKitWebView *, handler);
-        void remove_handler(WebKitWebView *);
+        launch policy;
+        scheme::resolver resolver;
+    };
+
+    class handler
+    {
+        std::unordered_map<WebKitWebView *, callback> m_callbacks;
 
       public:
-        static void handle(WebKitURISchemeRequest *, scheme_handler *);
+        void add_callback(WebKitWebView *, callback);
+        void del_callback(WebKitWebView *);
+
+      public:
+        static void handle(WebKitURISchemeRequest *, handler *);
     };
 } // namespace saucer::scheme

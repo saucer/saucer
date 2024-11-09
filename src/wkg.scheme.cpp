@@ -4,30 +4,34 @@
 
 namespace saucer::scheme
 {
-    request::request(impl data) : m_impl(std::make_unique<impl>(data)) {}
+    request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
+
+    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
+
+    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
 
     request::~request() = default;
 
     std::string request::url() const
     {
-        return webkit_uri_scheme_request_get_uri(m_impl->request);
+        return webkit_uri_scheme_request_get_uri(m_impl->request.get());
     }
 
     std::string request::method() const
     {
-        return webkit_uri_scheme_request_get_http_method(m_impl->request);
+        return webkit_uri_scheme_request_get_http_method(m_impl->request.get());
     }
 
     stash<> request::content() const
     {
-        const auto stream = utils::g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request)};
+        auto stream = utils::g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request.get())};
 
         if (!stream)
         {
             return stash<>::empty();
         }
 
-        const auto content = utils::g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
+        auto content = utils::g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
 
         if (!content)
         {
@@ -42,7 +46,7 @@ namespace saucer::scheme
 
     std::map<std::string, std::string> request::headers() const
     {
-        auto *const headers = webkit_uri_scheme_request_get_http_headers(m_impl->request);
+        auto *const headers = webkit_uri_scheme_request_get_http_headers(m_impl->request.get());
 
         std::map<std::string, std::string> rtn;
 

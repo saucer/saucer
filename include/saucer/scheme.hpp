@@ -1,5 +1,6 @@
 #pragma once
 
+#include "executor.hpp"
 #include "stash/stash.hpp"
 
 #include <map>
@@ -7,7 +8,6 @@
 
 #include <memory>
 #include <expected>
-#include <functional>
 
 namespace saucer::scheme
 {
@@ -41,6 +41,10 @@ namespace saucer::scheme
         request(impl);
 
       public:
+        request(const request &);
+        request(request &&) noexcept;
+
+      public:
         ~request();
 
       public:
@@ -52,5 +56,6 @@ namespace saucer::scheme
         [[nodiscard]] std::map<std::string, std::string> headers() const;
     };
 
-    using handler = std::move_only_function<std::expected<response, error>(const request &)>;
+    using executor = saucer::executor<response, error>;
+    using resolver = std::function<void(const request &, const executor &)>;
 } // namespace saucer::scheme
