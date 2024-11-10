@@ -47,7 +47,7 @@ namespace saucer
 
         auto resource_requested = [this](auto, auto *args)
         {
-            m_impl->scheme_handler(args);
+            m_impl->scheme_handler(args, this);
             return S_OK;
         };
 
@@ -105,35 +105,32 @@ namespace saucer
 
         m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigation_starting).Get(), nullptr);
 
-        if (ComPtr<ICoreWebView2_2> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
+        auto on_loaded = [this](auto...)
         {
-            auto on_loaded = [this](auto...)
+            m_impl->dom_loaded = true;
+
+            for (const auto &[script, id] : m_impl->scripts)
             {
-                m_impl->dom_loaded = true;
-
-                for (const auto &[script, id] : m_impl->scripts)
+                if (script.time != load_time::ready)
                 {
-                    if (script.time != load_time::ready)
-                    {
-                        continue;
-                    }
-
-                    execute(script.code);
+                    continue;
                 }
 
-                for (const auto &pending : m_impl->pending)
-                {
-                    execute(pending);
-                }
+                execute(script.code);
+            }
 
-                m_impl->pending.clear();
-                m_events.at<web_event::dom_ready>().fire();
+            for (const auto &pending : m_impl->pending)
+            {
+                execute(pending);
+            }
 
-                return S_OK;
-            };
+            m_impl->pending.clear();
+            m_events.at<web_event::dom_ready>().fire();
 
-            webview->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
-        }
+            return S_OK;
+        };
+
+        m_impl->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
 
         if (ComPtr<ICoreWebView2_15> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
         {
@@ -509,12 +506,19 @@ namespace saucer
         m_impl->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::handler handler)
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver, launch policy)
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name, handler = std::move(handler)]() mutable
-                            { return handle_scheme(name, std::move(handler)); });
+            return dispatch([this, name, handler = std::move(resolver), policy] mutable
+                            { return handle_scheme(name, std::move(handler), policy); });
+        }
+
+        ComPtr<ICoreWebView2_22> webview;
+
+        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
+        {
+            return;
         }
 
         if (m_impl->schemes.contains(name))
@@ -522,10 +526,12 @@ namespace saucer
             return;
         }
 
-        m_impl->schemes.emplace(name, std::move(handler));
+        m_impl->schemes.emplace(name, std::make_pair(std::move(resolver), policy));
 
-        auto pattern = utils::widen(fmt::format("{}*", name));
-        m_impl->web_view->AddWebResourceRequestedFilter(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        const auto pattern = utils::widen(fmt::format("{}*", name));
+
+        webview->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                     COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -535,6 +541,13 @@ namespace saucer
             return dispatch([this, name] { return remove_scheme(name); });
         }
 
+        ComPtr<ICoreWebView2_22> webview;
+
+        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
+        {
+            return;
+        }
+
         auto it = m_impl->schemes.find(name);
 
         if (it == m_impl->schemes.end())
@@ -542,8 +555,10 @@ namespace saucer
             return;
         }
 
-        auto pattern = utils::widen(fmt::format("{}*", name));
-        m_impl->web_view->RemoveWebResourceRequestedFilter(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        const auto pattern = utils::widen(fmt::format("{}*", name));
+
+        webview->RemoveWebResourceRequestedFilterWithRequestSourceKinds(
+            pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL, COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
 
         m_impl->schemes.erase(it);
     }

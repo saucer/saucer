@@ -33,7 +33,7 @@ namespace saucer
     {
         ComPtr<ICoreWebView2Controller> controller;
         ComPtr<ICoreWebView2Settings> settings;
-        ComPtr<ICoreWebView2> web_view;
+        ComPtr<ICoreWebView2_2> web_view;
 
       public:
         icon favicon;
@@ -44,11 +44,11 @@ namespace saucer
 
       public:
         std::vector<std::pair<script, std::wstring>> scripts;
-        std::unordered_map<std::string, scheme::handler> schemes;
+        std::unordered_map<std::string, std::pair<scheme::resolver, launch>> schemes;
 
       public:
         void create_webview(const std::shared_ptr<application> &, HWND, preferences);
-        HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *);
+        HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *, webview *);
 
       public:
         template <web_event>

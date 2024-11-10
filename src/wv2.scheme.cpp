@@ -6,6 +6,10 @@ namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
+    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
+
+    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+
     request::~request() = default;
 
     std::string request::url() const
@@ -43,9 +47,9 @@ namespace saucer::scheme
         headers->GetIterator(&it);
 
         std::map<std::string, std::string> rtn;
-        BOOL empty{};
+        BOOL has_header{};
 
-        while ((it->get_HasCurrentHeader(&empty), empty))
+        while ((it->get_HasCurrentHeader(&has_header), has_header))
         {
             utils::string_handle header;
             utils::string_handle value;

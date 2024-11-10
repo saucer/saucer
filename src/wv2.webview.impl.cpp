@@ -57,8 +57,10 @@ namespace saucer
             prefs.browser_flags.emplace("--disable-gpu");
         }
 
-        const auto args = fmt::format("{}", fmt::join(prefs.browser_flags, " "));
-        env_options()->put_AdditionalBrowserArguments(utils::widen(args).c_str());
+        const auto args        = fmt::format("{}", fmt::join(prefs.browser_flags, " "));
+        const auto env_options = impl::env_options();
+
+        env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
 
         if (prefs.storage_path.empty())
         {
@@ -69,9 +71,16 @@ namespace saucer
         {
             controller = result;
 
-            if (!result || !SUCCEEDED(result->get_CoreWebView2(&this->web_view)))
+            ComPtr<ICoreWebView2> webview;
+
+            if (!result || !SUCCEEDED(result->get_CoreWebView2(&webview)))
             {
                 assert(false && "Failed to get CoreWebView2");
+            }
+
+            if (!SUCCEEDED(webview.As(&web_view)))
+            {
+                assert(false && "Failed to get CoreWebView2_2");
             }
 
             return S_OK;
@@ -87,9 +96,9 @@ namespace saucer
             return S_OK;
         };
 
-        auto status =
-            CreateCoreWebView2EnvironmentWithOptions(nullptr, prefs.storage_path.wstring().c_str(), env_options().Get(),
-                                                     Callback<EnvironmentCompleted>(completed).Get());
+        const auto storage_path = prefs.storage_path.wstring();
+        const auto status       = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), env_options.Get(),
+                                                                           Callback<EnvironmentCompleted>(completed).Get());
 
         if (!SUCCEEDED(status))
         {
@@ -102,7 +111,7 @@ namespace saucer
         }
     }
 
-    HRESULT webview::impl::scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *args)
+    HRESULT webview::impl::scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *args, webview *self)
     {
         ComPtr<ICoreWebView2WebResourceRequest> request;
 
@@ -111,24 +120,10 @@ namespace saucer
             return S_OK;
         }
 
-        ComPtr<IStream> body;
+        utils::string_handle raw;
+        request->get_Uri(&raw.reset());
 
-        if (!SUCCEEDED(request->get_Content(&body)))
-        {
-            return S_OK;
-        }
-
-        ComPtr<ICoreWebView2Environment> environment;
-
-        if (ComPtr<ICoreWebView2_2> web_view2;
-            !SUCCEEDED(web_view.As(&web_view2)) || !SUCCEEDED(web_view2->get_Environment(&environment)))
-        {
-            return S_OK;
-        }
-
-        auto req = saucer::scheme::request{{request, body}};
-
-        auto url = req.url();
+        auto url = utils::narrow(raw.get());
         auto end = url.find(':');
 
         if (end == std::string::npos)
@@ -143,35 +138,85 @@ namespace saucer
             return S_OK;
         }
 
-        auto result = std::invoke(scheme->second, req);
-        ComPtr<ICoreWebView2WebResourceResponse> response;
+        ComPtr<ICoreWebView2Environment> environment;
 
-        if (!result.has_value())
+        if (!SUCCEEDED(web_view->get_Environment(&environment)))
         {
-            auto error = result.error();
+            return S_OK;
+        }
+
+        ComPtr<ICoreWebView2Deferral> deferral;
+
+        if (!SUCCEEDED(args->GetDeferral(&deferral)))
+        {
+            return S_OK;
+        }
+
+        ComPtr<IStream> content;
+
+        if (!SUCCEEDED(request->get_Content(&content)))
+        {
+            return S_OK;
+        }
+
+        auto resolve = [environment, args, deferral](const scheme::response &response)
+        {
+            const auto *raw = reinterpret_cast<const BYTE *>(response.data.data());
+            const auto size = static_cast<const UINT>(response.data.size());
+
+            ComPtr<IStream> buffer           = SHCreateMemStream(raw, size);
+            std::vector<std::string> headers = {fmt::format("Content-Type: {}", response.mime)};
+
+            for (const auto &[name, value] : response.headers)
+            {
+                headers.emplace_back(fmt::format("{}: {}", name, value));
+            }
+
+            const auto combined = utils::widen(fmt::format("{}", fmt::join(headers, "\n")));
+
+            ComPtr<ICoreWebView2WebResourceResponse> result;
+            environment->CreateWebResourceResponse(buffer.Get(), response.status, L"OK", combined.c_str(), &result);
+
+            args->put_Response(result.Get());
+            deferral->Complete();
+        };
+
+        auto reject = [environment, args, deferral](const scheme::error &error)
+        {
             auto name  = rebind::find_enum_name(error).value_or("Unknown");
+            auto value = std::to_underlying(error);
 
-            environment->CreateWebResourceResponse(nullptr, std::to_underlying(error),
-                                                   utils::widen(std::string{name}).c_str(), L"", &response);
+            ComPtr<ICoreWebView2WebResourceResponse> result;
+            environment->CreateWebResourceResponse(nullptr, value, utils::widen(std::string{name}).c_str(), L"", &result);
 
-            return args->put_Response(response.Get());
-        }
+            args->put_Response(result.Get());
+            deferral->Complete();
+        };
 
-        auto data = result->data;
-        ComPtr<IStream> buffer =
-            SHCreateMemStream(reinterpret_cast<const BYTE *>(data.data()), static_cast<UINT>(data.size()));
+        auto &[resolver, policy] = scheme->second;
+        auto req                 = scheme::request{{request, content}};
 
-        std::vector<std::string> headers{fmt::format("Content-Type: {}", result->mime)};
+        scheme::executor executor{
+            [self, resolve = std::move(resolve)]<typename... Ts>(Ts &&...args)
+            {
+                self->m_parent->post([resolve = std::move(resolve), ... args = std::forward<Ts>(args)]() mutable
+                                     { std::invoke(resolve, std::forward<Ts>(args)...); });
+            },
+            [self, reject = std::move(reject)]<typename... Ts>(Ts &&...args)
+            {
+                self->m_parent->post([reject = std::move(reject), ... args = std::forward<Ts>(args)]() mutable
+                                     { std::invoke(reject, std::forward<Ts>(args)...); });
+            },
+        };
 
-        for (const auto &[name, value] : result->headers)
+        if (policy != launch::async)
         {
-            headers.emplace_back(fmt::format("{}: {}", name, value));
+            std::invoke(resolver, req, executor);
+            return S_OK;
         }
 
-        auto combined = utils::widen(fmt::format("{}", fmt::join(headers, "\n")));
-
-        environment->CreateWebResourceResponse(buffer.Get(), result->status, L"OK", combined.c_str(), &response);
-        args->put_Response(response.Get());
+        self->m_parent->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
+                                       { std::invoke(resolver, req, executor); });
 
         return S_OK;
     }
