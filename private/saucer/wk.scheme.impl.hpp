@@ -2,7 +2,11 @@
 
 #include "scheme.hpp"
 
+#include "webview.hpp"
+#include "cocoa.utils.hpp"
+
 #import <WebKit/WebKit.h>
+#include <lockpp/lock.hpp>
 
 namespace saucer::scheme
 {
@@ -14,14 +18,26 @@ namespace saucer::scheme
         id<WKURLSchemeTask> task;
     };
 
+    struct callback
+    {
+        application *app;
+
+      public:
+        launch policy;
+        scheme::resolver resolver;
+    };
+
+    using task_ref = utils::objc_obj<id<WKURLSchemeTask>>;
+
     void init_objc();
 } // namespace saucer::scheme
 
 @interface SchemeHandler : NSObject <WKURLSchemeHandler>
 {
   @public
-    std::unordered_map<WKWebView *, saucer::scheme::handler> m_handlers;
+    std::unordered_map<WKWebView *, saucer::scheme::callback> m_callbacks;
+    lockpp::lock<std::unordered_map<NSUInteger, saucer::scheme::task_ref>> m_tasks;
 }
-- (void)add_handler:(saucer::scheme::handler)handler webview:(WKWebView *)instance;
-- (void)remove_handler:(WKWebView *)instance;
+- (void)add_callback:(saucer::scheme::callback)callback webview:(WKWebView *)instance;
+- (void)del_callback:(WKWebView *)instance;
 @end

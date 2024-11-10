@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ref_ptr.hpp"
+#include "ref_obj.hpp"
 
 #include <gtk/gtk.h>
 
