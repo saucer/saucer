@@ -197,7 +197,7 @@ namespace saucer
         auto names_ptr = std::views::transform(names, [](auto &value) { return value.c_str(); }) |
                          std::ranges::to<std::vector<const char *>>();
 
-        // https://opensource.apple.com/source/WebKit2/WebKit2-7601.1.56/UIProcess/API/gtk/WebKitSettings.cpp.auto.html
+        // https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp#L1753
 
         return WEBKIT_SETTINGS(
             g_object_new_with_properties(WEBKIT_TYPE_SETTINGS, values.size(), names_ptr.data(), values.data()));

@@ -245,8 +245,8 @@ namespace saucer
         auto *const settings = m_impl->config.get().preferences;
         [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
 
-        // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/_WKInspector.mm.auto.html
-        // https://opensource.apple.com/source/WebKit2/WebKit2-7611.3.10.0.1/UIProcess/API/Cocoa/WKWebView.mm.auto.html
+        // https://github.com/WebKit/WebKit/blob/0ba313f0755d90540c9c97a08e481c192f78c295/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L2694
+        // https://github.com/WebKit/WebKit/blob/0ba313f0755d90540c9c97a08e481c192f78c295/Source/WebKit/UIProcess/API/Cocoa/_WKInspector.mm#L138
 
         const id inspector = [m_impl->web_view.get() valueForKey:@"_inspector"];
 

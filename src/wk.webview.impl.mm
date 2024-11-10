@@ -254,6 +254,7 @@ namespace saucer
         };
 
         auto *const config = [[WKWebViewConfiguration alloc] init];
+        auto *const pool   = [config processPool];
 
         for (const auto &flag : prefs.browser_flags)
         {
@@ -302,9 +303,14 @@ namespace saucer
             [target setValue:[dict objectForKey:@"value"] forKey:selector];
         }
 
+        // https://github.com/WebKit/WebKit/blob/0ba313f0755d90540c9c97a08e481c192f78c295/Source/WebKit/UIProcess/API/Cocoa/WKProcessPool.mm#L219
+
         for (const auto &[name, handler] : schemes)
         {
-            [config setURLSchemeHandler:handler.get() forURLScheme:[NSString stringWithUTF8String:name.c_str()]];
+            auto *const scheme = [NSString stringWithUTF8String:name.c_str()];
+
+            [config setURLSchemeHandler:handler.get() forURLScheme:scheme];
+            [pool performSelector:@selector(_registerURLSchemeAsSecure:) withObject:scheme];
         }
 
         return config;
