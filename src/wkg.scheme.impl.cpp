@@ -68,7 +68,7 @@ namespace saucer::scheme
 
         if (policy != launch::async)
         {
-            std::invoke(resolver, std::move(req), std::move(executor));
+            return std::invoke(resolver, std::move(req), std::move(executor));
         }
 
         app->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable

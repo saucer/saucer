@@ -151,11 +151,10 @@ namespace saucer::scheme
 
         if (policy != launch::async)
         {
-            std::invoke(resolver, std::move(req), std::move(executor));
-            return S_OK;
+            return std::invoke(resolver, std::move(req), std::move(executor));
         }
 
-        self->m_parent->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                                       { std::invoke(resolver, std::move(req), std::move(executor)); });
+        app->pool().emplace([resolver = resolver, executor = std::move(executor), req = std::move(req)]() mutable
+                            { std::invoke(resolver, std::move(req), std::move(executor)); });
     }
 } // namespace saucer::scheme
