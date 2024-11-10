@@ -36,7 +36,7 @@ include("../cmake/cpm.cmake")
 
 CPMFindPackage(
   NAME           ut
-  VERSION        2.1.0
+  VERSION        2.1.1
   GIT_REPOSITORY "https://github.com/boost-ext/ut"
   OPTIONS        "BOOST_UT_DISABLE_MODULE ON"
 )
