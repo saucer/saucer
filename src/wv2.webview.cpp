@@ -510,8 +510,8 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name, handler = std::move(resolver), policy] mutable
-                            { return handle_scheme(name, std::move(handler), policy); });
+            return dispatch([this, name, resolver = std::move(resolver), policy]() mutable
+                            { return handle_scheme(name, std::move(resolver), policy); });
         }
 
         ComPtr<ICoreWebView2_22> webview;
