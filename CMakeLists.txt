@@ -42,6 +42,11 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 15)
 endif()
 
+if (WIN32 AND MINGW)
+  message(WARNING "[saucer] WebView2 requires certain headers that are not provided by MinGW!")
+  message(WARNING "[saucer] Expect to run into issues...")
+endif()
+
 if (NOT saucer_no_version_check AND saucer_cxx_outdated)
   message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_version_check=ON'")
 endif()
