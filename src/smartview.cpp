@@ -19,12 +19,11 @@ namespace saucer
 
     struct smartview_core::impl
     {
-        using id             = std::uint64_t;
-        using pending_future = std::shared_ptr<std::future<void>>;
+        using exposed = std::pair<function, launch>;
 
       public:
-        lock<std::unordered_map<id, resolver>> evaluations;
-        lock<std::unordered_map<std::string, std::pair<function, launch>>> functions;
+        lock<std::unordered_map<std::string, exposed>> functions;
+        lock<std::unordered_map<std::uint64_t, resolver>> evaluations;
 
       public:
         std::unique_ptr<saucer::serializer> serializer;
@@ -83,9 +82,14 @@ namespace saucer
     void smartview_core::call(std::unique_ptr<message_data> data)
     {
         const auto &message = *static_cast<function_data *>(data.get());
-        auto functions      = m_impl->functions.copy();
 
-        if (!functions.contains(message.name))
+        impl::exposed exposed;
+
+        if (auto locked = m_impl->functions.write(); locked->contains(message.name))
+        {
+            exposed = locked->at(message.name);
+        }
+        else
         {
             return reject(message.id, fmt::format("\"No exposed function '{}'\"", message.name));
         }
@@ -115,7 +119,7 @@ namespace saucer
         };
 
         auto executor        = serializer::executor{std::move(resolve), std::move(reject)};
-        auto &[func, policy] = functions[message.name];
+        auto &[func, policy] = exposed;
 
         if (policy == launch::sync)
         {
