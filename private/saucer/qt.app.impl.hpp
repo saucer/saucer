@@ -2,6 +2,8 @@
 
 #include "app.hpp"
 
+#include <vector>
+
 #include <QEvent>
 #include <QApplication>
 

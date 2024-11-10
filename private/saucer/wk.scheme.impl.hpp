@@ -10,12 +10,14 @@
 
 namespace saucer::scheme
 {
+    using task_ref = utils::objc_obj<id<WKURLSchemeTask>>;
+
     struct request::impl
     {
         friend void init_objc();
 
       public:
-        id<WKURLSchemeTask> task;
+        task_ref task;
     };
 
     struct callback
@@ -26,8 +28,6 @@ namespace saucer::scheme
         launch policy;
         scheme::resolver resolver;
     };
-
-    using task_ref = utils::objc_obj<id<WKURLSchemeTask>>;
 
     void init_objc();
 } // namespace saucer::scheme

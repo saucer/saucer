@@ -3,7 +3,6 @@
 #include "window.hpp"
 
 #include <QMainWindow>
-#include <QApplication>
 
 namespace saucer
 {

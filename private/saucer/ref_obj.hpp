@@ -15,7 +15,7 @@ namespace saucer::utils
         ref_obj();
 
       public:
-        ref_obj(T valeu);
+        ref_obj(T value);
         ref_obj(const ref_obj &other);
         ref_obj(ref_obj &&other) noexcept;
 

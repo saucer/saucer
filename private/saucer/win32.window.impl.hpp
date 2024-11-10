@@ -4,6 +4,7 @@
 
 #include "win32.utils.hpp"
 
+#include <utility>
 #include <optional>
 
 #include <windows.h>

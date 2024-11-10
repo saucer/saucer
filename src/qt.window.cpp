@@ -5,9 +5,10 @@
 
 #include <cassert>
 
+#include <flagpp/flags.hpp>
+
 #include <fmt/core.h>
 #include <fmt/xchar.h>
-#include <flagpp/flags.hpp>
 
 #include <QWindow>
 

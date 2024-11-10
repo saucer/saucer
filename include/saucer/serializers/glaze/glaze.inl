@@ -45,7 +45,7 @@ namespace saucer::serializers::glaze
         };
 
         template <typename T>
-        inline constexpr bool serializable = serializable_impl<T>::value;
+        concept Serializable = serializable_impl<T>::value;
 
         template <typename T>
         struct is_tuple_impl : std::false_type
@@ -58,10 +58,10 @@ namespace saucer::serializers::glaze
         };
 
         template <typename T>
-        inline constexpr bool is_tuple = is_tuple_impl<T>::value;
+        concept Tuple = is_tuple_impl<T>::value;
 
         template <typename T>
-            requires(not is_tuple<T>)
+            requires(not Tuple<T>)
         std::optional<std::string> mismatch(T &value, const glz::json_t &json)
         {
             auto serialized = glz::write<opts>(json).value_or("");
@@ -74,8 +74,7 @@ namespace saucer::serializers::glaze
             return fmt::format("Expected value to be '{}'", rebind::type_name<T>);
         }
 
-        template <typename T, std::size_t I = 0>
-            requires is_tuple<T>
+        template <Tuple T, std::size_t I = 0>
         std::optional<std::string> mismatch(T &tuple, const glz::json_t &json)
         {
             static constexpr auto N = std::tuple_size_v<T>;
@@ -118,8 +117,8 @@ namespace saucer::serializers::glaze
             return std::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};
         }
 
-        template <typename T>
-            requires(is_tuple<T> and std::tuple_size_v<T> == 0)
+        template <Tuple T>
+            requires(std::tuple_size_v<T> == 0)
         std::expected<T, std::string> parse(const std::string &)
         {
             return {};
@@ -133,7 +132,7 @@ namespace saucer::serializers::glaze
         template <typename T>
         auto serialize(T &&value)
         {
-            static_assert(serializable<T>, "Given type is not serializable");
+            static_assert(Serializable<T>, "Given type is not serializable");
             return glz::write<opts>(std::forward<T>(value)).value_or("null");
         }
 
@@ -161,7 +160,7 @@ namespace saucer::serializers::glaze
         using result    = resolver::result;
         using args      = resolver::args;
 
-        static_assert(impl::serializable<result> && impl::serializable<args>,
+        static_assert(impl::Serializable<result> && impl::Serializable<args>,
                       "All arguments as well as the result must be serializable");
 
         return [resolver = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::message_data> data,
@@ -206,15 +205,15 @@ namespace saucer::serializers::glaze
     template <typename T>
     auto serializer::resolve(std::promise<T> promise)
     {
-        static_assert(impl::serializable<T>, "The promise result must be serializable");
+        static_assert(impl::Serializable<T>, "The promise result must be serializable");
 
         return [promise = std::move(promise)](std::unique_ptr<saucer::message_data> data) mutable
         {
-            const auto &result = *static_cast<result_data *>(data.get());
+            const auto &res = *static_cast<result_data *>(data.get());
 
             if constexpr (!std::is_void_v<T>)
             {
-                auto parsed = impl::parse<T>(result.result.str);
+                auto parsed = impl::parse<T>(res.result.str);
 
                 if (!parsed)
                 {

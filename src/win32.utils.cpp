@@ -1,7 +1,5 @@
 #include "win32.utils.hpp"
 
-#include <fmt/core.h>
-
 namespace saucer
 {
     void utils::set_dpi_awareness()

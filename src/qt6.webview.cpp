@@ -1,9 +1,10 @@
 #include "qt.webview.impl.hpp"
 
+#include <algorithm>
+
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 
-#include <algorithm>
 #include <fmt/core.h>
 
 namespace saucer

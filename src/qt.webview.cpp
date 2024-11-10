@@ -1,18 +1,15 @@
 #include "qt.webview.impl.hpp"
 
+#include "requests.hpp"
 #include "instantiate.hpp"
 
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
 
-#include "scheme.hpp"
-#include "requests.hpp"
-
 #include <fmt/core.h>
 #include <fmt/xchar.h>
 
 #include <QWebEngineScriptCollection>
-
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
 #include <QWebEngineUrlScheme>

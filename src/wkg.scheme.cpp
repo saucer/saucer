@@ -1,7 +1,5 @@
 #include "wkg.scheme.impl.hpp"
 
-#include "gtk.utils.hpp"
-
 namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}

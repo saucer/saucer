@@ -1,6 +1,5 @@
 #include "win32.window.impl.hpp"
 
-#include "win32.utils.hpp"
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 
@@ -8,7 +7,6 @@
 
 #include <cassert>
 
-#include <fmt/core.h>
 #include <rebind/enum.hpp>
 #include <flagpp/flags.hpp>
 

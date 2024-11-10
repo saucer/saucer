@@ -2,8 +2,6 @@
 
 #include "webview.hpp"
 
-#include <string>
-
 #include <wrl.h>
 #include <WebView2.h>
 #include <WebView2EnvironmentOptions.h>

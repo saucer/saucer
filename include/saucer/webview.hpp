@@ -1,13 +1,18 @@
 #pragma once
 
-#include "modules/module.hpp"
 #include "window.hpp"
+
+#include "stash/stash.hpp"
+#include "modules/module.hpp"
 
 #include "icon.hpp"
 #include "script.hpp"
 
 #include "scheme.hpp"
 #include "navigation.hpp"
+
+#include <array>
+#include <cstdint>
 
 #include <filesystem>
 #include <unordered_map>

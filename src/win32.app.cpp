@@ -1,7 +1,5 @@
 #include "win32.app.impl.hpp"
 
-#include "win32.utils.hpp"
-
 #include <cassert>
 
 namespace saucer

@@ -9,9 +9,6 @@
 
 #include <cassert>
 
-#include <gdk/gdk.h>
-#include <gtk/gtk.h>
-
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;
 

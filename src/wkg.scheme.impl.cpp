@@ -1,7 +1,6 @@
 #include "wkg.scheme.impl.hpp"
 
 #include "handle.hpp"
-#include "gtk.utils.hpp"
 
 #include <rebind/enum.hpp>
 

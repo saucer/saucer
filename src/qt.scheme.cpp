@@ -1,12 +1,10 @@
 #include "qt.scheme.impl.hpp"
 
-#include <lockpp/lock.hpp>
-
 #include <ranges>
-#include <QtGlobal>
 
 #include <QMap>
 #include <QBuffer>
+#include <QtGlobal>
 #include <QIODevice>
 
 namespace saucer::scheme

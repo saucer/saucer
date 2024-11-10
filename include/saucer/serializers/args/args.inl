@@ -5,19 +5,19 @@
 namespace saucer
 {
     template <typename... Ts>
-    std::size_t arguments<Ts...>::size() const
+    constexpr std::size_t arguments<Ts...>::size() const
     {
         return sizeof...(Ts);
     }
 
     template <typename... Ts>
-    const arguments<Ts...>::tuple &arguments<Ts...>::as_tuple() const
+    constexpr const arguments<Ts...>::tuple &arguments<Ts...>::as_tuple() const
     {
         return static_cast<const std::tuple<Ts...> &>(*this);
     }
 
     template <typename... Ts>
-    auto make_args(Ts &&...args)
+    constexpr auto make_args(Ts &&...args)
     {
         return arguments<Ts...>{std::forward<Ts>(args)...};
     }

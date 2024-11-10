@@ -12,17 +12,17 @@ namespace saucer::scheme
 
     std::string request::url() const
     {
-        return m_impl->task.request.URL.absoluteString.UTF8String;
+        return m_impl->task.get().request.URL.absoluteString.UTF8String;
     }
 
     std::string request::method() const
     {
-        return m_impl->task.request.HTTPMethod.UTF8String;
+        return m_impl->task.get().request.HTTPMethod.UTF8String;
     }
 
     stash<> request::content() const
     {
-        auto *const body = m_impl->task.request.HTTPBody;
+        auto *const body = m_impl->task.get().request.HTTPBody;
 
         if (!body)
         {
@@ -35,7 +35,7 @@ namespace saucer::scheme
 
     std::map<std::string, std::string> request::headers() const
     {
-        auto *const headers = m_impl->task.request.allHTTPHeaderFields;
+        auto *const headers = m_impl->task.get().request.allHTTPHeaderFields;
 
         std::map<std::string, std::string> rtn;
 

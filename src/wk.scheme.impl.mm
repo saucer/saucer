@@ -23,14 +23,18 @@ void saucer::scheme::init_objc()
                     return;
                 }
 
-                auto handle = [self, task]
+                auto ref = task_ref::ref(task);
+
+                auto handle = [&]
                 {
                     auto locked = self->m_tasks.write();
-                    return locked->emplace(task.hash, task_ref::ref(task)).first->first;
+                    return locked->emplace(task.hash, ref).first->first;
                 }();
 
                 auto resolve = [self, handle](const scheme::response &response)
                 {
+                    const utils::autorelease_guard guard{};
+
                     auto tasks = self->m_tasks.write();
 
                     if (!tasks->contains(handle))
@@ -70,6 +74,8 @@ void saucer::scheme::init_objc()
 
                 auto reject = [self, handle](const scheme::error &error)
                 {
+                    const utils::autorelease_guard guard{};
+
                     auto tasks = self->m_tasks.write();
 
                     if (!tasks->contains(handle))
@@ -88,7 +94,7 @@ void saucer::scheme::init_objc()
 
                 auto &[app, policy, resolver] = self->m_callbacks.at(instance);
 
-                auto req      = scheme::request{{task}};
+                auto req      = scheme::request{{ref}};
                 auto executor = scheme::executor{std::move(resolve), std::move(reject)};
 
                 if (policy != launch::async)
