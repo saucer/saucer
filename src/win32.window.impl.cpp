@@ -1,5 +1,7 @@
 #include "win32.window.impl.hpp"
 
+#include "win32.app.impl.hpp"
+
 namespace saucer
 {
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
