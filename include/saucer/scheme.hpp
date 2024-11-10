@@ -57,5 +57,5 @@ namespace saucer::scheme
     };
 
     using executor = saucer::executor<response, error>;
-    using resolver = std::function<void(const request &, const executor &)>;
+    using resolver = std::function<void(request, executor)>;
 } // namespace saucer::scheme

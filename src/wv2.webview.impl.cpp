@@ -193,30 +193,28 @@ namespace saucer
             deferral->Complete();
         };
 
-        auto &[resolver, policy] = scheme->second;
-        auto req                 = scheme::request{{request, content}};
-
-        scheme::executor executor{
-            [self, resolve = std::move(resolve)]<typename... Ts>(Ts &&...args)
+        auto forward = [self]<typename T>(T &&callback)
+        {
+            return [self, callback = std::forward<T>(callback)]<typename... Ts>(Ts &&...args) mutable
             {
-                self->m_parent->post([resolve = std::move(resolve), ... args = std::forward<Ts>(args)]() mutable
-                                     { std::invoke(resolve, std::forward<Ts>(args)...); });
-            },
-            [self, reject = std::move(reject)]<typename... Ts>(Ts &&...args)
-            {
-                self->m_parent->post([reject = std::move(reject), ... args = std::forward<Ts>(args)]() mutable
-                                     { std::invoke(reject, std::forward<Ts>(args)...); });
-            },
+                self->m_parent->post([callback = std::forward<T>(callback), ... args = std::forward<Ts>(args)]() mutable
+                                     { std::invoke(callback, std::forward<Ts>(args)...); });
+            };
         };
+
+        auto &[resolver, policy] = scheme->second;
+
+        auto req      = scheme::request{{request, content}};
+        auto executor = scheme::executor{forward(std::move(resolve)), forward(std::move(reject))};
 
         if (policy != launch::async)
         {
-            std::invoke(resolver, req, executor);
+            std::invoke(resolver, std::move(req), std::move(executor));
             return S_OK;
         }
 
         self->m_parent->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                                       { std::invoke(resolver, req, executor); });
+                                       { std::invoke(resolver, std::move(req), std::move(executor)); });
 
         return S_OK;
     }

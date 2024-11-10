@@ -63,15 +63,15 @@ namespace saucer::scheme
 
         auto &[app, policy, resolver] = state->m_callbacks.at(identifier);
 
-        auto executor = scheme::executor{resolve, reject};
+        auto executor = scheme::executor{std::move(resolve), std::move(reject)};
         auto req      = scheme::request{{request}};
 
         if (policy != launch::async)
         {
-            return std::invoke(resolver, req, executor);
+            std::invoke(resolver, std::move(req), std::move(executor));
         }
 
         app->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                            { std::invoke(resolver, req, executor); });
+                            { std::invoke(resolver, std::move(req), std::move(executor)); });
     }
 } // namespace saucer::scheme

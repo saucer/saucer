@@ -144,17 +144,18 @@ namespace saucer::scheme
             req.value()->fail(static_cast<QWebEngineUrlRequestJob::Error>(offset));
         };
 
-        auto executor = scheme::executor{resolve, reject};
+        auto executor = scheme::executor{std::move(resolve), std::move(reject)};
         auto req      = scheme::request{{request, std::move(content)}};
 
         connect(raw, &QObject::destroyed, [request]() { request->assign(nullptr); });
 
         if (policy != launch::async)
         {
-            return std::invoke(resolver, req, executor);
+            std::invoke(resolver, std::move(req), std::move(executor));
+            return S_OK;
         }
 
-        app->pool().emplace([resolver = resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                            { std::invoke(resolver, req, executor); });
+        self->m_parent->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
+                                       { std::invoke(resolver, std::move(req), std::move(executor)); });
     }
 } // namespace saucer::scheme
