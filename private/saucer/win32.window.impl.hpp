@@ -12,7 +12,7 @@ namespace saucer
 {
     struct window::impl
     {
-        utils::handle<HWND, DestroyWindow> hwnd;
+        utils::window_handle hwnd;
 
       public:
         UINT prev_state;

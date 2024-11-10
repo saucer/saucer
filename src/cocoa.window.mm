@@ -42,6 +42,8 @@ namespace saucer
             m_events.clear(event.value);
         }
 
+        // We hide-on-close, so we call trigger two different close calls to properly quit.
+
         close();
         [m_impl->window close];
     }

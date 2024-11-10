@@ -52,6 +52,7 @@ namespace saucer
             m_events.clear(event.value);
         }
 
+        // We hide-on-close. This is required to make the parent quit properly.
         gtk_window_close(GTK_WINDOW(m_impl->window.get()));
     }
 

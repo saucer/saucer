@@ -17,7 +17,7 @@ namespace saucer
 
       public:
         HMODULE handle;
-        utils::handle<HWND, DestroyWindow> msg_window;
+        utils::window_handle msg_window;
 
       public:
         DWORD thread;

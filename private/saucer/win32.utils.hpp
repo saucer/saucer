@@ -10,6 +10,7 @@
 
 namespace saucer::utils
 {
+    using window_handle = utils::handle<HWND, DestroyWindow>;
     using string_handle = utils::handle<LPWSTR, CoTaskMemFree>;
     using module_handle = utils::handle<HMODULE, FreeLibrary>;
 
