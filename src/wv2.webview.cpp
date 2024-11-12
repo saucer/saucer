@@ -1,8 +1,6 @@
 #include "wv2.webview.impl.hpp"
 
-#include "requests.hpp"
 #include "instantiate.hpp"
-
 #include "win32.utils.hpp"
 
 #include "win32.app.impl.hpp"
@@ -169,32 +167,6 @@ namespace saucer
     webview::~webview()
     {
         std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd.get(), m_impl->o_wnd_proc);
-    }
-
-    bool webview::on_message(const std::string &message)
-    {
-        auto request = requests::parse(message);
-
-        if (!request)
-        {
-            return false;
-        }
-
-        if (std::holds_alternative<requests::resize>(request.value()))
-        {
-            const auto data = std::get<requests::resize>(request.value());
-            start_resize(static_cast<window_edge>(data.edge));
-
-            return true;
-        }
-
-        if (std::holds_alternative<requests::drag>(request.value()))
-        {
-            start_drag();
-            return true;
-        }
-
-        return false;
     }
 
     icon webview::favicon() const

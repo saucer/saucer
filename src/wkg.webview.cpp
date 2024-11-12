@@ -5,7 +5,6 @@
 #include "wkg.scheme.impl.hpp"
 
 #include "handle.hpp"
-#include "requests.hpp"
 #include "instantiate.hpp"
 
 #include <fmt/core.h>
@@ -66,8 +65,25 @@ namespace saucer
 
         auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
         {
-            utils::handle<char *, g_free> raw{jsc_value_to_string(value)};
-            reinterpret_cast<webview *>(data)->on_message(raw.get());
+            auto message = std::string{utils::handle<char *, g_free>{jsc_value_to_string(value)}.get()};
+            auto &self   = *reinterpret_cast<webview *>(data);
+
+            if (message == "dom_loaded")
+            {
+                self.m_impl->dom_loaded = true;
+
+                for (const auto &pending : self.m_impl->pending)
+                {
+                    self.execute(pending);
+                }
+
+                self.m_impl->pending.clear();
+                self.m_events.at<web_event::dom_ready>().fire();
+
+                return;
+            }
+
+            self.on_message(message);
         };
 
         m_impl->msg_received = g_signal_connect(m_impl->manager, "script-message-received", G_CALLBACK(+on_message), this);
@@ -129,47 +145,6 @@ namespace saucer
 
         gtk_box_remove(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
         g_signal_handler_disconnect(m_impl->manager, m_impl->msg_received);
-    }
-
-    bool webview::on_message(const std::string &message)
-    {
-        if (message == "dom_loaded")
-        {
-            m_impl->dom_loaded = true;
-
-            for (const auto &pending : m_impl->pending)
-            {
-                execute(pending);
-            }
-
-            m_impl->pending.clear();
-            m_events.at<web_event::dom_ready>().fire();
-
-            return true;
-        }
-
-        auto request = requests::parse(message);
-
-        if (!request)
-        {
-            return false;
-        }
-
-        if (std::holds_alternative<requests::resize>(request.value()))
-        {
-            const auto data = std::get<requests::resize>(request.value());
-            start_resize(static_cast<window_edge>(data.edge));
-
-            return true;
-        }
-
-        if (std::holds_alternative<requests::drag>(request.value()))
-        {
-            start_drag();
-            return true;
-        }
-
-        return false;
     }
 
     icon webview::favicon() const

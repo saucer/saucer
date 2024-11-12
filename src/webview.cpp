@@ -1,9 +1,42 @@
 #include "webview.hpp"
 
+#include "requests.hpp"
+
 #include <fmt/core.h>
 
 namespace saucer
 {
+    bool webview::on_message(const std::string &message)
+    {
+        if (extensible::on_message(message))
+        {
+            return true;
+        }
+
+        auto request = requests::parse(message);
+
+        if (!request)
+        {
+            return false;
+        }
+
+        if (std::holds_alternative<requests::resize>(request.value()))
+        {
+            const auto data = std::get<requests::resize>(request.value());
+            start_resize(static_cast<window_edge>(data.edge));
+
+            return true;
+        }
+
+        if (std::holds_alternative<requests::drag>(request.value()))
+        {
+            start_drag();
+            return true;
+        }
+
+        return false;
+    }
+
     void webview::embed(embedded_files files, launch policy)
     {
         if (!m_parent->thread_safe())

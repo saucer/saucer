@@ -1,8 +1,6 @@
 #include "qt.webview.impl.hpp"
 
-#include "requests.hpp"
 #include "instantiate.hpp"
-
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
 
@@ -90,47 +88,6 @@ namespace saucer
         window::m_impl->on_closed = {};
 
         m_impl->web_view->disconnect();
-    }
-
-    bool webview::on_message(const std::string &message)
-    {
-        if (message == "dom_loaded")
-        {
-            m_impl->dom_loaded = true;
-
-            for (const auto &pending : m_impl->pending)
-            {
-                execute(pending);
-            }
-
-            m_impl->pending.clear();
-            m_events.at<web_event::dom_ready>().fire();
-
-            return true;
-        }
-
-        auto request = requests::parse(message);
-
-        if (!request)
-        {
-            return false;
-        }
-
-        if (std::holds_alternative<requests::resize>(request.value()))
-        {
-            const auto data = std::get<requests::resize>(request.value());
-            start_resize(static_cast<window_edge>(data.edge));
-
-            return true;
-        }
-
-        if (std::holds_alternative<requests::drag>(request.value()))
-        {
-            start_drag();
-            return true;
-        }
-
-        return false;
     }
 
     icon webview::favicon() const

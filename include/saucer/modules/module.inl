@@ -3,6 +3,7 @@
 #include "module.hpp"
 
 #include <atomic>
+#include <algorithm>
 
 namespace saucer
 {
@@ -21,6 +22,54 @@ namespace saucer
         };
     } // namespace impl
 
+    struct erased_module::base
+    {
+        template <typename T>
+        class model;
+
+      public:
+        virtual ~base() = default;
+
+      public:
+        virtual bool on_message(const std::string &) = 0;
+    };
+
+    template <typename T>
+    class erased_module::base::model : public base
+    {
+        T m_value;
+
+      public:
+        model(T &&value) : m_value(std::move(value)) {}
+
+      public:
+        ~model() override = default;
+
+      public:
+        T *value()
+        {
+            return &m_value;
+        }
+
+      public:
+        bool on_message([[maybe_unused]] const std::string &message) override
+        {
+            if constexpr (requires {
+                              { m_value.on_message(message) } -> std::same_as<bool>;
+                          })
+            {
+                return m_value.on_message(message);
+            }
+
+            return false;
+        }
+    };
+
+    inline erased_module::base *erased_module::get() const
+    {
+        return m_value.get();
+    }
+
     template <typename T>
     std::optional<T *> erased_module::get() const
     {
@@ -29,7 +78,7 @@ namespace saucer
             return std::nullopt;
         }
 
-        return reinterpret_cast<T *>(m_value.get());
+        return static_cast<base::model<T> *>(m_value.get())->value();
     }
 
     template <typename T>
@@ -44,7 +93,7 @@ namespace saucer
         erased_module rtn;
 
         rtn.m_id    = id_of<T>();
-        rtn.m_value = std::make_shared<T>(std::forward<Ts>(args)...);
+        rtn.m_value = std::make_unique<base::model<T>>(T{std::forward<Ts>(args)...});
 
         return rtn;
     }
@@ -52,6 +101,12 @@ namespace saucer
     template <typename T>
     extensible<T>::extensible(T *parent) : m_parent(parent)
     {
+    }
+
+    template <typename T>
+    bool extensible<T>::on_message(const std::string &message)
+    {
+        return std::ranges::any_of(m_modules, [&](const auto &item) { return item.second.get()->on_message(message); });
     }
 
     template <typename T>

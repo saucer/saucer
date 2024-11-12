@@ -190,16 +190,36 @@ namespace saucer
 
         class_replaceMethod([MessageHandler class], @selector(userContentController:didReceiveScriptMessage:),
                             imp_implementationWithBlock(
-                                [](MessageHandler *handler, WKUserContentController *, WKScriptMessage *message)
+                                [](MessageHandler *handler, WKUserContentController *, WKScriptMessage *raw)
                                 {
-                                    const id body = message.body;
+                                    const utils::autorelease_guard guard{};
+
+                                    const id body = raw.body;
 
                                     if (![body isKindOfClass:[NSString class]])
                                     {
                                         return;
                                     }
 
-                                    handler->m_parent->on_message(static_cast<NSString *>(body).UTF8String);
+                                    auto message = std::string{static_cast<NSString *>(body).UTF8String};
+                                    auto &self   = *handler->m_parent;
+
+                                    if (message == "dom_loaded")
+                                    {
+                                        self.m_impl->dom_loaded = true;
+
+                                        for (const auto &pending : self.m_impl->pending)
+                                        {
+                                            self.execute(pending);
+                                        }
+
+                                        self.m_impl->pending.clear();
+                                        self.m_events.at<web_event::dom_ready>().fire();
+
+                                        return;
+                                    }
+
+                                    self.on_message(message);
                                 }),
                             "v@:@");
 

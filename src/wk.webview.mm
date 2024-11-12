@@ -1,9 +1,7 @@
 #include "wk.webview.impl.hpp"
 
-#include "cocoa.window.impl.hpp"
-
-#include "requests.hpp"
 #include "instantiate.hpp"
+#include "cocoa.window.impl.hpp"
 
 #include <algorithm>
 
@@ -104,47 +102,6 @@ namespace saucer
         [m_impl->controller removeAllUserScripts];
 
         window::m_impl->window.contentView = nil;
-    }
-
-    bool webview::on_message(const std::string &message)
-    {
-        if (message == "dom_loaded")
-        {
-            m_impl->dom_loaded = true;
-
-            for (const auto &pending : m_impl->pending)
-            {
-                execute(pending);
-            }
-
-            m_impl->pending.clear();
-            m_events.at<web_event::dom_ready>().fire();
-
-            return true;
-        }
-
-        auto request = requests::parse(message);
-
-        if (!request)
-        {
-            return false;
-        }
-
-        if (std::holds_alternative<requests::resize>(request.value()))
-        {
-            const auto data = std::get<requests::resize>(request.value());
-            start_resize(static_cast<window_edge>(data.edge));
-
-            return true;
-        }
-
-        if (std::holds_alternative<requests::drag>(request.value()))
-        {
-            start_drag();
-            return true;
-        }
-
-        return false;
     }
 
     icon webview::favicon() const // NOLINT(*-static)

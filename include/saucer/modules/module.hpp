@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include <memory>
+#include <string>
 #include <optional>
 
 namespace saucer
@@ -19,11 +20,17 @@ namespace saucer
 
     class erased_module
     {
+        struct base;
+
+      private:
         std::size_t m_id;
-        std::shared_ptr<void> m_value;
+        std::unique_ptr<base> m_value;
 
       private:
         erased_module() = default;
+
+      public:
+        [[nodiscard]] base *get() const;
 
       public:
         template <typename T>
@@ -41,6 +48,9 @@ namespace saucer
     template <typename T>
     class extensible
     {
+        friend T;
+
+      private:
         using module_map = std::unordered_map<std::size_t, erased_module>;
 
       private:
@@ -49,6 +59,9 @@ namespace saucer
 
       public:
         extensible(T *parent);
+
+      protected:
+        bool on_message(const std::string &message);
 
       public:
         template <typename M, typename... Ts>
