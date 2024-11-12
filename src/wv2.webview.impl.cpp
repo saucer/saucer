@@ -7,9 +7,10 @@
 
 #include <cassert>
 
+#include <rebind/utils/enum.hpp>
+
 #include <fmt/core.h>
 #include <fmt/xchar.h>
-#include <rebind/enum.hpp>
 
 #include <windows.h>
 #include <gdiplus.h>
@@ -183,7 +184,7 @@ namespace saucer
 
         auto reject = [environment, args, deferral](const scheme::error &error)
         {
-            auto name  = rebind::find_enum_name(error).value_or("Unknown");
+            auto name  = rebind::utils::find_enum_name(error).value_or("unknown");
             auto value = std::to_underlying(error);
 
             ComPtr<ICoreWebView2WebResourceResponse> result;

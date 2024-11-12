@@ -37,9 +37,9 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
 
-        for (const auto &event : rebind::enum_fields<window_event>)
+        for (const auto &event : rebind::enum_values<window_event>)
         {
-            m_events.clear(event.value);
+            m_events.clear(event);
         }
 
         // We hide-on-close, so we call trigger two different close calls to properly quit.

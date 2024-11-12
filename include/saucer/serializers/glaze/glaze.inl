@@ -10,7 +10,7 @@
 #include <fmt/xchar.h>
 
 #include <rebind/name.hpp>
-#include <rebind/enum.hpp>
+#include <rebind/utils/enum.hpp>
 
 namespace saucer::serializers::glaze
 {
@@ -111,7 +111,7 @@ namespace saucer::serializers::glaze
 
             if (auto err = glz::read<opts>(json, data); err)
             {
-                return std::unexpected{std::string{rebind::find_enum_name(err.ec).value_or("Unknown")}};
+                return std::unexpected{std::string{rebind::utils::find_enum_name(err.ec).value_or("Unknown")}};
             }
 
             return std::unexpected{mismatch<T>(rtn, json).value_or("<Unknown Error>")};

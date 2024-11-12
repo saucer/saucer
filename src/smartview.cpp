@@ -2,9 +2,7 @@
 
 #include "scripts.hpp"
 
-#include <rebind/enum.hpp>
 #include <lockpp/lock.hpp>
-
 #include <fmt/core.h>
 
 namespace saucer

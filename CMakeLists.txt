@@ -298,7 +298,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        3.0.0
+  VERSION        4.0.0
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 

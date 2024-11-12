@@ -44,9 +44,9 @@ namespace saucer
 
     window::~window()
     {
-        for (const auto &event : rebind::enum_fields<window_event>)
+        for (const auto &event : rebind::enum_values<window_event>)
         {
-            m_events.clear(event.value);
+            m_events.clear(event);
         }
 
         // We hide-on-close. This is required to make the parent quit properly.

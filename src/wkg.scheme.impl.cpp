@@ -2,7 +2,7 @@
 
 #include "handle.hpp"
 
-#include <rebind/enum.hpp>
+#include <rebind/utils/enum.hpp>
 
 namespace saucer::scheme
 {
@@ -54,7 +54,7 @@ namespace saucer::scheme
             static auto quark = webkit_network_error_quark();
 
             auto value = std::to_underlying(error);
-            auto name  = std::string{rebind::find_enum_name(error).value_or("unknown")};
+            auto name  = std::string{rebind::utils::find_enum_name(error).value_or("unknown")};
             auto err   = utils::handle<GError *, g_error_free>{g_error_new(quark, value, "%s", name.c_str())};
 
             webkit_uri_scheme_request_finish_error(request.get(), err.get());
