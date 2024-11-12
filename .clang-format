@@ -1,5 +1,4 @@
 ---
-Language: Cpp
 InsertNewlineAtEOF: true
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
