@@ -60,7 +60,7 @@ jobs:
           backend: ${{ matrix.backend }}
           platform: ${{ matrix.platform }}
           build-type: ${{ matrix.config }}
-          cmake-args: -Dsaucer_tests=ON
+          cmake-args: -Dsaucer_tests=ON -Dsaucer_examples=ON
 
       - name: 🐛 Debug
         if: ${{ github.event.inputs.debug == 'true' }}
