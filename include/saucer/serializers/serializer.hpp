@@ -18,13 +18,13 @@ namespace saucer
 {
     struct serializer
     {
-        using parse_result = std::unique_ptr<message_data>;
+        using parse_result = message_data;
         using executor     = saucer::executor<std::string>;
         using args         = fmt::dynamic_format_arg_store<fmt::format_context>;
 
       public:
-        using resolver = std::move_only_function<void(std::unique_ptr<message_data>)>;
-        using function = std::function<void(std::unique_ptr<message_data>, executor)>;
+        using resolver = std::move_only_function<void(std::unique_ptr<result_data>)>;
+        using function = std::function<void(std::unique_ptr<function_data>, executor)>;
 
       public:
         virtual ~serializer() = default;

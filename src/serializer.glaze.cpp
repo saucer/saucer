@@ -59,7 +59,7 @@ namespace saucer::serializers::glaze
         return value;
     }
 
-    std::unique_ptr<message_data> serializer::parse(const std::string &data) const
+    serializer::parse_result serializer::parse(const std::string &data) const
     {
         if (auto res = parse_as<function_data>(data); res.has_value())
         {
@@ -71,6 +71,6 @@ namespace saucer::serializers::glaze
             return std::make_unique<result_data>(res.value());
         }
 
-        return nullptr;
+        return std::monostate{};
     }
 } // namespace saucer::serializers::glaze

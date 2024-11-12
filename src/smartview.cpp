@@ -54,42 +54,40 @@ namespace saucer
 
         auto parsed = m_impl->serializer->parse(message);
 
-        if (!parsed)
+        if (std::holds_alternative<std::monostate>(parsed))
         {
             return false;
         }
 
-        if (auto *data = dynamic_cast<function_data *>(parsed.get()); data)
+        if (std::holds_alternative<std::unique_ptr<function_data>>(parsed))
         {
-            call(std::move(parsed));
+            call(std::move(std::get<0>(parsed)));
             return true;
         }
 
-        if (auto *data = dynamic_cast<result_data *>(parsed.get()); data)
+        if (std::holds_alternative<std::unique_ptr<result_data>>(parsed))
         {
-            resolve(std::move(parsed));
+            resolve(std::move(std::get<1>(parsed)));
             return true;
         }
 
         return false;
     }
 
-    void smartview_core::call(std::unique_ptr<message_data> data)
+    void smartview_core::call(std::unique_ptr<function_data> message)
     {
-        const auto &message = *static_cast<function_data *>(data.get());
-
         impl::exposed exposed;
 
-        if (auto locked = m_impl->functions.write(); locked->contains(message.name))
+        if (auto locked = m_impl->functions.write(); locked->contains(message->name))
         {
-            exposed = locked->at(message.name);
+            exposed = locked->at(message->name);
         }
         else
         {
-            return reject(message.id, fmt::format("\"No exposed function '{}'\"", message.name));
+            return reject(message->id, fmt::format("\"No exposed function '{}'\"", message->name));
         }
 
-        auto resolve = [parent = m_impl->self, id = message.id](const auto &result)
+        auto resolve = [parent = m_impl->self, id = message->id](const auto &result)
         {
             auto core = parent->read();
 
@@ -101,7 +99,7 @@ namespace saucer
             core.value()->resolve(id, result);
         };
 
-        auto reject = [parent = m_impl->self, id = message.id](const auto &error)
+        auto reject = [parent = m_impl->self, id = message->id](const auto &error)
         {
             auto core = parent->read();
 
@@ -118,25 +116,26 @@ namespace saucer
 
         if (policy == launch::sync)
         {
-            return std::invoke(func, std::move(data), executor);
+            return std::invoke(func, std::move(message), executor);
         }
 
-        m_parent->pool().emplace([func = std::move(func), data = std::move(data), executor = std::move(executor)]() mutable
-                                 { std::invoke(func, std::move(data), executor); });
+        m_parent->pool().emplace(
+            [func = std::move(func), message = std::move(message), executor = std::move(executor)]() mutable
+            { std::invoke(func, std::move(message), executor); });
     }
 
-    void smartview_core::resolve(std::unique_ptr<message_data> data)
+    void smartview_core::resolve(std::unique_ptr<result_data> message)
     {
-        const auto &message = *static_cast<result_data *>(data.get());
-        auto evals          = m_impl->evaluations.write();
+        const auto id = message->id;
+        auto evals    = m_impl->evaluations.write();
 
-        if (!evals->contains(message.id))
+        if (!evals->contains(id))
         {
             return;
         }
 
-        std::invoke(evals->at(message.id), std::move(data));
-        evals->erase(message.id);
+        std::invoke(evals->at(id), std::move(message));
+        evals->erase(id);
     }
 
     void smartview_core::add_function(std::string name, function &&resolve, launch policy)

@@ -163,7 +163,7 @@ namespace saucer::serializers::glaze
         static_assert(impl::Serializable<result> && impl::Serializable<args>,
                       "All arguments as well as the result must be serializable");
 
-        return [resolver = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::message_data> data,
+        return [resolver = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::function_data> data,
                                                                              executor exec)
         {
             const auto &message = *static_cast<function_data *>(data.get());
@@ -207,7 +207,7 @@ namespace saucer::serializers::glaze
     {
         static_assert(impl::Serializable<T>, "The promise result must be serializable");
 
-        return [promise = std::move(promise)](std::unique_ptr<saucer::message_data> data) mutable
+        return [promise = std::move(promise)](std::unique_ptr<saucer::result_data> data) mutable
         {
             const auto &res = *static_cast<result_data *>(data.get());
 

@@ -72,6 +72,12 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 * 🦺 Thread-Safe
 
+* 🧨 No Exceptions 
+  > Compiles with `-fno-exceptions`!
+
+* 🏃 No RTTI
+  > Compiles with `-fno-rtti`!
+
 * ⚖️ FOSS
   > Licensed under MIT!
 

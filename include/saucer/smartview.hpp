@@ -34,8 +34,8 @@ namespace saucer
         bool on_message(const std::string &) override;
 
       protected:
-        [[sc::thread_safe]] void call(std::unique_ptr<message_data>);
-        [[sc::thread_safe]] void resolve(std::unique_ptr<message_data>);
+        [[sc::thread_safe]] void call(std::unique_ptr<function_data>);
+        [[sc::thread_safe]] void resolve(std::unique_ptr<result_data>);
 
       protected:
         [[sc::thread_safe]] void add_function(std::string, serializer::function &&, launch);
