@@ -43,7 +43,7 @@ namespace saucer::scheme
             }
 
             webkit_uri_scheme_response_set_content_type(res.get(), response.mime.c_str());
-            webkit_uri_scheme_response_set_status(res.get(), response.status, "");
+            webkit_uri_scheme_response_set_status(res.get(), response.status, nullptr);
             webkit_uri_scheme_response_set_http_headers(res.get(), headers);
 
             webkit_uri_scheme_request_finish_with_response(request.get(), res.get());
