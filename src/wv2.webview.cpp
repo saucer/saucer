@@ -167,6 +167,7 @@ namespace saucer
     webview::~webview()
     {
         std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd.get(), m_impl->o_wnd_proc);
+        m_impl->controller->Close();
     }
 
     icon webview::favicon() const

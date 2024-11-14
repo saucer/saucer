@@ -251,9 +251,6 @@ namespace saucer
             impl->controller->put_IsVisible(w_param != SIZE_MINIMIZED);
             impl->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
             break;
-        case WM_DESTROY:
-            impl->controller->Close();
-            break;
         }
 
         return original();
