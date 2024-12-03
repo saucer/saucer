@@ -23,6 +23,12 @@ namespace saucer
 
         switch (msg)
         {
+        case WM_NCCALCSIZE:
+            if (w_param && !window->m_impl->decorated)
+            {
+                return 1;
+            }
+            break;
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
 

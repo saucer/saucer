@@ -17,6 +17,9 @@ namespace saucer
 
       public:
         UINT prev_state;
+        bool decorated{true};
+
+      public:
         utils::handle<HICON, DestroyIcon> icon;
         std::optional<std::pair<int, int>> max_size, min_size;
 
