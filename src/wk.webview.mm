@@ -72,12 +72,21 @@ namespace saucer
 
         [m_impl->web_view.get() setNavigationDelegate:m_impl->delegate.get()];
 
+        static constexpr auto resize_mask = NSViewWidthSizable | NSViewMaxXMargin | NSViewHeightSizable | NSViewMaxYMargin;
+        [m_impl->web_view.get() setAutoresizingMask:resize_mask];
+
         if (!prefs.user_agent.empty())
         {
             m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
         }
 
-        window::m_impl->window.contentView = m_impl->web_view.get();
+        auto *const view = [[[NSView alloc] init] autorelease];
+
+        [view setAutoresizesSubviews:YES];
+        [view addSubview:m_impl->web_view.get()];
+        [m_impl->web_view.get() setFrame:view.bounds];
+
+        window::m_impl->window.contentView = view;
         m_impl->appearance                 = window::m_impl->window.appearance;
 
         window::m_impl->on_closed = [this]
