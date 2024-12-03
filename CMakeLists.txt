@@ -292,7 +292,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        4.0.0
+  VERSION        4.0.2
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -310,7 +310,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           poolparty
-  VERSION        3.0.0
+  VERSION        3.0.1
   GIT_REPOSITORY "https://github.com/Curve/poolparty"
 )
 
