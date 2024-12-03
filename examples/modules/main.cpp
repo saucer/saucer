@@ -1,5 +1,3 @@
-#include <print>
-
 #include <saucer/smartview.hpp>
 #include <saucer/modules/desktop.hpp>
 
@@ -7,8 +5,6 @@ int main()
 {
     namespace modules = saucer::modules;
     using modules::picker::type;
-
-    saucer::webview::register_scheme("test");
 
     auto app = saucer::application::acquire({
         .id = "example",
