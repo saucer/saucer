@@ -59,6 +59,9 @@ namespace saucer
 
         [m_impl->config.get() setWebsiteDataStore:store];
 
+        auto *const settings = m_impl->config.get().preferences;
+        [settings setValue:@YES forKey:@"fullScreenEnabled"];
+
         m_impl->controller = m_impl->config.get().userContentController;
 
         auto *const handler = [[[MessageHandler alloc] initWithParent:this] autorelease];
