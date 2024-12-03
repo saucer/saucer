@@ -328,9 +328,11 @@ namespace saucer
         for (const auto &[name, handler] : schemes)
         {
             auto *const scheme = [NSString stringWithUTF8String:name.c_str()];
-
             [config setURLSchemeHandler:handler.get() forURLScheme:scheme];
+
+#ifdef SAUCER_WEBKIT_PRIVATE
             [pool performSelector:@selector(_registerURLSchemeAsSecure:) withObject:scheme];
+#endif
         }
 
         return config;

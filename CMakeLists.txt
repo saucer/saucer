@@ -11,10 +11,12 @@ option(saucer_package_all       "Add all required dependencies to install target
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
 option(saucer_examples          "Build examples"                                   OFF)
+option(saucer_tests             "Build tests"                                      OFF)
+
 option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"        OFF) # See VS2022 17.10 Changelog
+option(saucer_private_webkit    "Enable private api usage for wkwebview"            ON)
 
 option(saucer_no_version_check  "Skip compiler version check"                      OFF)
-option(saucer_tests             "Build tests"                                      OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
@@ -157,6 +159,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 
 if (saucer_tests)
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_TESTS)
+endif()
+
+if (saucer_private_webkit)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT_PRIVATE)
 endif()
 
 if (saucer_backend MATCHES "^Qt.$")

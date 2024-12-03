@@ -59,8 +59,10 @@ namespace saucer
 
         [m_impl->config.get() setWebsiteDataStore:store];
 
+#ifdef SAUCER_WEBKIT_PRIVATE
         auto *const settings = m_impl->config.get().preferences;
         [settings setValue:@YES forKey:@"fullScreenEnabled"];
+#endif
 
         m_impl->controller = m_impl->config.get().userContentController;
 
@@ -142,10 +144,14 @@ namespace saucer
             return dispatch([this] { return dev_tools(); });
         }
 
+#ifdef SAUCER_WEBKIT_PRIVATE
         auto *const settings = m_impl->config.get().preferences;
         auto *const enabled  = reinterpret_cast<NSNumber *>([settings valueForKey:@"developerExtrasEnabled"]);
 
         return enabled.boolValue;
+#else
+        return false;
+#endif
     }
 
     std::string webview::url() const
@@ -211,6 +217,7 @@ namespace saucer
             return dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
+#ifdef SAUCER_WEBKIT_PRIVATE
         auto *const settings = m_impl->config.get().preferences;
         [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
 
@@ -231,6 +238,7 @@ namespace saucer
         }
 
         [inspector performSelector:@selector(close)];
+#endif
     }
 
     void webview::set_context_menu(bool enabled)
