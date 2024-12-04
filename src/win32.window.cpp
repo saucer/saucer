@@ -91,12 +91,7 @@ namespace saucer
             return dispatch([this] { return maximized(); });
         }
 
-        WINDOWPLACEMENT placement;
-        placement.length = sizeof(WINDOWPLACEMENT);
-
-        GetWindowPlacement(m_impl->hwnd.get(), &placement);
-
-        return placement.showCmd == SW_SHOWMAXIMIZED;
+        return IsZoomed(m_impl->hwnd.get());
     }
 
     bool window::resizable() const

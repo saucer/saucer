@@ -26,12 +26,23 @@ namespace saucer
         case WM_NCCALCSIZE:
             if (w_param && !window->m_impl->decorated)
             {
-                if (window->maximized())
+                auto *const monitor = MonitorFromWindow(hwnd, 0);
+
+                RECT window_rect{};
+                GetWindowRect(hwnd, &window_rect);
+
+                MONITORINFO monitor_info{.cbSize = sizeof(MONITORINFO)};
+                GetMonitorInfoW(monitor, &monitor_info);
+
+                WINDOWINFO info{};
+                GetWindowInfo(hwnd, &info);
+
+                const auto boundary = monitor_info.rcWork.top - static_cast<LONG>(info.cyWindowBorders);
+                const auto overhang = window_rect.top < boundary;
+
+                if (window->maximized() && overhang)
                 {
                     auto *const rect = reinterpret_cast<RECT *>(l_param);
-
-                    WINDOWINFO info{};
-                    GetWindowInfo(hwnd, &info);
 
                     rect->top += static_cast<LONG>(info.cyWindowBorders);
                     rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
@@ -40,13 +51,13 @@ namespace saucer
                     rect->right -= static_cast<LONG>(info.cxWindowBorders);
                 }
 
-                return 1;
+                return 0;
             }
             break;
         case WM_NCPAINT:
             if (!window->m_impl->decorated && window->m_impl->transparent)
             {
-                return 1;
+                return 0;
             }
             break;
         case WM_GETMINMAXINFO: {
