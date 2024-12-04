@@ -333,24 +333,11 @@ namespace saucer
             return dispatch([this, enabled] { set_decorations(enabled); });
         }
 
-        static constexpr auto flag = WS_THICKFRAME;
-        auto current_style         = GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE);
-
-        if (enabled)
-        {
-            current_style |= flag;
-        }
-        else
-        {
-            current_style &= ~flag;
-        }
-
-        SetWindowLongW(m_impl->hwnd.get(), GWL_STYLE, current_style);
-
         m_impl->decorated = enabled;
 
         MARGINS margins{0, 0, 0, enabled ? 0 : 1};
         DwmExtendFrameIntoClientArea(m_impl->hwnd.get(), &margins);
+
         SetWindowPos(m_impl->hwnd.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
     }
 
