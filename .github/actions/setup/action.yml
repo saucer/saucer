@@ -17,6 +17,10 @@ inputs:
     required: true
     description: The CMake build configuration
 
+  install:
+    required: false
+    description: Whether or not to build install target
+
 runs:
   using: "composite"
   steps:
@@ -45,3 +49,8 @@ runs:
       run: |
         cmake -B build -Dsaucer_backend=${{ inputs.backend }} ${{ inputs.cmake-args }}
         cmake --build build --config ${{ inputs.build-type }}
+
+    - name: 📥 Install
+      shell: bash
+      if: inputs.install == 'true'
+      run: "cmake --install build --prefix 'artifact' --config ${{ matrix.config }}"
