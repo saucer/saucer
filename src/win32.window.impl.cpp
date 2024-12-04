@@ -34,6 +34,10 @@ namespace saucer
                     GetWindowInfo(hwnd, &info);
 
                     rect->top += static_cast<LONG>(info.cyWindowBorders);
+                    rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
+
+                    rect->left += static_cast<LONG>(info.cxWindowBorders);
+                    rect->right -= static_cast<LONG>(info.cxWindowBorders);
                 }
 
                 return 1;
