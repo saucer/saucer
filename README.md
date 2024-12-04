@@ -57,7 +57,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
     </tr>
   </table>
 
-* 🛸 Feature rich
+* 👾 Feature-Rich
   > Supports custom schemes, script injection, favicons, and much more!
 
 * 🔀 Seamless C++ / JavaScript interoperability
