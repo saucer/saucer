@@ -123,3 +123,16 @@ int main()
     return 0;
 }
 ```
+
+## 🌐 Who's using saucer?
+
+<div align="center">
+<br/>
+
+<a href="https://casterlabs.co/" target="_blank">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://cdn.casterlabs.co/branding/casterlabs/wordmark_white.svg">
+        <img width="300" src="https://cdn.casterlabs.co/branding/casterlabs/wordmark_black.svg">
+    </picture>
+</a>
+</div>
