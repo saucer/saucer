@@ -39,7 +39,7 @@ namespace saucer
         ~application();
 
       public:
-        [[nodiscard]] poolparty::pool<> &pool();
+        [[sc::unstable]] [[nodiscard]] poolparty::pool<> &pool();
 
       public:
         template <bool Stable = true>
