@@ -4,7 +4,7 @@ namespace saucer
 {
     void utils::set_dpi_awareness()
     {
-        module_handle module{LoadLibraryW(L"Shcore.dll")};
+        auto module = module_handle{LoadLibraryW(L"Shcore.dll")};
 
         if (auto *func = GetProcAddress(module.get(), "SetProcessDpiAwareness"); func)
         {
@@ -25,8 +25,8 @@ namespace saucer
 
     void utils::set_immersive_dark(HWND hwnd, bool enabled)
     {
-        module_handle dwmapi{LoadLibraryW(L"Dwmapi.dll")};
-        auto *func = GetProcAddress(dwmapi.get(), "DwmSetWindowAttribute");
+        auto dwmapi = module_handle{LoadLibraryW(L"Dwmapi.dll")};
+        auto *func  = GetProcAddress(dwmapi.get(), "DwmSetWindowAttribute");
 
         if (!func)
         {
