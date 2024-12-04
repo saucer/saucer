@@ -26,17 +26,14 @@ namespace saucer
         case WM_NCCALCSIZE:
             if (w_param && !window->m_impl->decorated)
             {
-                auto *const rect = reinterpret_cast<RECT *>(l_param);
-
                 if (window->maximized())
                 {
+                    auto *const rect = reinterpret_cast<RECT *>(l_param);
+
                     WINDOWINFO info{};
                     GetWindowInfo(hwnd, &info);
+
                     rect->top += static_cast<LONG>(info.cyWindowBorders);
-                }
-                else
-                {
-                    rect->top += 1;
                 }
 
                 return 1;
