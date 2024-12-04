@@ -80,7 +80,7 @@ jobs:
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-        if: ${{ matrix.backend != 'WebKitGtk' && matrix.backend != 'WebKit' && matrix.backend != "WebView2" }}
+        if: ${{ matrix.backend != 'WebKitGtk' && matrix.backend != 'WebKit' && matrix.backend != 'WebView2' }}
 
       - name: 📦 Upload Artifacts
         uses: actions/upload-artifact@v4
