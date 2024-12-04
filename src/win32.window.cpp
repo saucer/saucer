@@ -337,8 +337,9 @@ namespace saucer
 
         MARGINS margins{0, 0, 0, enabled ? 0 : 1};
         DwmExtendFrameIntoClientArea(m_impl->hwnd.get(), &margins);
-
         SetWindowPos(m_impl->hwnd.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+
+        m_events.at<window_event::decorated>().fire(enabled);
     }
 
     void window::set_always_on_top(bool enabled)

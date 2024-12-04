@@ -86,22 +86,6 @@ namespace saucer
 
             break;
         }
-        case WM_STYLECHANGED: {
-            if (w_param != static_cast<WPARAM>(GWL_STYLE))
-            {
-                break;
-            }
-
-            static constexpr auto flag = WS_CAPTION;
-            auto *const changes        = reinterpret_cast<STYLESTRUCT *>(l_param);
-
-            if ((changes->styleOld & flag) != (changes->styleNew & flag))
-            {
-                window->m_events.at<window_event::decorated>().fire(changes->styleNew & flag);
-            }
-
-            break;
-        }
         case WM_CLOSE: {
             if (window->m_events.at<window_event::close>().until(policy::block))
             {
