@@ -114,14 +114,17 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-  
-if (PROJECT_IS_TOP_LEVEL AND NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+
+if (PROJECT_IS_TOP_LEVEL AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
 endif()
 
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if (NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
   target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
 endif()
+
+# We are not using `CMAKE_CXX_COMPILER_FRONTEND_VARIANT` here because ClangCL behaves kind of weird
+# and expects flags to disable warnings in GNU fashion regardless of whether it is in MSVC- or GNU-CLI mode
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   target_compile_options(${PROJECT_NAME} PUBLIC -Wno-attributes=sc::)
