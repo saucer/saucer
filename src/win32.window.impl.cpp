@@ -26,6 +26,11 @@ namespace saucer
         case WM_NCCALCSIZE:
             if (w_param && !window->m_impl->decorated)
             {
+                if (!window->maximized())
+                {
+                    return 0;
+                }
+
                 auto *const monitor = MonitorFromWindow(hwnd, 0);
 
                 RECT window_rect{};
@@ -40,16 +45,18 @@ namespace saucer
                 const auto boundary = monitor_info.rcWork.top - static_cast<LONG>(info.cyWindowBorders);
                 const auto overhang = window_rect.top < boundary;
 
-                if (window->maximized() && overhang)
+                if (!overhang)
                 {
-                    auto *const rect = reinterpret_cast<RECT *>(l_param);
-
-                    rect->top += static_cast<LONG>(info.cyWindowBorders);
-                    rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
-
-                    rect->left += static_cast<LONG>(info.cxWindowBorders);
-                    rect->right -= static_cast<LONG>(info.cxWindowBorders);
+                    return 0;
                 }
+
+                auto *const rect = reinterpret_cast<RECT *>(l_param);
+
+                rect->top += static_cast<LONG>(info.cyWindowBorders);
+                rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
+
+                rect->left += static_cast<LONG>(info.cxWindowBorders);
+                rect->right -= static_cast<LONG>(info.cxWindowBorders);
 
                 return 0;
             }
