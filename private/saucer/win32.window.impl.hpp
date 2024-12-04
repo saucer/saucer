@@ -17,7 +17,10 @@ namespace saucer
 
       public:
         UINT prev_state;
+
+      public:
         bool decorated{true};
+        bool transparent{false};
 
       public:
         utils::handle<HICON, DestroyIcon> icon;

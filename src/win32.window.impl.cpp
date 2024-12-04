@@ -29,6 +29,12 @@ namespace saucer
                 return 1;
             }
             break;
+        case WM_NCPAINT:
+            if (!window->m_impl->decorated && window->m_impl->transparent)
+            {
+                return 1;
+            }
+            break;
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
 

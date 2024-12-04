@@ -351,7 +351,9 @@ namespace saucer
             return;
         }
 
-        auto [r, g, b, a] = color;
+        auto [r, g, b, a]           = color;
+        window::m_impl->transparent = a < 255;
+
         controller->put_DefaultBackgroundColor({.A = a, .R = r, .G = g, .B = b});
     }
 
