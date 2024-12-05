@@ -1,5 +1,6 @@
 #include "win32.window.impl.hpp"
 
+#include "win32.utils.hpp"
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 
@@ -330,8 +331,7 @@ namespace saucer
 
         m_impl->decorated = enabled;
 
-        MARGINS margins{0, 0, 0, enabled ? 0 : 1};
-        DwmExtendFrameIntoClientArea(m_impl->hwnd.get(), &margins);
+        utils::extend_frame(m_impl->hwnd.get(), {0, 0, 0, enabled ? 0 : 1});
         SetWindowPos(m_impl->hwnd.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 
         m_events.at<window_event::decorated>().fire(enabled);

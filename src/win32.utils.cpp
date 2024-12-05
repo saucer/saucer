@@ -1,14 +1,24 @@
 #include "win32.utils.hpp"
 
+#include <shellscalingapi.h>
+#include <dwmapi.h>
+
 namespace saucer
 {
+    template <auto Func, typename T, typename... Ts>
+    auto call_as(T func, Ts &&...args)
+    {
+        using func_t = decltype(Func);
+        return reinterpret_cast<func_t>(func)(std::forward<Ts>(args)...);
+    }
+
     void utils::set_dpi_awareness()
     {
         auto module = module_handle{LoadLibraryW(L"Shcore.dll")};
 
         if (auto *func = GetProcAddress(module.get(), "SetProcessDpiAwareness"); func)
         {
-            reinterpret_cast<HRESULT(CALLBACK *)(DWORD)>(func)(2);
+            call_as<SetProcessDpiAwareness>(func, PROCESS_PER_MONITOR_DPI_AWARE);
             return;
         }
 
@@ -20,7 +30,7 @@ namespace saucer
             return;
         }
 
-        reinterpret_cast<bool(CALLBACK *)()>(func)();
+        call_as<SetProcessDPIAware>(func);
     }
 
     void utils::set_immersive_dark(HWND hwnd, bool enabled)
@@ -34,11 +44,25 @@ namespace saucer
         }
 
         static constexpr auto immersive_dark = 20;
+        auto enable_immersive_dark           = static_cast<BOOL>(enabled);
 
-        auto *set_attribute        = reinterpret_cast<HRESULT (*)(HWND, DWORD, LPCVOID, DWORD)>(func);
-        auto enable_immersive_dark = static_cast<BOOL>(enabled);
+        call_as<DwmSetWindowAttribute>(func, hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
+    }
 
-        set_attribute(hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
+    void utils::extend_frame(HWND hwnd, std::array<int, 4> area)
+    {
+        auto dwmapi = module_handle{LoadLibraryW(L"Dwmapi.dll")};
+        auto *func  = GetProcAddress(dwmapi.get(), "DwmExtendFrameIntoClientAreai");
+
+        if (!func)
+        {
+            return;
+        }
+
+        const auto &[left, right, top, bottom] = area;
+        const auto margins                     = MARGINS{left, right, top, bottom};
+
+        call_as<DwmExtendFrameIntoClientArea>(func, hwnd, &margins);
     }
 
     WNDPROC utils::overwrite_wndproc(HWND hwnd, WNDPROC wndproc)
