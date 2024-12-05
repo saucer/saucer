@@ -63,9 +63,28 @@ namespace saucer
 
         env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
 
-        if (prefs.storage_path.empty())
+        if (prefs.persistent_cookies && prefs.storage_path.empty())
         {
-            prefs.storage_path = std::filesystem::temp_directory_path() / "saucer";
+            prefs.storage_path = fs::current_path() / ".saucer";
+
+            std::error_code ec{};
+            fs::create_directories(prefs.storage_path, ec);
+
+            SetFileAttributesW(prefs.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
+        }
+        else if (prefs.storage_path.empty())
+        {
+            std::wstring uuid;
+
+            if (auto [raw, str] = std::pair<UUID, RPC_WSTR>{};
+                UuidCreate(&raw) == RPC_S_OK && UuidToStringW(&raw, &str) == RPC_S_OK)
+            {
+                uuid = reinterpret_cast<wchar_t *>(str);
+                RpcStringFreeW(&str);
+            }
+
+            prefs.storage_path = std::filesystem::temp_directory_path() / fmt::format(L"saucer-{}", uuid);
+            temp_path          = prefs.storage_path;
         }
 
         auto created = [this](auto, auto *result)
@@ -110,6 +129,8 @@ namespace saucer
         {
             app->run<false>();
         }
+
+        web_view->get_BrowserProcessId(&browser_pid);
     }
 
     HRESULT webview::impl::scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *args, webview *self)
@@ -222,25 +243,15 @@ namespace saucer
 
     LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        auto userdata        = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-        const auto *web_view = reinterpret_cast<webview *>(userdata);
+        auto userdata       = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+        const auto *webview = reinterpret_cast<saucer::webview *>(userdata);
 
-        if (!web_view)
+        if (!webview || !webview->m_impl->controller)
         {
             return DefWindowProcW(hwnd, msg, w_param, l_param);
         }
 
-        const auto &impl = web_view->m_impl;
-
-        auto original = [&]
-        {
-            return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
-        };
-
-        if (!impl->controller)
-        {
-            return original();
-        }
+        const auto &impl = webview->m_impl;
 
         switch (msg)
         {
@@ -253,7 +264,7 @@ namespace saucer
             break;
         }
 
-        return original();
+        return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
     }
 
     template <>

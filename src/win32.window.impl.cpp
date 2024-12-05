@@ -16,11 +16,6 @@ namespace saucer
 
         const auto &impl = window->m_impl;
 
-        auto original = [&]
-        {
-            return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
-        };
-
         switch (msg)
         {
         case WM_NCCALCSIZE:
@@ -141,6 +136,6 @@ namespace saucer
         }
         }
 
-        return original();
+        return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
     }
 } // namespace saucer

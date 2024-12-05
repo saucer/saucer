@@ -41,6 +41,10 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
+        std::uint32_t browser_pid;
+        std::optional<fs::path> temp_path;
+
+      public:
         std::vector<std::pair<script, std::wstring>> scripts;
         std::unordered_map<std::string, std::pair<scheme::resolver, launch>> schemes;
 

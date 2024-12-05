@@ -25,20 +25,8 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
-        auto copy = prefs;
-
-        if (prefs.persistent_cookies && prefs.storage_path.empty())
-        {
-            copy.storage_path = fs::current_path() / ".saucer";
-
-            std::error_code ec{};
-            fs::create_directories(copy.storage_path, ec);
-
-            SetFileAttributesW(copy.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
-        }
-
         m_impl->o_wnd_proc = utils::overwrite_wndproc(window::m_impl->hwnd.get(), impl::wnd_proc);
-        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), std::move(copy));
+        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), prefs);
 
         m_impl->web_view->get_Settings(&m_impl->settings);
         m_impl->settings->put_IsStatusBarEnabled(false);
@@ -168,6 +156,20 @@ namespace saucer
     {
         std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd.get(), m_impl->o_wnd_proc);
         m_impl->controller->Close();
+
+        if (!m_impl->temp_path)
+        {
+            return;
+        }
+
+        // ICorWebView5s `add_BrowserProcessExited` fires rather unreliably and requries us to run the main-loop.
+        // Thus, we wait for the webview process to exit instead.
+
+        utils::handle<HANDLE, CloseHandle> handle = OpenProcess(SYNCHRONIZE, false, m_impl->browser_pid);
+        WaitForSingleObject(handle.get(), 3000);
+
+        std::error_code ec{};
+        fs::remove_all(m_impl->temp_path.value(), ec);
     }
 
     icon webview::favicon() const
