@@ -112,7 +112,7 @@ namespace saucer
             return dispatch([this] { return decorations(); });
         }
 
-        return GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE) & WS_CAPTION;
+        return m_impl->decorated;
     }
 
     bool window::always_on_top() const
