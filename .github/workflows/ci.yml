@@ -7,7 +7,7 @@ on:
         type: boolean
         description: Enable Debugging
 
-name: 🧪 Tests
+name: 🛸 Test & Build
 
 jobs:
   run-tests:
@@ -61,7 +61,7 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: 🛸 Setup Saucer
+      - name: 👽 Setup Saucer
         uses: ./.github/actions/setup
         with:
           backend: ${{ matrix.backend }}
