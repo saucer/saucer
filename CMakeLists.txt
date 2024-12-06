@@ -168,9 +168,16 @@ if (saucer_private_webkit)
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT_PRIVATE)
 endif()
 
-if (saucer_backend MATCHES "^Qt.$")
-  string(REGEX REPLACE "[a-zA-Z]+" "" QT_VERSION "${saucer_backend}")
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT${QT_VERSION})
+if (saucer_backend STREQUAL "Qt5")
+  set(QT_VERSION 5)
+  set(QT_REQUIRED_VERSION 5.0.0)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT5)
+endif()
+
+if (saucer_backend STREQUAL "Qt6")
+  set(QT_VERSION 6)
+  set(QT_REQUIRED_VERSION 6.7.0)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT6)
 endif()
 
 if (saucer_backend STREQUAL "WebKitGtk")
@@ -340,7 +347,7 @@ if (saucer_backend MATCHES "^Qt.$")
   target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
   set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
 
-  find_package(Qt${QT_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
+  find_package(Qt${QT_VERSION} ${QT_REQUIRED_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
 endif()
 

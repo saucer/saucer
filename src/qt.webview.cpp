@@ -164,12 +164,8 @@ namespace saucer
             return dispatch([this] { return force_dark_mode(); });
         }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         const auto *settings = m_impl->profile->settings();
         return settings->testAttribute(QWebEngineSettings::ForceDarkMode);
-#else
-        return {};
-#endif
     }
 
     void webview::set_dev_tools(bool enabled)
@@ -235,10 +231,8 @@ namespace saucer
             return dispatch([this, enabled] { return set_force_dark_mode(enabled); });
         }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         auto *settings = m_impl->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
-#endif
     }
 
     void webview::set_file(const fs::path &file)
@@ -410,12 +404,7 @@ namespace saucer
         scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
 
         using enum QWebEngineUrlScheme::Flag;
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
         scheme.setFlags(SecureScheme | FetchApiAllowed | CorsEnabled);
-#else
-        scheme.setFlags(SecureScheme | CorsEnabled);
-#endif
 
         QWebEngineUrlScheme::registerScheme(scheme);
     }

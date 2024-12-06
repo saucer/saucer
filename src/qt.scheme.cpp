@@ -4,7 +4,6 @@
 
 #include <QMap>
 #include <QBuffer>
-#include <QtGlobal>
 #include <QIODevice>
 
 namespace saucer::scheme
@@ -88,14 +87,12 @@ namespace saucer::scheme
         auto request = std::make_shared<lockpp::lock<QWebEngineUrlRequestJob *>>(raw);
         auto content = QByteArray{};
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
         auto *const body = raw->requestBody();
 
         if (raw->requestBody())
         {
             content = body->readAll();
         }
-#endif
 
         auto resolve = [request](const scheme::response &response)
         {
@@ -106,7 +103,6 @@ namespace saucer::scheme
                 return;
             }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
             auto to_array = [](auto &item)
             {
                 return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
@@ -116,7 +112,6 @@ namespace saucer::scheme
             const auto converted = QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}};
 
             req.value()->setAdditionalResponseHeaders(converted);
-#endif
 
             const auto data = response.data;
             auto *buffer    = new QBuffer{};
