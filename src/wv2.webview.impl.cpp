@@ -3,6 +3,7 @@
 #include "scripts.hpp"
 
 #include "win32.utils.hpp"
+#include "win32.app.impl.hpp"
 #include "wv2.scheme.impl.hpp"
 
 #include <cassert>
@@ -74,16 +75,24 @@ namespace saucer
         }
         else if (prefs.storage_path.empty())
         {
-            std::wstring uuid;
+            static constexpr auto hash_size = 32;
 
-            if (auto [raw, str] = std::pair<UUID, RPC_WSTR>{};
-                UuidCreate(&raw) == RPC_S_OK && UuidToStringW(&raw, &str) == RPC_S_OK)
+            auto id   = app->native<false>()->id;
+            auto hash = id;
+
+            if (BYTE data[hash_size]{}; HashData(reinterpret_cast<BYTE *>(id.data()), id.size(), data, hash_size) == S_OK)
             {
-                uuid = reinterpret_cast<wchar_t *>(str);
-                RpcStringFreeW(&str);
+                hash = data                                                                    //
+                       | std::views::transform([](auto x) { return fmt::format(L"{:x}", x); }) //
+                       | std::views::join                                                      //
+                       | std::ranges::to<std::wstring>();
+            }
+            else
+            {
+                assert(false && "Failedd to compute hash of id");
             }
 
-            prefs.storage_path = std::filesystem::temp_directory_path() / fmt::format(L"saucer-{}", uuid);
+            prefs.storage_path = std::filesystem::temp_directory_path() / fmt::format(L"saucer-{}", hash);
             temp_path          = prefs.storage_path;
         }
 
