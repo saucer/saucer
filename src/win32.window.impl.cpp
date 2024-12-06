@@ -21,29 +21,15 @@ namespace saucer
         case WM_NCCALCSIZE:
             if (w_param && !window->m_impl->decorated)
             {
-                if (!window->maximized())
+                auto *const params = reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param);
+
+                if (!window->maximized() || params->rgrc[0].top >= 0)
                 {
                     return 0;
                 }
-
-                auto *const monitor = MonitorFromWindow(hwnd, 0);
-
-                RECT window_rect{};
-                GetWindowRect(hwnd, &window_rect);
-
-                MONITORINFO monitor_info{.cbSize = sizeof(MONITORINFO)};
-                GetMonitorInfoW(monitor, &monitor_info);
 
                 WINDOWINFO info{};
                 GetWindowInfo(hwnd, &info);
-
-                const auto boundary = monitor_info.rcWork.top - static_cast<LONG>(info.cyWindowBorders);
-                const auto overhang = window_rect.top < boundary;
-
-                if (!overhang)
-                {
-                    return 0;
-                }
 
                 auto *const rect = reinterpret_cast<RECT *>(l_param);
 
