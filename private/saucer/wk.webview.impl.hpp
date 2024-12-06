@@ -22,10 +22,11 @@ namespace saucer
         utils::objc_ptr<WKWebView> web_view;
 
       public:
+        utils::objc_ptr<NSView> view;
         utils::objc_ptr<NavigationDelegate> delegate;
-        WKUserContentController *controller;
 
       public:
+        WKUserContentController *controller;
         NSAppearance *appearance;
 
       public:

@@ -82,13 +82,13 @@ namespace saucer
             m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
         }
 
-        auto *const view = [[[NSView alloc] init] autorelease];
+        m_impl->view = [[NSView alloc] init];
 
-        [view setAutoresizesSubviews:YES];
-        [view addSubview:m_impl->web_view.get()];
-        [m_impl->web_view.get() setFrame:view.bounds];
+        [m_impl->view.get() setAutoresizesSubviews:YES];
+        [m_impl->view.get() addSubview:m_impl->web_view.get()];
+        [m_impl->web_view.get() setFrame:m_impl->view.get().bounds];
 
-        window::m_impl->window.contentView = view;
+        window::m_impl->window.contentView = m_impl->view.get();
         m_impl->appearance                 = window::m_impl->window.appearance;
 
         window::m_impl->on_closed = [this]
@@ -115,7 +115,8 @@ namespace saucer
         [m_impl->controller removeAllScriptMessageHandlers];
         [m_impl->controller removeAllUserScripts];
 
-        window::m_impl->window.contentView = nil;
+        [m_impl->view.get() setSubviews:[NSArray array]];
+        [window::m_impl->window setContentView:nil];
     }
 
     icon webview::favicon() const // NOLINT(*-static)
