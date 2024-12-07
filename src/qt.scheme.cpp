@@ -105,6 +105,7 @@ namespace saucer::scheme
                 return;
             }
 
+#ifdef SAUCER_QT6
             auto to_array = [](auto &item)
             {
                 return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
@@ -114,6 +115,7 @@ namespace saucer::scheme
             const auto converted = QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}};
 
             req.value()->setAdditionalResponseHeaders(converted);
+#endif
 
             const auto data = response.data;
             auto *buffer    = new QBuffer{};

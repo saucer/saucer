@@ -110,6 +110,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::navigate>([[maybe_unused]] webview *self)
     {
+#ifdef SAUCER_QT6
         auto &event = self->m_events.at<web_event::navigate>();
 
         if (!event.empty())
@@ -141,6 +142,7 @@ namespace saucer
                 web_page->disconnect(new_id);
                 web_page->disconnect(nav_id);
             });
+#endif
     }
 
     template <>
