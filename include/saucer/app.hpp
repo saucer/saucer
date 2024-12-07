@@ -3,6 +3,7 @@
 #include "utils/required.hpp"
 #include "modules/module.hpp"
 
+#include <optional>
 #include <functional>
 
 #include <string>
@@ -16,6 +17,10 @@ namespace saucer
     struct options
     {
         required<std::string> id;
+
+      public:
+        std::optional<int> argc;
+        std::optional<char **> argv;
 
       public:
         std::size_t threads = std::thread::hardware_concurrency();
@@ -63,7 +68,8 @@ namespace saucer
         void quit();
 
       public:
-        [[nodiscard]] static std::shared_ptr<application> acquire(const options &);
+        [[nodiscard]] static std::shared_ptr<application> init(const options &);
+        [[nodiscard]] static std::shared_ptr<application> active();
     };
 } // namespace saucer
 

@@ -5,7 +5,7 @@ int main()
 {
     saucer::webview::register_scheme("test");
 
-    auto app = saucer::application::acquire({
+    auto app = saucer::application::init({
         .id = "app.saucer.tests",
     });
 

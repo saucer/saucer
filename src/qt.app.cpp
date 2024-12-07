@@ -11,6 +11,12 @@ namespace saucer
         m_impl->argv = {m_impl->id.data()};
         m_impl->argc = static_cast<int>(m_impl->argv.size());
 
+        if (opts.argc && opts.argv)
+        {
+            m_impl->argc = opts.argc.value();
+            m_impl->argv = {opts.argv.value(), opts.argv.value() + opts.argc.value()};
+        }
+
 #ifndef SAUCER_TESTS
         qputenv("QT_LOGGING_RULES", "*=false");
 #endif

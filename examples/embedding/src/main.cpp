@@ -3,7 +3,7 @@
 
 int main()
 {
-    auto app = saucer::application::acquire({
+    auto app = saucer::application::init({
         .id = "embedding",
     });
 

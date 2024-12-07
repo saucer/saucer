@@ -6,7 +6,7 @@ int main()
     namespace modules = saucer::modules;
     using modules::picker::type;
 
-    auto app = saucer::application::acquire({
+    auto app = saucer::application::init({
         .id = "example",
     });
 

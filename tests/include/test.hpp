@@ -56,7 +56,7 @@ namespace saucer::tests
             {
                 return boost::ut::test(name) = [test = std::move(test)]
                 {
-                    auto app = saucer::application::acquire({""});
+                    auto app = saucer::application::active();
 
                     if constexpr (Policy & launch::sync)
                     {

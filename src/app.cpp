@@ -5,16 +5,20 @@
 
 namespace saucer
 {
+    auto &instance()
+    {
+        static lockpp::lock<std::weak_ptr<application>> instance;
+        return instance;
+    }
+
     poolparty::pool<> &application::pool()
     {
         return m_pool;
     }
 
-    std::shared_ptr<application> application::acquire(const options &options)
+    std::shared_ptr<application> application::init(const options &options)
     {
-        static lockpp::lock<std::weak_ptr<application>> instance;
-
-        auto locked = instance.write();
+        auto locked = instance().write();
         auto rtn    = locked->lock();
 
         if (!rtn)
@@ -25,5 +29,11 @@ namespace saucer
         }
 
         return rtn;
+    }
+
+    std::shared_ptr<application> application::active()
+    {
+        auto locked = instance().read();
+        return locked->lock();
     }
 } // namespace saucer

@@ -95,7 +95,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 int main()
 {
-    auto app = saucer::application::acquire({
+    auto app = saucer::application::init({
         .id = "example",
     });
 
