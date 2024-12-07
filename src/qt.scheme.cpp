@@ -87,12 +87,14 @@ namespace saucer::scheme
         auto request = std::make_shared<lockpp::lock<QWebEngineUrlRequestJob *>>(raw);
         auto content = QByteArray{};
 
+#ifdef SAUCER_QT6
         auto *const body = raw->requestBody();
 
         if (raw->requestBody())
         {
             content = body->readAll();
         }
+#endif
 
         auto resolve = [request](const scheme::response &response)
         {
