@@ -7,6 +7,7 @@
 
 #include <regex>
 #include <optional>
+#include <charconv>
 
 #include <fmt/core.h>
 
