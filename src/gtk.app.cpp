@@ -1,5 +1,7 @@
 #include "gtk.app.impl.hpp"
 
+#include <fmt/format.h>
+
 namespace saucer
 {
     template void application::run<true>() const;
@@ -9,7 +11,7 @@ namespace saucer
     {
         const auto id = g_application_id_is_valid(opts.id.value().c_str())
                             ? opts.id.value()
-                            : std::format("app.saucer.{}", impl::fix_id(opts.id.value()));
+                            : fmt::format("app.saucer.{}", impl::fix_id(opts.id.value()));
 
         m_impl->thread      = std::this_thread::get_id();
         m_impl->application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
