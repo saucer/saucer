@@ -5,7 +5,7 @@
 // NOLINTBEGIN(*-dcl58-cpp)
 namespace std
 {
-    template <typename T>
+    template <typename...>
     struct move_only_function;
 
     template <typename R, typename... Ts>
