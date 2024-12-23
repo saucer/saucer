@@ -64,6 +64,11 @@ set(saucer_backend          "Default"       CACHE STRING "The backend to use, wi
 # Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
 # --------------------------------------------------------------------------------------------------------
 
+if (saucer_package_all AND NOT saucer_prefer_remote)
+  message(WARNING "[saucer] Cannot use 'saucer_package_all' without 'saucer_prefer_remote'")
+  set(saucer_prefer_remote ON)
+endif()
+
 if (saucer_prefer_remote)
   message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
 endif()
@@ -219,21 +224,18 @@ include("cmake/cpm.cmake")
 include("cmake/polyfill.cmake")
 
 check_features()
-set(saucer_fmt_install ON)
 
 if (saucer_polyfill_thread)
   message(STATUS "[saucer] Using std::jthread polyfill")
 
   CPMFindPackage(
     NAME           jthread
-    VERSION        24.00.0
+    VERSION        24.00.1
     GIT_REPOSITORY "https://github.com/saucer/jthread"
   )
 
-  link_libraries(nonstd::jthread)
+  target_link_libraries(${PROJECT_NAME} PUBLIC nonstd::jthread)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/jthread.hpp")
-
-  set(saucer_fmt_install OFF)
 endif()
 
 if (saucer_polyfill_functional)
@@ -241,14 +243,12 @@ if (saucer_polyfill_functional)
 
   CPMFindPackage(
     NAME           fu2
-    VERSION        4.2.2
+    VERSION        4.2.3
     GIT_REPOSITORY "https://github.com/saucer/function2"
   )
 
-  link_libraries(function2::function2)
+  target_link_libraries(${PROJECT_NAME} PUBLIC function2::function2)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
-  
-  set(saucer_fmt_install OFF)
 endif()
 
 if (saucer_polyfill_expected)
@@ -262,10 +262,8 @@ if (saucer_polyfill_expected)
     EXCLUDE_FROM_ALL ON
   )
 
-  link_libraries(tl::expected)
+  target_link_libraries(${PROJECT_NAME} PUBLIC tl::expected)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/expected.hpp")
-  
-  set(saucer_fmt_install OFF)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -297,7 +295,6 @@ CPMFindPackage(
   NAME           fmt
   GIT_TAG        11.0.2
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
-  OPTIONS        "FMT_INSTALL ${saucer_fmt_install}"
 )
 
 CPMFindPackage(
@@ -431,11 +428,18 @@ install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION bin
 )
 
-if (saucer_prefer_remote AND saucer_backend STREQUAL "WebView2")
+install(DIRECTORY "include/saucer" TYPE INCLUDE)
+
+if (NOT saucer_package_all)
+    return()
+endif()
+
+if (saucer_backend STREQUAL "WebView2")
   install(FILES ${webview2_lib_path} DESTINATION lib)
 endif()
 
-install(DIRECTORY "include/saucer" TYPE INCLUDE)
-install(DIRECTORY "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>/fmt" TYPE INCLUDE)
-install(DIRECTORY "$<TARGET_PROPERTY:glaze_glaze,INTERFACE_INCLUDE_DIRECTORIES>/glaze" TYPE INCLUDE)
+if (saucer_polyfill_expected)
+    install(DIRECTORY "$<TARGET_PROPERTY:expected,INTERFACE_INCLUDE_DIRECTORIES>/tl" TYPE INCLUDE)
+endif()
+
 install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
