@@ -322,13 +322,19 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
+  NAME           eraser
+  VERSION        2.2.0
+  GIT_REPOSITORY "https://github.com/Curve/eraser"
+)
+
+CPMFindPackage(
   NAME           boost_preprocessor
   GIT_TAG        boost-1.86.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty)
+target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty cr::eraser)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends

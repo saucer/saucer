@@ -2,13 +2,15 @@
 
 #include "requests.hpp"
 
+#include <algorithm>
+
 #include <fmt/core.h>
 
 namespace saucer
 {
     bool webview::on_message(const std::string &message)
     {
-        if (extensible::on_message(message))
+        if (std::ranges::any_of(modules(), [&message](auto &module) { return module.template invoke<0>(message); }))
         {
             return true;
         }

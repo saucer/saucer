@@ -1,14 +1,33 @@
 #pragma once
 
 #include <type_traits>
-#include <unordered_map>
+#include <concepts>
 
-#include <memory>
-#include <string>
+#include <unordered_map>
 #include <optional>
+#include <string>
+
+#include <eraser/erased.hpp>
 
 namespace saucer
 {
+    namespace modules
+    {
+        using webview = eraser::interface<eraser::method<0,
+                                                         [](auto &self, const auto &message)
+                                                         {
+                                                             if constexpr (requires { self.on_message(message); })
+                                                             {
+                                                                 return self.on_message(message);
+                                                             }
+                                                             else
+                                                             {
+                                                                 return false;
+                                                             }
+                                                         },
+                                                         bool(const std::string &)>>;
+    } // namespace modules
+
     template <typename T>
     struct stable_natives;
 
@@ -18,40 +37,13 @@ namespace saucer
     template <typename S, typename T, typename... Ts>
     concept Module = std::constructible_from<S, T *, Ts...>;
 
-    class erased_module
-    {
-        struct base;
-
-      private:
-        std::size_t m_id;
-        std::unique_ptr<base> m_value;
-
-      private:
-        erased_module() = default;
-
-      public:
-        [[nodiscard]] base *get() const;
-
-      public:
-        template <typename T>
-        [[nodiscard]] std::optional<T *> get() const;
-
-      public:
-        template <typename T>
-        [[nodiscard]] static std::size_t id_of();
-
-      public:
-        template <typename T, typename... Ts>
-        [[nodiscard]] static erased_module from(Ts &&...args);
-    };
-
-    template <typename T>
+    template <typename T, typename Interface = eraser::interface<>>
     class extensible
     {
         friend T;
 
       private:
-        using module_map = std::unordered_map<std::size_t, erased_module>;
+        using module_map = std::unordered_map<std::size_t, eraser::erased<Interface>>;
 
       private:
         T *m_parent;
@@ -61,7 +53,7 @@ namespace saucer
         extensible(T *parent);
 
       protected:
-        bool on_message(const std::string &message);
+        auto modules() const;
 
       public:
         template <typename M, typename... Ts>
