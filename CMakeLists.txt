@@ -323,7 +323,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           eraser
-  VERSION        2.2.0
+  VERSION        2.2.1
   GIT_REPOSITORY "https://github.com/Curve/eraser"
 )
 
