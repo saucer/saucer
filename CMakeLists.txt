@@ -281,7 +281,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_callable_traits
-  GIT_TAG        boost-1.86.0
+  GIT_TAG        boost-1.87.0
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
 )
 
@@ -293,13 +293,13 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        11.0.2
+  GIT_TAG        11.1.1
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
 CPMFindPackage(
   NAME           glaze
-  VERSION        4.0.2
+  VERSION        4.2.3
   GIT_REPOSITORY "https://github.com/stephenberry/glaze"
 )
 
@@ -311,7 +311,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        4.0.0
+  VERSION        5.1.0
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
@@ -329,7 +329,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           boost_preprocessor
-  GIT_TAG        boost-1.86.0
+  GIT_TAG        boost-1.87.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
