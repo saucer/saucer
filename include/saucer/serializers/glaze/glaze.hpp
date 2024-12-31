@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../serializer.hpp"
+#include "../generic/generic.hpp"
 
 #include <glaze/glaze.hpp>
 
@@ -16,7 +16,28 @@ namespace saucer::serializers::glaze
         glz::raw_json result;
     };
 
-    struct serializer : saucer::serializer
+    class interface
+    {
+        template <typename T>
+        using result = std::expected<T, std::string>;
+
+      public:
+        template <typename T>
+        static result<T> parse(const std::string &);
+
+      public:
+        template <typename T>
+        static result<T> parse(const result_data &);
+
+        template <typename T>
+        static result<T> parse(const function_data &);
+
+      public:
+        template <typename T>
+        static std::string serialize(T &&);
+    };
+
+    struct serializer : generic::serializer<function_data, result_data, interface>
     {
         ~serializer() override;
 
@@ -26,17 +47,6 @@ namespace saucer::serializers::glaze
 
       public:
         [[nodiscard]] parse_result parse(const std::string &data) const override;
-
-      public:
-        template <typename Function>
-        static auto serialize(Function &&func);
-
-        template <typename... Ts>
-        static auto serialize_args(Ts &&...params);
-
-      public:
-        template <typename T>
-        static auto resolve(std::promise<T> promise);
     };
 } // namespace saucer::serializers::glaze
 

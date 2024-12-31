@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tuple.hpp"
 #include "../executor.hpp"
 
 #include <utility>
@@ -14,83 +15,32 @@ namespace saucer::traits
 {
     namespace impl
     {
-        template <template <typename...> typename Transform, typename... Ts>
-        consteval auto transform_tuple(std::tuple<Ts...>) -> std::tuple<Transform<Ts>...>;
-
         template <typename T, typename... Ts>
         consteval auto apply_result(const std::tuple<Ts...> &) -> std::invoke_result_t<T, Ts...>;
 
         template <typename T, typename... Ts>
         consteval auto can_apply(const std::tuple<Ts...> &) -> std::bool_constant<std::invocable<T, Ts...>>;
-
-        template <std::size_t Count, typename... Ts, typename Tuple = std::tuple<Ts...>>
-        consteval auto extract(const Tuple &)
-        {
-            auto unpack = []<auto... Is>(std::index_sequence<Is...>)
-            {
-                return std::type_identity<std::tuple<std::tuple_element_t<Is, Tuple>...>>{};
-            };
-
-            return unpack(std::make_index_sequence<Count>());
-        }
-
-        template <typename... Ts, typename Tuple = std::tuple<Ts...>, auto Size = std::tuple_size_v<Tuple>>
-        consteval auto drop_last(const Tuple &value)
-        {
-            static constexpr auto count = Size <= 1 ? 0 : Size - 1;
-            return extract<count>(value);
-        }
-
-        template <typename... Ts, typename Tuple = std::tuple<Ts...>, auto Size = std::tuple_size_v<Tuple>>
-        consteval auto last(const Tuple &)
-        {
-            if constexpr (Size >= 1)
-            {
-                return std::type_identity<std::tuple_element_t<Size - 1, Tuple>>{};
-            }
-            else
-            {
-                return std::type_identity<void>{};
-            }
-        }
     } // namespace impl
-
-    template <typename T, template <typename...> typename Transform>
-    using transform_tuple_t = decltype(impl::transform_tuple<Transform>(std::declval<T>()));
 
     template <typename T, typename Args>
     using apply_result_t = decltype(impl::apply_result<T>(std::declval<Args>()));
 
     template <typename T, typename Args>
-    concept can_apply = decltype(impl::can_apply<T>(std::declval<Args>()))::value;
-
-    template <typename T>
-    using drop_last_t = decltype(impl::drop_last(std::declval<T>()))::type;
-
-    template <typename T>
-    using last_t = decltype(impl::last(std::declval<T>()))::type;
-
-    template <typename T, typename O>
-    using tuple_cat_t = decltype(std::tuple_cat(std::declval<T>(), std::declval<O>()));
-
-    template <typename T, typename... Ts>
-    using tuple_add_t = tuple_cat_t<T, std::tuple<Ts...>>;
+    static constexpr auto can_apply_v = decltype(impl::can_apply<T>(std::declval<Args>()))::value;
 
     template <typename T, template <typename...> typename Transform = std::decay_t>
-    using args_t = transform_tuple_t<boost::callable_traits::args_t<T>, Transform>;
+    using args_t = tuple::transform_t<boost::callable_traits::args_t<T>, Transform>;
 
     template <typename T>
     using result_t = boost::callable_traits::return_type_t<T>;
 
-    template <typename T,                                                                                                  //
-              typename Executor,                                                                                           //
-              typename Args,                                                                                               //
-              bool TakesExecutor = can_apply<T, tuple_add_t<Args, Executor>>,                                              //
-              typename Result    = apply_result_t<T, std::conditional_t<TakesExecutor, tuple_add_t<Args, Executor>, Args>> //
+    template <typename T,                                                                                                //
+              typename Executor,                                                                                         //
+              typename Args,                                                                                             //
+              bool TakesExecutor = can_apply_v<T, tuple::add_t<Args, Executor>>,                                         //
+              typename Result = apply_result_t<T, std::conditional_t<TakesExecutor, tuple::add_t<Args, Executor>, Args>> //
               >
-    struct converter
-    {
-    };
+    struct converter;
 
     template <typename T, typename Executor, typename Args>
     struct converter<T, Executor, Args, true, void>
@@ -137,7 +87,7 @@ namespace saucer::traits
         }
     };
 
-    template <typename T, typename Result = result_t<T>, typename Last = last_t<args_t<T>>>
+    template <typename T, typename Result = result_t<T>, typename Last = tuple::last_t<args_t<T>>>
     struct resolver
     {
         using args     = args_t<T>;
@@ -152,7 +102,7 @@ namespace saucer::traits
     template <typename T, typename Result, typename R, typename E>
     struct resolver<T, Result, executor<R, E>>
     {
-        using args     = drop_last_t<args_t<T>>;
+        using args     = tuple::drop_last_t<args_t<T>>;
         using error    = E;
         using result   = R;
         using executor = saucer::executor<R, E>;
