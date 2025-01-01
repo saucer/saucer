@@ -1,8 +1,7 @@
 #pragma once
 
 #include "webview.hpp"
-
-#include "serializers/glaze/glaze.hpp"
+#include "config.hpp"
 
 #include <future>
 #include <atomic>
@@ -49,8 +48,6 @@ namespace saucer
         [[sc::thread_safe]] void clear_exposed();
         [[sc::thread_safe]] void clear_exposed(const std::string &name);
     };
-
-    using default_serializer = serializers::glaze::serializer;
 
     template <Serializer Serializer = default_serializer>
     struct smartview : public smartview_core

@@ -2,8 +2,6 @@
 
 #include "glaze.hpp"
 
-#include <fmt/ranges.h>
-
 #include <rebind/name.hpp>
 #include <rebind/utils/enum.hpp>
 
@@ -14,7 +12,10 @@ namespace saucer::serializers::glaze
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
         template <typename T>
-        concept Serializable = glz::read_supported<opts.format, T>;
+        concept Readable = glz::read_supported<opts.format, T>;
+
+        template <typename T>
+        concept Writable = glz::write_supported<opts.format, T>;
 
         template <typename T>
         auto can_parse(T &value, const glz::json_t &data)
@@ -58,7 +59,7 @@ namespace saucer::serializers::glaze
     template <typename T>
     interface::result<T> interface::parse(const std::string &data)
     {
-        static_assert(impl::Serializable<T>, "T should be serializable");
+        static_assert(impl::Readable<T>, "T should be serializable");
 
         T rtn{};
 
@@ -93,7 +94,7 @@ namespace saucer::serializers::glaze
     template <typename T>
     std::string interface::serialize(T &&value)
     {
-        static_assert(impl::Serializable<T>, "T should be serializable");
+        static_assert(impl::Writable<T>, "T should be serializable");
         return glz::write<impl::opts>(std::forward<T>(value)).value_or("null");
     }
 } // namespace saucer::serializers::glaze

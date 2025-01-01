@@ -59,6 +59,7 @@ endif()
 
 set(saucer_webview2_version "1.0.2903.40"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
+set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
 
 # --------------------------------------------------------------------------------------------------------
 # Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
@@ -92,6 +93,13 @@ set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
   message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
+endif()
+
+set(saucer_valid_serializers Glaze Rflpp None)
+set_property(CACHE saucer_serializer PROPERTY STRINGS ${saucer_valid_serializers})
+
+if (NOT saucer_serializer IN_LIST saucer_valid_serializers)
+  message(FATAL_ERROR "Bad Serializer, expected one of ${saucer_valid_serializers}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -203,13 +211,10 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE 
     "src/module/unstable.cpp"
-
+    
     "src/app.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
-    
-    "src/requests.cpp"
-    "src/serializer.glaze.cpp"
 )
 
 # --------------------------------------------------------------------------------------------------------
@@ -298,12 +303,6 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           glaze
-  VERSION        4.2.3
-  GIT_REPOSITORY "https://github.com/stephenberry/glaze"
-)
-
-CPMFindPackage(
   NAME           flagpp
   VERSION        3.0
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
@@ -311,7 +310,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        5.1.0
+  VERSION        5.1.1
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
@@ -334,7 +333,7 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits glaze::glaze cr::ereignis fmt::fmt cr::rebind cr::poolparty cr::eraser)
+target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits cr::ereignis fmt::fmt cr::rebind cr::poolparty cr::eraser)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
@@ -400,6 +399,62 @@ if (saucer_backend STREQUAL "WebView2")
   include("cmake/webview2.cmake")
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Shlwapi gdiplus webview2::webview2)
 endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Setup Serializers
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_serializer STREQUAL "Glaze")
+  file(GLOB_RECURSE glaze_sources 
+    "src/glaze.*cpp"
+  )
+
+  target_sources(${PROJECT_NAME} PRIVATE ${glaze_sources})
+
+  CPMFindPackage(
+    NAME           glaze
+    VERSION        4.2.3
+    GIT_REPOSITORY "https://github.com/stephenberry/glaze"
+  )
+
+  target_link_libraries(${PROJECT_NAME} PUBLIC glaze::glaze)
+endif()
+
+if (saucer_serializer STREQUAL "Rflpp")
+  file(GLOB_RECURSE rflpp_sources 
+    "src/rfl.*cpp"
+  )
+
+  target_sources(${PROJECT_NAME} PRIVATE ${rflpp_sources})
+
+  CPMFindPackage(
+    NAME           reflectcpp
+    VERSION        0.16.0
+    GIT_REPOSITORY "https://github.com/getml/reflect-cpp"
+    SYSTEM         ON
+  )
+
+  target_link_libraries(${PROJECT_NAME} PUBLIC reflectcpp)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Configure Config
+# --------------------------------------------------------------------------------------------------------
+
+function(configure_config)
+  string(TOLOWER ${saucer_serializer} SERIALIZER)
+
+  if (NOT saucer_serializer STREQUAL "None")
+    set(INCLUDE_SERIALIZER "#include \"serializers/${SERIALIZER}/${SERIALIZER}.hpp\"")
+    set(DEFAULT_SERIALIZER "serializers::${SERIALIZER}::serializer")
+  else()
+    set(DEFAULT_SERIALIZER "void")
+  endif()
+
+  configure_file("config/config.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/config.hpp")
+endfunction()
+
+configure_config()
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Tests

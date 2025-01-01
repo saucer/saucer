@@ -2,18 +2,18 @@
 
 #include "../generic/generic.hpp"
 
-#include <glaze/glaze.hpp>
+#include <rfl/json.hpp>
 
-namespace saucer::serializers::glaze
+namespace saucer::serializers::rflpp
 {
     struct function_data : saucer::function_data
     {
-        glz::raw_json params;
+        rfl::Generic params;
     };
 
     struct result_data : saucer::result_data
     {
-        glz::raw_json result;
+        rfl::Generic result;
     };
 
     class interface
@@ -23,7 +23,7 @@ namespace saucer::serializers::glaze
 
       public:
         template <typename T>
-        static result<T> parse(const std::string &);
+        static result<T> parse(const auto &);
 
       public:
         template <typename T>
@@ -48,6 +48,6 @@ namespace saucer::serializers::glaze
       public:
         [[nodiscard]] parse_result parse(const std::string &) const override;
     };
-} // namespace saucer::serializers::glaze
+} // namespace saucer::serializers::rflpp
 
-#include "glaze.inl"
+#include "rflpp.inl"
