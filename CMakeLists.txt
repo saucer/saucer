@@ -5,6 +5,7 @@ project(saucer LANGUAGES CXX VERSION 5.0.0)
 # Library switches
 # --------------------------------------------------------------------------------------------------------
 
+option(saucer_static            "Build a static library"                            ON)
 option(saucer_modules           "Enable module support"                             ON)
 
 option(saucer_package_all       "Add all required dependencies to install target"  OFF)
@@ -122,7 +123,12 @@ endif()
 # Setup Library
 # --------------------------------------------------------------------------------------------------------
 
-add_library(${PROJECT_NAME} STATIC)
+if (saucer_static)
+  add_library(${PROJECT_NAME} STATIC)
+else()
+  add_library(${PROJECT_NAME} SHARED)
+endif()
+
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
