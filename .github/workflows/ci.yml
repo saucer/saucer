@@ -50,7 +50,7 @@ jobs:
             platform: Windows
             os: windows-latest
             install: "true"
-            cmake-args: "-Dsaucer_package_all=ON -T ClangCL" # TODO: Build with MSVC again after compiler bug is fixed (https://github.com/stephenberry/glaze/issues/1448)
+            cmake-args: "-Dsaucer_package_all=ON -Dsaucer_serializer=Rflpp"
 
     name: ${{ matrix.backend }}-${{ matrix.config }}
 
