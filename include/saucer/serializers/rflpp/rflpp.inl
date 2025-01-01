@@ -7,6 +7,19 @@ namespace saucer::serializers::rflpp
     namespace impl
     {
         template <typename T>
+        struct is_fixed_string : std::false_type
+        {
+        };
+
+        template <std::size_t N>
+        struct is_fixed_string<const char (&)[N]> : std::true_type
+        {
+        };
+
+        template <typename T>
+        concept fixed_string = is_fixed_string<T>::value;
+
+        template <typename T>
         concept Readable = requires(std::string data) {
             { rfl::json::read<std::remove_cvref_t<T>>(data) };
         };
@@ -60,6 +73,14 @@ namespace saucer::serializers::rflpp
     std::string interface::serialize(T &&value)
     {
         static_assert(impl::Writable<T>, "T should be serializable");
-        return rfl::json::write(std::forward<T>(value));
+
+        if constexpr (impl::fixed_string<T>)
+        {
+            return rfl::json::write(std::string{std::forward<T>(value)});
+        }
+        else
+        {
+            return rfl::json::write(std::forward<T>(value));
+        }
     }
 } // namespace saucer::serializers::rflpp
