@@ -419,7 +419,7 @@ if (saucer_serializer STREQUAL "Glaze")
 
   CPMFindPackage(
     NAME           glaze
-    VERSION        4.2.3
+    VERSION        4.2.4
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
