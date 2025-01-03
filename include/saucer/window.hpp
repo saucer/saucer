@@ -107,7 +107,10 @@ namespace saucer
       public:
         [[sc::thread_safe]] [[nodiscard]] bool resizable() const;
         [[sc::thread_safe]] [[nodiscard]] bool decorations() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
+        [[sc::thread_safe]] [[nodiscard]] bool click_through() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] std::string title() const;
@@ -136,7 +139,10 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_resizable(bool enabled);
         [[sc::thread_safe]] void set_decorations(bool enabled);
+
+      public:
         [[sc::thread_safe]] void set_always_on_top(bool enabled);
+        [[sc::thread_safe]] void set_click_through(bool enabled);
 
       public:
         [[sc::thread_safe]] void set_icon(const icon &icon);

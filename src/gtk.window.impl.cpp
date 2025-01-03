@@ -159,6 +159,26 @@ namespace saucer
         g_signal_connect(window.get(), "close-request", G_CALLBACK(+callback), self);
     }
 
+    void window::impl::update_region(saucer::window *self) const
+    {
+        auto callback = [](void *, double, double, saucer::window *self)
+        {
+            auto *widget  = GTK_WIDGET(self->m_impl->window.get());
+            auto *native  = gtk_widget_get_native(widget);
+            auto *surface = gtk_native_get_surface(native);
+
+            if (!surface)
+            {
+                return;
+            }
+
+            gdk_surface_set_input_region(surface, self->m_impl->region.get());
+        };
+
+        g_signal_connect(motion_controller, "motion", G_CALLBACK(+callback), self);
+        gtk_widget_add_controller(GTK_WIDGET(self->m_impl->window.get()), motion_controller);
+    }
+
     void window::impl::update_decorations(saucer::window *self) const
     {
         auto callback = [](void *, GParamSpec *, saucer::window *self)

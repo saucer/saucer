@@ -117,6 +117,16 @@ namespace saucer
         return m_impl->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
     }
 
+    bool window::click_through() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this] { return click_through(); });
+        }
+
+        return m_impl->window->windowFlags().testFlag(Qt::WindowTransparentForInput);
+    }
+
     std::pair<int, int> window::size() const
     {
         if (!m_parent->thread_safe())
@@ -304,6 +314,16 @@ namespace saucer
         }
 
         m_impl->set_flag(Qt::WindowStaysOnTopHint, enabled);
+    }
+
+    void window::set_click_through(bool enabled)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this, enabled] { return set_click_through(enabled); });
+        }
+
+        m_impl->set_flag(Qt::WindowTransparentForInput, enabled);
     }
 
     void window::set_icon(const icon &icon)

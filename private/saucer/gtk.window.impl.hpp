@@ -41,6 +41,10 @@ namespace saucer
         AdwHeaderBar *header;
 
       public:
+        GtkEventController *motion_controller;
+        utils::handle<cairo_region_t *, cairo_region_destroy> region;
+
+      public:
         std::optional<click_event> prev_click;
         [[nodiscard]] std::optional<event_data> prev_data() const;
 
@@ -53,6 +57,7 @@ namespace saucer
 
       public:
         void track(saucer::window *) const;
+        void update_region(saucer::window *) const;
         void update_decorations(saucer::window *) const;
     };
 } // namespace saucer

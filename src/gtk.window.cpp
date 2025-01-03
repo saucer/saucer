@@ -113,6 +113,16 @@ namespace saucer
         return {};
     }
 
+    bool window::click_through() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this] { return click_through(); });
+        }
+
+        return m_impl->motion_controller;
+    }
+
     std::string window::title() const
     {
         if (!m_parent->thread_safe())
@@ -311,6 +321,36 @@ namespace saucer
 
     void window::set_always_on_top(bool) // NOLINT(*-static)
     {
+    }
+
+    void window::set_click_through(bool enabled)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this, enabled] { return set_click_through(enabled); });
+        }
+
+        if (enabled && !m_impl->motion_controller)
+        {
+            m_impl->motion_controller = gtk_event_controller_motion_new();
+            m_impl->region.reset(cairo_region_create());
+            m_impl->update_region(this);
+
+            return;
+        }
+
+        if (enabled || !m_impl->motion_controller)
+        {
+            return;
+        }
+
+        auto *const widget = GTK_WIDGET(m_impl->window.get());
+        gtk_widget_remove_controller(widget, m_impl->motion_controller);
+
+        m_impl->motion_controller = nullptr;
+        m_impl->region.reset();
+
+        gtk_widget_queue_resize(widget);
     }
 
     void window::set_icon(const icon &) // NOLINT(*-static)
