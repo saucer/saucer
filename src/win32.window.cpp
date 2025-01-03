@@ -102,7 +102,7 @@ namespace saucer
             return dispatch([this] { return resizable(); });
         }
 
-        return GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
+        return GetWindowLongPtrW(m_impl->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
     }
 
     bool window::decorations() const
@@ -122,7 +122,17 @@ namespace saucer
             return dispatch([this] { return always_on_top(); });
         }
 
-        return GetWindowLong(m_impl->hwnd.get(), GWL_EXSTYLE) & WS_EX_TOPMOST;
+        return GetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE) & WS_EX_TOPMOST;
+    }
+
+    bool window::click_through() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this] { return click_through(); });
+        }
+
+        return GetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE) & WS_EX_TRANSPARENT;
     }
 
     std::string window::title() const
@@ -308,7 +318,7 @@ namespace saucer
         }
 
         static constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-        auto current_style          = GetWindowLongW(m_impl->hwnd.get(), GWL_STYLE);
+        auto current_style          = GetWindowLongPtrW(m_impl->hwnd.get(), GWL_STYLE);
 
         if (enabled)
         {
@@ -319,7 +329,7 @@ namespace saucer
             current_style &= ~flags;
         }
 
-        SetWindowLongW(m_impl->hwnd.get(), GWL_STYLE, current_style);
+        SetWindowLongPtrW(m_impl->hwnd.get(), GWL_STYLE, current_style);
     }
 
     void window::set_decorations(bool enabled)
@@ -345,6 +355,35 @@ namespace saucer
         }
 
         SetWindowPos(m_impl->hwnd.get(), enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+
+    void window::set_click_through(bool enabled)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this, enabled] { set_click_through(enabled); });
+        }
+
+        static constexpr auto flags = WS_EX_TRANSPARENT | WS_EX_LAYERED;
+        auto current_style          = GetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE);
+
+        if (enabled)
+        {
+            current_style |= flags;
+        }
+        else
+        {
+            current_style &= ~flags;
+        }
+
+        SetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE, current_style);
+
+        if (!enabled)
+        {
+            return;
+        }
+
+        SetLayeredWindowAttributes(m_impl->hwnd.get(), RGB(255, 255, 255), 255, 0);
     }
 
     void window::set_icon(const icon &icon)
