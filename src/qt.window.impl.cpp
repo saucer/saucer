@@ -18,6 +18,19 @@ namespace saucer
         window->setPalette(palette);
     }
 
+    void window::impl::set_flag(Qt::WindowType flag, bool enabled) const
+    {
+        const auto shown = window->isVisible();
+        window->setWindowFlag(flag, enabled);
+
+        if (!shown || shown == window->isVisible())
+        {
+            return;
+        }
+
+        window->show();
+    }
+
     window::impl::main_window::main_window(saucer::window *parent) : m_parent(parent) {}
 
     void window::impl::main_window::changeEvent(QEvent *event)

@@ -293,7 +293,7 @@ namespace saucer
             return dispatch([this, enabled] { return set_decorations(enabled); });
         }
 
-        m_impl->window->setWindowFlag(Qt::FramelessWindowHint, !enabled);
+        m_impl->set_flag(Qt::FramelessWindowHint, !enabled);
     }
 
     void window::set_always_on_top(bool enabled)
@@ -303,7 +303,7 @@ namespace saucer
             return dispatch([this, enabled] { return set_always_on_top(enabled); });
         }
 
-        m_impl->window->setWindowFlag(Qt::WindowStaysOnTopHint, enabled);
+        m_impl->set_flag(Qt::WindowStaysOnTopHint, enabled);
     }
 
     void window::set_icon(const icon &icon)
