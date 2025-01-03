@@ -132,6 +132,18 @@ namespace saucer
         return m_impl->window.level == kCGMaximumWindowLevelKey;
     }
 
+    bool window::click_through() const
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this] { return click_through(); });
+        }
+
+        return m_impl->window.ignoresMouseEvents;
+    }
+
     std::string window::title() const
     {
         const utils::autorelease_guard guard{};
@@ -329,6 +341,18 @@ namespace saucer
         }
 
         m_impl->window.level = enabled ? kCGMaximumWindowLevelKey : kCGNormalWindowLevelKey;
+    }
+
+    void window::set_click_through(bool enabled)
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return dispatch([this, enabled] { return set_click_through(enabled); });
+        }
+
+        m_impl->window.ignoresMouseEvents = enabled;
     }
 
     void window::set_icon(const icon &icon)
