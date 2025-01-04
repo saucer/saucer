@@ -293,7 +293,9 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->m_events.at<web_event::navigated>().fire(self->url());
+            auto url = self->url();
+            self->m_parent->post([self, url] { self->m_events.at<web_event::navigated>().fire(url); });
+
             return S_OK;
         };
 
@@ -325,7 +327,9 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->m_events.at<web_event::title>().fire(self->page_title());
+            auto title = self->page_title();
+            self->m_parent->post([self, title] { self->m_events.at<web_event::title>().fire(title); });
+
             return S_OK;
         };
 
@@ -347,7 +351,7 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->m_events.at<web_event::load>().fire(state::finished);
+            self->m_parent->post([self] { self->m_events.at<web_event::load>().fire(state::finished); });
             return S_OK;
         };
 

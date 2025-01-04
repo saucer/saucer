@@ -77,7 +77,7 @@ namespace saucer
         auto navigation_starting = [this](auto, ICoreWebView2NavigationStartingEventArgs *args)
         {
             m_impl->dom_loaded = false;
-            m_events.at<web_event::load>().fire(state::started);
+            m_parent->post([this] { m_events.at<web_event::load>().fire(state::started); });
 
             auto request = navigation{{args}};
 
@@ -111,7 +111,7 @@ namespace saucer
             }
 
             m_impl->pending.clear();
-            m_events.at<web_event::dom_ready>().fire();
+            m_parent->post([this] { m_events.at<web_event::dom_ready>().fire(); });
 
             return S_OK;
         };
