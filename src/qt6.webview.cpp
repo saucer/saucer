@@ -13,7 +13,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, script] { inject(script); });
+            return m_parent->dispatch([this, script] { inject(script); });
         }
 
         if (script.permanent && !std::ranges::contains(m_impl->permanent_scripts, script))

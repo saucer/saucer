@@ -83,10 +83,6 @@ namespace saucer
         std::shared_ptr<application> m_parent;
 
       protected:
-        template <typename Callback>
-        [[nodiscard]] auto dispatch(Callback &&) const;
-
-      protected:
         window(const preferences &);
 
       public:
@@ -95,6 +91,9 @@ namespace saucer
       public:
         template <bool Stable = true>
         [[nodiscard]] natives<window, Stable> native() const;
+
+      public:
+        [[nodiscard]] application &parent() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool visible() const;
@@ -164,5 +163,3 @@ namespace saucer
         [[sc::thread_safe]] std::uint64_t on(events::type<Event>);
     };
 } // namespace saucer
-
-#include "window.inl"

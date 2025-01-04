@@ -151,7 +151,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return favicon(); });
+            return m_parent->dispatch([this] { return favicon(); });
         }
 
         return {{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view))}};
@@ -161,7 +161,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return page_title(); });
+            return m_parent->dispatch([this] { return page_title(); });
         }
 
         return webkit_web_view_get_title(m_impl->web_view);
@@ -171,7 +171,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return dev_tools(); });
+            return m_parent->dispatch([this] { return dev_tools(); });
         }
 
         auto *const settings = webkit_web_view_get_settings(m_impl->web_view);
@@ -182,7 +182,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return url(); });
+            return m_parent->dispatch([this] { return url(); });
         }
 
         const auto *rtn = webkit_web_view_get_uri(m_impl->web_view);
@@ -199,7 +199,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return context_menu(); });
+            return m_parent->dispatch([this] { return context_menu(); });
         }
 
         return m_impl->context_menu;
@@ -209,7 +209,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return background(); });
+            return m_parent->dispatch([this] { return background(); });
         }
 
         GdkRGBA color{};
@@ -227,7 +227,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return force_dark_mode(); });
+            return m_parent->dispatch([this] { return force_dark_mode(); });
         }
 
         AdwColorScheme scheme{};
@@ -240,7 +240,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_dev_tools(enabled); });
+            return m_parent->dispatch([this, enabled] { return set_dev_tools(enabled); });
         }
 
         auto *const settings  = webkit_web_view_get_settings(m_impl->web_view);
@@ -261,7 +261,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_context_menu(enabled); });
+            return m_parent->dispatch([this, enabled] { return set_context_menu(enabled); });
         }
 
         m_impl->context_menu = enabled;
@@ -271,7 +271,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, enabled] { return set_force_dark_mode(enabled); });
+            return m_parent->dispatch([this, enabled] { return set_force_dark_mode(enabled); });
         }
 
         g_object_set(adw_style_manager_get_default(), "color-scheme",
@@ -282,7 +282,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, color] { return set_background(color); });
+            return m_parent->dispatch([this, color] { return set_background(color); });
         }
 
         const auto [r, g, b, a] = color;
@@ -307,7 +307,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, url] { return set_url(url); });
+            return m_parent->dispatch([this, url] { return set_url(url); });
         }
 
         webkit_web_view_load_uri(m_impl->web_view, url.c_str());
@@ -317,7 +317,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return back(); });
+            return m_parent->dispatch([this] { return back(); });
         }
 
         webkit_web_view_go_back(m_impl->web_view);
@@ -327,7 +327,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return forward(); });
+            return m_parent->dispatch([this] { return forward(); });
         }
 
         webkit_web_view_go_forward(m_impl->web_view);
@@ -337,7 +337,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return reload(); });
+            return m_parent->dispatch([this] { return reload(); });
         }
 
         webkit_web_view_reload(m_impl->web_view);
@@ -347,7 +347,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this] { return clear_scripts(); });
+            return m_parent->dispatch([this] { return clear_scripts(); });
         }
 
         auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
@@ -371,7 +371,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, script] { return inject(script); });
+            return m_parent->dispatch([this, script] { return inject(script); });
         }
 
         const auto time  = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
@@ -390,7 +390,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, code] { return execute(code); });
+            return m_parent->dispatch([this, code] { return execute(code); });
         }
 
         if (!m_impl->dom_loaded)
@@ -406,8 +406,8 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name, handler = std::move(resolver), policy] mutable
-                            { return handle_scheme(name, std::move(handler), policy); });
+            return m_parent->dispatch([this, name, handler = std::move(resolver), policy] mutable
+                                      { return handle_scheme(name, std::move(handler), policy); });
         }
 
         if (!impl::schemes.contains(name))
@@ -423,7 +423,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, name] { return remove_scheme(name); });
+            return m_parent->dispatch([this, name] { return remove_scheme(name); });
         }
 
         if (!impl::schemes.contains(name))
@@ -438,7 +438,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, event] { return clear(event); });
+            return m_parent->dispatch([this, event] { return clear(event); });
         }
 
         m_events.clear(event);
@@ -448,7 +448,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, event, id] { return remove(event, id); });
+            return m_parent->dispatch([this, event, id] { return remove(event, id); });
         }
 
         m_events.remove(event, id);
@@ -459,7 +459,8 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable
+                                      { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -471,8 +472,8 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return dispatch([this, callback = std::move(callback)] mutable //
-                            { return on<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable
+                                      { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
