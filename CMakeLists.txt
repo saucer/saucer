@@ -219,6 +219,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/module/unstable.cpp"
     
     "src/app.cpp"
+    "src/window.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
 )

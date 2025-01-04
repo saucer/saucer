@@ -6,7 +6,7 @@
 
 namespace saucer
 {
-    template <typename Callback>
+    template <bool Get, typename Callback>
     auto application::dispatch(Callback &&callback) const
     {
         auto task = poolparty::packaged_task{std::forward<Callback>(callback)};
@@ -14,6 +14,13 @@ namespace saucer
 
         post([task = std::move(task)]() mutable { std::invoke(task); });
 
-        return rtn;
+        if constexpr (Get)
+        {
+            return rtn.get();
+        }
+        else
+        {
+            return rtn;
+        }
     }
 } // namespace saucer

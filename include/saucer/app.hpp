@@ -57,7 +57,7 @@ namespace saucer
         void post(callback_t) const;
 
       public:
-        template <typename Callback>
+        template <bool Get = true, typename Callback>
         [[sc::thread_safe]] auto dispatch(Callback &&) const;
 
       public:
