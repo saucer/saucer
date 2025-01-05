@@ -14,6 +14,9 @@
 
 namespace saucer
 {
+    template <typename T>
+    struct safe_deleter;
+
     struct options
     {
         required<std::string> id;
@@ -31,6 +34,8 @@ namespace saucer
         struct impl;
 
       private:
+        template <typename T>
+        using safe_ptr   = std::unique_ptr<T, safe_deleter<T>>;
         using callback_t = std::move_only_function<void()>;
 
       private:
@@ -59,6 +64,10 @@ namespace saucer
       public:
         template <bool Get = true, typename Callback>
         [[sc::thread_safe]] auto dispatch(Callback &&) const;
+
+      public:
+        template <typename T, typename... Ts>
+        [[sc::thread_safe]] safe_ptr<T> make(Ts &&...) const;
 
       public:
         template <bool Blocking = true>

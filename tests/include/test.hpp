@@ -9,37 +9,6 @@ namespace saucer::tests
 {
     namespace impl
     {
-        template <typename T>
-        struct safe_deleter
-        {
-            std::shared_ptr<saucer::application> app;
-
-          public:
-            void operator()(T *ptr)
-            {
-                if (!app->thread_safe())
-                {
-                    return app->dispatch([this, ptr] { return (*this)(ptr); });
-                }
-
-                delete ptr;
-            };
-        };
-
-        template <typename T>
-        std::shared_ptr<T> get(std::shared_ptr<saucer::application> app)
-        {
-            if (!app->thread_safe())
-            {
-                return app->dispatch([app] { return get<T>(app); });
-            }
-
-            auto *ptr = new T{{.application = app}};
-            ptr->show();
-
-            return {ptr, impl::safe_deleter<T>{app}};
-        }
-
         enum launch : int
         {
             async = 1 << 0,
@@ -51,21 +20,32 @@ namespace saucer::tests
         {
             std::string name;
 
+          private:
+            std::shared_ptr<T> get()
+            {
+                auto app = application::active();
+                auto rtn = app->make<T>(preferences{.application = app});
+
+                rtn->show();
+
+                return rtn;
+            }
+
           public:
             constexpr auto operator=(std::function<void(std::shared_ptr<T>)> test) // NOLINT(*-assign*)
             {
-                return boost::ut::test(name) = [test = std::move(test)]
+                return boost::ut::test(name) = [this, test = std::move(test)]
                 {
-                    auto app = saucer::application::active();
+                    auto app = application::active();
 
                     if constexpr (Policy & launch::sync)
                     {
-                        std::invoke(test, get<T>(app));
+                        std::invoke(test, get());
                     }
 
                     if constexpr (Policy & launch::async)
                     {
-                        auto fut = std::async(std::launch::async, test, get<T>(app));
+                        auto fut = std::async(std::launch::async, test, get());
                         app->run();
                         fut.get();
                     }
