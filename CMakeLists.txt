@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(saucer LANGUAGES CXX VERSION 5.0.0)
+project(saucer LANGUAGES CXX VERSION 6.0.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Library switches
