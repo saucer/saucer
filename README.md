@@ -69,6 +69,13 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 * 🧰 Customizability
   > Modules allow access to platform specific implementations, making it possible to tweak the library to your hearts content
+  
+  * Official Modules
+    * 🖥️ [saucer/desktop](https://github.com/saucer/desktop) 
+      > 📂 File-Picker and URI-Launch support
+    
+    * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
+      > 📄 Print current page as PDF
 
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!
