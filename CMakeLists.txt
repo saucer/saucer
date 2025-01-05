@@ -480,7 +480,8 @@ if (saucer_examples)
   message(STATUS "[saucer] Building Examples")
   add_subdirectory("examples/json-bridge")
   add_subdirectory("examples/embedding")
-  add_subdirectory("examples/modules")
+  add_subdirectory("examples/desktop")
+  add_subdirectory("examples/pdf")
 endif()
 
 # --------------------------------------------------------------------------------------------------------

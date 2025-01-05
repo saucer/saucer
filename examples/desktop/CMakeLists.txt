@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(module_example LANGUAGES CXX VERSION 1.0)
+project(desktop_example LANGUAGES CXX VERSION 1.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Create executable
@@ -15,7 +15,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
 
 CPMFindPackage(
   NAME           saucer-desktop
-  GIT_TAG        main
+  VERSION        2.0.0
   GIT_REPOSITORY "https://github.com/saucer/desktop"
 )
 
