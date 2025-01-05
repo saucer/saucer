@@ -1,14 +1,13 @@
 #include <saucer/webview.hpp>
 #include <saucer/modules/pdf.hpp>
 
-#include <iostream>
 #include <print>
 
 int main(int argc, char **argv)
 {
     if (argc < 3)
     {
-        std::println(std::cerr, "Usage: {} <url> <file>", argv[0]);
+        std::println(stderr, "Usage: {} <url> <file>", argv[0]);
         return 1;
     }
 
