@@ -20,6 +20,9 @@ namespace saucer::traits
 
         template <typename T, typename... Ts>
         consteval auto can_apply(const std::tuple<Ts...> &) -> std::bool_constant<std::invocable<T, Ts...>>;
+
+        template <typename T, typename D = std::decay_t<T>>
+        using arg_transformer_t = std::conditional_t<std::same_as<D, std::string_view>, std::string, D>;
     } // namespace impl
 
     template <typename T, typename Args>
@@ -28,7 +31,7 @@ namespace saucer::traits
     template <typename T, typename Args>
     static constexpr auto can_apply_v = decltype(impl::can_apply<T>(std::declval<Args>()))::value;
 
-    template <typename T, template <typename...> typename Transform = std::decay_t>
+    template <typename T, template <typename...> typename Transform = impl::arg_transformer_t>
     using args_t = tuple::transform_t<boost::callable_traits::args_t<T>, Transform>;
 
     template <typename T>
