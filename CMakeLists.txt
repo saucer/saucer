@@ -18,6 +18,7 @@ option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"     
 option(saucer_private_webkit    "Enable private api usage for wkwebview"            ON)
 
 option(saucer_no_version_check  "Skip compiler version check"                      OFF)
+option(saucer_no_polyfill       "Disable automatic polyfills"                      OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
@@ -237,7 +238,7 @@ include("cmake/polyfill.cmake")
 
 check_features()
 
-if (saucer_polyfill_thread)
+if (NOT saucer_no_polyfill AND saucer_polyfill_thread)
   message(STATUS "[saucer] Using std::jthread polyfill")
 
   CPMFindPackage(
@@ -250,7 +251,7 @@ if (saucer_polyfill_thread)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/jthread.hpp")
 endif()
 
-if (saucer_polyfill_functional)
+if (NOT saucer_no_polyfill AND saucer_polyfill_functional)
   message(STATUS "[saucer] Using std::move_only_function polyfill")
 
   CPMFindPackage(
@@ -263,7 +264,7 @@ if (saucer_polyfill_functional)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
 endif()
 
-if (saucer_polyfill_expected)
+if (NOT saucer_no_polyfill AND saucer_polyfill_expected)
   message(STATUS "[saucer] Using std::expected polyfill")
 
   CPMFindPackage(
