@@ -14,7 +14,7 @@ namespace saucer
 
     struct smartview_core::impl
     {
-        using exposed = std::pair<function, launch>;
+        using exposed = std::shared_ptr<std::pair<function, launch>>;
 
       public:
         lock<std::unordered_map<std::string, exposed>> functions;
@@ -87,41 +87,41 @@ namespace saucer
             return reject(message->id, fmt::format("\"No exposed function '{}'\"", message->name));
         }
 
-        auto resolve = [parent = m_impl->self, id = message->id](const auto &result)
+        auto resolve = [shared = m_impl->self, id = message->id](const auto &result)
         {
-            auto core = parent->read();
+            auto self = shared->read();
 
-            if (!core.value())
+            if (!self.value())
             {
                 return;
             }
 
-            core.value()->resolve(id, result);
+            self.value()->resolve(id, result);
         };
 
-        auto reject = [parent = m_impl->self, id = message->id](const auto &error)
+        auto reject = [shared = m_impl->self, id = message->id](const auto &error)
         {
-            auto core = parent->read();
+            auto self = shared->read();
 
-            if (!core.value())
+            if (!self.value())
             {
                 return;
             }
 
-            core.value()->reject(id, error);
+            self.value()->reject(id, error);
         };
 
-        auto executor        = serializer::executor{std::move(resolve), std::move(reject)};
-        auto &[func, policy] = exposed;
+        auto executor     = serializer::executor{std::move(resolve), std::move(reject)};
+        const auto policy = exposed->second;
 
         if (policy == launch::sync)
         {
-            return std::invoke(func, std::move(message), executor);
+            return std::invoke(exposed->first, std::move(message), executor);
         }
 
         m_parent->pool().emplace(
-            [func = std::move(func), message = std::move(message), executor = std::move(executor)]() mutable
-            { std::invoke(func, std::move(message), executor); });
+            [exposed = std::move(exposed), message = std::move(message), executor = std::move(executor)]() mutable
+            { std::invoke(exposed->first, std::move(message), executor); });
     }
 
     void smartview_core::resolve(std::unique_ptr<result_data> message)
@@ -141,7 +141,7 @@ namespace saucer
     void smartview_core::add_function(std::string name, function &&resolve, launch policy)
     {
         auto functions = m_impl->functions.write();
-        functions->emplace(std::move(name), std::make_pair(std::move(resolve), policy));
+        functions->emplace(std::move(name), std::make_shared<impl::exposed::element_type>(std::move(resolve), policy));
     }
 
     void smartview_core::add_evaluation(resolver &&resolve, const std::string &code)

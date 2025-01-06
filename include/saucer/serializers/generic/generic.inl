@@ -61,8 +61,8 @@ namespace saucer::serializers::generic
         using converter = resolver::converter;
         using args      = resolver::args;
 
-        return [resolver = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::function_data> data,
-                                                                             serializer::executor exec)
+        return [func = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::function_data> data,
+                                                                         serializer::executor exec) mutable
         {
             const auto &message = *static_cast<FunctionData *>(data.get());
             const auto parsed   = impl::parse<Interface, args>(message);
@@ -85,7 +85,7 @@ namespace saucer::serializers::generic
             auto executor = typename resolver::executor{std::move(resolve), std::move(reject)};
             auto params   = std::tuple_cat(std::move(parsed.value()), std::make_tuple(std::move(executor)));
 
-            std::apply(resolver, std::move(params));
+            std::apply(func, std::move(params));
         };
     }
 

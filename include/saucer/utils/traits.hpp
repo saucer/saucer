@@ -57,7 +57,7 @@ namespace saucer::traits
         static decltype(auto) convert(T &&callable)
             requires std::same_as<Result, R>
         {
-            return [callable = std::forward<T>(callable)](Ts... args, auto &&executor)
+            return [callable = std::forward<T>(callable)](Ts &&...args, auto &&executor) mutable
             {
                 if constexpr (std::is_void_v<Result>)
                 {
@@ -77,7 +77,7 @@ namespace saucer::traits
     {
         static decltype(auto) convert(T &&callable)
         {
-            return [callable = std::forward<T>(callable)](Ts... args, auto &&executor)
+            return [callable = std::forward<T>(callable)](Ts &&...args, auto &&executor) mutable
             {
                 std::invoke(callable, std::forward<Ts>(args)...)
                     .transform(executor.resolve)
