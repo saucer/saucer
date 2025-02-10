@@ -52,7 +52,7 @@ namespace saucer
     void utils::extend_frame(HWND hwnd, std::array<int, 4> area)
     {
         auto dwmapi = module_handle{LoadLibraryW(L"Dwmapi.dll")};
-        auto *func  = GetProcAddress(dwmapi.get(), "DwmExtendFrameIntoClientAreai");
+        auto *func  = GetProcAddress(dwmapi.get(), "DwmExtendFrameIntoClientArea");
 
         if (!func)
         {
