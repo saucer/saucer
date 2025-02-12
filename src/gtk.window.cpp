@@ -5,12 +5,8 @@
 
 #include <fmt/core.h>
 #include <rebind/enum.hpp>
-#include <flagpp/flags.hpp>
 
 #include <cassert>
-
-template <>
-constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
@@ -234,47 +230,13 @@ namespace saucer
             return m_parent->dispatch([this, edge] { return start_resize(edge); });
         }
 
-        GdkSurfaceEdge translated{};
-
-        switch (std::to_underlying(edge))
+        if (!resizable())
         {
-            using enum window_edge;
-
-        case std::to_underlying(top):
-            translated = GDK_SURFACE_EDGE_NORTH;
-            break;
-        case std::to_underlying(bottom):
-            translated = GDK_SURFACE_EDGE_SOUTH;
-            break;
-        case std::to_underlying(left):
-            translated = GDK_SURFACE_EDGE_WEST;
-            break;
-        case std::to_underlying(right):
-            translated = GDK_SURFACE_EDGE_EAST;
-            break;
-        case top | left:
-            translated = GDK_SURFACE_EDGE_NORTH_WEST;
-            break;
-        case top | right:
-            translated = GDK_SURFACE_EDGE_NORTH_EAST;
-            break;
-        case bottom | left:
-            translated = GDK_SURFACE_EDGE_SOUTH_WEST;
-            break;
-        case bottom | right:
-            translated = GDK_SURFACE_EDGE_SOUTH_EAST;
-            break;
+            set_resizable(true);
+            m_impl->prev_resizable = false;
         }
 
-        const auto data = m_impl->prev_data();
-
-        if (!data)
-        {
-            return;
-        }
-
-        const auto [device, surface, button, time, x, y] = data.value();
-        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
+        m_parent->post([this, edge] { m_impl->start_resize(edge); });
     }
 
     void window::set_minimized(bool enabled)

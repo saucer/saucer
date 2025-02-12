@@ -117,7 +117,7 @@ namespace saucer
 
         auto *const controller = gtk_gesture_click_new();
 
-        auto on_click = [](GtkGestureClick *gesture, gint, double, double, void *data)
+        auto on_click = [](GtkGestureClick *gesture, gint, gdouble, gdouble, void *data)
         {
             auto *const self       = reinterpret_cast<webview *>(data);
             auto *const controller = GTK_EVENT_CONTROLLER(gesture);
@@ -129,7 +129,23 @@ namespace saucer
             });
         };
 
+        auto release = [](GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, void *data)
+        {
+            auto *const self = reinterpret_cast<webview *>(data);
+            auto &previous   = self->window::m_impl->prev_resizable;
+
+            if (!previous.has_value())
+            {
+                return;
+            }
+
+            self->set_resizable(previous.value());
+            previous.reset();
+        };
+
         g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
+        g_signal_connect(controller, "unpaired-release", G_CALLBACK(+release), this);
+
         gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view), GTK_EVENT_CONTROLLER(controller));
 
         inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
