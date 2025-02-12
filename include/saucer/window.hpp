@@ -21,7 +21,7 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    enum class window_event
+    enum class window_event : std::uint8_t
     {
         decorated,
         maximize,
@@ -39,6 +39,7 @@ namespace saucer
         full,
     };
 
+    enum class window_edge : std::uint8_t
     {
         top    = 1 << 0,
         bottom = 1 << 1,
@@ -46,7 +47,7 @@ namespace saucer
         right  = 1 << 3,
     };
 
-    enum class policy
+    enum class policy : std::uint8_t
     {
         allow,
         block,

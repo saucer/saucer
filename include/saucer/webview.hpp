@@ -24,7 +24,7 @@
 
 namespace saucer
 {
-    enum class web_event
+    enum class web_event : std::uint8_t
     {
         dom_ready,
         navigated,
@@ -34,13 +34,13 @@ namespace saucer
         load,
     };
 
-    enum class state
+    enum class state : std::uint8_t
     {
         started,
         finished,
     };
 
-    enum class launch
+    enum class launch : std::uint8_t
     {
         sync,
         async,
