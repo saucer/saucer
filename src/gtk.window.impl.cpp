@@ -183,12 +183,19 @@ namespace saucer
     {
         auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
-            const auto decorations = self->decorations();
+            auto &prev         = self->m_impl->prev_decoration;
+            const auto current = self->decoration();
 
-            gtk_widget_set_visible(GTK_WIDGET(self->m_impl->header), decorations);
-            self->m_events.at<window_event::decorated>().fire(decorations);
+            if (prev && prev.value() == current)
+            {
+                return;
+            }
+
+            prev.emplace(current);
+            self->m_events.at<window_event::decorated>().fire(current);
         };
 
         g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);
+        g_signal_connect(header, "notify::visible", G_CALLBACK(+callback), self);
     }
 } // namespace saucer

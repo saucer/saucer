@@ -34,7 +34,10 @@ namespace saucer
     struct window::impl
     {
         utils::handle<GtkWindow *, gtk_window_destroy> window;
+
+      public:
         utils::g_object_ptr<GtkCssProvider> style;
+        std::optional<window_decoration> prev_decoration;
 
       public:
         GtkBox *content;
