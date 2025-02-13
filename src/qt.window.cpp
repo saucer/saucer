@@ -87,14 +87,24 @@ namespace saucer
         return m_impl->window->maximumSize() != m_impl->window->minimumSize();
     }
 
-    bool window::decorations() const
+    window_decoration window::decoration() const
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this] { return decorations(); });
+            return m_parent->dispatch([this] { return decoration(); });
         }
 
-        return !m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint);
+        if (m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint))
+        {
+            return window_decoration::none;
+        }
+
+        if (m_impl->window->windowFlags().testFlag(Qt::CustomizeWindowHint))
+        {
+            return window_decoration::partial;
+        }
+
+        return window_decoration::full;
     }
 
     std::string window::title() const
@@ -296,16 +306,6 @@ namespace saucer
         m_impl->window->setMinimumSize(m_impl->min_size);
     }
 
-    void window::set_decorations(bool enabled)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_decorations(enabled); });
-        }
-
-        m_impl->set_flag(Qt::FramelessWindowHint, !enabled);
-    }
-
     void window::set_always_on_top(bool enabled)
     {
         if (!m_parent->thread_safe())
@@ -349,6 +349,17 @@ namespace saucer
         }
 
         m_impl->window->setWindowTitle(QString::fromStdString(title));
+    }
+
+    void window::set_decoration(window_decoration decoration)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
+        }
+
+        m_impl->set_flag(Qt::FramelessWindowHint, decoration == window_decoration::none);
+        m_impl->set_flag(Qt::CustomizeWindowHint, decoration == window_decoration::partial);
     }
 
     void window::set_size(int width, int height)

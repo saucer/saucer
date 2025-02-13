@@ -39,7 +39,7 @@ namespace saucer
 
         if (event->type() == QEvent::ParentChange)
         {
-            m_parent->m_events.at<window_event::decorated>().fire(m_parent->decorations());
+            m_parent->m_events.at<window_event::decorated>().fire(m_parent->decoration());
             return;
         }
 
