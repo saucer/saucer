@@ -313,7 +313,7 @@ namespace saucer
             return m_parent->dispatch([this, enabled] { return set_always_on_top(enabled); });
         }
 
-        m_impl->set_flag(Qt::WindowStaysOnTopHint, enabled);
+        m_impl->set_flags({{Qt::WindowStaysOnTopHint, enabled}});
     }
 
     void window::set_click_through(bool enabled)
@@ -323,7 +323,7 @@ namespace saucer
             return m_parent->dispatch([this, enabled] { return set_click_through(enabled); });
         }
 
-        m_impl->set_flag(Qt::WindowTransparentForInput, enabled);
+        m_impl->set_flags({{Qt::WindowTransparentForInput, enabled}});
     }
 
     void window::set_icon(const icon &icon)
@@ -358,8 +358,10 @@ namespace saucer
             return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
         }
 
-        m_impl->set_flag(Qt::FramelessWindowHint, decoration == window_decoration::none);
-        m_impl->set_flag(Qt::CustomizeWindowHint, decoration == window_decoration::partial);
+        m_impl->set_flags({
+            {Qt::CustomizeWindowHint, decoration == window_decoration::partial},
+            {Qt::FramelessWindowHint, decoration == window_decoration::none},
+        });
     }
 
     void window::set_size(int width, int height)

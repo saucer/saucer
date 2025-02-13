@@ -18,10 +18,14 @@ namespace saucer
         window->setPalette(palette);
     }
 
-    void window::impl::set_flag(Qt::WindowType flag, bool enabled) const
+    void window::impl::set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const
     {
         const auto shown = window->isVisible();
-        window->setWindowFlag(flag, enabled);
+
+        for (const auto &[flag, enabled] : flags)
+        {
+            window->setWindowFlag(flag, enabled);
+        }
 
         if (!shown || shown == window->isVisible())
         {
@@ -45,6 +49,9 @@ namespace saucer
 
         if (event->type() == QEvent::ActivationChange)
         {
+#ifdef SAUCER_QT5
+            m_parent->m_events.at<window_event::decorated>().fire(m_parent->decoration());
+#endif
             m_parent->m_events.at<window_event::focus>().fire(isActiveWindow());
             return;
         }
