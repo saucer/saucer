@@ -81,27 +81,25 @@ namespace saucer
     std::optional<icon> icon::from(const stash<> &ico)
     {
         ComPtr<IStream> data = SHCreateMemStream(ico.data(), static_cast<DWORD>(ico.size()));
-        auto *bitmap         = Gdiplus::Bitmap::FromStream(data.Get());
+        auto bitmap          = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromStream(data.Get())};
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {
-            delete bitmap;
             return std::nullopt;
         }
 
-        return icon{{std::shared_ptr<Gdiplus::Bitmap>{bitmap}}};
+        return icon{{std::move(bitmap)}};
     }
 
     std::optional<icon> icon::from(const fs::path &file)
     {
-        auto *bitmap = Gdiplus::Bitmap::FromFile(file.wstring().c_str());
+        auto bitmap = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromFile(file.wstring().c_str())};
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {
-            delete bitmap;
             return std::nullopt;
         }
 
-        return icon{{std::shared_ptr<Gdiplus::Bitmap>{bitmap}}};
+        return icon{{std::move(bitmap)}};
     }
 } // namespace saucer
