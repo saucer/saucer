@@ -117,7 +117,7 @@ if (saucer_backend STREQUAL "Default")
     set(saucer_backend WebKitGtk)
   endif()
 
-  message(STATUS "[saucer] Backend is 'Defaut', using ${saucer_backend}")
+  message(STATUS "[saucer] Backend is 'Default', using ${saucer_backend}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
