@@ -92,7 +92,7 @@ namespace saucer
         const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
-                                  self->m_events.at<window_event::decorated>().fire(self->decorations());
+                                  self->m_events.at<window_event::decorated>().fire(self->decoration());
                               }];
 
         [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];

@@ -15,6 +15,10 @@ namespace saucer
 {
     using observer_callback_t = std::function<void()>;
 
+    static constexpr auto mask = NSWindowStyleMaskClosable         //
+                                 | NSWindowStyleMaskMiniaturizable //
+                                 | NSWindowStyleMaskTitled;
+
     struct click_event
     {
         NSRect frame;
@@ -27,7 +31,7 @@ namespace saucer
         utils::objc_ptr<WindowDelegate> delegate;
 
       public:
-        NSWindowStyleMask prev_mask;
+        NSWindowStyleMask masks;
         std::function<void()> on_closed;
 
       public:

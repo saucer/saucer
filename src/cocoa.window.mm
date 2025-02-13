@@ -17,15 +17,15 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, [] { impl::init_objc(); });
 
-        static constexpr auto mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled |
-                                     NSWindowStyleMaskResizable;
-
         const utils::autorelease_guard guard{};
 
         m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                      styleMask:mask
                                                        backing:NSBackingStoreBuffered
                                                          defer:NO];
+
+        // Due to the way flags are handled, the resizable flag is not initially set.
+        set_resizable(true);
 
         m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
 
@@ -108,18 +108,6 @@ namespace saucer
         return m_impl->window.styleMask & NSWindowStyleMaskResizable;
     }
 
-    bool window::decorations() const
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return decorations(); });
-        }
-
-        return m_impl->window.styleMask != NSWindowStyleMaskBorderless;
-    }
-
     bool window::always_on_top() const
     {
         const utils::autorelease_guard guard{};
@@ -154,6 +142,28 @@ namespace saucer
         }
 
         return m_impl->window.title.UTF8String;
+    }
+
+    window_decoration window::decoration() const
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return decoration(); });
+        }
+
+        if (m_impl->window.styleMask == NSWindowStyleMaskBorderless)
+        {
+            return window_decoration::none;
+        }
+
+        if (m_impl->window.styleMask & NSWindowStyleMaskFullSizeContentView)
+        {
+            return window_decoration::partial;
+        }
+
+        return window_decoration::full;
     }
 
     std::pair<int, int> window::size() const
@@ -298,37 +308,17 @@ namespace saucer
         }
 
         static constexpr auto flag = NSWindowStyleMaskResizable;
-        auto mask                  = m_impl->window.styleMask;
 
         if (!enabled)
         {
-            mask &= ~flag;
+            m_impl->masks &= ~flag;
         }
         else
         {
-            mask |= flag;
+            m_impl->masks |= flag;
         }
 
-        [m_impl->window setStyleMask:mask];
-    }
-
-    void window::set_decorations(bool enabled)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_decorations(enabled); });
-        }
-
-        const auto mask = m_impl->window.styleMask;
-
-        if (mask != NSWindowStyleMaskBorderless)
-        {
-            m_impl->prev_mask = mask;
-        }
-
-        [m_impl->window setStyleMask:enabled ? m_impl->prev_mask : NSWindowStyleMaskBorderless];
+        [m_impl->window setStyleMask:mask | m_impl->masks];
     }
 
     void window::set_always_on_top(bool enabled)
@@ -386,6 +376,43 @@ namespace saucer
         }
 
         [m_impl->window setTitle:[NSString stringWithUTF8String:title.c_str()]];
+    }
+
+    void window::set_decoration(window_decoration decoration)
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
+        }
+
+        if (decoration == window_decoration::none)
+        {
+            [m_impl->window setStyleMask:NSWindowStyleMaskBorderless];
+            return;
+        }
+
+        static constexpr auto flag = NSWindowStyleMaskFullSizeContentView;
+        const auto hidden          = static_cast<BOOL>(decoration == window_decoration::partial);
+
+        if (hidden)
+        {
+            m_impl->masks |= flag;
+        }
+        else
+        {
+            m_impl->masks &= ~flag;
+        }
+
+        [m_impl->window setStyleMask:mask | m_impl->masks];
+
+        [m_impl->window standardWindowButton:NSWindowZoomButton].hidden        = hidden;
+        [m_impl->window standardWindowButton:NSWindowCloseButton].hidden       = hidden;
+        [m_impl->window standardWindowButton:NSWindowMiniaturizeButton].hidden = hidden;
+
+        m_impl->window.titlebarAppearsTransparent = hidden;
+        m_impl->window.titleVisibility            = hidden ? NSWindowTitleHidden : NSWindowTitleVisible;
     }
 
     void window::set_size(int width, int height)
