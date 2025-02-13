@@ -49,9 +49,6 @@ namespace saucer
 
         if (event->type() == QEvent::ActivationChange)
         {
-#ifdef SAUCER_QT5
-            m_parent->m_events.at<window_event::decorated>().fire(m_parent->decoration());
-#endif
             m_parent->m_events.at<window_event::focus>().fire(isActiveWindow());
             return;
         }

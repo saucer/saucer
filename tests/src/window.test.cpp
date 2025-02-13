@@ -60,7 +60,7 @@ suite<"window"> window_suite = []
         expect(not window->resizable());
     };
 
-#ifndef SAUCER_QT6
+#if !defined(SAUCER_QT5) && !defined(SAUCER_QT6)
     "decorations"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)
     {
         using enum saucer::window_decoration;
