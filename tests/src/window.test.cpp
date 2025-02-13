@@ -63,16 +63,24 @@ suite<"window"> window_suite = []
 #ifndef SAUCER_QT6
     "decorations"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)
     {
-        bool decorated{false};
-        window->on<saucer::window_event::decorated>([&decorated](bool value) { decorated = value; });
+        using enum saucer::window_decoration;
 
-        expect(window->decorations());
+        auto decoration{full};
+        window->on<saucer::window_event::decorated>([&decoration](auto value) { decoration = value; });
 
-        window->set_decorations(false);
-        wait_for([&] { return !decorated; });
+        expect(window->decoration() == full);
 
-        expect(not window->decorations());
-        expect(not decorated);
+        window->set_decoration(partial);
+        wait_for([&] { return decoration == partial; });
+
+        expect(window->decoration() == decoration);
+        expect(decoration == partial);
+
+        window->set_decoration(none);
+        wait_for([&] { return decoration == none; });
+
+        expect(window->decoration() == none);
+        expect(decoration == none);
     };
 
 #ifndef SAUCER_WEBKITGTK
