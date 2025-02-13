@@ -186,7 +186,7 @@ namespace saucer
             auto &prev         = self->m_impl->prev_decoration;
             const auto current = self->decoration();
 
-            if (prev && prev.value() == current)
+            if (prev.has_value() && prev.value() == current)
             {
                 return;
             }

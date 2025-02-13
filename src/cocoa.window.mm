@@ -24,7 +24,6 @@ namespace saucer
                                                        backing:NSBackingStoreBuffered
                                                          defer:NO];
 
-        // Due to the way flags are handled, the resizable flag is not initially set.
         set_resizable(true);
 
         m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];

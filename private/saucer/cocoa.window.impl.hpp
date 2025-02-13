@@ -31,7 +31,7 @@ namespace saucer
         utils::objc_ptr<WindowDelegate> delegate;
 
       public:
-        NSWindowStyleMask masks;
+        NSWindowStyleMask masks{};
         std::function<void()> on_closed;
 
       public:
