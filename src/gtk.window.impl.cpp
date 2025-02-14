@@ -2,7 +2,12 @@
 
 #include "gtk.app.impl.hpp"
 
+#include <flagpp/flags.hpp>
+
 #include <algorithm>
+
+template <>
+constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
@@ -120,6 +125,51 @@ namespace saucer
     {
     }
 
+    void window::impl::start_resize(window_edge edge) const
+    {
+        GdkSurfaceEdge translated{};
+
+        switch (std::to_underlying(edge))
+        {
+            using enum window_edge;
+
+        case std::to_underlying(top):
+            translated = GDK_SURFACE_EDGE_NORTH;
+            break;
+        case std::to_underlying(bottom):
+            translated = GDK_SURFACE_EDGE_SOUTH;
+            break;
+        case std::to_underlying(left):
+            translated = GDK_SURFACE_EDGE_WEST;
+            break;
+        case std::to_underlying(right):
+            translated = GDK_SURFACE_EDGE_EAST;
+            break;
+        case top | left:
+            translated = GDK_SURFACE_EDGE_NORTH_WEST;
+            break;
+        case top | right:
+            translated = GDK_SURFACE_EDGE_NORTH_EAST;
+            break;
+        case bottom | left:
+            translated = GDK_SURFACE_EDGE_SOUTH_WEST;
+            break;
+        case bottom | right:
+            translated = GDK_SURFACE_EDGE_SOUTH_EAST;
+            break;
+        }
+
+        const auto data = prev_data();
+
+        if (!data)
+        {
+            return;
+        }
+
+        const auto [device, surface, button, time, x, y] = data.value();
+        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
+    }
+
     void window::impl::make_transparent(bool enabled) const
     {
         if (!enabled)
@@ -183,12 +233,19 @@ namespace saucer
     {
         auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
-            const auto decorations = self->decorations();
+            auto &prev         = self->m_impl->prev_decoration;
+            const auto current = self->decoration();
 
-            gtk_widget_set_visible(GTK_WIDGET(self->m_impl->header), decorations);
-            self->m_events.at<window_event::decorated>().fire(decorations);
+            if (prev.has_value() && prev.value() == current)
+            {
+                return;
+            }
+
+            prev.emplace(current);
+            self->m_events.at<window_event::decorated>().fire(current);
         };
 
         g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);
+        g_signal_connect(header, "notify::visible", G_CALLBACK(+callback), self);
     }
 } // namespace saucer

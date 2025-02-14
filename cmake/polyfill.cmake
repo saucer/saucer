@@ -1,53 +1,66 @@
-cmake_policy(SET CMP0067 NEW)
-include(CheckCXXSourceCompiles)
+function(saucer_check_cxx_compiles CODE OUTPUT)
+  set(FILE_PATH "${CMAKE_BINARY_DIR}/saucer_polyfill/${OUTPUT}.cpp")
+  file(WRITE "${FILE_PATH}" "${CODE}")
 
-function(check_features)
-    set(CMAKE_CXX_STANDARD 23)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  try_compile(
+     ${OUTPUT}
+     "${CMAKE_BINARY_DIR}"
+     "${FILE_PATH}"
+     CXX_STANDARD 23 
+     CXX_STANDARD_REQUIRED ON
+  )
 
-    check_cxx_source_compiles(
-        "#include <thread>
+  return(PROPAGATE ${OUTPUT})
+endfunction()
 
-        int main()
-        {
-            std::jthread t{[]{}};
-            return 0;
-        }"
-        has_jthread
-    )
+function(saucer_determine_polyfills RESULTS)
+  saucer_check_cxx_compiles(
+    "#include <thread>
 
-    check_cxx_source_compiles(
-        "#include <functional>
+    int main()
+    {
+      std::jthread{[]{}};
+      return 0;
+    }"
+    has_jthread
+  )
 
-        int main()
-        {
-            std::move_only_function<void()> f{[]{}};
-            return 0;
-        }"
-        has_move_only_function
-    )
+  saucer_check_cxx_compiles(
+    "#include <functional>
 
-    check_cxx_source_compiles(
-        "#include <expected>
+    int main()
+    {
+      std::move_only_function<void()>{[]{}};
+      return 0;
+    }"
+    has_move_only_function
+  )
 
-        int main()
-        {
-            std::expected<int, int> e{};
-            return 0;
-        }"
-        has_expected
-    )
+  saucer_check_cxx_compiles(
+    "#include <expected>
 
-    if (NOT has_jthread)
-        set(saucer_polyfill_thread ON PARENT_SCOPE)
-    endif()
+    int main()
+    {
+      std::expected<int, int>{};
+      return 0;
+    }"
+    has_expected
+  )
 
-    if (NOT has_move_only_function)
-        set(saucer_polyfill_functional ON PARENT_SCOPE)
-    endif()
+  set(${RESULTS} "")
 
-    if (NOT has_expected)
-        set(saucer_polyfill_expected ON PARENT_SCOPE)
-    endif()
+  if (NOT has_jthread)
+    list(APPEND ${RESULTS} "jthread")
+  endif()
+
+  if (NOT has_move_only_function)
+    list(APPEND ${RESULTS} "functional")
+  endif()
+
+  if (NOT has_expected)
+    list(APPEND ${RESULTS} "expected")
+  endif()
+
+  return(PROPAGATE ${RESULTS})
 endfunction()
 

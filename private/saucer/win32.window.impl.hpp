@@ -17,10 +17,11 @@ namespace saucer
 
       public:
         UINT prev_state;
+        std::optional<window_decoration> prev_decoration;
 
       public:
-        bool decorated{true};
-        bool transparent{false};
+        long styles{};
+        bool titlebar{true};
 
       public:
         utils::handle<HICON, DestroyIcon> icon;
@@ -28,6 +29,9 @@ namespace saucer
 
       public:
         WNDPROC o_wnd_proc;
+
+      public:
+        static void set_style(HWND, long);
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer

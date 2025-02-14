@@ -21,7 +21,7 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    enum class window_event
+    enum class window_event : std::uint8_t
     {
         decorated,
         maximize,
@@ -32,7 +32,14 @@ namespace saucer
         close,
     };
 
-    enum class window_edge
+    enum class window_decoration : std::uint8_t
+    {
+        none,
+        partial,
+        full,
+    };
+
+    enum class window_edge : std::uint8_t
     {
         top    = 1 << 0,
         bottom = 1 << 1,
@@ -40,7 +47,7 @@ namespace saucer
         right  = 1 << 3,
     };
 
-    enum class policy
+    enum class policy : std::uint8_t
     {
         allow,
         block,
@@ -65,14 +72,14 @@ namespace saucer
         struct impl;
 
       public:
-        using events = ereignis::manager<                          //
-            ereignis::event<window_event::decorated, void(bool)>,  //
-            ereignis::event<window_event::maximize, void(bool)>,   //
-            ereignis::event<window_event::minimize, void(bool)>,   //
-            ereignis::event<window_event::closed, void()>,         //
-            ereignis::event<window_event::resize, void(int, int)>, //
-            ereignis::event<window_event::focus, void(bool)>,      //
-            ereignis::event<window_event::close, policy()>         //
+        using events = ereignis::manager<                                      //
+            ereignis::event<window_event::decorated, void(window_decoration)>, //
+            ereignis::event<window_event::maximize, void(bool)>,               //
+            ereignis::event<window_event::minimize, void(bool)>,               //
+            ereignis::event<window_event::closed, void()>,                     //
+            ereignis::event<window_event::resize, void(int, int)>,             //
+            ereignis::event<window_event::focus, void(bool)>,                  //
+            ereignis::event<window_event::close, policy()>                     //
             >;
 
       protected:
@@ -102,10 +109,7 @@ namespace saucer
       public:
         [[sc::thread_safe]] [[nodiscard]] bool minimized() const;
         [[sc::thread_safe]] [[nodiscard]] bool maximized() const;
-
-      public:
         [[sc::thread_safe]] [[nodiscard]] bool resizable() const;
-        [[sc::thread_safe]] [[nodiscard]] bool decorations() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
@@ -113,6 +117,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] [[nodiscard]] std::string title() const;
+        [[sc::thread_safe]] [[nodiscard]] window_decoration decoration() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] std::pair<int, int> size() const;
@@ -134,10 +139,7 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_minimized(bool enabled);
         [[sc::thread_safe]] void set_maximized(bool enabled);
-
-      public:
         [[sc::thread_safe]] void set_resizable(bool enabled);
-        [[sc::thread_safe]] void set_decorations(bool enabled);
 
       public:
         [[sc::thread_safe]] void set_always_on_top(bool enabled);
@@ -146,6 +148,7 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_icon(const icon &icon);
         [[sc::thread_safe]] void set_title(const std::string &title);
+        [[sc::thread_safe]] void set_decoration(window_decoration decoration);
 
       public:
         [[sc::thread_safe]] void set_size(int width, int height);

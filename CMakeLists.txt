@@ -18,7 +18,6 @@ option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"     
 option(saucer_private_webkit    "Enable private api usage for wkwebview"            ON)
 
 option(saucer_no_version_check  "Skip compiler version check"                      OFF)
-option(saucer_no_polyfill       "Disable automatic polyfills"                      OFF)
 
 # --------------------------------------------------------------------------------------------------------
 # Check requirements
@@ -62,6 +61,7 @@ endif()
 set(saucer_webview2_version "1.0.2903.40"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
+set(saucer_polyfills        "Default"       CACHE STRING "The polyfills to use. Set to 'None' to avoid any polyfills from being used. Uses 'try_compile' by default")
 
 # --------------------------------------------------------------------------------------------------------
 # Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
@@ -236,9 +236,12 @@ target_sources(${PROJECT_NAME} PRIVATE
 include("cmake/cpm.cmake")
 include("cmake/polyfill.cmake")
 
-check_features()
+if (saucer_polyfills STREQUAL "Default")
+  saucer_determine_polyfills(saucer_polyfills)
+  message(STATUS "[saucer] Recommended polyfills: ${saucer_polyfills}")
+endif()
 
-if (NOT saucer_no_polyfill AND saucer_polyfill_thread)
+if ("jthread" IN_LIST saucer_polyfills)
   message(STATUS "[saucer] Using std::jthread polyfill")
 
   CPMFindPackage(
@@ -251,7 +254,7 @@ if (NOT saucer_no_polyfill AND saucer_polyfill_thread)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/jthread.hpp")
 endif()
 
-if (NOT saucer_no_polyfill AND saucer_polyfill_functional)
+if ("functional" IN_LIST saucer_polyfills)
   message(STATUS "[saucer] Using std::move_only_function polyfill")
 
   CPMFindPackage(
@@ -264,7 +267,7 @@ if (NOT saucer_no_polyfill AND saucer_polyfill_functional)
   target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
 endif()
 
-if (NOT saucer_no_polyfill AND saucer_polyfill_expected)
+if ("expected" IN_LIST saucer_polyfills)
   message(STATUS "[saucer] Using std::expected polyfill")
 
   CPMFindPackage(

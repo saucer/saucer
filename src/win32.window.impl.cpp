@@ -4,6 +4,18 @@
 
 namespace saucer
 {
+    void window::impl::set_style(HWND hwnd, long style)
+    {
+        auto current = GetWindowLongPtr(hwnd, GWL_STYLE);
+
+        if (current & WS_VISIBLE)
+        {
+            style |= WS_VISIBLE;
+        }
+
+        SetWindowLongPtr(hwnd, GWL_STYLE, style);
+    }
+
     LRESULT CALLBACK window::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto userdata = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
@@ -18,33 +30,38 @@ namespace saucer
 
         switch (msg)
         {
-        case WM_NCCALCSIZE:
-            if (w_param && !window->m_impl->decorated)
-            {
-                auto *const params = reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param);
+        case WM_STYLECHANGED: {
+            auto &prev         = window->m_impl->prev_decoration;
+            const auto current = window->decoration();
 
-                if (!window->maximized() || params->rgrc[0].top >= 0)
-                {
-                    return 0;
-                }
+            if (prev.has_value() && prev.value() == current)
+            {
+                break;
+            }
+
+            prev.emplace(current);
+            window->m_events.at<window_event::decorated>().fire(current);
+
+            break;
+        }
+        case WM_NCCALCSIZE:
+            if (!window->m_impl->titlebar)
+            {
+                auto *const rect = w_param ? std::addressof(reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param)->rgrc[0])
+                                           : reinterpret_cast<RECT *>(l_param);
+
+                const auto maximized = window->maximized();
+                const auto keep      = !maximized || rect->top >= 0;
 
                 WINDOWINFO info{};
                 GetWindowInfo(hwnd, &info);
 
-                auto *const rect = reinterpret_cast<RECT *>(l_param);
-
-                rect->top += static_cast<LONG>(info.cyWindowBorders);
+                rect->top += keep ? maximized ? 0 : 1 : static_cast<LONG>(info.cxWindowBorders);
                 rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
 
                 rect->left += static_cast<LONG>(info.cxWindowBorders);
                 rect->right -= static_cast<LONG>(info.cxWindowBorders);
 
-                return 0;
-            }
-            break;
-        case WM_NCPAINT:
-            if (!window->m_impl->decorated && window->m_impl->transparent)
-            {
                 return 0;
             }
             break;

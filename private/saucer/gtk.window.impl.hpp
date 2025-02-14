@@ -37,6 +37,10 @@ namespace saucer
         utils::g_object_ptr<GtkCssProvider> style;
 
       public:
+        std::optional<bool> prev_resizable;
+        std::optional<window_decoration> prev_decoration;
+
+      public:
         GtkBox *content;
         AdwHeaderBar *header;
 
@@ -53,7 +57,8 @@ namespace saucer
         void setup(saucer::window *);
 
       public:
-        void make_transparent(bool enabled) const;
+        void make_transparent(bool) const;
+        void start_resize(window_edge) const;
 
       public:
         void track(saucer::window *) const;

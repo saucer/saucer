@@ -5,12 +5,8 @@
 
 #include <fmt/core.h>
 #include <rebind/enum.hpp>
-#include <flagpp/flags.hpp>
 
 #include <cassert>
-
-template <>
-constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
@@ -98,16 +94,6 @@ namespace saucer
         return gtk_window_get_resizable(GTK_WINDOW(m_impl->window.get()));
     }
 
-    bool window::decorations() const
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return decorations(); });
-        }
-
-        return gtk_window_get_decorated(GTK_WINDOW(m_impl->window.get()));
-    }
-
     bool window::always_on_top() const // NOLINT(*-static)
     {
         return {};
@@ -131,6 +117,26 @@ namespace saucer
         }
 
         return gtk_window_get_title(GTK_WINDOW(m_impl->window.get()));
+    }
+
+    window_decoration window::decoration() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return decoration(); });
+        }
+
+        if (!gtk_window_get_decorated(m_impl->window.get()))
+        {
+            return window_decoration::none;
+        }
+
+        if (!gtk_widget_get_visible(GTK_WIDGET(m_impl->header)))
+        {
+            return window_decoration::partial;
+        }
+
+        return window_decoration::full;
     }
 
     std::pair<int, int> window::size() const
@@ -224,47 +230,13 @@ namespace saucer
             return m_parent->dispatch([this, edge] { return start_resize(edge); });
         }
 
-        GdkSurfaceEdge translated{};
-
-        switch (std::to_underlying(edge))
+        if (!resizable())
         {
-            using enum window_edge;
-
-        case std::to_underlying(top):
-            translated = GDK_SURFACE_EDGE_NORTH;
-            break;
-        case std::to_underlying(bottom):
-            translated = GDK_SURFACE_EDGE_SOUTH;
-            break;
-        case std::to_underlying(left):
-            translated = GDK_SURFACE_EDGE_WEST;
-            break;
-        case std::to_underlying(right):
-            translated = GDK_SURFACE_EDGE_EAST;
-            break;
-        case top | left:
-            translated = GDK_SURFACE_EDGE_NORTH_WEST;
-            break;
-        case top | right:
-            translated = GDK_SURFACE_EDGE_NORTH_EAST;
-            break;
-        case bottom | left:
-            translated = GDK_SURFACE_EDGE_SOUTH_WEST;
-            break;
-        case bottom | right:
-            translated = GDK_SURFACE_EDGE_SOUTH_EAST;
-            break;
+            set_resizable(true);
+            m_impl->prev_resizable = false;
         }
 
-        const auto data = m_impl->prev_data();
-
-        if (!data)
-        {
-            return;
-        }
-
-        const auto [device, surface, button, time, x, y] = data.value();
-        gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
+        m_parent->post([this, edge] { m_impl->start_resize(edge); });
     }
 
     void window::set_minimized(bool enabled)
@@ -307,16 +279,6 @@ namespace saucer
         }
 
         gtk_window_set_resizable(GTK_WINDOW(m_impl->window.get()), enabled);
-    }
-
-    void window::set_decorations(bool enabled)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_decorations(enabled); });
-        }
-
-        gtk_window_set_decorated(GTK_WINDOW(m_impl->window.get()), enabled);
     }
 
     void window::set_always_on_top(bool) // NOLINT(*-static)
@@ -365,6 +327,20 @@ namespace saucer
         }
 
         gtk_window_set_title(GTK_WINDOW(m_impl->window.get()), title.c_str());
+    }
+
+    void window::set_decoration(window_decoration decoration)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
+        }
+
+        const auto decorated = decoration != window_decoration::none;
+        const auto visible   = decoration == window_decoration::full;
+
+        gtk_window_set_decorated(m_impl->window.get(), decorated);
+        gtk_widget_set_visible(GTK_WIDGET(m_impl->header), visible);
     }
 
     void window::set_size(int width, int height)
