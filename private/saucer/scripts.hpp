@@ -14,26 +14,51 @@ namespace saucer::scripts
             left:   1 << 2,
             right:  1 << 3,
         }},
+
         internal: 
         {{
+            idc: 0,
+            rpc: [],
+            send_ipc: async (message, serializer = JSON.stringify) =>
+            {{
+                const id = ++window.saucer.internal.idc;
+
+                const promise = new Promise((resolve, reject) => {{
+                    window.saucer.internal.rpc[id] = {{
+                        reject,
+                        resolve,
+                    }};
+                }});
+
+                await window.saucer.internal.send_message(serializer({{
+                    ...message,
+                    id
+                }}));
+
+                return promise;
+            }},
+            fire: async (id, message) =>
+            {{
+                await window.saucer.internal.send_message(JSON.stringify({{
+                    [id]: true,
+                    ...message,
+                }}));
+            }},
             {internal}
         }},
-        startDrag: async () =>
-        {{
-            await window.saucer.internal.send_message(JSON.stringify({{
-                ["saucer:drag"]: true
-            }}));
-        }},
-        startResize: async (edge) =>
-        {{
-            await window.saucer.internal.send_message(JSON.stringify({{
-                ["saucer:resize"]: true,
-                edge,
-            }}));
-        }}
+
+        startDrag: () => window.saucer.internal.fire("saucer:drag"),
+        startResize: edge => window.saucer.internal.fire("saucer:resize", {{ edge }}),
+
+        minimize: value => window.saucer.internal.fire("saucer:minimize", {{ value }}),
+        maximize: value => window.saucer.internal.fire("saucer:maximize", {{ value }}),
+
+        minimized: value => window.saucer.internal.send_ipc({{ ["saucer:minimized"]: true }}),
+        maximized: value => window.saucer.internal.send_ipc({{ ["saucer:maximized"]: true }}),
     }};
 
-    document.addEventListener("mousedown", async ({{ x, y, target, button }}) => {{
+    document.addEventListener("mousedown", async ({{ x, y, target, button }}) => 
+    {{
         if (button !== 0)
         {{
             return;
@@ -44,24 +69,39 @@ namespace saucer::scripts
             return;
         }}
 
-        const dragger  = [...document.querySelectorAll("[data-webview-drag]")];
-        const resizer  = [...document.querySelectorAll("[data-webview-resize]")];
         const elements = document.elementsFromPoint(x, y);
+        const drag     = [...document.querySelectorAll("[data-webview-drag]")];
 
-        if (elements.some(x => dragger.includes(x)))
+        if (elements.some(x => drag.includes(x)))
         {{
             await window.saucer.startDrag();
             return;
         }}
 
-        const resize = elements.find(x => resizer.includes(x));
+        const minimize = [...document.querySelectorAll("[data-webview-minimize]")];
 
-        if (!resize)
+        if (elements.some(x => minimize.includes(x)))
+        {{
+            await window.saucer.minimize(true);
+        }}
+
+        const maximize = [...document.querySelectorAll("[data-webview-maximize]")];
+
+        if (elements.some(x => maximize.includes(x)))
+        {{
+            const maximized = await window.saucer.maximized();
+            await window.saucer.maximize(!maximized);
+        }}
+
+        const resize  = [...document.querySelectorAll("[data-webview-resize]")];
+        const element = elements.find(x => resize.includes(x));
+
+        if (!element)
         {{
             return;
         }}
 
-        const attributes = [...resize.attributes];
+        const attributes = [...element.attributes];
         const attribute  = attributes.find(x => x.name === "data-webview-resize");
 
         const edges      = Object.keys(window.saucer.windowEdge);
@@ -72,9 +112,6 @@ namespace saucer::scripts
     )js";
 
     static constexpr std::string_view smartview_script = R"js(
-    window.saucer.internal.idc = 0;
-    window.saucer.internal.rpc = [];
-
     window.saucer.internal.resolve = async (id, value) =>
     {{
         await window.saucer.internal.send_message({serializer}({{
@@ -96,23 +133,11 @@ namespace saucer::scripts
             throw 'Bad name, expected string';
         }}
 
-        const id = ++window.saucer.internal.idc;
-        
-        const rtn = new Promise((resolve, reject) => {{
-            window.saucer.internal.rpc[id] = {{
-                reject,
-                resolve,
-            }};
-        }});
-
-        await window.saucer.internal.send_message({serializer}({{
-                ["saucer:call"]: true,
-                id,
-                name,
-                params,
-        }}));
-
-        return rtn;
+        return window.saucer.internal.send_ipc({{
+            ["saucer:call"]: true,
+            name,
+            params,
+        }}, {serializer});
     }}
 
     window.saucer.exposed = new Proxy({{}}, {{

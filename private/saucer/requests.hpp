@@ -2,6 +2,8 @@
 
 #include <string>
 #include <variant>
+
+#include <cstdint>
 #include <optional>
 
 namespace saucer::requests
@@ -11,10 +13,31 @@ namespace saucer::requests
         int edge;
     };
 
+    struct maximize
+    {
+        bool value;
+    };
+
+    struct minimize
+    {
+        bool value;
+    };
+
     struct drag
     {
     };
 
-    using request = std::variant<resize, drag>;
+    struct maximized
+    {
+        std::uint64_t id;
+    };
+
+    struct minimized
+    {
+        std::uint64_t id;
+    };
+
+    using request = std::variant<resize, maximize, minimize, drag, maximized, minimized>;
+
     std::optional<request> parse(const std::string &);
 } // namespace saucer::requests

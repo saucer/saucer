@@ -54,24 +54,21 @@ namespace saucer
 
         auto parsed = m_impl->serializer->parse(message);
 
-        if (std::holds_alternative<std::monostate>(parsed))
-        {
-            return false;
-        }
+        overload visitor = {
+            [](std::monostate &) { return false; },
+            [this](std::unique_ptr<function_data> &parsed)
+            {
+                call(std::move(parsed));
+                return true;
+            },
+            [this](std::unique_ptr<result_data> &parsed)
+            {
+                resolve(std::move(parsed));
+                return true;
+            },
+        };
 
-        if (std::holds_alternative<std::unique_ptr<function_data>>(parsed))
-        {
-            call(std::move(std::get<0>(parsed)));
-            return true;
-        }
-
-        if (std::holds_alternative<std::unique_ptr<result_data>>(parsed))
-        {
-            resolve(std::move(std::get<1>(parsed)));
-            return true;
-        }
-
-        return false;
+        return std::visit(visitor, parsed);
     }
 
     void smartview_core::call(std::unique_ptr<function_data> message)
@@ -96,7 +93,7 @@ namespace saucer
                 return;
             }
 
-            self.value()->resolve(id, result);
+            self.value()->webview::resolve(id, result);
         };
 
         auto reject = [shared = m_impl->self, id = message->id](const auto &error)
@@ -160,26 +157,6 @@ namespace saucer
                 )();
             )",
             id, code));
-    }
-
-    void smartview_core::reject(std::uint64_t id, const std::string &reason)
-    {
-        webview::execute(fmt::format(
-            R"(
-                window.saucer.internal.rpc[{0}].reject({1});
-                delete window.saucer.internal.rpc[{0}];
-            )",
-            id, reason));
-    }
-
-    void smartview_core::resolve(std::uint64_t id, const std::string &result)
-    {
-        webview::execute(fmt::format(
-            R"(
-                window.saucer.internal.rpc[{0}].resolve({1});
-                delete window.saucer.internal.rpc[{0}];
-            )",
-            id, result));
     }
 
     void smartview_core::clear_exposed()

@@ -33,16 +33,12 @@ namespace saucer
         bool on_message(const std::string &) override;
 
       protected:
-        [[sc::thread_safe]] void call(std::unique_ptr<function_data>);
-        [[sc::thread_safe]] void resolve(std::unique_ptr<result_data>);
+        void call(std::unique_ptr<function_data>);
+        void resolve(std::unique_ptr<result_data>);
 
       protected:
-        [[sc::thread_safe]] void add_function(std::string, serializer::function &&, launch);
-        [[sc::thread_safe]] void add_evaluation(serializer::resolver &&, const std::string &);
-
-      protected:
-        [[sc::thread_safe]] void reject(std::uint64_t, const std::string &);
-        [[sc::thread_safe]] void resolve(std::uint64_t, const std::string &);
+        void add_function(std::string, serializer::function &&, launch);
+        void add_evaluation(serializer::resolver &&, const std::string &);
 
       public:
         [[sc::thread_safe]] void clear_exposed();

@@ -85,6 +85,10 @@ namespace saucer
         virtual bool on_message(const std::string &);
         void handle_scheme(const std::string &, scheme::resolver &&, launch);
 
+      protected:
+        void reject(std::uint64_t, const std::string &);
+        void resolve(std::uint64_t, const std::string &);
+
       public:
         webview(const preferences &);
 

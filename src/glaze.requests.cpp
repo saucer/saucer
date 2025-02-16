@@ -13,11 +13,51 @@ struct glz::meta<saucer::requests::resize>
 };
 
 template <>
+struct glz::meta<saucer::requests::maximize>
+{
+    using T                     = saucer::requests::maximize;
+    static constexpr auto value = object( //
+        "saucer:maximize", skip{},        //
+        "value", &T::value                //
+    );
+};
+
+template <>
+struct glz::meta<saucer::requests::minimize>
+{
+    using T                     = saucer::requests::minimize;
+    static constexpr auto value = object( //
+        "saucer:minimize", skip{},        //
+        "value", &T::value                //
+    );
+};
+
+template <>
 struct glz::meta<saucer::requests::drag>
 {
     using T                     = saucer::requests::drag;
     static constexpr auto value = object( //
         "saucer:drag", skip{}             //
+    );
+};
+
+template <>
+struct glz::meta<saucer::requests::maximized>
+{
+    using T                     = saucer::requests::maximized;
+    static constexpr auto value = object( //
+        "saucer:maximized", skip{},       //
+        "id", &T::id                      //
+    );
+};
+
+template <>
+struct glz::meta<saucer::requests::minimized>
+{
+    using T                     = saucer::requests::minimized;
+    static constexpr auto value = object( //
+        "saucer:minimized", skip{},       //
+        "id", &T::id                      //
     );
 };
 

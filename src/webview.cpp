@@ -22,21 +22,38 @@ namespace saucer
             return false;
         }
 
-        if (std::holds_alternative<requests::resize>(request.value()))
-        {
-            const auto data = std::get<requests::resize>(request.value());
-            start_resize(static_cast<window_edge>(data.edge));
+        overload visitor = {
+            [this](const requests::resize &data) { start_resize(static_cast<window_edge>(data.edge)); },
+            [this](const requests::maximize &data) { set_maximized(data.value); },
+            [this](const requests::minimize &data) { set_minimized(data.value); },
+            [this](const requests::drag &) { start_drag(); },
+            [this](const requests::maximized &data) { resolve(data.id, fmt::format("{}", maximized())); },
+            [this](const requests::minimized &data) { resolve(data.id, fmt::format("{}", minimized())); },
+        };
 
-            return true;
-        }
+        std::visit(visitor, request.value());
 
-        if (std::holds_alternative<requests::drag>(request.value()))
-        {
-            start_drag();
-            return true;
-        }
+        return true;
+    }
 
-        return false;
+    void webview::reject(std::uint64_t id, const std::string &reason)
+    {
+        execute(fmt::format(
+            R"(
+                window.saucer.internal.rpc[{0}].reject({1});
+                delete window.saucer.internal.rpc[{0}];
+            )",
+            id, reason));
+    }
+
+    void webview::resolve(std::uint64_t id, const std::string &result)
+    {
+        execute(fmt::format(
+            R"(
+                window.saucer.internal.rpc[{0}].resolve({1});
+                delete window.saucer.internal.rpc[{0}];
+            )",
+            id, result));
     }
 
     void webview::embed(embedded_files files, launch policy)
