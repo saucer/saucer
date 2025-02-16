@@ -42,6 +42,15 @@ struct glz::meta<saucer::requests::drag>
 };
 
 template <>
+struct glz::meta<saucer::requests::close>
+{
+    using T                     = saucer::requests::close;
+    static constexpr auto value = object( //
+        "saucer:close", skip{}            //
+    );
+};
+
+template <>
 struct glz::meta<saucer::requests::maximized>
 {
     using T                     = saucer::requests::maximized;

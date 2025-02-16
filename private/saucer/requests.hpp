@@ -23,6 +23,10 @@ namespace saucer::requests
         bool value;
     };
 
+    struct close
+    {
+    };
+
     struct drag
     {
     };
@@ -37,7 +41,7 @@ namespace saucer::requests
         std::uint64_t id;
     };
 
-    using request = std::variant<resize, maximize, minimize, drag, maximized, minimized>;
+    using request = std::variant<resize, maximize, minimize, close, drag, maximized, minimized>;
 
     std::optional<request> parse(const std::string &);
 } // namespace saucer::requests

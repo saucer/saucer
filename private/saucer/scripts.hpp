@@ -47,9 +47,10 @@ namespace saucer::scripts
             {internal}
         }},
 
+        close: () => window.saucer.internal.fire("saucer:close"),
         startDrag: () => window.saucer.internal.fire("saucer:drag"),
-        startResize: edge => window.saucer.internal.fire("saucer:resize", {{ edge }}),
 
+        startResize: edge => window.saucer.internal.fire("saucer:resize", {{ edge }}),
         minimize: value => window.saucer.internal.fire("saucer:minimize", {{ value }}),
         maximize: value => window.saucer.internal.fire("saucer:maximize", {{ value }}),
 
@@ -76,6 +77,13 @@ namespace saucer::scripts
         {{
             await window.saucer.startDrag();
             return;
+        }}
+
+        const close = [...document.querySelectorAll("[data-webview-close]")];
+
+        if (elements.some(x => close.includes(x)))
+        {{
+            await window.saucer.close();
         }}
 
         const minimize = [...document.querySelectorAll("[data-webview-minimize]")];
