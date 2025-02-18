@@ -1,6 +1,5 @@
 #include "webview.hpp"
-
-#include "requests.hpp"
+#include "request.hpp"
 
 #include <algorithm>
 
@@ -15,7 +14,7 @@ namespace saucer
             return true;
         }
 
-        auto request = requests::parse(message);
+        auto request = request::parse(message);
 
         if (!request)
         {
@@ -23,13 +22,13 @@ namespace saucer
         }
 
         overload visitor = {
-            [this](const requests::resize &data) { start_resize(static_cast<window_edge>(data.edge)); },
-            [this](const requests::maximize &data) { set_maximized(data.value); },
-            [this](const requests::minimize &data) { set_minimized(data.value); },
-            [this](const requests::close &) { close(); },
-            [this](const requests::drag &) { start_drag(); },
-            [this](const requests::maximized &data) { resolve(data.id, fmt::format("{}", maximized())); },
-            [this](const requests::minimized &data) { resolve(data.id, fmt::format("{}", minimized())); },
+            [this](const request::resize &data) { start_resize(static_cast<window_edge>(data.edge)); },
+            [this](const request::maximize &data) { set_maximized(data.value); },
+            [this](const request::minimize &data) { set_minimized(data.value); },
+            [this](const request::close &) { close(); },
+            [this](const request::drag &) { start_drag(); },
+            [this](const request::maximized &data) { resolve(data.id, fmt::format("{}", maximized())); },
+            [this](const request::minimized &data) { resolve(data.id, fmt::format("{}", minimized())); },
         };
 
         std::visit(visitor, request.value());

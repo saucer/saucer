@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace saucer::requests
+namespace saucer::request
 {
     struct resize
     {
@@ -44,4 +44,4 @@ namespace saucer::requests
     using request = std::variant<resize, maximize, minimize, close, drag, maximized, minimized>;
 
     std::optional<request> parse(const std::string &);
-} // namespace saucer::requests
+} // namespace saucer::request
