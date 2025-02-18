@@ -309,7 +309,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        11.1.1
+  GIT_TAG        11.1.3
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
@@ -321,7 +321,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        5.1.1
+  VERSION        5.2.0
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
@@ -424,7 +424,7 @@ if (saucer_serializer STREQUAL "Glaze")
 
   CPMFindPackage(
     NAME           glaze
-    VERSION        4.2.4
+    VERSION        4.4.2
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -440,7 +440,7 @@ if (saucer_serializer STREQUAL "Rflpp")
 
   CPMFindPackage(
     NAME           reflectcpp
-    VERSION        0.16.0
+    VERSION        0.17.0
     GIT_REPOSITORY "https://github.com/getml/reflect-cpp"
     SYSTEM         ON
   )
