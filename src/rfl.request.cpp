@@ -10,7 +10,7 @@ consteval auto to_array(std::string_view name)
 {
     std::array<char, N + 1> rtn{0};
 
-    for (auto i = 0uz; N > i; i++)
+    for (auto i = 0; N > i; i++)
     {
         rtn.at(i) = name.at(i);
     }
@@ -21,15 +21,15 @@ consteval auto to_array(std::string_view name)
 template <typename T, std::size_t I = 0, typename... State>
 consteval auto generate()
 {
-    static constexpr auto members = rebind::members<T>;
-    static constexpr auto size    = std::tuple_size_v<decltype(members)>;
+    constexpr auto members = rebind::members<T>;
+    constexpr auto size    = std::tuple_size_v<decltype(members)>;
 
     if constexpr (I < size)
     {
-        static constexpr auto current = std::get<I>(members);
+        constexpr auto current = std::get<I>(members);
 
-        using type                 = decltype(current)::type;
-        static constexpr auto name = to_array<current.name.size()>(current.name);
+        using type          = decltype(current)::type;
+        constexpr auto name = to_array<current.name.size()>(current.name);
         return generate<T, I + 1, State..., rfl::Field<name, type>>();
     }
     else
@@ -54,7 +54,7 @@ consteval auto index_of()
 template <typename T, typename Named>
 constexpr auto convert(Named &&tuple)
 {
-    static constexpr auto size = std::tuple_size_v<decltype(rebind::members<T>)>;
+    constexpr auto size = std::tuple_size_v<decltype(rebind::members<T>)>;
 
     auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
     {
@@ -92,8 +92,8 @@ namespace saucer
 
         auto visitor = []<typename T>(T &named) -> request
         {
-            static constexpr auto index = index_of<T, named_variant>();
-            using mapped                = std::variant_alternative_t<index, request>;
+            constexpr auto index = index_of<T, named_variant>();
+            using mapped         = std::variant_alternative_t<index, request>;
             return convert<mapped>(named);
         };
 

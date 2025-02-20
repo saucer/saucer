@@ -27,13 +27,11 @@ namespace saucer::request::utils
         template <typename T, bool Terminated>
         static constexpr auto tag = []
         {
-            static constexpr auto name = rebind::utils::pure_name<T>;
-
-            static constexpr auto format = std::string_view{"saucer:{}"};
-            static constexpr auto length = format.size() - 2 + name.size();
+            constexpr auto name   = rebind::utils::pure_name<T>;
+            constexpr auto length = 7 + name.size();
 
             std::array<char, length + (Terminated ? 1 : 0)> buffer{};
-            fmt::format_to(buffer.data(), FMT_COMPILE(format), name);
+            fmt::format_to(buffer.data(), FMT_COMPILE("saucer:{}"), name);
 
             return buffer;
         }();

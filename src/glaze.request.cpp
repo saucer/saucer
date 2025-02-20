@@ -7,8 +7,8 @@ using namespace saucer::request::utils;
 template <typename T, std::size_t I = 0, typename... State>
 consteval auto generate(State... state)
 {
-    static constexpr auto names = glz::member_names<T>;
-    static constexpr auto size  = names.size();
+    constexpr auto names = glz::member_names<T>;
+    constexpr auto size  = names.size();
 
     if constexpr (I < size)
     {
