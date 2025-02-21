@@ -19,23 +19,6 @@ namespace saucer
 {
     const std::string &webview::impl::inject_script()
     {
-        static std::optional<std::string> instance;
-
-        if (instance)
-        {
-            return instance.value();
-        }
-
-        QFile qwebchannel{":/qtwebchannel/qwebchannel.js"};
-
-        if (!qwebchannel.open(QIODevice::ReadOnly))
-        {
-            assert(false && "Failed to open web-channel");
-        }
-
-        const auto content = qwebchannel.readAll().toStdString();
-        qwebchannel.close();
-
         static constexpr auto internal = R"js(
             channel: new Promise((resolve) =>
             {
@@ -49,12 +32,24 @@ namespace saucer
             }
         )js";
 
-        instance.emplace(content + fmt::format(scripts::webview_script,            //
-                                               fmt::arg("internal", internal),     //
-                                               fmt::arg("stubs", request::stubs()) //
-                                               ));
+        static const auto web_channel = []
+        {
+            QFile qwebchannel{":/qtwebchannel/qwebchannel.js"};
 
-        return instance.value();
+            if (!qwebchannel.open(QIODevice::ReadOnly))
+            {
+                assert(false && "Failed to open web-channel");
+            }
+
+            return qwebchannel.readAll().toStdString();
+        }();
+
+        static const auto script = web_channel + fmt::format(scripts::webview_script,            //
+                                                             fmt::arg("internal", internal),     //
+                                                             fmt::arg("stubs", request::stubs()) //
+                                                 );
+
+        return script;
     }
 
     constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";

@@ -78,13 +78,6 @@ namespace saucer
 
     const std::string &webview::impl::inject_script()
     {
-        static std::optional<std::string> instance;
-
-        if (instance)
-        {
-            return instance.value();
-        }
-
         static constexpr auto internal = R"js(
             message: async (message) =>
             {
@@ -92,12 +85,12 @@ namespace saucer
             }
         )js";
 
-        instance.emplace(fmt::format(scripts::webview_script,            //
-                                     fmt::arg("internal", internal),     //
-                                     fmt::arg("stubs", request::stubs()) //
-                                     ));
+        static const auto script = fmt::format(scripts::webview_script,            //
+                                               fmt::arg("internal", internal),     //
+                                               fmt::arg("stubs", request::stubs()) //
+        );
 
-        return instance.value();
+        return script;
     }
 
     constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";
