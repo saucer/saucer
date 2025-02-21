@@ -32,12 +32,12 @@ namespace saucer
         constexpr auto tag     = request::utils::tag<Message>;
         constexpr auto members = rebind::utils::member_names<Message>;
 
-        const auto has_id = std::ranges::find(members, "id") != members.end();
-        const auto params = members                                                            //
-                            | std::views::filter([](auto &&member) { return member != "id"; }) //
-                            | std::views::join_with(',')                                       //
-                            | std::ranges::to<std::string>();
+        const auto has_id   = std::ranges::find(members, "id") != members.end();
+        const auto filtered = members                                                            //
+                              | std::views::filter([](auto &&member) { return member != "id"; }) //
+                              | std::ranges::to<std::vector>();
 
+        const auto params     = fmt::format("{}", fmt::join(filtered, ", "));
         const auto invocation = has_id ? fmt::format(R"(send({{ ["{}"]: true, {} }}))", tag, params)
                                        : fmt::format(R"(fire("{}", {{ {} }}))", tag, params);
 
