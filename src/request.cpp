@@ -32,7 +32,7 @@ namespace saucer
         constexpr auto tag     = request::utils::tag<Message>;
         constexpr auto members = rebind::utils::member_names<Message>;
 
-        const auto has_id = std::ranges::contains(members, "id");
+        const auto has_id = std::ranges::find(members, "id") != members.end();
         const auto params = members                                                            //
                             | std::views::filter([](auto &&member) { return member != "id"; }) //
                             | std::views::join_with(',')                                       //
