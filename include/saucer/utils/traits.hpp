@@ -78,7 +78,8 @@ namespace saucer::traits
               >
     struct converter
     {
-        static_assert(false, "Could not convert function. Make sure you are using appropiate value categories!");
+        static_assert(std::same_as<WithExecutor, apply_failure> && std::same_as<Result, apply_failure>,
+                      "Could not match arguments. Make sure you are using appropiate value categories!");
     };
 
     template <typename T, typename Args, typename Executor, typename _>
