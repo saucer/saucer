@@ -20,8 +20,14 @@ namespace saucer::tuple
         {
         };
 
-        template <template <typename...> typename Transform, typename... Ts>
-        consteval auto transform(std::tuple<Ts...>) -> std::tuple<Transform<Ts>...>;
+        template <typename Tuple, template <typename...> typename Transform>
+        struct transform;
+
+        template <typename... Ts, template <typename...> typename Transform>
+        struct transform<std::tuple<Ts...>, Transform>
+        {
+            using type = std::tuple<Transform<Ts>...>;
+        };
 
         template <std::size_t Count, typename... Ts, typename Tuple = std::tuple<Ts...>>
         consteval auto extract(const Tuple &)
@@ -59,7 +65,7 @@ namespace saucer::tuple
     concept Tuple = impl::is_tuple<T>::value;
 
     template <typename T, template <typename...> typename Transform>
-    using transform_t = decltype(impl::transform<Transform>(std::declval<T>()));
+    using transform_t = impl::transform<T, Transform>::type;
 
     template <typename T>
     using drop_last_t = decltype(impl::drop_last(std::declval<T>()))::type;
