@@ -12,11 +12,14 @@
 namespace saucer
 {
     template <typename T>
+    concept has_name = requires() {
+        { T::name } -> std::convertible_to<std::string_view>;
+    };
+
+    template <typename T>
     static constexpr auto name = []
     {
-        if constexpr (requires {
-                          { T::name } -> std::convertible_to<std::string_view>;
-                      })
+        if constexpr (has_name<T>)
         {
             return T::name;
         }
