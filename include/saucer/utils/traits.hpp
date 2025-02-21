@@ -15,25 +15,24 @@ namespace saucer::traits
 {
     namespace impl
     {
-        template <typename T, typename Args>
-        struct can_apply : std::false_type
+        template <bool Success, typename T = void>
+        struct apply_info
         {
+            using type                    = T;
+            static constexpr auto success = Success;
+        };
+
+        template <typename T, typename Args>
+        struct apply
+        {
+            using type = apply_info<false>;
         };
 
         template <typename T, typename... Ts>
             requires std::invocable<T, Ts...>
-        struct can_apply<T, std::tuple<Ts...>> : std::true_type
+        struct apply<T, std::tuple<Ts...>>
         {
-        };
-
-        template <typename T, typename Args>
-        struct apply_result;
-
-        template <typename T, typename... Ts>
-            requires std::invocable<T, Ts...>
-        struct apply_result<T, std::tuple<Ts...>>
-        {
-            using type = std::invoke_result_t<T, Ts...>;
+            using type = apply_info<true, std::invoke_result_t<T, Ts...>>;
         };
 
         template <typename T>
@@ -51,11 +50,13 @@ namespace saucer::traits
         using arg_transformer_t = std::conditional_t<std::same_as<D, std::string_view>, std::string, D>;
     } // namespace impl
 
-    template <typename T, typename Args>
-    static constexpr auto can_apply_v = impl::can_apply<T, Args>::value;
+    using apply_failure = impl::apply_info<false>;
+
+    template <typename T>
+    using apply_success = impl::apply_info<true, T>;
 
     template <typename T, typename Args>
-    using apply_result_t = impl::apply_result<T, Args>::type;
+    using apply_t = impl::apply<T, Args>::type;
 
     template <typename T>
     static constexpr auto has_reference_v = impl::has_reference<T>::value;
@@ -69,16 +70,19 @@ namespace saucer::traits
     template <typename T>
     using result_t = boost::callable_traits::return_type_t<T>;
 
-    template <typename T,                                                                                                //
-              typename Args,                                                                                             //
-              typename Executor,                                                                                         //
-              bool TakesExecutor = can_apply_v<T, tuple::add_t<Args, Executor>>,                                         //
-              typename Result = apply_result_t<T, std::conditional_t<TakesExecutor, tuple::add_t<Args, Executor>, Args>> //
+    template <typename T,                                                                                                 //
+              typename Args,                                                                                              //
+              typename Executor,                                                                                          //
+              typename WithExecutor = apply_t<T, tuple::add_t<Args, Executor>>,                                           //
+              typename Result = apply_t<T, std::conditional_t<WithExecutor::success, tuple::add_t<Args, Executor>, Args>> //
               >
-    struct converter;
+    struct converter
+    {
+        static_assert(false, "Could not convert function. Make sure you are using appropiate value categories!");
+    };
 
-    template <typename T, typename Args, typename Executor>
-    struct converter<T, Args, Executor, true, void>
+    template <typename T, typename Args, typename Executor, typename _>
+    struct converter<T, Args, Executor, apply_success<_>, apply_success<void>>
     {
         static decltype(auto) convert(T callable)
         {
@@ -87,7 +91,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename... Ts, typename R, typename E, typename Result>
-    struct converter<T, std::tuple<Ts...>, executor<R, E>, false, Result>
+    struct converter<T, std::tuple<Ts...>, executor<R, E>, apply_failure, apply_success<Result>>
     {
         static decltype(auto) convert(T callable)
         {
@@ -107,7 +111,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename... Ts, typename R, typename E>
-    struct converter<T, std::tuple<Ts...>, executor<R, E>, false, std::expected<R, E>>
+    struct converter<T, std::tuple<Ts...>, executor<R, E>, apply_failure, apply_success<std::expected<R, E>>>
     {
         static decltype(auto) convert(T callable)
         {
