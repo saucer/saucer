@@ -55,17 +55,17 @@ namespace saucer::serializers::generic
 
     template <typename FunctionData, typename ResultData, Serializer<FunctionData, ResultData> Interface>
     template <typename Function>
-    auto serializer<FunctionData, ResultData, Interface>::serialize(Function &&func)
+    auto serializer<FunctionData, ResultData, Interface>::serialize(Function func)
     {
         using resolver  = traits::resolver<Function>;
         using converter = resolver::converter;
         using args      = resolver::args;
 
-        return [func = converter::convert(std::forward<Function>(func))](std::unique_ptr<saucer::function_data> data,
-                                                                         serializer::executor exec) mutable
+        return [func = converter::convert(std::move(func))](std::unique_ptr<saucer::function_data> data,
+                                                            serializer::executor exec) mutable
         {
             const auto &message = *static_cast<FunctionData *>(data.get());
-            const auto parsed   = impl::parse<Interface, args>(message);
+            auto parsed         = impl::parse<Interface, args>(message);
 
             if (!parsed)
             {

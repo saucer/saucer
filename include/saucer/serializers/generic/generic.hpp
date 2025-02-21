@@ -18,7 +18,7 @@ namespace saucer::serializers::generic
     struct serializer : saucer::serializer
     {
         template <typename Function>
-        static auto serialize(Function &&);
+        static auto serialize(Function);
 
         template <typename... Ts>
         static auto serialize_args(Ts &&...);
