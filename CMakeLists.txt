@@ -217,6 +217,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_sources(${PROJECT_NAME} PRIVATE 
+    "src/request.cpp"
     "src/module/unstable.cpp"
     
     "src/app.cpp"
@@ -321,7 +322,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        5.2.0
+  VERSION        5.2.1
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 

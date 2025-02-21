@@ -1,6 +1,7 @@
 #include "wv2.webview.impl.hpp"
 
 #include "scripts.hpp"
+#include "request.hpp"
 
 #include "win32.utils.hpp"
 #include "win32.app.impl.hpp"
@@ -30,12 +31,17 @@ namespace saucer
             return instance.value();
         }
 
-        instance.emplace(fmt::format(scripts::webview_script, fmt::arg("internal", R"js(
-        send_message: async (message) =>
-        {
-            window.chrome.webview.postMessage(message);
-        }
-        )js")));
+        static constexpr auto internal = R"js(
+            message: async (message) =>
+            {
+                window.chrome.webview.postMessage(message);
+            }
+        )js";
+
+        instance.emplace(fmt::format(scripts::webview_script,            //
+                                     fmt::arg("internal", internal),     //
+                                     fmt::arg("stubs", request::stubs()) //
+                                     ));
 
         return instance.value();
     }

@@ -1,6 +1,7 @@
 #include "wk.webview.impl.hpp"
 
 #include "scripts.hpp"
+#include "request.hpp"
 
 #include "cocoa.window.impl.hpp"
 #include "wk.navigation.impl.hpp"
@@ -84,17 +85,22 @@ namespace saucer
             return instance.value();
         }
 
-        instance.emplace(fmt::format(scripts::webview_script, fmt::arg("internal", R"js(
-        send_message: async (message) =>
-        {
-            window.webkit.messageHandlers.saucer.postMessage(message);
-        }
-        )js")));
+        static constexpr auto internal = R"js(
+            message: async (message) =>
+            {
+                window.webkit.messageHandlers.saucer.postMessage(message);
+            }
+        )js";
+
+        instance.emplace(fmt::format(scripts::webview_script,            //
+                                     fmt::arg("internal", internal),     //
+                                     fmt::arg("stubs", request::stubs()) //
+                                     ));
 
         return instance.value();
     }
 
-    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.send_message('dom_loaded')";
+    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";
 
     void webview::impl::init_objc()
     {

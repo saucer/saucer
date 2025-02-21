@@ -22,11 +22,11 @@ namespace saucer
         }
 
         overload visitor = {
-            [this](const request::resize &data) { start_resize(static_cast<window_edge>(data.edge)); },
+            [this](const request::start_resize &data) { start_resize(static_cast<window_edge>(data.edge)); },
+            [this](const request::start_drag &) { start_drag(); },
             [this](const request::maximize &data) { set_maximized(data.value); },
             [this](const request::minimize &data) { set_minimized(data.value); },
             [this](const request::close &) { close(); },
-            [this](const request::drag &) { start_drag(); },
             [this](const request::maximized &data) { resolve(data.id, fmt::format("{}", maximized())); },
             [this](const request::minimized &data) { resolve(data.id, fmt::format("{}", minimized())); },
         };

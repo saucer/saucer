@@ -1,6 +1,7 @@
 #include "qt.webview.impl.hpp"
 
 #include "scripts.hpp"
+#include "request.hpp"
 
 #include "qt.icon.impl.hpp"
 #include "qt.navigation.impl.hpp"
@@ -35,23 +36,28 @@ namespace saucer
         const auto content = qwebchannel.readAll().toStdString();
         qwebchannel.close();
 
-        instance.emplace(content + fmt::format(scripts::webview_script, fmt::arg("internal", R"js(
-        channel: new Promise((resolve) =>
-        {
-            new QWebChannel(qt.webChannelTransport, function(channel) {
-                resolve(channel.objects.saucer);
-            });
-        }),
-        send_message: async (message) =>
-        {
-            (await window.saucer.internal.channel).on_message(message);
-        }
-        )js")));
+        static constexpr auto internal = R"js(
+            channel: new Promise((resolve) =>
+            {
+                new QWebChannel(qt.webChannelTransport, function(channel) {
+                    resolve(channel.objects.saucer);
+                });
+            }),
+            message: async (message) =>
+            {
+                (await window.saucer.internal.channel).on_message(message);
+            }
+        )js";
+
+        instance.emplace(content + fmt::format(scripts::webview_script,            //
+                                               fmt::arg("internal", internal),     //
+                                               fmt::arg("stubs", request::stubs()) //
+                                               ));
 
         return instance.value();
     }
 
-    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.send_message('dom_loaded')";
+    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";
 
     webview::impl::web_class::web_class(webview *parent) : m_parent(parent) {}
 

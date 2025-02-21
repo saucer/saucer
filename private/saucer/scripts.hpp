@@ -14,12 +14,11 @@ namespace saucer::scripts
             left:   1 << 2,
             right:  1 << 3,
         }},
-
         internal: 
         {{
             idc: 0,
             rpc: [],
-            send_ipc: async (message, serializer = JSON.stringify) =>
+            send: async (message, serializer = JSON.stringify) =>
             {{
                 const id = ++window.saucer.internal.idc;
 
@@ -30,7 +29,7 @@ namespace saucer::scripts
                     }};
                 }});
 
-                await window.saucer.internal.send_message(serializer({{
+                await window.saucer.internal.message(serializer({{
                     ...message,
                     id
                 }}));
@@ -39,23 +38,14 @@ namespace saucer::scripts
             }},
             fire: async (id, message) =>
             {{
-                await window.saucer.internal.send_message(JSON.stringify({{
+                await window.saucer.internal.message(JSON.stringify({{
                     [id]: true,
                     ...message,
                 }}));
             }},
             {internal}
         }},
-
-        close: () => window.saucer.internal.fire("saucer:close"),
-        startDrag: () => window.saucer.internal.fire("saucer:drag"),
-
-        startResize: edge => window.saucer.internal.fire("saucer:resize", {{ edge }}),
-        minimize: value => window.saucer.internal.fire("saucer:minimize", {{ value }}),
-        maximize: value => window.saucer.internal.fire("saucer:maximize", {{ value }}),
-
-        minimized: value => window.saucer.internal.send_ipc({{ ["saucer:minimized"]: true }}),
-        maximized: value => window.saucer.internal.send_ipc({{ ["saucer:maximized"]: true }}),
+        {stubs}
     }};
 
     document.addEventListener("mousedown", async ({{ x, y, target, button }}) => 
@@ -122,7 +112,7 @@ namespace saucer::scripts
     static constexpr std::string_view smartview_script = R"js(
     window.saucer.internal.resolve = async (id, value) =>
     {{
-        await window.saucer.internal.send_message({serializer}({{
+        await window.saucer.internal.message({serializer}({{
                 ["saucer:resolve"]: true,
                 id,
                 result: value === undefined ? null : value,
@@ -141,7 +131,7 @@ namespace saucer::scripts
             throw 'Bad name, expected string';
         }}
 
-        return window.saucer.internal.send_ipc({{
+        return window.saucer.internal.send({{
             ["saucer:call"]: true,
             name,
             params,
