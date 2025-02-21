@@ -47,7 +47,7 @@ namespace saucer::serializers::generic
             {
                 (rtn.emplace_back(serialize<Interface>(std::forward<Ts>(args))), ...);
             };
-            std::apply(unpack, data.as_tuple());
+            std::apply(unpack, std::move(data.tuple()));
 
             return fmt::format("{}", fmt::join(rtn, ", "));
         }
