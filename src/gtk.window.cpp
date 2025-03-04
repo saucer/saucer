@@ -170,6 +170,11 @@ namespace saucer
         return {width, height};
     }
 
+    std::pair<int, int> window::position() const // NOLINT(*-static)
+    {
+        return {};
+    }
+
     void window::hide()
     {
         if (!m_parent->thread_safe())
@@ -365,6 +370,10 @@ namespace saucer
         }
 
         gtk_widget_set_size_request(GTK_WIDGET(m_impl->window.get()), width, height);
+    }
+
+    void window::set_position(int, int) // NOLINT(*-static)
+    {
     }
 
     void window::clear(window_event event)
