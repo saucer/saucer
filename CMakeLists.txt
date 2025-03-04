@@ -59,6 +59,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 set(saucer_webview2_version "1.0.2903.40"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_windows_arch     "Default"       CACHE STRING "The windows architecture (Win32, x64, ARM64) used for linking against NuGet packages")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
 set(saucer_polyfills        "Default"       CACHE STRING "The polyfills to use. Set to 'None' to avoid any polyfills from being used. Uses 'try_compile' by default")
