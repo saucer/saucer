@@ -167,6 +167,16 @@ namespace saucer
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
     }
 
+    std::pair<int, int> window::position() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return position(); });
+        }
+
+        return {m_impl->window->x(), m_impl->window->y()};
+    }
+
     void window::hide()
     {
         if (!m_parent->thread_safe())
@@ -394,6 +404,16 @@ namespace saucer
 
         m_impl->window->setMinimumSize(width, height);
         m_impl->min_size = m_impl->window->minimumSize();
+    }
+
+    void window::set_position(int x, int y)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this, x, y] { return set_position(x, y); });
+        }
+
+        m_impl->window->move(x, y);
     }
 
     void window::clear(window_event event)

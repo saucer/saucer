@@ -125,6 +125,9 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] std::pair<int, int> min_size() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] std::pair<int, int> position() const;
+
+      public:
         [[sc::thread_safe]] void hide();
         [[sc::thread_safe]] void show();
         [[sc::thread_safe]] void close();
@@ -154,6 +157,9 @@ namespace saucer
         [[sc::thread_safe]] void set_size(int width, int height);
         [[sc::thread_safe]] void set_max_size(int width, int height);
         [[sc::thread_safe]] void set_min_size(int width, int height);
+
+      public:
+        [[sc::thread_safe]] void set_position(int x, int y);
 
       public:
         [[sc::thread_safe]] void clear(window_event event);
