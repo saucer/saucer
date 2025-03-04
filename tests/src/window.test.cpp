@@ -132,4 +132,14 @@ suite<"window"> window_suite = []
         auto [width, height] = window->min_size();
         expect(width == 200 && height == 300) << width << ":" << height;
     };
+
+#ifndef SAUCER_WEBKITGTK
+    "position"_test_both = [](const auto &window)
+    {
+        window->set_position(200, 300);
+
+        auto [x, y] = window->position();
+        expect(x == 200 && y == 300) << x << ":" << y;
+    };
+#endif
 };
