@@ -1,16 +1,17 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 namespace saucer
 {
-    enum class load_time
+    enum class load_time : std::uint8_t
     {
         creation,
         ready,
     };
 
-    enum class web_frame
+    enum class web_frame : std::uint8_t
     {
         top,
         all,
