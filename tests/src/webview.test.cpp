@@ -82,7 +82,7 @@ suite<"webview"> webview_suite = []
     };
 
 #ifndef SAUCER_QT5
-    "force-dark"_test_both = [](const auto &webview)
+    "force-dark"_test_async = [](const auto &webview)
     {
         expect(not webview->force_dark_mode());
 
