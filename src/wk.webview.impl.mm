@@ -76,7 +76,7 @@ namespace saucer
     {
     }
 
-    const std::string &webview::impl::inject_script()
+    std::string webview::impl::inject_script()
     {
         static constexpr auto internal = R"js(
             message: async (message) =>

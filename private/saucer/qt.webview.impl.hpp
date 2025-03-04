@@ -46,7 +46,7 @@ namespace saucer
         void setup(webview *);
 
       public:
-        static const std::string &inject_script();
+        static std::string inject_script();
         static constinit std::string_view ready_script;
     };
 

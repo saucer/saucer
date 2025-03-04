@@ -57,7 +57,7 @@ namespace saucer
         void setup(webview *);
 
       public:
-        static const std::string &inject_script();
+        static std::string inject_script();
         static ComPtr<CoreWebView2EnvironmentOptions> env_options();
 
       public:

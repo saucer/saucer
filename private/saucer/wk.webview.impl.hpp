@@ -49,7 +49,7 @@ namespace saucer
         static WKWebViewConfiguration *make_config(const preferences &);
 
       public:
-        static const std::string &inject_script();
+        static std::string inject_script();
         static constinit std::string_view ready_script;
 
       public:
