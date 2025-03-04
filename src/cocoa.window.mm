@@ -204,6 +204,19 @@ namespace saucer
         return {width, height};
     }
 
+    std::pair<int, int> window::position() const
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return position(); });
+        }
+
+        const auto [x, y] = m_impl->window.frame.origin;
+        return {x, y};
+    }
+
     void window::hide()
     {
         const utils::autorelease_guard guard{};
@@ -451,6 +464,18 @@ namespace saucer
         }
 
         [m_impl->window setMinSize:{static_cast<float>(width), static_cast<float>(height)}];
+    }
+
+    void window::set_position(int x, int y)
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this, x, y] { return set_position(x, y); });
+        }
+
+        [m_impl->window setFrameOrigin:{static_cast<double>(x), static_cast<double>(y)}];
     }
 
     void window::clear(window_event event)
