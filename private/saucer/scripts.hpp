@@ -61,19 +61,12 @@ namespace saucer::scripts
         }}
 
         const elements = document.elementsFromPoint(x, y);
-        const drag     = [...document.querySelectorAll("[data-webview-drag]")];
-
-        if (elements.some(x => drag.includes(x)))
-        {{
-            await window.saucer.startDrag();
-            return;
-        }}
-
         const close = [...document.querySelectorAll("[data-webview-close]")];
 
         if (elements.some(x => close.includes(x)))
         {{
             await window.saucer.close();
+            return;
         }}
 
         const minimize = [...document.querySelectorAll("[data-webview-minimize]")];
@@ -81,6 +74,7 @@ namespace saucer::scripts
         if (elements.some(x => minimize.includes(x)))
         {{
             await window.saucer.minimize(true);
+            return;
         }}
 
         const maximize = [...document.querySelectorAll("[data-webview-maximize]")];
@@ -89,6 +83,15 @@ namespace saucer::scripts
         {{
             const maximized = await window.saucer.maximized();
             await window.saucer.maximize(!maximized);
+            return;
+        }}
+
+        const drag = [...document.querySelectorAll("[data-webview-drag]")];
+
+        if (elements.some(x => drag.includes(x)))
+        {{
+            await window.saucer.startDrag();
+            return;
         }}
 
         const resize  = [...document.querySelectorAll("[data-webview-resize]")];
