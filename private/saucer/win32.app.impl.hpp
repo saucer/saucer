@@ -28,7 +28,11 @@ namespace saucer
         utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
+        static screen convert(MONITORINFOEXW);
+
+      public:
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+        static BOOL CALLBACK enum_monitor(HMONITOR, HDC, LPRECT, LPARAM);
 
       public:
         static constexpr auto WM_SAFE_CALL = WM_USER + 1;

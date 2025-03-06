@@ -53,6 +53,19 @@ namespace saucer
         return m_impl->thread == GetCurrentThreadId();
     }
 
+    std::vector<screen> application::screens() const
+    {
+        if (!thread_safe())
+        {
+            return dispatch([this] { return screens(); });
+        }
+
+        std::vector<screen> rtn{};
+        EnumDisplayMonitors(nullptr, nullptr, impl::enum_monitor, reinterpret_cast<LPARAM>(&rtn));
+
+        return rtn;
+    }
+
     void application::post(callback_t callback) const
     {
         auto *message = new safe_message{std::move(callback)};

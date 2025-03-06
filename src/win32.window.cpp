@@ -205,6 +205,31 @@ namespace saucer
         return m_impl->min_size.value_or(std::make_pair(width, height));
     }
 
+    std::optional<screen> window::screen() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return screen(); });
+        }
+
+        auto *const monitor = MonitorFromWindow(m_impl->hwnd.get(), MONITOR_DEFAULTTONEAREST);
+
+        if (!monitor)
+        {
+            return std::nullopt;
+        }
+
+        MONITORINFOEXW info{};
+        info.cbSize = sizeof(MONITORINFOEXW);
+
+        if (!GetMonitorInfo(monitor, &info))
+        {
+            return std::nullopt;
+        }
+
+        return application::impl::convert(info);
+    }
+
     std::pair<int, int> window::position() const
     {
         if (!m_parent->thread_safe())
