@@ -53,4 +53,18 @@ namespace saucer
 
         [NSApp setMainMenu:mainmenu];
     }
+
+    screen application::impl::convert(NSScreen *screen)
+    {
+        const utils::autorelease_guard guard{};
+
+        const auto size = screen.frame.size;
+        const auto pos  = screen.frame.origin;
+
+        return {
+            .name     = screen.localizedName.UTF8String,
+            .size     = {size.width, size.height},
+            .position = {pos.x, pos.y},
+        };
+    }
 } // namespace saucer

@@ -204,6 +204,25 @@ namespace saucer
         return {width, height};
     }
 
+    std::optional<screen> window::screen() const
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return screen(); });
+        }
+
+        auto *const screen = m_impl->window.screen;
+
+        if (!screen)
+        {
+            return std::nullopt;
+        }
+
+        return application::impl::convert(screen);
+    }
+
     std::pair<int, int> window::position() const
     {
         const utils::autorelease_guard guard{};

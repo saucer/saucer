@@ -21,5 +21,6 @@ namespace saucer
 
       public:
         static void init_menu();
+        static screen convert(NSScreen *);
     };
 } // namespace saucer

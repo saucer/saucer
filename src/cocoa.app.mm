@@ -20,6 +20,28 @@ namespace saucer
         return m_impl->thread == std::this_thread::get_id();
     }
 
+    std::vector<screen> application::screens() const
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!thread_safe())
+        {
+            return dispatch([this] { return screens(); });
+        }
+
+        auto *const screens = [NSScreen screens];
+
+        std::vector<screen> rtn{};
+        rtn.reserve(screens.count);
+
+        for (NSScreen *entry : screens)
+        {
+            rtn.emplace_back(impl::convert(entry));
+        }
+
+        return rtn;
+    }
+
     void application::post(callback_t callback) const // NOLINT(*-static)
     {
         auto *const queue = dispatch_get_main_queue();
