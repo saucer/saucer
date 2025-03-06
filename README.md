@@ -72,8 +72,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   
   * Official Modules
     * 🖥️ [saucer/desktop](https://github.com/saucer/desktop) 
-      > 📂 File-Picker and URI-Launch support
-    
+      > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support
+
     * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
       > 📄 Print current page as PDF
 
@@ -143,3 +143,12 @@ int main()
     </picture>
 </a>
 </div>
+
+<br/>
+
+> [🎉 Become part of this list!](https://github.com/saucer/saucer/issues/new)
+
+## ⭐ Star History
+
+
+![](https://api.star-history.com/svg?repos=saucer/saucer&type=Date)
