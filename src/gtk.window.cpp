@@ -170,7 +170,12 @@ namespace saucer
         return {width, height};
     }
 
-    std::optional<screen> window::screen() const
+    std::pair<int, int> window::position() const // NOLINT(*-static)
+    {
+        return {};
+    }
+
+    std::optional<saucer::screen> window::screen() const
     {
         if (!m_parent->thread_safe())
         {
@@ -194,11 +199,6 @@ namespace saucer
         }
 
         return application::impl::convert(monitor);
-    }
-
-    std::pair<int, int> window::position() const // NOLINT(*-static)
-    {
-        return {};
     }
 
     void window::hide()

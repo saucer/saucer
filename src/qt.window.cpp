@@ -169,7 +169,17 @@ namespace saucer
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
     }
 
-    std::optional<screen> window::screen() const
+    std::pair<int, int> window::position() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return position(); });
+        }
+
+        return {m_impl->window->x(), m_impl->window->y()};
+    }
+
+    std::optional<saucer::screen> window::screen() const
     {
         if (!m_parent->thread_safe())
         {
@@ -184,16 +194,6 @@ namespace saucer
         }
 
         return application::impl::convert(screen);
-    }
-
-    std::pair<int, int> window::position() const
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return position(); });
-        }
-
-        return {m_impl->window->x(), m_impl->window->y()};
     }
 
     void window::hide()
