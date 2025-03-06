@@ -35,6 +35,26 @@ namespace saucer
         return m_impl->application->thread() == QThread::currentThread();
     }
 
+    std::vector<screen> application::screens() const
+    {
+        if (!thread_safe())
+        {
+            return dispatch([this] { return screens(); });
+        }
+
+        const auto screens = m_impl->application->screens();
+
+        std::vector<screen> rtn;
+        rtn.reserve(screens.size());
+
+        for (const auto &screen : screens)
+        {
+            rtn.emplace_back(impl::convert(screen));
+        }
+
+        return rtn;
+    }
+
     void application::post(callback_t callback) const
     {
         auto *const event = new safe_event{std::move(callback)};

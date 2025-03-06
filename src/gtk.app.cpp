@@ -39,6 +39,29 @@ namespace saucer
         return m_impl->thread == std::this_thread::get_id();
     }
 
+    std::vector<screen> application::screens() const
+    {
+        if (!thread_safe())
+        {
+            return dispatch([this] { return screens(); });
+        }
+
+        auto *const display  = gdk_display_get_default();
+        auto *const monitors = gdk_display_get_monitors(display);
+        const auto size      = g_list_model_get_n_items(monitors);
+
+        std::vector<screen> rtn{};
+        rtn.reserve(size);
+
+        for (auto i = 0uz; size > i; ++i)
+        {
+            auto *const current = reinterpret_cast<GdkMonitor *>(g_list_model_get_item(monitors, i));
+            rtn.emplace_back(impl::convert(current));
+        }
+
+        return rtn;
+    }
+
     void application::post(callback_t callback) const // NOLINT(*-static)
     {
         auto once = [](callback_t *data)

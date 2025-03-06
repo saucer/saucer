@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <QEvent>
+#include <QScreen>
 #include <QApplication>
 
 namespace saucer
@@ -19,6 +20,9 @@ namespace saucer
       public:
         int argc;
         std::vector<char *> argv;
+
+      public:
+        static screen convert(QScreen *);
     };
 
     class safe_event : public QEvent

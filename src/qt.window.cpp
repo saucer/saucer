@@ -1,7 +1,9 @@
 #include "qt.window.impl.hpp"
 
-#include "instantiate.hpp"
+#include "qt.app.impl.hpp"
 #include "qt.icon.impl.hpp"
+
+#include "instantiate.hpp"
 
 #include <cassert>
 
@@ -165,6 +167,23 @@ namespace saucer
         }
 
         return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
+    }
+
+    std::optional<screen> window::screen() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return screen(); });
+        }
+
+        auto *const screen = m_impl->window->screen();
+
+        if (!screen)
+        {
+            return std::nullopt;
+        }
+
+        return application::impl::convert(screen);
     }
 
     std::pair<int, int> window::position() const

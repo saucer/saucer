@@ -3,6 +3,8 @@
 #include "utils/required.hpp"
 #include "modules/module.hpp"
 
+#include <vector>
+#include <utility>
 #include <optional>
 #include <functional>
 
@@ -16,6 +18,15 @@ namespace saucer
 {
     template <typename T>
     struct safe_deleter;
+
+    struct screen
+    {
+        std::string name;
+
+      public:
+        std::pair<int, int> size;
+        std::pair<int, int> position;
+    };
 
     struct options
     {
@@ -49,14 +60,15 @@ namespace saucer
         ~application();
 
       public:
-        [[sc::unstable]] [[nodiscard]] poolparty::pool<> &pool();
-
-      public:
         template <bool Stable = true>
         [[nodiscard]] natives<application, Stable> native() const;
 
       public:
+        [[sc::unstable]] [[nodiscard]] poolparty::pool<> &pool();
+
+      public:
         [[nodiscard]] bool thread_safe() const;
+        [[nodiscard]] std::vector<screen> screens() const;
 
       public:
         void post(callback_t) const;

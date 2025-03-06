@@ -125,6 +125,7 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] std::pair<int, int> min_size() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] std::optional<screen> screen() const;
         [[sc::thread_safe]] [[nodiscard]] std::pair<int, int> position() const;
 
       public:
