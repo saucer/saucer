@@ -311,7 +311,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fmt
-  GIT_TAG        11.1.3
+  GIT_TAG        11.1.4
   GIT_REPOSITORY "https://github.com/fmtlib/fmt"
 )
 
