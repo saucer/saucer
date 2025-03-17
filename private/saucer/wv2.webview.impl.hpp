@@ -31,7 +31,7 @@ namespace saucer
     {
         ComPtr<ICoreWebView2Controller> controller;
         ComPtr<ICoreWebView2Settings> settings;
-        ComPtr<ICoreWebView2_2> web_view;
+        ComPtr<ICoreWebView2_3> web_view;
 
       public:
         icon favicon;

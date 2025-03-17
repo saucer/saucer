@@ -26,7 +26,7 @@ namespace saucer
     template <>
     struct stable_natives<webview>
     {
-        ICoreWebView2_2 *webview;
+        ICoreWebView2_3 *webview;
         ICoreWebView2Controller *controller;
     };
 } // namespace saucer
