@@ -47,7 +47,7 @@ namespace saucer
         case WM_NCCALCSIZE:
             if (!window->m_impl->titlebar)
             {
-                auto *const rect = w_param ? std::addressof(reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param)->rgrc[0])
+                auto *const rect = w_param ? &reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param)->rgrc[0] //
                                            : reinterpret_cast<RECT *>(l_param);
 
                 const auto maximized = window->maximized();
@@ -89,11 +89,9 @@ namespace saucer
             switch (w_param)
             {
             case SIZE_MAXIMIZED:
-                window->m_impl->prev_state = SIZE_MAXIMIZED;
                 window->m_events.at<window_event::maximize>().fire(true);
                 break;
             case SIZE_MINIMIZED:
-                window->m_impl->prev_state = SIZE_MINIMIZED;
                 window->m_events.at<window_event::minimize>().fire(true);
                 break;
             case SIZE_RESTORED:
@@ -106,10 +104,10 @@ namespace saucer
                     window->m_events.at<window_event::minimize>().fire(false);
                     break;
                 }
-
-                window->m_impl->prev_state = SIZE_RESTORED;
                 break;
             }
+
+            window->m_impl->prev_state = w_param;
 
             auto [width, height] = window->size();
             window->m_events.at<window_event::resize>().fire(width, height);
