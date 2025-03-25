@@ -31,6 +31,16 @@ namespace saucer
         m_impl->web_view->get_Settings(&m_impl->settings);
         m_impl->settings->put_IsStatusBarEnabled(false);
 
+        if (ComPtr<ICoreWebView2Settings2> settings; !prefs.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
+        {
+            settings->put_UserAgent(utils::widen(prefs.user_agent).c_str());
+        }
+
+        if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
+        {
+            settings->put_AreBrowserAcceleratorKeysEnabled(false);
+        }
+
         auto resource_requested = [this](auto, auto *args)
         {
             m_impl->scheme_handler(args, this);
@@ -138,16 +148,6 @@ namespace saucer
         }
 
         set_dev_tools(false);
-
-        if (ComPtr<ICoreWebView2Settings2> settings; !prefs.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
-        {
-            settings->put_UserAgent(utils::widen(prefs.user_agent).c_str());
-        }
-
-        if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
-        {
-            settings->put_AreBrowserAcceleratorKeysEnabled(false);
-        }
 
         inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
     }
