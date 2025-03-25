@@ -54,7 +54,7 @@ namespace saucer::serializers::rflpp
             return rtn.value();
         }
 
-        return std::unexpected{rtn.error().value().what()};
+        return std::unexpected{rtn.error().what()};
     }
 
     template <typename T>

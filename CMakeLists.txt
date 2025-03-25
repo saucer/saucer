@@ -426,7 +426,7 @@ if (saucer_serializer STREQUAL "Glaze")
 
   CPMFindPackage(
     NAME           glaze
-    VERSION        4.4.2
+    VERSION        5.0.1
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -442,7 +442,7 @@ if (saucer_serializer STREQUAL "Rflpp")
 
   CPMFindPackage(
     NAME           reflectcpp
-    VERSION        0.17.0
+    VERSION        0.18.0
     GIT_REPOSITORY "https://github.com/getml/reflect-cpp"
     SYSTEM         ON
   )
