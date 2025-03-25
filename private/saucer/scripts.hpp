@@ -55,40 +55,33 @@ namespace saucer::scripts
             return;
         }}
 
-        if (target.hasAttribute("data-webview-ignore"))
-        {{
-            return;
-        }}
-
         const elements = document.elementsFromPoint(x, y);
-        const close = [...document.querySelectorAll("[data-webview-close]")];
 
-        if (elements.some(x => close.includes(x)))
+        if (elements.some(elem => elem.hasAttribute("data-webview-close")))
         {{
             await window.saucer.close();
             return;
         }}
 
-        const minimize = [...document.querySelectorAll("[data-webview-minimize]")];
-
-        if (elements.some(x => minimize.includes(x)))
+        if (elements.some(elem => elem.hasAttribute("data-webview-minimize")))
         {{
             await window.saucer.minimize(true);
             return;
         }}
 
-        const maximize = [...document.querySelectorAll("[data-webview-maximize]")];
-
-        if (elements.some(x => maximize.includes(x)))
+        if (elements.some(elem => elem.hasAttribute("data-webview-maximize")))
         {{
             const maximized = await window.saucer.maximized();
             await window.saucer.maximize(!maximized);
             return;
         }}
 
-        const drag = [...document.querySelectorAll("[data-webview-drag]")];
+        if (elements.some(elem => elem.hasAttribute("data-webview-ignore")))
+        {{
+            return;
+        }}
 
-        if (elements.some(x => drag.includes(x)))
+        if (elements.some(elem => elem.hasAttribute("data-webview-drag")))
         {{
             await window.saucer.startDrag();
             return;
