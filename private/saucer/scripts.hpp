@@ -48,58 +48,59 @@ namespace saucer::scripts
         {stubs}
     }};
 
-    document.addEventListener("mousedown", async ({{ x, y, target, button }}) => 
+    document.addEventListener("mousedown", async ({{ x, y, target, button, detail }}) => 
     {{
         if (button !== 0)
         {{
             return;
         }}
 
-        const elements = document.elementsFromPoint(x, y);
+        const elements  = document.elementsFromPoint(x, y);
+        
+        const has       = (name) => elements.some(elem => elem.hasAttribute(name));
+        const attribute = (name) => elements.find(elem => elem.hasAttribute(name))?.getAttribute(name);
 
-        if (elements.some(elem => elem.hasAttribute("data-webview-close")))
+        if (has("data-webview-close"))
         {{
             await window.saucer.close();
             return;
         }}
 
-        if (elements.some(elem => elem.hasAttribute("data-webview-minimize")))
+        if (has("data-webview-minimize"))
         {{
             await window.saucer.minimize(true);
             return;
         }}
 
-        if (elements.some(elem => elem.hasAttribute("data-webview-maximize")))
+        const maximize = attribute("data-webview-maximize");
+
+        if (maximize === "" || (maximize === "double" && detail === 2))
         {{
             const maximized = await window.saucer.maximized();
             await window.saucer.maximize(!maximized);
             return;
         }}
 
-        if (elements.some(elem => elem.hasAttribute("data-webview-ignore")))
+        if (has("data-webview-ignore"))
         {{
             return;
         }}
 
-        if (elements.some(elem => elem.hasAttribute("data-webview-drag")))
+        if (has("data-webview-drag"))
         {{
             await window.saucer.startDrag();
             return;
         }}
 
-        const resize  = [...document.querySelectorAll("[data-webview-resize]")];
-        const element = elements.find(x => resize.includes(x));
+        const resize = attribute("data-webview-resize");
 
-        if (!element)
+        if (resize == null)
         {{
             return;
         }}
 
-        const attributes = [...element.attributes];
-        const attribute  = attributes.find(x => x.name === "data-webview-resize");
-
         const edges      = Object.keys(window.saucer.windowEdge);
-        const edge       = [...attribute.value].reduce((flag, value) => flag | window.saucer.windowEdge[edges.find(x => x.startsWith(value))], 0);
+        const edge       = [...resize].reduce((flag, value) => flag | window.saucer.windowEdge[edges.find(x => x.startsWith(value))], 0);
 
         await window.saucer.startResize(edge);
     }});
