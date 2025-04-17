@@ -24,6 +24,8 @@ namespace saucer
     {
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
+        utils::set_dpi_awareness();
+
         m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,             //
                                        m_parent->native<false>()->id.c_str(), //
                                        L"",                                   //
@@ -41,7 +43,6 @@ namespace saucer
 
         set_resizable(true);
 
-        utils::set_dpi_awareness();
         m_impl->o_wnd_proc = utils::overwrite_wndproc(m_impl->hwnd.get(), impl::wnd_proc);
 
         SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
