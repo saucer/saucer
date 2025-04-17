@@ -14,16 +14,22 @@ namespace saucer
 
     void utils::set_dpi_awareness()
     {
-        auto module = module_handle{LoadLibraryW(L"Shcore.dll")};
+        auto user32 = module_handle{LoadLibraryW(L"user32.dll")};
+        auto shcore = module_handle{LoadLibraryW(L"Shcore.dll")};
 
-        if (auto *func = GetProcAddress(module.get(), "SetProcessDpiAwareness"); func)
+        if (auto *func = GetProcAddress(user32.get(), "SetProcessDpiAwarenessContext"); func)
+        {
+            call_as<SetProcessDpiAwarenessContext>(func, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+            return;
+        }
+
+        if (auto *func = GetProcAddress(shcore.get(), "SetProcessDpiAwareness"); func)
         {
             call_as<SetProcessDpiAwareness>(func, PROCESS_PER_MONITOR_DPI_AWARE);
             return;
         }
 
-        module     = LoadLibraryW(L"user32.dll");
-        auto *func = GetProcAddress(module.get(), "SetProcessDPIAware");
+        auto *func = GetProcAddress(user32.get(), "SetProcessDPIAware");
 
         if (!func)
         {
