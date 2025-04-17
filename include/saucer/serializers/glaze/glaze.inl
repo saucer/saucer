@@ -12,10 +12,10 @@ namespace saucer::serializers::glaze
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
         template <typename T>
-        concept Readable = glz::read_supported<opts.format, T>;
+        concept Readable = glz::read_supported<T, opts.format>;
 
         template <typename T>
-        concept Writable = glz::write_supported<opts.format, T>;
+        concept Writable = glz::write_supported<T, opts.format>;
 
         template <typename T>
         auto can_parse(T &value, const glz::json_t &data)

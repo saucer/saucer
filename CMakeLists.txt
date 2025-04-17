@@ -58,7 +58,7 @@ endif()
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_webview2_version "1.0.2903.40"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_webview2_version "1.0.3179.45"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_windows_arch     "Default"       CACHE STRING "The windows architecture (Win32, x64, ARM64) used for linking against NuGet packages")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
@@ -426,7 +426,7 @@ if (saucer_serializer STREQUAL "Glaze")
 
   CPMFindPackage(
     NAME           glaze
-    VERSION        5.0.1
+    VERSION        5.1.0
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -442,7 +442,7 @@ if (saucer_serializer STREQUAL "Rflpp")
 
   CPMFindPackage(
     NAME           reflectcpp
-    VERSION        0.18.0
+    VERSION        0.19.0
     GIT_REPOSITORY "https://github.com/getml/reflect-cpp"
     SYSTEM         ON
   )
