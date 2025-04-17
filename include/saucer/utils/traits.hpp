@@ -118,10 +118,22 @@ namespace saucer::traits
         {
             return [callable = std::move(callable)](Ts &&...args, auto &&executor) mutable
             {
-                std::invoke(callable, std::forward<Ts>(args)...)
-                    .transform(executor.resolve)
-                    .transform_error([&executor]<typename... Us>(Us &&...args)
-                                     { return std::invoke(executor.reject, std::forward<Us>(args)...), 0; });
+                auto result = std::invoke(callable, std::forward<Ts>(args)...);
+
+                if (!result.has_value())
+                {
+                    std::invoke(executor.reject, result.error());
+                    return;
+                }
+
+                if constexpr (std::is_void_v<R>)
+                {
+                    std::invoke(executor.resolve);
+                }
+                else
+                {
+                    std::invoke(executor.resolve, result.value());
+                }
             };
         }
     };
