@@ -407,7 +407,9 @@ if (saucer_backend STREQUAL "WebView2")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
-  target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE=1 _UNICODE=1 NOMINMAX=1)
+  
+  target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
 
   include("cmake/webview2.cmake")
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Shlwapi gdiplus webview2::webview2)
