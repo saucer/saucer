@@ -18,7 +18,7 @@ constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
-    static constexpr auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS;
+    static constexpr auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
 
     window::window(const preferences &prefs) : m_impl(std::make_unique<impl>()), m_parent(prefs.application.value())
     {
