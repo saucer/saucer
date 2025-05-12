@@ -11,11 +11,6 @@ namespace saucer
         return instance;
     }
 
-    poolparty::pool<> &application::pool()
-    {
-        return m_pool;
-    }
-
     std::shared_ptr<application> application::init(const options &options)
     {
         auto locked = instance().write();

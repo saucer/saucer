@@ -12,8 +12,6 @@
 #include <memory>
 #include <thread>
 
-#include <poolparty/pool.hpp>
-
 namespace saucer
 {
     template <typename T>
@@ -50,7 +48,6 @@ namespace saucer
         using callback_t = std::move_only_function<void()>;
 
       private:
-        poolparty::pool<> m_pool;
         std::unique_ptr<impl> m_impl;
 
       private:
@@ -62,9 +59,6 @@ namespace saucer
       public:
         template <bool Stable = true>
         [[nodiscard]] natives<application, Stable> native() const;
-
-      public:
-        [[sc::unstable]] [[nodiscard]] poolparty::pool<> &pool();
 
       public:
         [[nodiscard]] bool thread_safe() const;

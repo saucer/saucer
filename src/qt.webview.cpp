@@ -322,12 +322,12 @@ namespace saucer
         m_impl->web_view->page()->runJavaScript(QString::fromStdString(code));
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver, launch policy)
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, name, handler = std::move(resolver), policy] mutable
-                                      { return handle_scheme(name, std::move(handler), policy); });
+            return m_parent->dispatch([this, name, handler = std::move(resolver)] mutable
+                                      { return handle_scheme(name, std::move(handler)); });
         }
 
         if (m_impl->schemes.contains(name))
@@ -335,7 +335,7 @@ namespace saucer
             return;
         }
 
-        auto handler = scheme::handler{m_parent.get(), policy, std::move(resolver)};
+        auto handler = scheme::handler{m_parent.get(), std::move(resolver)};
         auto &scheme = m_impl->schemes.emplace(name, std::move(handler)).first->second;
 
         m_impl->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);

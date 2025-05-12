@@ -11,101 +11,96 @@ void saucer::scheme::init_objc()
         return;
     }
 
-    class_replaceMethod(
-        [SchemeHandler class], @selector(webView:startURLSchemeTask:),
-        imp_implementationWithBlock(
-            [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> task)
-            {
-                const utils::autorelease_guard guard{};
+    class_replaceMethod([SchemeHandler class], @selector(webView:startURLSchemeTask:),
+                        imp_implementationWithBlock(
+                            [](SchemeHandler *self, WKWebView *instance, id<WKURLSchemeTask> task)
+                            {
+                                const utils::autorelease_guard guard{};
 
-                if (!self->m_callbacks.contains(instance))
-                {
-                    return;
-                }
+                                if (!self->m_callbacks.contains(instance))
+                                {
+                                    return;
+                                }
 
-                auto ref = task_ref::ref(task);
+                                auto ref = task_ref::ref(task);
 
-                auto handle = [&]
-                {
-                    auto locked = self->m_tasks.write();
-                    return locked->emplace(task.hash, ref).first->first;
-                }();
+                                auto handle = [&]
+                                {
+                                    auto locked = self->m_tasks.write();
+                                    return locked->emplace(task.hash, ref).first->first;
+                                }();
 
-                auto resolve = [self, handle](const scheme::response &response)
-                {
-                    const utils::autorelease_guard guard{};
+                                auto resolve = [self, handle](const scheme::response &response)
+                                {
+                                    const utils::autorelease_guard guard{};
 
-                    auto tasks = self->m_tasks.write();
+                                    auto tasks = self->m_tasks.write();
 
-                    if (!tasks->contains(handle))
-                    {
-                        return;
-                    }
+                                    if (!tasks->contains(handle))
+                                    {
+                                        return;
+                                    }
 
-                    auto task          = tasks->at(handle);
-                    const auto content = response.data;
+                                    auto task          = tasks->at(handle);
+                                    const auto content = response.data;
 
-                    auto *const data = [NSData dataWithBytes:content.data() length:static_cast<NSInteger>(content.size())];
-                    auto *const headers = [[[NSMutableDictionary<NSString *, NSString *> alloc] init] autorelease];
+                                    auto *const data = [NSData dataWithBytes:content.data()
+                                                                      length:static_cast<NSInteger>(content.size())];
+                                    auto *const headers =
+                                        [[[NSMutableDictionary<NSString *, NSString *> alloc] init] autorelease];
 
-                    for (const auto &[key, value] : response.headers)
-                    {
-                        [headers setObject:[NSString stringWithUTF8String:value.c_str()]
-                                    forKey:[NSString stringWithUTF8String:key.c_str()]];
-                    }
+                                    for (const auto &[key, value] : response.headers)
+                                    {
+                                        [headers setObject:[NSString stringWithUTF8String:value.c_str()]
+                                                    forKey:[NSString stringWithUTF8String:key.c_str()]];
+                                    }
 
-                    auto *const mime   = [NSString stringWithUTF8String:response.mime.c_str()];
-                    auto *const length = [NSString stringWithFormat:@"%zu", content.size()];
+                                    auto *const mime   = [NSString stringWithUTF8String:response.mime.c_str()];
+                                    auto *const length = [NSString stringWithFormat:@"%zu", content.size()];
 
-                    [headers setObject:mime forKey:@"Content-Type"];
-                    [headers setObject:length forKey:@"Content-Length"];
+                                    [headers setObject:mime forKey:@"Content-Type"];
+                                    [headers setObject:length forKey:@"Content-Length"];
 
-                    auto *const res = [[[NSHTTPURLResponse alloc] initWithURL:task.get().request.URL
-                                                                   statusCode:response.status
-                                                                  HTTPVersion:nil
-                                                                 headerFields:headers] autorelease];
+                                    auto *const res = [[[NSHTTPURLResponse alloc] initWithURL:task.get().request.URL
+                                                                                   statusCode:response.status
+                                                                                  HTTPVersion:nil
+                                                                                 headerFields:headers] autorelease];
 
-                    [task.get() didReceiveResponse:res];
-                    [task.get() didReceiveData:data];
-                    [task.get() didFinish];
+                                    [task.get() didReceiveResponse:res];
+                                    [task.get() didReceiveData:data];
+                                    [task.get() didFinish];
 
-                    tasks->erase(handle);
-                };
+                                    tasks->erase(handle);
+                                };
 
-                auto reject = [self, handle](const scheme::error &error)
-                {
-                    const utils::autorelease_guard guard{};
+                                auto reject = [self, handle](const scheme::error &error)
+                                {
+                                    const utils::autorelease_guard guard{};
 
-                    auto tasks = self->m_tasks.write();
+                                    auto tasks = self->m_tasks.write();
 
-                    if (!tasks->contains(handle))
-                    {
-                        return;
-                    }
+                                    if (!tasks->contains(handle))
+                                    {
+                                        return;
+                                    }
 
-                    auto task = tasks->at(handle);
+                                    auto task = tasks->at(handle);
 
-                    [task.get() didFailWithError:[NSError errorWithDomain:NSURLErrorDomain
-                                                                     code:std::to_underlying(error)
-                                                                 userInfo:nil]];
+                                    [task.get() didFailWithError:[NSError errorWithDomain:NSURLErrorDomain
+                                                                                     code:std::to_underlying(error)
+                                                                                 userInfo:nil]];
 
-                    tasks->erase(handle);
-                };
+                                    tasks->erase(handle);
+                                };
 
-                auto &[app, policy, resolver] = self->m_callbacks.at(instance);
+                                auto &[app, resolver] = self->m_callbacks.at(instance);
 
-                auto req      = scheme::request{{ref}};
-                auto executor = scheme::executor{std::move(resolve), std::move(reject)};
+                                auto req      = scheme::request{{ref}};
+                                auto executor = scheme::executor{std::move(resolve), std::move(reject)};
 
-                if (policy != launch::async)
-                {
-                    return std::invoke(resolver, std::move(req), std::move(executor));
-                }
-
-                app->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                                    { std::invoke(resolver, std::move(req), std::move(executor)); });
-            }),
-        "v@:@");
+                                return std::invoke(resolver, std::move(req), std::move(executor));
+                            }),
+                        "v@:@");
 
     init = true;
 }

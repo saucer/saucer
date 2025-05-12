@@ -37,7 +37,7 @@ namespace saucer
         void resolve(std::unique_ptr<result_data>);
 
       protected:
-        void add_function(std::string, serializer::function &&, launch);
+        void add_function(std::string, serializer::function &&);
         void add_evaluation(serializer::resolver &&, const std::string &);
 
       public:
@@ -52,7 +52,7 @@ namespace saucer
 
       public:
         template <typename Function>
-        [[sc::thread_safe]] void expose(std::string name, Function &&func, launch policy = launch::sync);
+        [[sc::thread_safe]] void expose(std::string name, Function &&func);
 
       public:
         template <typename... Params>

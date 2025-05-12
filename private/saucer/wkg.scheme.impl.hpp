@@ -17,9 +17,6 @@ namespace saucer::scheme
     struct callback
     {
         application *app;
-
-      public:
-        launch policy;
         scheme::resolver resolver;
     };
 

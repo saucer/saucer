@@ -7,7 +7,7 @@ namespace saucer
     template void application::run<true>() const;
     template void application::run<false>() const;
 
-    application::application(const options &opts) : extensible(this), m_pool(opts.threads), m_impl(std::make_unique<impl>())
+    application::application(const options &opts) : extensible(this), m_impl(std::make_unique<impl>())
     {
         const auto id = g_application_id_is_valid(opts.id.value().c_str())
                             ? opts.id.value()

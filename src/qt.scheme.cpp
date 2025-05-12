@@ -67,13 +67,13 @@ namespace saucer::scheme
                | std::ranges::to<std::map<std::string, std::string>>();
     }
 
-    handler::handler(application *app, launch policy, scheme::resolver resolver)
-        : app(app), policy(policy), resolver(std::move(resolver))
+    handler::handler(application *app, scheme::resolver resolver)
+        : app(app), resolver(std::move(resolver))
     {
     }
 
     handler::handler(handler &&other) noexcept
-        : app(std::exchange(other.app, nullptr)), policy(other.policy), resolver(std::move(other.resolver))
+        : app(std::exchange(other.app, nullptr)), resolver(std::move(other.resolver))
     {
     }
 
@@ -146,12 +146,6 @@ namespace saucer::scheme
 
         connect(raw, &QObject::destroyed, [request]() { request->assign(nullptr); });
 
-        if (policy != launch::async)
-        {
-            return std::invoke(resolver, std::move(req), std::move(executor));
-        }
-
-        app->pool().emplace([resolver = resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                            { std::invoke(resolver, std::move(req), std::move(executor)); });
+        return std::invoke(resolver, std::move(req), std::move(executor));
     }
 } // namespace saucer::scheme

@@ -4,7 +4,7 @@
 
 namespace saucer
 {
-    application::application(const options &opts) : extensible(this), m_pool(opts.threads), m_impl(std::make_unique<impl>())
+    application::application(const options &opts) : extensible(this), m_impl(std::make_unique<impl>())
     {
         m_impl->thread = GetCurrentThreadId();
         m_impl->handle = GetModuleHandleW(nullptr);

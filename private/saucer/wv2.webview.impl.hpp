@@ -46,7 +46,7 @@ namespace saucer
 
       public:
         std::vector<std::pair<script, std::wstring>> scripts;
-        std::unordered_map<std::string, std::pair<scheme::resolver, launch>> schemes;
+        std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:
         void create_webview(const std::shared_ptr<application> &, HWND, preferences);

@@ -14,7 +14,7 @@ namespace saucer
 
     struct smartview_core::impl
     {
-        using exposed = std::shared_ptr<std::pair<function, launch>>;
+        using exposed = std::shared_ptr<function>;
 
       public:
         lock<std::unordered_map<std::string, exposed>> functions;
@@ -108,17 +108,9 @@ namespace saucer
             self.value()->reject(id, error);
         };
 
-        auto executor     = serializer::executor{std::move(resolve), std::move(reject)};
-        const auto policy = exposed->second;
-
-        if (policy == launch::sync)
-        {
-            return std::invoke(exposed->first, std::move(message), executor);
-        }
-
-        m_parent->pool().emplace(
-            [exposed = std::move(exposed), message = std::move(message), executor = std::move(executor)]() mutable
-            { std::invoke(exposed->first, std::move(message), executor); });
+        auto executor = serializer::executor{std::move(resolve), std::move(reject)};
+        
+        return std::invoke(*exposed, std::move(message), std::move(executor));
     }
 
     void smartview_core::resolve(std::unique_ptr<result_data> message)
@@ -137,10 +129,10 @@ namespace saucer
         std::invoke(evaluation, std::move(message));
     }
 
-    void smartview_core::add_function(std::string name, function &&resolve, launch policy)
+    void smartview_core::add_function(std::string name, function &&resolve)
     {
         auto functions = m_impl->functions.write();
-        functions->emplace(std::move(name), std::make_shared<impl::exposed::element_type>(std::move(resolve), policy));
+        functions->emplace(std::move(name), std::make_shared<function>(std::move(resolve)));
     }
 
     void smartview_core::add_evaluation(resolver &&resolve, const std::string &code)

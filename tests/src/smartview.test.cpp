@@ -31,13 +31,6 @@ suite<"smartview"> smartview_suite = []
             return a + b;
         });
 
-        smartview->expose(
-            "sub",
-            [&](int a, int b) { //
-                return smartview->evaluate<int>("{} - {}", a, b).get();
-            },
-            saucer::launch::async);
-
         smartview->expose("struct", [](const some_struct &data) { //
             return data.x;
         });
@@ -45,7 +38,6 @@ suite<"smartview"> smartview_suite = []
         smartview->set_url("https://saucer.github.io");
 
         expect(smartview->evaluate<int>("await saucer.exposed.sum(10, 5)").get() == 15);
-        expect(smartview->evaluate<int>("await saucer.exposed.sub(10, 5)").get() == 5);
 
         expect(smartview->evaluate<int>("await saucer.exposed.struct({{ x: 5 }})").get() == 5);
         expect(smartview->evaluate<int>("await saucer.exposed.struct({})", some_struct{5}).get() == 5);
@@ -53,16 +45,39 @@ suite<"smartview"> smartview_suite = []
 
     "expose-executor"_test_async = [](const std::shared_ptr<saucer::smartview<>> &smartview)
     {
-        smartview->expose("sum", [](int a, int b, const saucer::executor<int> &exec) { //
-            auto [resolve, reject] = exec;
+        smartview->expose("sum",
+                          [](int a, int b, const saucer::executor<int> &exec)
+                          {
+                              auto [resolve, reject] = exec;
 
-            if (a < 0 || b < 0)
-            {
-                return reject("Not positive");
-            }
+                              if (a < 0 || b < 0)
+                              {
+                                  return reject("Not positive");
+                              }
 
-            resolve(a + b);
-        });
+                              resolve(a + b);
+                          });
+
+        smartview->expose("sub",
+                          [](int a, int b, saucer::executor<int> exec)
+                          {
+                              auto thread = std::thread{[](auto a, auto b, auto exec)
+                                                        {
+                                                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                                                            auto [resolve, reject] = exec;
+
+                                                            if (a < 0 || b < 0)
+                                                            {
+                                                                return reject("Not positive");
+                                                            }
+
+                                                            resolve(a + b);
+                                                        },
+                                                        a, b, std::move(exec)};
+
+                              thread.detach();
+                          });
 
         std::optional<std::variant<int, std::string>> result;
 

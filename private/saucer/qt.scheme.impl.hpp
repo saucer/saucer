@@ -20,13 +20,10 @@ namespace saucer::scheme
     class handler : public QWebEngineUrlSchemeHandler
     {
         application *app;
-
-      private:
-        launch policy;
         scheme::resolver resolver;
 
       public:
-        handler(application *, launch, scheme::resolver);
+        handler(application *, scheme::resolver);
 
       public:
         handler(handler &&) noexcept;

@@ -60,17 +60,11 @@ namespace saucer::scheme
             webkit_uri_scheme_request_finish_error(request.get(), err.get());
         };
 
-        auto &[app, policy, resolver] = state->m_callbacks.at(identifier);
+        auto &[app, resolver] = state->m_callbacks.at(identifier);
 
         auto executor = scheme::executor{std::move(resolve), std::move(reject)};
         auto req      = scheme::request{{request}};
 
-        if (policy != launch::async)
-        {
-            return std::invoke(resolver, std::move(req), std::move(executor));
-        }
-
-        app->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                            { std::invoke(resolver, std::move(req), std::move(executor)); });
+        return std::invoke(resolver, std::move(req), std::move(executor));
     }
 } // namespace saucer::scheme

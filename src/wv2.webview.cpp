@@ -481,12 +481,12 @@ namespace saucer
         m_impl->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver, launch policy)
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, name, resolver = std::move(resolver), policy]() mutable
-                                      { return handle_scheme(name, std::move(resolver), policy); });
+            return m_parent->dispatch([this, name, resolver = std::move(resolver)]() mutable
+                                      { return handle_scheme(name, std::move(resolver)); });
         }
 
         ComPtr<ICoreWebView2_22> webview;
@@ -501,7 +501,7 @@ namespace saucer
             return;
         }
 
-        m_impl->schemes.emplace(name, std::make_pair(std::move(resolver), policy));
+        m_impl->schemes.emplace(name, std::move(resolver));
 
         const auto pattern = utils::widen(fmt::format("{}*", name));
 

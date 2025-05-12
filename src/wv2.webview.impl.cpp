@@ -232,20 +232,12 @@ namespace saucer
             };
         };
 
-        auto &[resolver, policy] = scheme->second;
+        auto &resolver = scheme->second;
 
         auto req      = scheme::request{{request, content}};
         auto executor = scheme::executor{forward(std::move(resolve)), forward(std::move(reject))};
 
-        if (policy != launch::async)
-        {
-            std::invoke(resolver, std::move(req), std::move(executor));
-            return S_OK;
-        }
-
-        self->m_parent->pool().emplace([resolver, executor = std::move(executor), req = std::move(req)]() mutable
-                                       { std::invoke(resolver, std::move(req), std::move(executor)); });
-
+        std::invoke(resolver, std::move(req), std::move(executor));
         return S_OK;
     }
 

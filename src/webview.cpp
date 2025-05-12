@@ -56,7 +56,7 @@ namespace saucer
             id, result));
     }
 
-    void webview::embed(embedded_files files, launch policy)
+    void webview::embed(embedded_files files)
     {
         if (!m_parent->thread_safe())
         {
@@ -93,7 +93,7 @@ namespace saucer
             };
         };
 
-        handle_scheme("saucer", func, policy);
+        handle_scheme("saucer", func);
     }
 
     void webview::serve(const std::string &file)

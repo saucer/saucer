@@ -430,12 +430,12 @@ namespace saucer
         [m_impl->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver, launch policy)
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, name, handler = std::move(resolver), policy] mutable
-                                      { return handle_scheme(name, std::move(handler), policy); });
+            return m_parent->dispatch([this, name, handler = std::move(resolver)] mutable
+                                      { return handle_scheme(name, std::move(handler)); });
         }
 
         if (!impl::schemes.contains(name))
@@ -443,7 +443,7 @@ namespace saucer
             return;
         }
 
-        [impl::schemes[name].get() add_callback:{.app = m_parent.get(), .policy = policy, .resolver = std::move(resolver)}
+        [impl::schemes[name].get() add_callback:{.app = m_parent.get(), .resolver = std::move(resolver)}
                                         webview:m_impl->web_view.get()];
     }
 
