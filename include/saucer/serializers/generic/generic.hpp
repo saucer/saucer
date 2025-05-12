@@ -25,7 +25,7 @@ namespace saucer::serializers::generic
 
       public:
         template <typename T>
-        static auto resolve(std::promise<T>);
+        static auto resolve(coco::promise<T>);
     };
 } // namespace saucer::serializers::generic
 

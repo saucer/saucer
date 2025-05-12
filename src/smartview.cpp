@@ -123,16 +123,18 @@ namespace saucer
 
     void smartview_core::resolve(std::unique_ptr<result_data> message)
     {
-        const auto id = message->id;
-        auto evals    = m_impl->evaluations.write();
+        resolver evaluation;
 
-        if (!evals->contains(id))
+        if (auto locked = m_impl->evaluations.write(); auto node = locked->extract(message->id))
+        {
+            evaluation = std::move(node.mapped());
+        }
+        else
         {
             return;
         }
 
-        std::invoke(evals->at(id), std::move(message));
-        evals->erase(id);
+        std::invoke(evaluation, std::move(message));
     }
 
     void smartview_core::add_function(std::string name, function &&resolve, launch policy)

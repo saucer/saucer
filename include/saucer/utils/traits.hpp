@@ -9,6 +9,8 @@
 #include <tuple>
 #include <expected>
 
+#include <coco/utils/utils.hpp>
+#include <coco/traits/traits.hpp>
 #include <boost/callable_traits.hpp>
 
 namespace saucer::traits
@@ -59,10 +61,10 @@ namespace saucer::traits
     using apply_t = impl::apply<T, Args>::type;
 
     template <typename T>
-    static constexpr auto has_reference_v = impl::has_reference<T>::value;
+    using raw_args_t = boost::callable_traits::args_t<T>;
 
     template <typename T>
-    using raw_args_t = boost::callable_traits::args_t<T>;
+    concept NonRefCallable = !impl::has_reference<raw_args_t<T>>::value;
 
     template <typename T, template <typename...> typename Transform = impl::arg_transformer_t>
     using args_t = tuple::transform_t<raw_args_t<T>, Transform>;
@@ -79,7 +81,58 @@ namespace saucer::traits
     struct converter
     {
         static_assert(std::same_as<WithExecutor, apply_failure> && std::same_as<Result, apply_failure>,
-                      "Could not match arguments. Make sure you are using appropiate value categories!");
+                      "Could not find appropiate converter. Make sure to return `void` when taking an executor!");
+    };
+
+    template <NonRefCallable T, typename Result = result_t<T>, typename Last = tuple::last_t<args_t<T>>>
+    struct resolver
+    {
+        using args     = args_t<T>;
+        using error    = void;
+        using result   = Result;
+        using executor = saucer::executor<Result, void>;
+
+      public:
+        using converter = traits::converter<T, args, executor, apply_failure, apply_success<Result>>;
+    };
+
+    template <NonRefCallable T, typename Result, typename R, typename E>
+    struct resolver<T, Result, executor<R, E>>
+    {
+        using args     = tuple::drop_last_t<args_t<T>>;
+        using error    = E;
+        using result   = R;
+        using executor = saucer::executor<R, E>;
+
+      public:
+        using converter = traits::converter<T, args, executor, apply_success<Result>, apply_success<Result>>;
+    };
+
+    template <NonRefCallable T, typename R, typename E, typename Last>
+    struct resolver<T, std::expected<R, E>, Last>
+    {
+        using args     = args_t<T>;
+        using error    = E;
+        using result   = R;
+        using executor = saucer::executor<R, E>;
+
+      public:
+        using converter = traits::converter<T, args, executor, apply_failure, apply_success<std::expected<R, E>>>;
+    };
+
+    template <NonRefCallable T, coco::Awaitable Result, typename Last>
+    struct resolver<T, Result, Last>
+    {
+        using underlying = resolver<T, typename coco::traits<Result>::result, Last>;
+
+      public:
+        using args     = underlying::args;
+        using error    = underlying::error;
+        using result   = underlying::result;
+        using executor = underlying::executor;
+
+      public:
+        using converter = traits::converter<T, args, executor, apply_failure, apply_success<Result>>;
     };
 
     template <typename T, typename Args, typename Executor, typename _>
@@ -94,18 +147,24 @@ namespace saucer::traits
     template <typename T, typename... Ts, typename R, typename E, typename Result>
     struct converter<T, std::tuple<Ts...>, executor<R, E>, apply_failure, apply_success<Result>>
     {
+        template <typename... Rs>
+        static void resolve(auto &&executor, Rs &&...result)
+        {
+            std::invoke(executor.resolve, std::forward<Rs>(result)...);
+        }
+
         static decltype(auto) convert(T callable)
         {
-            return [callable = std::move(callable)](Ts &&...args, auto &&executor) mutable
+            return [callable = std::move(callable)]<typename Executor>(Ts &&...args, Executor &&executor) mutable
             {
                 if constexpr (std::is_void_v<Result>)
                 {
                     std::invoke(callable, std::forward<Ts>(args)...);
-                    std::invoke(executor.resolve);
+                    resolve(std::forward<Executor>(executor));
                 }
                 else
                 {
-                    std::invoke(executor.resolve, std::invoke(callable, std::forward<Ts>(args)...));
+                    resolve(std::forward<Executor>(executor), std::invoke(callable, std::forward<Ts>(args)...));
                 }
             };
         }
@@ -114,64 +173,58 @@ namespace saucer::traits
     template <typename T, typename... Ts, typename R, typename E>
     struct converter<T, std::tuple<Ts...>, executor<R, E>, apply_failure, apply_success<std::expected<R, E>>>
     {
+        static void resolve(auto &&executor, auto &&result)
+        {
+            if (!result.has_value())
+            {
+                std::invoke(executor.reject, result.error());
+                return;
+            }
+
+            if constexpr (std::is_void_v<R>)
+            {
+                std::invoke(executor.resolve);
+            }
+            else
+            {
+                std::invoke(executor.resolve, result.value());
+            }
+        }
+
         static decltype(auto) convert(T callable)
         {
-            return [callable = std::move(callable)](Ts &&...args, auto &&executor) mutable
+            return [callable = std::move(callable)]<typename Executor>(Ts &&...args, Executor &&executor) mutable
             {
-                auto result = std::invoke(callable, std::forward<Ts>(args)...);
-
-                if (!result.has_value())
-                {
-                    std::invoke(executor.reject, result.error());
-                    return;
-                }
-
-                if constexpr (std::is_void_v<R>)
-                {
-                    std::invoke(executor.resolve);
-                }
-                else
-                {
-                    std::invoke(executor.resolve, result.value());
-                }
+                resolve(std::forward<Executor>(executor), std::invoke(callable, std::forward<Ts>(args)...));
             };
         }
     };
 
-    template <typename T, typename Result = result_t<T>, typename Last = tuple::last_t<args_t<T>>>
-        requires(!has_reference_v<raw_args_t<T>>)
-    struct resolver
+    template <typename T, typename... Ts, typename R, typename E, coco::Awaitable Result>
+    struct converter<T, std::tuple<Ts...>, executor<R, E>, apply_failure, apply_success<Result>>
     {
-        using args     = args_t<T>;
-        using error    = void;
-        using result   = Result;
-        using executor = saucer::executor<Result, void>;
+        template <typename Executor, typename... Rs>
+        static void resolve(Executor &&executor, Rs &&...result)
+        {
+            using result_t    = coco::traits<Result>::result;
+            using converter_t = resolver<T, result_t>::converter;
 
-      public:
-        using converter = traits::converter<T, args, executor>;
-    };
+            static_assert(not std::same_as<converter_t, converter>);
 
-    template <typename T, typename Result, typename R, typename E>
-    struct resolver<T, Result, executor<R, E>>
-    {
-        using args     = tuple::drop_last_t<args_t<T>>;
-        using error    = E;
-        using result   = R;
-        using executor = saucer::executor<R, E>;
+            converter_t::resolve(std::forward<Executor>(executor), std::forward<Rs>(result)...);
+        }
 
-      public:
-        using converter = traits::converter<T, args, executor>;
-    };
+        static decltype(auto) convert(T callable)
+        {
+            return [callable = std::move(callable)]<typename Executor>(Ts &&...args, Executor &&executor) mutable
+            {
+                auto callback = [executor = std::forward<Executor>(executor)]<typename... Rs>(Rs &&...result) mutable
+                {
+                    resolve(std::move(executor), std::forward<Rs>(result)...);
+                };
 
-    template <typename T, typename R, typename E, typename Last>
-    struct resolver<T, std::expected<R, E>, Last>
-    {
-        using args     = args_t<T>;
-        using error    = E;
-        using result   = R;
-        using executor = saucer::executor<R, E>;
-
-      public:
-        using converter = traits::converter<T, args, executor>;
+                coco::then(std::invoke(callable, std::forward<Ts>(args)...), std::move(callback));
+            };
+        }
     };
 } // namespace saucer::traits

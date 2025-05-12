@@ -19,10 +19,10 @@ namespace saucer
 
     template <Serializer Serializer>
     template <typename Return, typename... Params>
-    std::future<Return> smartview<Serializer>::evaluate(std::string_view code, Params &&...params)
+    coco::future<Return> smartview<Serializer>::evaluate(std::string_view code, Params &&...params)
     {
-        std::promise<Return> promise;
-        auto rtn = promise.get_future();
+        auto promise = coco::promise<Return>{};
+        auto rtn     = promise.get_future();
 
         auto args    = Serializer::serialize_args(std::forward<Params>(params)...);
         auto resolve = Serializer::resolve(std::move(promise));

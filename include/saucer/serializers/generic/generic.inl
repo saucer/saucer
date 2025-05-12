@@ -103,7 +103,7 @@ namespace saucer::serializers::generic
 
     template <typename FunctionData, typename ResultData, Serializer<FunctionData, ResultData> Interface>
     template <typename T>
-    auto serializer<FunctionData, ResultData, Interface>::resolve(std::promise<T> promise)
+    auto serializer<FunctionData, ResultData, Interface>::resolve(coco::promise<T> promise)
     {
         return [promise = std::move(promise)](std::unique_ptr<saucer::result_data> data) mutable
         {

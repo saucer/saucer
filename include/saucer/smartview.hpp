@@ -3,13 +3,13 @@
 #include "webview.hpp"
 #include "config.hpp"
 
-#include <future>
 #include <atomic>
-
 #include <string>
 #include <memory>
 
 #include <string_view>
+
+#include <coco/promise/promise.hpp>
 
 namespace saucer
 {
@@ -60,7 +60,7 @@ namespace saucer
 
       public:
         template <typename Return, typename... Params>
-        [[sc::thread_safe]] [[nodiscard]] std::future<Return> evaluate(std::string_view code, Params &&...params);
+        [[sc::thread_safe]] [[nodiscard]] coco::future<Return> evaluate(std::string_view code, Params &&...params);
     };
 } // namespace saucer
 

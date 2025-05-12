@@ -10,9 +10,9 @@
 
 #include <string>
 #include <memory>
-#include <future>
 
 #include <fmt/args.h>
+#include <coco/promise/promise.hpp>
 
 namespace saucer
 {
@@ -54,7 +54,7 @@ namespace saucer
             T::serialize_args(make_args(10, 15, 20))
         } -> std::convertible_to<serializer::args>;
         { //
-            T::resolve(std::declval<std::promise<int>>())
+            T::resolve(std::declval<coco::promise<int>>())
         } -> std::convertible_to<serializer::resolver>;
     };
 } // namespace saucer

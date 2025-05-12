@@ -298,12 +298,6 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           boost_callable_traits
-  GIT_TAG        boost-1.87.0
-  GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
-)
-
-CPMFindPackage(
   NAME           ereignis
   VERSION        4.3
   GIT_REPOSITORY "https://github.com/Soundux/ereignis"
@@ -340,13 +334,25 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
+  NAME           coco
+  VERSION        3.2.0
+  GIT_REPOSITORY "https://github.com/Curve/coco"
+)
+
+CPMFindPackage(
   NAME           boost_preprocessor
   GIT_TAG        boost-1.87.0
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
+CPMFindPackage(
+  NAME           boost_callable_traits
+  GIT_TAG        boost-1.87.0
+  GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
+)
+
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits cr::ereignis fmt::fmt cr::rebind cr::poolparty cr::eraser)
+target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits cr::ereignis fmt::fmt cr::rebind cr::poolparty cr::eraser cr::coco)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
