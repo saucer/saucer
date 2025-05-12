@@ -44,7 +44,8 @@ jobs:
 
           - backend: WebKit
             platform: MacOS
-            os: macos-latest
+            os: macos-15
+            xcode-version: latest-stable
 
           - backend: WebView2
             platform: Windows
@@ -66,9 +67,12 @@ jobs:
         with:
           backend: ${{ matrix.backend }}
           platform: ${{ matrix.platform }}
+
           build-type: ${{ matrix.config }}
-          cmake-args: -Dsaucer_tests=ON -Dsaucer_examples=ON ${{ matrix.cmake-args }}
           install: ${{ matrix.install }}
+
+          xcode-version: ${{ matrix.xcode-version }}
+          cmake-args: -Dsaucer_tests=ON -Dsaucer_examples=ON ${{ matrix.cmake-args }}
 
       - name: 🐛 Debug
         if: ${{ github.event.inputs.debug == 'true' }}
