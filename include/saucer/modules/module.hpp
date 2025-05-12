@@ -13,19 +13,22 @@ namespace saucer
 {
     namespace modules
     {
-        using webview = eraser::interface<eraser::method<0,
-                                                         [](auto &self, const auto &message)
-                                                         {
-                                                             if constexpr (requires { self.on_message(message); })
-                                                             {
-                                                                 return self.on_message(message);
-                                                             }
-                                                             else
-                                                             {
-                                                                 return false;
-                                                             }
-                                                         },
-                                                         bool(const std::string &)>>;
+        struct webview_methods
+        {
+            static inline auto on_message = [](auto &self, const auto &message)
+            {
+                if constexpr (requires { self.on_message(message); })
+                {
+                    return self.on_message(message);
+                }
+                else
+                {
+                    return false;
+                }
+            };
+        };
+
+        using webview = eraser::interface<eraser::method<0, webview_methods::on_message, bool(const std::string &)>>;
     } // namespace modules
 
     template <typename T>
