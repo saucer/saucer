@@ -31,17 +31,21 @@ runs:
     - name: 📋 Install Base Dependencies
       shell: bash
       if: inputs.platform == 'Linux'
-      run: "pacman --noconfirm -Syu cmake gcc git xorg-server-xvfb xorg-xwd openssh tmate"
+      run: |
+        pacman --noconfirm -Syu cmake gcc git xorg-server-xvfb xorg-xwd openssh tmate
 
     - name: 📋 Install Qt5-Dependencies
       shell: bash
       if: inputs.backend == 'Qt5'
-      run: "pacman --noconfirm -Syu qt5-base qt5-webchannel qt5-webengine"
+      run: |
+        pacman --noconfirm -Syu qt5-base qt5-webchannel qt5-webengine
 
     - name: 📋 Install Qt6-Dependencies
       shell: bash
       if: inputs.backend == 'Qt6'
-      run: "pacman --noconfirm -Syu qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine"
+      run: |
+        pacman --noconfirm -Syu qt6-base qt6-declarative qt6-svg qt6-tools qt6-translations qt6-webchannel qt6-webengine dbus
+        dbus-daemon --system --print-address &
 
     - name: 📋 Install WebKitGtk-Dependencies
       shell: bash
