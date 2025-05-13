@@ -15,7 +15,7 @@ namespace saucer
     {
         struct webview_methods
         {
-            static inline auto on_message = [](auto &self, const auto &message)
+            static constexpr auto on_message = [](auto &self, const auto &message)
             {
                 if constexpr (requires { self.on_message(message); })
                 {
