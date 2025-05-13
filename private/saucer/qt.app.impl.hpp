@@ -3,6 +3,7 @@
 #include "app.hpp"
 
 #include <vector>
+#include <unordered_map>
 
 #include <QEvent>
 #include <QScreen>
@@ -13,6 +14,10 @@ namespace saucer
     struct application::impl
     {
         std::unique_ptr<QApplication> application;
+        std::unique_ptr<QEventLoop> loop;
+
+      public:
+        std::unordered_map<void *, bool> instances;
 
       public:
         std::string id;

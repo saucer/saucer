@@ -214,6 +214,7 @@ namespace saucer
         }
 
         m_impl->window->show();
+        m_parent->native<false>()->instances[m_impl->window.get()] = true;
     }
 
     void window::close()

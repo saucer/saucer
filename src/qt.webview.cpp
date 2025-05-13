@@ -23,11 +23,8 @@ namespace saucer
 
         if (prefs.hardware_acceleration)
         {
-            flags.emplace("--enable-oop-rasterization");
-            flags.emplace("--enable-gpu-rasterization");
-
-            flags.emplace("--use-gl=desktop");
-            flags.emplace("--enable-native-gpu-memory-buffers");
+            flags.emplace("--gpu");
+            flags.emplace("--ignore-gpu-blocklist");
         }
 
         const auto args = fmt::format("{}", fmt::join(flags, " "));

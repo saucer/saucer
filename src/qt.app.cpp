@@ -26,9 +26,17 @@ namespace saucer
 #endif
 
         m_impl->application = std::make_unique<QApplication>(m_impl->argc, m_impl->argv.data());
+        m_impl->loop        = std::make_unique<QEventLoop>();
     }
 
-    application::~application() = default;
+    application::~application()
+    {
+        auto fut = dispatch<false>([] { QApplication::quit(); });
+        {
+            QApplication::exec();
+        }
+        fut.get();
+    }
 
     bool application::thread_safe() const
     {
@@ -64,17 +72,17 @@ namespace saucer
     template <>
     void application::run<true>() const // NOLINT(*-static)
     {
-        QApplication::exec();
+        m_impl->loop->exec(QEventLoop::ApplicationExec);
     }
 
     template <>
     void application::run<false>() const // NOLINT(*-static)
     {
-        QApplication::processEvents();
+        m_impl->loop->processEvents();
     }
 
     void application::quit() // NOLINT(*-static)
     {
-        QApplication::quit();
+        m_impl->loop->quit();
     }
 } // namespace saucer

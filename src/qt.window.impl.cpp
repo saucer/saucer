@@ -1,4 +1,5 @@
 #include "qt.window.impl.hpp"
+#include "qt.app.impl.hpp"
 
 #include <QThread>
 #include <QCloseEvent>
@@ -85,8 +86,20 @@ namespace saucer
         }
 
         m_parent->m_events.at<window_event::closed>().fire();
-
         QMainWindow::closeEvent(event);
+
+        auto &parent     = m_parent->m_parent;
+        auto *identifier = m_parent->m_impl->window.get();
+        auto &instances  = parent->native<false>()->instances;
+
+        instances.erase(identifier);
+
+        if (std::ranges::any_of(instances | std::views::values, std::identity{}))
+        {
+            return;
+        }
+
+        parent->quit();
     }
 
     void window::impl::main_window::resizeEvent(QResizeEvent *event)
