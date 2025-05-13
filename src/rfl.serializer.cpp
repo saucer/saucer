@@ -19,7 +19,13 @@ namespace rfl
 
         static function_data to(const ReflType &v) noexcept
         {
-            return {{v.id, v.name}, v.params};
+            function_data rtn;
+
+            rtn.id     = v.id;
+            rtn.name   = v.name;
+            rtn.params = v.params;
+
+            return rtn;
         }
     };
 
@@ -35,7 +41,12 @@ namespace rfl
 
         static result_data to(const ReflType &v) noexcept
         {
-            return {{v.id}, v.result};
+            result_data rtn;
+
+            rtn.id     = v.id;
+            rtn.result = v.result;
+
+            return rtn;
         }
     };
 } // namespace rfl
