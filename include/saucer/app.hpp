@@ -10,7 +10,6 @@
 
 #include <string>
 #include <memory>
-#include <thread>
 
 namespace saucer
 {
@@ -33,9 +32,6 @@ namespace saucer
       public:
         std::optional<int> argc;
         std::optional<char **> argv;
-
-      public:
-        std::size_t threads = std::thread::hardware_concurrency();
     };
 
     struct application : extensible<application>
