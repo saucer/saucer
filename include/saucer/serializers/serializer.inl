@@ -71,8 +71,8 @@ namespace saucer
         return [converted = converter::convert(std::forward<T>(callable))](std::unique_ptr<function_data> data,
                                                                            serializer_core::executor exec) mutable
         {
-            auto &message = *static_cast<Interface::function_data *>(data.get());
-            auto parsed   = impl::read<Interface, args>(message);
+            auto const &message = *static_cast<Interface::function_data *>(data.get());
+            auto parsed         = impl::read<Interface, args>(message);
 
             if (!parsed)
             {
@@ -102,7 +102,7 @@ namespace saucer
     {
         return [promise = std::move(promise)](std::unique_ptr<result_data> data) mutable
         {
-            auto &res = *static_cast<Interface::result_data *>(data.get());
+            auto const &res = *static_cast<Interface::result_data *>(data.get());
 
             if constexpr (!std::is_void_v<T>)
             {
