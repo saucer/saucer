@@ -12,8 +12,7 @@ consteval auto generate(State... state)
 
     if constexpr (I < size)
     {
-        return generate<T, I + 1>(state..., names.at(I),
-                                  [](auto &&self) -> auto & { return glz::get<I>(glz::to_tie(self)); });
+        return generate<T, I + 1>(state..., names.at(I), [](auto &&self) -> auto & { return glz::get<I>(glz::to_tie(self)); });
     }
     else
     {
@@ -32,7 +31,7 @@ namespace saucer
 {
     static constexpr auto opts = glz::opts{.error_on_unknown_keys = true, .error_on_missing_keys = true};
 
-    std::optional<request::request> request::parse(const std::string &data)
+    std::optional<request::request> request::parse(std::string_view data)
     {
         request rtn{};
 

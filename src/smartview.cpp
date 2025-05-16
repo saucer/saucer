@@ -3,14 +3,13 @@
 #include "scripts.hpp"
 
 #include <lockpp/lock.hpp>
-#include <fmt/core.h>
 
 namespace saucer
 {
     using lockpp::lock;
 
-    using resolver = saucer::serializer::resolver;
-    using function = saucer::serializer::function;
+    using resolver = serializer_core::resolver;
+    using function = serializer_core::function;
 
     struct smartview_core::impl
     {
@@ -21,11 +20,11 @@ namespace saucer
         lock<std::unordered_map<std::uint64_t, resolver>> evaluations;
 
       public:
-        std::unique_ptr<saucer::serializer> serializer;
+        std::unique_ptr<serializer_core> serializer;
         std::shared_ptr<lockpp::lock<smartview_core *>> self;
     };
 
-    smartview_core::smartview_core(std::unique_ptr<serializer> serializer, const preferences &prefs)
+    smartview_core::smartview_core(std::unique_ptr<serializer_core> serializer, const preferences &prefs)
         : webview(prefs), m_impl(std::make_unique<impl>())
     {
         using namespace scripts;
@@ -33,7 +32,7 @@ namespace saucer
         m_impl->serializer = std::move(serializer);
         m_impl->self       = std::make_shared<lockpp::lock<smartview_core *>>(this);
 
-        auto script = fmt::format(smartview_script, fmt::arg("serializer", m_impl->serializer->js_serializer()));
+        auto script = std::format(smartview_script, m_impl->serializer->js_serializer());
 
         inject({.code = std::move(script), .time = load_time::creation, .permanent = true});
         inject({.code = m_impl->serializer->script(), .time = load_time::creation, .permanent = true});
@@ -45,7 +44,7 @@ namespace saucer
         *locked     = nullptr;
     }
 
-    bool smartview_core::on_message(const std::string &message)
+    bool smartview_core::on_message(std::string_view message)
     {
         if (webview::on_message(message))
         {
@@ -55,7 +54,10 @@ namespace saucer
         auto parsed = m_impl->serializer->parse(message);
 
         overload visitor = {
-            [](std::monostate &) { return false; },
+            [](std::monostate &) //
+            {                    //
+                return false;
+            },
             [this](std::unique_ptr<function_data> &parsed)
             {
                 call(std::move(parsed));
@@ -81,7 +83,7 @@ namespace saucer
         }
         else
         {
-            return reject(message->id, fmt::format("\"No exposed function '{}'\"", message->name));
+            return reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
         }
 
         auto resolve = [shared = m_impl->self, id = message->id](const auto &result)
@@ -108,8 +110,8 @@ namespace saucer
             self.value()->reject(id, error);
         };
 
-        auto executor = serializer::executor{std::move(resolve), std::move(reject)};
-        
+        auto executor = serializer_core::executor{std::move(resolve), std::move(reject)};
+
         return std::invoke(*exposed, std::move(message), std::move(executor));
     }
 
@@ -135,7 +137,7 @@ namespace saucer
         functions->emplace(std::move(name), std::make_shared<function>(std::move(resolve)));
     }
 
-    void smartview_core::add_evaluation(resolver &&resolve, const std::string &code)
+    void smartview_core::add_evaluation(resolver &&resolve, std::string_view code)
     {
         auto id = m_id_counter++;
 
@@ -144,7 +146,7 @@ namespace saucer
             locked->emplace(id, std::move(resolve));
         }
 
-        webview::execute(fmt::format(
+        webview::execute(std::format(
             R"(
                 (async () =>
                     window.saucer.internal.resolve({}, {})

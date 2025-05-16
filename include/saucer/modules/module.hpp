@@ -1,11 +1,12 @@
 #pragma once
 
-#include <type_traits>
 #include <concepts>
+#include <type_traits>
 
-#include <unordered_map>
 #include <optional>
-#include <string>
+#include <unordered_map>
+
+#include <string_view>
 
 #include <eraser/erased.hpp>
 
@@ -28,7 +29,7 @@ namespace saucer
             };
         };
 
-        using webview = eraser::interface<eraser::method<0, webview_methods::on_message, bool(const std::string &)>>;
+        using webview = eraser::interface<eraser::method<0, webview_methods::on_message, bool(std::string_view)>>;
     } // namespace modules
 
     template <typename T>

@@ -1,9 +1,6 @@
 #pragma once
 
 #include <string>
-#include <memory>
-
-#include <variant>
 #include <cstdint>
 
 namespace saucer
@@ -24,6 +21,4 @@ namespace saucer
       public:
         virtual ~result_data() = default;
     };
-
-    using message_data = std::variant<std::unique_ptr<function_data>, std::unique_ptr<result_data>, std::monostate>;
 } // namespace saucer

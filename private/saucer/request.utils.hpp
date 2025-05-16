@@ -5,7 +5,6 @@
 #include <array>
 #include <string_view>
 
-#include <fmt/compile.h>
 #include <rebind/utils/name.hpp>
 
 namespace saucer::request::utils
@@ -30,8 +29,12 @@ namespace saucer::request::utils
             constexpr auto name   = rebind::utils::pure_name<T>;
             constexpr auto length = 7 + name.size();
 
-            std::array<char, length + (Terminated ? 1 : 0)> buffer{};
-            fmt::format_to(buffer.data(), FMT_COMPILE("saucer:{}"), name);
+            auto buffer = std::array<char, length + (Terminated ? 1 : 0)>{'s', 'a', 'u', 'c', 'e', 'r', ':'};
+
+            for (auto i = 0uz; name.size() > i; ++i)
+            {
+                buffer[7 + i] = name[i];
+            }
 
             return buffer;
         }();

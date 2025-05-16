@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstddef>
-
 #include <tuple>
 #include <type_traits>
 
@@ -23,7 +21,6 @@ namespace saucer
 
       public:
         [[nodiscard]] constexpr auto &tuple();
-        [[nodiscard]] constexpr std::size_t size();
     };
 
     template <typename... Ts>

@@ -11,6 +11,8 @@
 #include "scheme.hpp"
 #include "navigation.hpp"
 
+#include <memory>
+
 #include <array>
 #include <cstdint>
 
@@ -18,7 +20,7 @@
 #include <unordered_map>
 
 #include <string>
-#include <memory>
+#include <string_view>
 
 #include <ereignis/manager.hpp>
 
@@ -76,12 +78,12 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
-        virtual bool on_message(const std::string &);
+        virtual bool on_message(std::string_view);
         void handle_scheme(const std::string &, scheme::resolver &&);
 
       protected:
-        void reject(std::uint64_t, const std::string &);
-        void resolve(std::uint64_t, const std::string &);
+        void reject(std::uint64_t, std::string_view);
+        void resolve(std::uint64_t, std::string_view);
 
       public:
         webview(const preferences &);
@@ -127,7 +129,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void embed(embedded_files files);
-        [[sc::thread_safe]] void serve(const std::string &file);
+        [[sc::thread_safe]] void serve(std::string_view file);
 
       public:
         [[sc::thread_safe]] void clear_scripts();

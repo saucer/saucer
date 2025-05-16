@@ -12,13 +12,7 @@ namespace saucer::serializers::glaze
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
         template <typename T>
-        concept Readable = glz::read_supported<T, opts.format>;
-
-        template <typename T>
-        concept Writable = glz::write_supported<T, opts.format>;
-
-        template <typename T>
-        auto can_parse(T &value, const glz::json_t &data)
+        auto try_parse(T &value, const glz::json_t &data)
         {
             return !glz::read<opts>(value, data);
         }
@@ -27,40 +21,44 @@ namespace saucer::serializers::glaze
             requires(not tuple::Tuple<T>)
         std::optional<std::string> mismatch(T &value, const glz::json_t &data)
         {
-            if (can_parse(value, data))
+            if (try_parse(value, data))
             {
                 return std::nullopt;
             }
 
-            return fmt::format("Expected value of type '{}'", rebind::type_name<T>);
+            return std::format("Expected value of type '{}'", rebind::type_name<T>);
+        }
+
+        template <tuple::Tuple T, std::size_t I = 0>
+            requires(I >= std::tuple_size_v<T>)
+        std::optional<std::string> mismatch(T &, const glz::json_t &)
+        {
+            return std::nullopt;
         }
 
         template <tuple::Tuple T, std::size_t I = 0>
         std::optional<std::string> mismatch(T &value, const glz::json_t &data)
         {
-            if constexpr (I < std::tuple_size_v<T>)
-            {
-                using current = std::tuple_element_t<I, T>;
+            using current = std::tuple_element_t<I, T>;
 
-                if (can_parse(std::get<I>(value), data[I]))
-                {
-                    return mismatch<T, I + 1>(value, data);
-                }
-
-                return fmt::format("Expected parameter {} to be of type '{}'", I, rebind::type_name<current>);
-            }
-            else
+            if (try_parse(std::get<I>(value), data[I]))
             {
-                return std::nullopt;
+                return mismatch<T, I + 1>(value, data);
             }
+
+            return std::format("Expected parameter {} to be of type '{}'", I, rebind::type_name<current>);
         }
     } // namespace impl
 
-    template <typename T>
-    interface::result<T> interface::parse(const std::string &data)
+    template <Writable T>
+    std::string serializer::write(T &&value)
     {
-        static_assert(impl::Readable<T>, "T should be serializable");
+        return glz::write<impl::opts>(std::forward<T>(value)).value_or("null");
+    }
 
+    template <Readable T>
+    serializer::result<T> serializer::read(std::string_view data)
+    {
         T rtn{};
 
         if (auto err = glz::read<impl::opts>(rtn, data); !err)
@@ -72,29 +70,22 @@ namespace saucer::serializers::glaze
 
         if (auto err = glz::read<impl::opts>(json, data); err)
         {
-            const auto name = rebind::utils::find_enum_name(err.ec);
-            return std::unexpected{std::string{name.value_or("<Unknown Parsing Error>")}};
+            auto const name = rebind::utils::find_enum_name(err.ec).value_or("Unknown");
+            return std::unexpected{std::string{name}};
         }
 
-        return std::unexpected{impl::mismatch(rtn, json).value_or("<Unknown Mismatch>")};
+        return std::unexpected{impl::mismatch(rtn, json).value_or("Unknown Mismatch")};
     }
 
-    template <typename T>
-    interface::result<T> interface::parse(const result_data &data)
+    template <Readable T>
+    serializer::result<T> serializer::read(const result_data &data)
     {
-        return parse<T>(data.result.str);
+        return read<T>(data.result.str);
     }
 
-    template <typename T>
-    interface::result<T> interface::parse(const function_data &data)
+    template <Readable T>
+    serializer::result<T> serializer::read(const function_data &data)
     {
-        return parse<T>(data.params.str);
-    }
-
-    template <typename T>
-    std::string interface::serialize(T &&value)
-    {
-        static_assert(impl::Writable<T>, "T should be serializable");
-        return glz::write<impl::opts>(std::forward<T>(value)).value_or("null");
+        return read<T>(data.params.str);
     }
 } // namespace saucer::serializers::glaze

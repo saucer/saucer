@@ -10,8 +10,6 @@
 #include <optional>
 #include <charconv>
 
-#include <fmt/core.h>
-
 namespace saucer
 {
     template <>
@@ -36,8 +34,7 @@ namespace saucer
 
         auto callback = [](WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, webview *self)
         {
-            if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION &&
-                type != WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION)
+            if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION && type != WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION)
             {
                 return false;
             }
@@ -115,10 +112,9 @@ namespace saucer
             }
         )js";
 
-        static const auto script = fmt::format(scripts::webview_script,            //
-                                               fmt::arg("internal", internal),     //
-                                               fmt::arg("stubs", request::stubs()) //
-        );
+        static const auto script = std::format(scripts::webview_script, //
+                                               internal,                //
+                                               request::stubs());
 
         return script;
     }
@@ -194,12 +190,11 @@ namespace saucer
             values.emplace_back(converted.value());
         }
 
-        auto names_ptr = std::views::transform(names, [](auto &value) { return value.c_str(); }) |
-                         std::ranges::to<std::vector<const char *>>();
+        auto names_ptr = std::views::transform(names, [](auto &value) { return value.c_str(); }) //
+                         | std::ranges::to<std::vector<const char *>>();
 
         // https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp#L1753
 
-        return WEBKIT_SETTINGS(
-            g_object_new_with_properties(WEBKIT_TYPE_SETTINGS, values.size(), names_ptr.data(), values.data()));
+        return WEBKIT_SETTINGS(g_object_new_with_properties(WEBKIT_TYPE_SETTINGS, values.size(), names_ptr.data(), values.data()));
     }
 } // namespace saucer

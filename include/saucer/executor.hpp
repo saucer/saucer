@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <functional>
+#include <string_view>
 
 namespace saucer
 {
@@ -23,7 +23,7 @@ namespace saucer
         using fn_with_arg_t = fn_with_arg<R, T>::type;
     } // namespace impl
 
-    template <typename T, typename E = std::string>
+    template <typename T, typename E = std::string_view>
     struct executor
     {
         std::function<impl::fn_with_arg_t<void, T>> resolve;

@@ -1,13 +1,12 @@
 #include "webview.hpp"
 #include "request.hpp"
 
+#include <format>
 #include <algorithm>
-
-#include <fmt/core.h>
 
 namespace saucer
 {
-    bool webview::on_message(const std::string &message)
+    bool webview::on_message(std::string_view message)
     {
         if (std::ranges::any_of(modules(), [&message](auto &module) { return module.template invoke<0>(message); }))
         {
@@ -27,8 +26,8 @@ namespace saucer
             [this](const request::maximize &data) { set_maximized(data.value); },
             [this](const request::minimize &data) { set_minimized(data.value); },
             [this](const request::close &) { close(); },
-            [this](const request::maximized &data) { resolve(data.id, fmt::format("{}", maximized())); },
-            [this](const request::minimized &data) { resolve(data.id, fmt::format("{}", minimized())); },
+            [this](const request::maximized &data) { resolve(data.id, std::format("{}", maximized())); },
+            [this](const request::minimized &data) { resolve(data.id, std::format("{}", minimized())); },
         };
 
         std::visit(visitor, request.value());
@@ -36,9 +35,9 @@ namespace saucer
         return true;
     }
 
-    void webview::reject(std::uint64_t id, const std::string &reason)
+    void webview::reject(std::uint64_t id, std::string_view reason)
     {
-        execute(fmt::format(
+        execute(std::format(
             R"(
                 window.saucer.internal.rpc[{0}].reject({1});
                 delete window.saucer.internal.rpc[{0}];
@@ -46,9 +45,9 @@ namespace saucer
             id, reason));
     }
 
-    void webview::resolve(std::uint64_t id, const std::string &result)
+    void webview::resolve(std::uint64_t id, std::string_view result)
     {
-        execute(fmt::format(
+        execute(std::format(
             R"(
                 window.saucer.internal.rpc[{0}].resolve({1});
                 delete window.saucer.internal.rpc[{0}];
@@ -96,9 +95,9 @@ namespace saucer
         handle_scheme("saucer", func);
     }
 
-    void webview::serve(const std::string &file)
+    void webview::serve(std::string_view file)
     {
-        set_url(fmt::format("saucer://embedded/{}", file));
+        set_url(std::format("saucer://embedded/{}", file));
     }
 
     void webview::clear_embedded()

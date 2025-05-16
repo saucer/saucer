@@ -29,12 +29,6 @@ namespace saucer
     }
 
     template <typename... Ts>
-    constexpr std::size_t arguments<Ts...>::size()
-    {
-        return sizeof...(Ts);
-    }
-
-    template <typename... Ts>
     constexpr auto make_args(Ts &&...args)
     {
         return arguments<Ts...>{std::forward<Ts>(args)...};

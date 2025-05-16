@@ -7,7 +7,7 @@
 #include "handle.hpp"
 #include "instantiate.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace saucer
 {
@@ -42,9 +42,9 @@ namespace saucer
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
-        webkit_settings_set_hardware_acceleration_policy(
-            m_impl->settings.get(), prefs.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
-                                                                : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+        webkit_settings_set_hardware_acceleration_policy(m_impl->settings.get(), prefs.hardware_acceleration
+                                                                                     ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
+                                                                                     : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
         webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
 
@@ -54,9 +54,9 @@ namespace saucer
 
         gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
 
-        auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, void *data)
+        auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *data)
         {
-            return !reinterpret_cast<impl *>(data)->context_menu;
+            return static_cast<gboolean>(!data->context_menu);
         };
         g_signal_connect(m_impl->web_view, "context-menu", G_CALLBACK(+on_context), m_impl.get());
 
@@ -290,8 +290,8 @@ namespace saucer
             return m_parent->dispatch([this, enabled] { return set_force_dark_mode(enabled); });
         }
 
-        g_object_set(adw_style_manager_get_default(), "color-scheme",
-                     enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT, nullptr);
+        g_object_set(adw_style_manager_get_default(), "color-scheme", enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT,
+                     nullptr);
     }
 
     void webview::set_background(const color &color)
@@ -316,7 +316,15 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
-        set_url(fmt::format("file://{}", fs::canonical(file).string()));
+        auto error     = std::error_code{};
+        auto canonical = fs::canonical(file, error);
+
+        if (error)
+        {
+            return;
+        }
+
+        set_url(std::format("file://{}", canonical.string()));
     }
 
     void webview::set_url(const std::string &url)
@@ -431,7 +439,9 @@ namespace saucer
             return;
         }
 
-        impl::schemes[name]->add_callback(m_impl->web_view, {.app = m_parent.get(), .resolver = std::move(resolver)});
+        // TODO: Use heterogenous lookup with C++26
+
+        impl::schemes[name]->add_callback(m_impl->web_view, {.app = m_parent, .resolver = std::move(resolver)});
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -474,8 +484,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return once<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
@@ -487,8 +496,7 @@ namespace saucer
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return on<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);

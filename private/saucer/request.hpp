@@ -1,10 +1,12 @@
 #pragma once
 
-#include <string>
-#include <variant>
-
 #include <cstdint>
+
+#include <variant>
 #include <optional>
+
+#include <string>
+#include <string_view>
 
 namespace saucer::request
 {
@@ -48,5 +50,5 @@ namespace saucer::request
     using request = std::variant<start_resize, start_drag, maximize, minimize, close, maximized, minimized>;
 
     [[nodiscard]] std::string stubs();
-    [[nodiscard]] std::optional<request> parse(const std::string &);
+    [[nodiscard]] std::optional<request> parse(std::string_view);
 } // namespace saucer::request

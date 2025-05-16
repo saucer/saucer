@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../generic/generic.hpp"
+#include "../serializer.hpp"
 
 #include <glaze/glaze.hpp>
 
@@ -16,37 +16,42 @@ namespace saucer::serializers::glaze
         glz::raw_json result;
     };
 
-    class interface
+    template <typename T>
+    concept Readable = glz::read_supported<T, glz::JSON>;
+
+    template <typename T>
+    concept Writable = glz::write_supported<T, glz::JSON>;
+
+    struct serializer : saucer::serializer<serializer>
     {
-        template <typename T>
-        using result = std::expected<T, std::string>;
+        using result_data   = result_data;
+        using function_data = function_data;
 
       public:
-        template <typename T>
-        static result<T> parse(const std::string &);
+        template <typename... Ts>
+        using format_string = std::format_string<std::enable_if_t<Writable<Ts>, std::string>...>;
 
       public:
-        template <typename T>
-        static result<T> parse(const result_data &);
-
-        template <typename T>
-        static result<T> parse(const function_data &);
-
-      public:
-        template <typename T>
-        static std::string serialize(T &&);
-    };
-
-    struct serializer : generic::serializer<function_data, result_data, interface>
-    {
         ~serializer() override;
 
       public:
         [[nodiscard]] std::string script() const override;
         [[nodiscard]] std::string js_serializer() const override;
+        [[nodiscard]] parse_result parse(std::string_view) const override;
 
       public:
-        [[nodiscard]] parse_result parse(const std::string &) const override;
+        template <Writable T>
+        static std::string write(T &&);
+
+        template <Readable T>
+        static result<T> read(std::string_view);
+
+      public:
+        template <Readable T>
+        static result<T> read(const result_data &);
+
+        template <Readable T>
+        static result<T> read(const function_data &);
     };
 } // namespace saucer::serializers::glaze
 

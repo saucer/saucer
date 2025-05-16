@@ -304,12 +304,6 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           fmt
-  GIT_TAG        11.1.4
-  GIT_REPOSITORY "https://github.com/fmtlib/fmt"
-)
-
-CPMFindPackage(
   NAME           flagpp
   VERSION        3.0
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
@@ -352,7 +346,7 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits cr::ereignis fmt::fmt cr::rebind cr::poolparty cr::eraser cr::coco)
+target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits cr::ereignis cr::rebind cr::poolparty cr::eraser cr::coco)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
@@ -434,7 +428,7 @@ if (saucer_serializer STREQUAL "Glaze")
 
   CPMFindPackage(
     NAME           glaze
-    VERSION        5.1.0
+    VERSION        5.2.1
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 

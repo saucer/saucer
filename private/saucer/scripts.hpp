@@ -43,9 +43,9 @@ namespace saucer::scripts
                     ...message,
                 }}));
             }},
-            {internal}
+            {0}
         }},
-        {stubs}
+        {1}
     }};
 
     document.addEventListener("mousedown", async ({{ x, y, target, button, detail }}) => 
@@ -109,7 +109,7 @@ namespace saucer::scripts
     static constexpr std::string_view smartview_script = R"js(
     window.saucer.internal.resolve = async (id, value) =>
     {{
-        await window.saucer.internal.message({serializer}({{
+        await window.saucer.internal.message({0}({{
                 ["saucer:resolve"]: true,
                 id,
                 result: value === undefined ? null : value,
@@ -132,7 +132,7 @@ namespace saucer::scripts
             ["saucer:call"]: true,
             name,
             params,
-        }}, {serializer});
+        }}, {0});
     }}
 
     window.saucer.exposed = new Proxy({{}}, {{

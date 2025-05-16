@@ -4,9 +4,9 @@
 #include "config.hpp"
 
 #include <atomic>
-#include <string>
 #include <memory>
 
+#include <string>
 #include <string_view>
 
 #include <coco/promise/promise.hpp>
@@ -24,21 +24,21 @@ namespace saucer
         std::atomic_uint64_t m_id_counter{0};
 
       protected:
-        smartview_core(std::unique_ptr<serializer>, const preferences &);
+        smartview_core(std::unique_ptr<serializer_core>, const preferences &);
 
       public:
         ~smartview_core() override;
 
       protected:
-        bool on_message(const std::string &) override;
+        bool on_message(std::string_view) override;
 
       protected:
         void call(std::unique_ptr<function_data>);
         void resolve(std::unique_ptr<result_data>);
 
       protected:
-        void add_function(std::string, serializer::function &&);
-        void add_evaluation(serializer::resolver &&, const std::string &);
+        void add_function(std::string, serializer_core::function &&);
+        void add_evaluation(serializer_core::resolver &&, std::string_view);
 
       public:
         [[sc::thread_safe]] void clear_exposed();
@@ -51,16 +51,16 @@ namespace saucer
         smartview(const preferences &);
 
       public:
-        template <typename Function>
-        [[sc::thread_safe]] void expose(std::string name, Function &&func);
+        template <typename T>
+        [[sc::thread_safe]] void expose(std::string name, T &&func);
 
       public:
-        template <typename... Params>
-        [[sc::thread_safe]] void execute(std::string_view code, Params &&...params);
+        template <typename... Ts>
+        [[sc::thread_safe]] void execute(format_string<Serializer, Ts...> code, Ts &&...params);
 
       public:
-        template <typename Return, typename... Params>
-        [[sc::thread_safe]] [[nodiscard]] coco::future<Return> evaluate(std::string_view code, Params &&...params);
+        template <typename R, typename... Ts>
+        [[sc::thread_safe]] [[nodiscard]] coco::future<R> evaluate(format_string<Serializer, Ts...> code, Ts &&...params);
     };
 } // namespace saucer
 

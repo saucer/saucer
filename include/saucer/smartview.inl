@@ -10,24 +10,23 @@ namespace saucer
     }
 
     template <Serializer Serializer>
-    template <typename... Params>
-    void smartview<Serializer>::execute(std::string_view code, Params &&...params)
+    template <typename... Ts>
+    void smartview<Serializer>::execute(format_string<Serializer, Ts...> code, Ts &&...params)
     {
-        auto args = Serializer::serialize_args(std::forward<Params>(params)...);
-        webview::execute(fmt::vformat(code, args));
+        webview::execute(std::format(code, Serializer::serialize(std::forward<Ts>(params))...));
     }
 
     template <Serializer Serializer>
-    template <typename Return, typename... Params>
-    coco::future<Return> smartview<Serializer>::evaluate(std::string_view code, Params &&...params)
+    template <typename R, typename... Ts>
+    coco::future<R> smartview<Serializer>::evaluate(format_string<Serializer, Ts...> code, Ts &&...params)
     {
-        auto promise = coco::promise<Return>{};
+        auto promise = coco::promise<R>{};
         auto rtn     = promise.get_future();
 
-        auto args    = Serializer::serialize_args(std::forward<Params>(params)...);
+        auto format  = std::format(code, Serializer::serialize(std::forward<Ts>(params))...);
         auto resolve = Serializer::resolve(std::move(promise));
 
-        add_evaluation(std::move(resolve), fmt::vformat(code, args));
+        add_evaluation(std::move(resolve), format);
 
         return rtn;
     }
@@ -36,7 +35,7 @@ namespace saucer
     template <typename Function>
     void smartview<Serializer>::expose(std::string name, Function &&func)
     {
-        auto resolve = Serializer::serialize(std::forward<Function>(func));
+        auto resolve = Serializer::convert(std::forward<Function>(func));
         add_function(std::move(name), std::move(resolve));
     }
 } // namespace saucer
