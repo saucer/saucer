@@ -17,70 +17,67 @@ namespace saucer::serializers::rflpp
         };
 
         template <typename T>
-        concept fixed_string = is_fixed_string<T>::value;
+        concept FixedString = is_fixed_string<T>::value;
 
         template <typename T>
-        concept Readable = requires(std::string data) {
-            { rfl::json::read<std::remove_cvref_t<T>>(data) };
-        };
-
-        template <typename T>
-        concept Writable = requires(T value) {
-            { rfl::json::write(value) };
-        };
-
-        template <typename T>
-        auto parse(const std::string &data)
-        {
-            return rfl::json::read<T>(data);
-        }
-
-        template <typename T>
-        auto parse(const rfl::Generic &data)
-        {
-            return rfl::from_generic<T>(data);
-        }
-    } // namespace impl
-
-    template <typename T>
-    interface::result<T> interface::parse(const auto &data)
-    {
-        static_assert(impl::Readable<T>, "T should be serializable");
-
-        auto rtn = impl::parse<T>(data);
-
-        if (rtn)
-        {
-            return rtn.value();
-        }
-
-        return std::unexpected{rtn.error().what()};
-    }
-
-    template <typename T>
-    interface::result<T> interface::parse(const result_data &data)
-    {
-        return parse<T>(data.result);
-    }
-
-    template <typename T>
-    interface::result<T> interface::parse(const function_data &data)
-    {
-        return parse<T>(data.params);
-    }
-
-    template <typename T>
-    std::string interface::serialize(T &&value)
-    {
-        static_assert(impl::Writable<T>, "T should be serializable");
-
-        if constexpr (impl::fixed_string<T>)
-        {
-            return rfl::json::write(std::string{std::forward<T>(value)});
-        }
-        else
+        std::string write(T &&value)
         {
             return rfl::json::write(std::forward<T>(value));
         }
+
+        template <FixedString T>
+        std::string write(T &&value)
+        {
+            return write(std::string{std::forward<T>(value)});
+        }
+
+        template <typename T, typename U>
+        auto read_impl(U &&value)
+        {
+            return rfl::json::read<T>(std::forward<U>(value));
+        }
+
+        template <typename T>
+        auto read_impl(const rfl::Generic &value)
+        {
+            return rfl::from_generic<T>(value);
+        }
+
+        template <typename T, typename U>
+        serializer::result<T> read(U &&value)
+        {
+            auto rtn = read_impl<T>(std::forward<U>(value));
+
+            if (!rtn.has_value())
+            {
+                return std::unexpected{rtn.error().what()};
+            }
+
+            return rtn.value();
+        }
+    } // namespace impl
+
+    template <Writable T>
+    std::string serializer::write(T &&value)
+    {
+        return impl::write(std::forward<T>(value));
+    }
+
+    template <Readable T>
+    serializer::result<T> serializer::read(std::string_view value)
+    {
+        return impl::read<T>(value);
+    }
+
+    template <Readable T>
+    serializer::result<T> serializer::read(const result_data &data)
+    {
+        return impl::read<T>(data.result);
+    }
+
+    template <Readable T>
+    serializer::result<T> serializer::read(const function_data &data)
+    {
+        return impl::read<T>(data.params);
     }
 } // namespace saucer::serializers::rflpp

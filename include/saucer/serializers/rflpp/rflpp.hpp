@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../generic/generic.hpp"
+#include "../serializer.hpp"
 
 #include <rfl/json.hpp>
 
@@ -16,37 +16,46 @@ namespace saucer::serializers::rflpp
         rfl::Generic result;
     };
 
-    class interface
-    {
-        template <typename T>
-        using result = std::expected<T, std::string>;
-
-      public:
-        template <typename T>
-        static result<T> parse(const auto &);
-
-      public:
-        template <typename T>
-        static result<T> parse(const result_data &);
-
-        template <typename T>
-        static result<T> parse(const function_data &);
-
-      public:
-        template <typename T>
-        static std::string serialize(T &&);
+    template <typename T>
+    concept Readable = requires(std::string data) {
+        { rfl::json::read<std::remove_cvref_t<T>>(data) };
     };
 
-    struct serializer : generic::serializer<function_data, result_data, interface>
+    template <typename T>
+    concept Writable = requires(T value) {
+        { rfl::json::write(value) };
+    };
+
+    struct serializer : saucer::serializer<serializer>
     {
+        using result_data   = result_data;
+        using function_data = function_data;
+
+      public:
+        template <typename... Ts>
+        using format_string = std::format_string<std::enable_if_t<Writable<Ts>, std::string>...>;
+
+      public:
         ~serializer() override;
 
       public:
         [[nodiscard]] std::string script() const override;
         [[nodiscard]] std::string js_serializer() const override;
+        [[nodiscard]] parse_result parse(std::string_view) const override;
 
       public:
-        [[nodiscard]] parse_result parse(const std::string &) const override;
+        template <Writable T>
+        static std::string write(T &&);
+
+        template <Readable T>
+        static result<T> read(std::string_view);
+
+      public:
+        template <Readable T>
+        static result<T> read(const result_data &);
+
+        template <Readable T>
+        static result<T> read(const function_data &);
     };
 } // namespace saucer::serializers::rflpp
 

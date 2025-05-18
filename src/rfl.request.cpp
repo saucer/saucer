@@ -78,7 +78,7 @@ struct variants<std::variant<Ts...>>
 
 namespace saucer
 {
-    std::optional<request::request> request::parse(const std::string &data)
+    std::optional<request::request> request::parse(std::string_view data)
     {
         using variant       = variants<request>;
         using named_variant = variant::type;

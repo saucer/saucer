@@ -66,7 +66,7 @@ namespace saucer::serializers::rflpp
     }
 
     template <typename T>
-    std::optional<T> parse_as(const std::string &buffer)
+    std::optional<T> parse_as(std::string_view buffer)
     {
         auto result = rfl::json::read<T>(buffer);
 
@@ -78,7 +78,7 @@ namespace saucer::serializers::rflpp
         return result.value();
     }
 
-    serializer::parse_result serializer::parse(const std::string &data) const
+    serializer::parse_result serializer::parse(std::string_view data) const
     {
         if (auto res = parse_as<function_data>(data); res.has_value())
         {
