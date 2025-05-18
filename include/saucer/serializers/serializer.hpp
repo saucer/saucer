@@ -1,8 +1,8 @@
 #pragma once
 
 #include "data.hpp"
-#include "args/args.hpp"
 
+#include "args/args.hpp"
 #include "../executor.hpp"
 
 #include <memory>
@@ -72,7 +72,7 @@ namespace saucer
         template <typename T>
         static auto convert(T &&);
 
-        template <typename T>
+        template <Readable<Interface> T>
         static auto resolve(coco::promise<T>);
 
       public:

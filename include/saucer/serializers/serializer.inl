@@ -11,17 +11,17 @@ namespace saucer
 {
     namespace impl
     {
+        template <typename Interface, typename T>
+        std::expected<T, std::string> read(const auto &value)
+        {
+            return Interface::template read<T>(value);
+        }
+
         template <typename Interface, tuple::Tuple T>
             requires(std::tuple_size_v<T> == 0)
         std::expected<T, std::string> read(const auto &)
         {
             return {};
-        }
-
-        template <typename Interface, Readable<Interface> T>
-        std::expected<T, std::string> read(const auto &value)
-        {
-            return Interface::template read<T>(value);
         }
 
         template <typename Interface>
@@ -30,13 +30,13 @@ namespace saucer
             return {};
         }
 
-        template <typename Interface, Writable<Interface> T>
+        template <typename Interface, typename T>
         std::string write(T &&value)
         {
             return Interface::template write<T>(std::forward<T>(value));
         }
 
-        template <typename Interface, Writable<Interface>... Ts>
+        template <typename Interface, typename... Ts>
         std::string write(arguments<Ts...> value)
         {
             std::vector<std::string> rtn;
@@ -71,7 +71,7 @@ namespace saucer
         return [converted = converter::convert(std::forward<T>(callable))](std::unique_ptr<function_data> data,
                                                                            serializer_core::executor exec) mutable
         {
-            auto const &message = *static_cast<Interface::function_data *>(data.get());
+            const auto &message = *static_cast<Interface::function_data *>(data.get());
             auto parsed         = impl::read<Interface, args>(message);
 
             if (!parsed)
@@ -97,12 +97,12 @@ namespace saucer
     }
 
     template <typename Interface>
-    template <typename T>
+    template <Readable<Interface> T>
     auto serializer<Interface>::resolve(coco::promise<T> promise)
     {
         return [promise = std::move(promise)](std::unique_ptr<result_data> data) mutable
         {
-            auto const &res = *static_cast<Interface::result_data *>(data.get());
+            const auto &res = *static_cast<Interface::result_data *>(data.get());
 
             if constexpr (!std::is_void_v<T>)
             {

@@ -70,7 +70,7 @@ namespace saucer::serializers::glaze
 
         if (auto err = glz::read<impl::opts>(json, data); err)
         {
-            auto const name = rebind::utils::find_enum_name(err.ec).value_or("Unknown");
+            const auto name = rebind::utils::find_enum_name(err.ec).value_or("Unknown");
             return std::unexpected{std::string{name}};
         }
 
