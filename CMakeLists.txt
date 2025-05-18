@@ -228,66 +228,10 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Polyfills
-# └ Apple Clang (as well as libc++) is lacking behind on some features which this library and
-#   some upstream dependencies rely upon. To avoid all sorts of upstream changes, we use
-#   a few (very ugly) hacks to make saucer work on macOS. These can hopefully be removed once
-#   Apple Clang moves to a more recent libc++. 
-# --------------------------------------------------------------------------------------------------------
-
-include("cmake/cpm.cmake")
-include("cmake/polyfill.cmake")
-
-if (saucer_polyfills STREQUAL "Default")
-  saucer_determine_polyfills(saucer_polyfills)
-  message(STATUS "[saucer] Recommended polyfills: ${saucer_polyfills}")
-endif()
-
-if ("jthread" IN_LIST saucer_polyfills)
-  message(STATUS "[saucer] Using std::jthread polyfill")
-
-  CPMFindPackage(
-    NAME           jthread
-    VERSION        24.00.1
-    GIT_REPOSITORY "https://github.com/saucer/jthread"
-  )
-
-  target_link_libraries(${PROJECT_NAME} PUBLIC nonstd::jthread)
-  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/jthread.hpp")
-endif()
-
-if ("functional" IN_LIST saucer_polyfills)
-  message(STATUS "[saucer] Using std::move_only_function polyfill")
-
-  CPMFindPackage(
-    NAME           fu2
-    VERSION        4.2.3
-    GIT_REPOSITORY "https://github.com/saucer/function2"
-  )
-
-  target_link_libraries(${PROJECT_NAME} PUBLIC function2::function2)
-  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/functional.hpp")
-endif()
-
-if ("expected" IN_LIST saucer_polyfills)
-  message(STATUS "[saucer] Using std::expected polyfill")
-
-  CPMFindPackage(
-    NAME             tl-expected
-    VERSION          1.1.0
-    GIT_REPOSITORY   "https://github.com/TartanLlama/expected"
-    OPTIONS          "EXPECTED_BUILD_TESTS OFF"
-    EXCLUDE_FROM_ALL ON
-  )
-
-  target_link_libraries(${PROJECT_NAME} PUBLIC tl::expected)
-  target_precompile_headers(${PROJECT_NAME} PUBLIC "polyfill/expected.hpp")
-endif()
-
-# --------------------------------------------------------------------------------------------------------
 # Setup Dependencies
 # --------------------------------------------------------------------------------------------------------
 
+include("cmake/cpm.cmake")
 include("cmake/nuget.cmake")
 include("cmake/module.cmake")
 
@@ -298,27 +242,15 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           ereignis
-  VERSION        4.3
-  GIT_REPOSITORY "https://github.com/Soundux/ereignis"
-)
-
-CPMFindPackage(
-  NAME           flagpp
-  VERSION        3.0
-  GIT_REPOSITORY "https://github.com/Curve/flagpp"
+  NAME           coco
+  VERSION        3.2.0
+  GIT_REPOSITORY "https://github.com/Curve/coco"
 )
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        5.2.1
+  VERSION        5.2.2
   GIT_REPOSITORY "https://github.com/Curve/rebind"
-)
-
-CPMFindPackage(
-  NAME           poolparty
-  VERSION        3.0.1
-  GIT_REPOSITORY "https://github.com/Curve/poolparty"
 )
 
 CPMFindPackage(
@@ -328,9 +260,28 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           coco
-  VERSION        3.2.0
-  GIT_REPOSITORY "https://github.com/Curve/coco"
+  NAME           ereignis
+  VERSION        5.1.0
+  GIT_REPOSITORY "https://github.com/Curve/ereignis"
+)
+
+CPMFindPackage(
+  NAME           flagpp
+  VERSION        3.0
+  GIT_REPOSITORY "https://github.com/Curve/flagpp"
+)
+
+CPMFindPackage(
+  NAME           poolparty
+  VERSION        3.0.1
+  GIT_REPOSITORY "https://github.com/Curve/poolparty"
+)
+
+CPMFindPackage(
+  NAME           fill
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/saucer/fill"
+  OPTIONS        "fill_namespace std" "fill_silent ON"
 )
 
 CPMFindPackage(
@@ -345,8 +296,8 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
 )
 
-target_link_libraries(${PROJECT_NAME} ${saucer_linkage} boost_preprocessor cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            boost_callable_traits cr::ereignis cr::rebind cr::poolparty cr::eraser cr::coco)
+target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp boost_preprocessor)
+target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::eraser cr::ereignis cr::poolparty saucer::fill boost_callable_traits)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
@@ -513,10 +464,6 @@ endif()
 
 if (saucer_backend STREQUAL "WebView2")
   install(FILES ${webview2_lib_path} DESTINATION lib)
-endif()
-
-if (saucer_polyfill_expected)
-    install(DIRECTORY "$<TARGET_PROPERTY:expected,INTERFACE_INCLUDE_DIRECTORIES>/tl" TYPE INCLUDE)
 endif()
 
 install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
