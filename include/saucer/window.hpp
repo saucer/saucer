@@ -6,16 +6,16 @@
 #include "app.hpp"
 #include "icon.hpp"
 
-#include <string>
-#include <memory>
-
 #include <set>
-#include <utility>
+#include <string>
 
-#include <cstdint>
+#include <utility>
 #include <filesystem>
 
-#include <ereignis/manager.hpp>
+#include <memory>
+#include <cstdint>
+
+#include <ereignis/manager/manager.hpp>
 
 namespace saucer
 {
@@ -169,9 +169,9 @@ namespace saucer
         [[sc::thread_safe]] void remove(window_event event, std::uint64_t id);
 
         template <window_event Event>
-        [[sc::thread_safe]] void once(events::type<Event>);
+        [[sc::thread_safe]] void once(events::event<Event>::callback callback);
 
         template <window_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type<Event>);
+        [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
     };
 } // namespace saucer

@@ -25,14 +25,14 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::navigate>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::navigate>();
+        auto &event = self->m_events.get<web_event::navigate>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, webview *self)
+        auto callback = [](WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, webview *self) -> gboolean
         {
             if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION && type != WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION)
             {
@@ -47,7 +47,7 @@ namespace saucer
                 .type     = type,
             }};
 
-            if (self->m_events.at<web_event::navigate>().until(policy::block, request))
+            if (self->m_events.get<web_event::navigate>().fire(request).find(policy::block))
             {
                 webkit_policy_decision_ignore(decision);
                 return true;
@@ -63,7 +63,7 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::favicon>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::favicon>();
+        auto &event = self->m_events.get<web_event::favicon>();
 
         if (!event.empty())
         {
@@ -72,7 +72,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, webview *self)
         {
-            self->m_events.at<web_event::favicon>().fire(self->favicon());
+            self->m_events.get<web_event::favicon>().fire(self->favicon());
         };
 
         const auto id = g_signal_connect(web_view, "notify::favicon", G_CALLBACK(+callback), self);
@@ -82,7 +82,7 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::title>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::title>();
+        auto &event = self->m_events.get<web_event::title>();
 
         if (!event.empty())
         {
@@ -91,7 +91,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, webview *self)
         {
-            self->m_events.at<web_event::title>().fire(self->page_title());
+            self->m_events.get<web_event::title>().fire(self->page_title());
         };
 
         const auto id = g_signal_connect(web_view, "notify::title", G_CALLBACK(+callback), self);

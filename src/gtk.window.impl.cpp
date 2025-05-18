@@ -2,9 +2,9 @@
 
 #include "gtk.app.impl.hpp"
 
-#include <flagpp/flags.hpp>
-
 #include <algorithm>
+
+#include <flagpp/flags.hpp>
 
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;
@@ -48,7 +48,7 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::resize>(saucer::window *self)
     {
-        auto &event = self->m_events.at<window_event::resize>();
+        auto &event = self->m_events.get<window_event::resize>();
 
         if (!event.empty())
         {
@@ -58,7 +58,7 @@ namespace saucer
         auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
             auto [width, height] = self->size();
-            self->m_events.at<window_event::resize>().fire(width, height);
+            self->m_events.get<window_event::resize>().fire(width, height);
         };
 
         const auto width  = g_signal_connect(window.get(), "notify::default-width", G_CALLBACK(+callback), self);
@@ -75,7 +75,7 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
     {
-        auto &event = self->m_events.at<window_event::maximize>();
+        auto &event = self->m_events.get<window_event::maximize>();
 
         if (!event.empty())
         {
@@ -84,7 +84,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
-            self->m_events.at<window_event::maximize>().fire(self->maximized());
+            self->m_events.get<window_event::maximize>().fire(self->maximized());
         };
 
         const auto id = g_signal_connect(window.get(), "notify::maximized", G_CALLBACK(+callback), self);
@@ -99,7 +99,7 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::focus>(saucer::window *self)
     {
-        auto &event = self->m_events.at<window_event::focus>();
+        auto &event = self->m_events.get<window_event::focus>();
 
         if (!event.empty())
         {
@@ -108,7 +108,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, saucer::window *self)
         {
-            self->m_events.at<window_event::focus>().fire(self->focused());
+            self->m_events.get<window_event::focus>().fire(self->focused());
         };
 
         const auto id = g_signal_connect(window.get(), "notify::is-active", G_CALLBACK(+callback), self);
@@ -183,17 +183,17 @@ namespace saucer
 
     void window::impl::track(saucer::window *self) const
     {
-        auto callback = [](void *, saucer::window *self)
+        auto callback = [](void *, saucer::window *self) -> gboolean
         {
-            if (self->m_events.at<window_event::close>().until(policy::block))
+            if (self->m_events.get<window_event::close>().fire().find(policy::block))
             {
                 return true;
             }
 
-            auto parent      = self->m_parent;
+            auto *parent     = self->m_parent;
             auto *identifier = self->m_impl->window.get();
 
-            self->m_events.at<window_event::closed>().fire();
+            self->m_events.get<window_event::closed>().fire();
 
             auto &instances = parent->native<false>()->instances;
             instances.erase(identifier);
@@ -242,7 +242,7 @@ namespace saucer
             }
 
             prev.emplace(current);
-            self->m_events.at<window_event::decorated>().fire(current);
+            self->m_events.get<window_event::decorated>().fire(current);
         };
 
         g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);

@@ -5,8 +5,6 @@
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 
-#include <fmt/core.h>
-
 namespace saucer
 {
     void webview::inject(const script &script)
@@ -66,7 +64,7 @@ namespace saucer
 
         if (script.frame == web_frame::top)
         {
-            source = fmt::format(R"js(
+            source = std::format(R"js(
             if (self === top)
             {{
                 {}

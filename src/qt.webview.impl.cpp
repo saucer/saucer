@@ -6,10 +6,8 @@
 #include "qt.icon.impl.hpp"
 #include "qt.navigation.impl.hpp"
 
+#include <format>
 #include <cassert>
-#include <optional>
-
-#include <fmt/core.h>
 
 #include <QFile>
 #include <QBuffer>
@@ -44,10 +42,9 @@ namespace saucer
             return qwebchannel.readAll().toStdString();
         }();
 
-        static const auto script = web_channel + fmt::format(scripts::webview_script,            //
-                                                             fmt::arg("internal", internal),     //
-                                                             fmt::arg("stubs", request::stubs()) //
-                                                 );
+        static const auto script = web_channel + std::format(scripts::webview_script, //
+                                                             internal,                //
+                                                             request::stubs());
 
         return script;
     }
@@ -71,7 +68,7 @@ namespace saucer
             }
 
             self.m_impl->pending.clear();
-            self.m_events.at<web_event::dom_ready>().fire();
+            self.m_events.get<web_event::dom_ready>().fire();
 
             return;
         }
@@ -87,7 +84,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::navigated>([[maybe_unused]] webview *self)
     {
-        auto &event = self->m_events.at<web_event::navigated>();
+        auto &event = self->m_events.get<web_event::navigated>();
 
         if (!event.empty())
         {
@@ -101,7 +98,7 @@ namespace saucer
                 return;
             }
 
-            self->m_events.at<web_event::navigated>().fire(url.toString().toStdString());
+            self->m_events.get<web_event::navigated>().fire(url.toString().toStdString());
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
@@ -112,7 +109,7 @@ namespace saucer
     void webview::impl::setup<web_event::navigate>([[maybe_unused]] webview *self)
     {
 #ifdef SAUCER_QT6
-        auto &event = self->m_events.at<web_event::navigate>();
+        auto &event = self->m_events.get<web_event::navigate>();
 
         if (!event.empty())
         {
@@ -123,7 +120,7 @@ namespace saucer
         {
             auto request = navigation{{&req}};
 
-            if (!self->m_events.at<web_event::navigate>().during(policy::allow, request).has_value())
+            if (!self->m_events.get<web_event::navigate>().fire(request).find(policy::block))
             {
                 return;
             }
@@ -149,7 +146,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::favicon>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::favicon>();
+        auto &event = self->m_events.get<web_event::favicon>();
 
         if (!event.empty())
         {
@@ -158,7 +155,7 @@ namespace saucer
 
         auto handler = [self](const auto &favicon)
         {
-            self->m_events.at<web_event::favicon>().fire(icon{{favicon}});
+            self->m_events.get<web_event::favicon>().fire(icon{{favicon}});
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
@@ -168,7 +165,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::title>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::title>();
+        auto &event = self->m_events.get<web_event::title>();
 
         if (!event.empty())
         {
@@ -177,7 +174,7 @@ namespace saucer
 
         auto handler = [self](const auto &title)
         {
-            self->m_events.at<web_event::title>().fire(title.toStdString());
+            self->m_events.get<web_event::title>().fire(title.toStdString());
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
@@ -187,7 +184,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::load>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::load>();
+        auto &event = self->m_events.get<web_event::load>();
 
         if (!event.empty())
         {
@@ -196,7 +193,7 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->m_events.at<web_event::load>().fire(state::finished);
+            self->m_events.get<web_event::load>().fire(state::finished);
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);

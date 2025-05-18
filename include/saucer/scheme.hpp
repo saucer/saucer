@@ -3,13 +3,15 @@
 #include "executor.hpp"
 #include "stash/stash.hpp"
 
+#include <memory>
+#include <cstdint>
+
 #include <map>
 #include <string>
-#include <memory>
 
 namespace saucer::scheme
 {
-    enum class error
+    enum class error : std::uint8_t
     {
         not_found,
         invalid,

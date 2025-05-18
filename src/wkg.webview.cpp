@@ -54,9 +54,9 @@ namespace saucer
 
         gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
 
-        auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *data)
+        auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *data) -> gboolean
         {
-            return static_cast<gboolean>(!data->context_menu);
+            return !data->context_menu;
         };
         g_signal_connect(m_impl->web_view, "context-menu", G_CALLBACK(+on_context), m_impl.get());
 
@@ -78,7 +78,7 @@ namespace saucer
                 }
 
                 self.m_impl->pending.clear();
-                self.m_events.at<web_event::dom_ready>().fire();
+                self.m_events.get<web_event::dom_ready>().fire();
 
                 return;
             }
@@ -94,13 +94,13 @@ namespace saucer
 
             if (event == WEBKIT_LOAD_COMMITTED)
             {
-                self->m_events.at<web_event::navigated>().fire(self->url());
+                self->m_events.get<web_event::navigated>().fire(self->url());
                 return;
             }
 
             if (event == WEBKIT_LOAD_FINISHED)
             {
-                self->m_events.at<web_event::load>().fire(state::finished);
+                self->m_events.get<web_event::load>().fire(state::finished);
                 return;
             }
 
@@ -110,7 +110,7 @@ namespace saucer
             }
 
             self->m_impl->dom_loaded = false;
-            self->m_events.at<web_event::load>().fire(state::started);
+            self->m_events.get<web_event::load>().fire(state::started);
         };
 
         g_signal_connect(m_impl->web_view, "load-changed", G_CALLBACK(+on_load), this);
@@ -480,7 +480,7 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type<Event> callback)
+    void webview::once(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
@@ -488,11 +488,11 @@ namespace saucer
         }
 
         m_impl->setup<Event>(this);
-        m_events.at<Event>().once(std::move(callback));
+        m_events.get<Event>().once(std::move(callback));
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type<Event> callback)
+    std::uint64_t webview::on(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
@@ -500,7 +500,7 @@ namespace saucer
         }
 
         m_impl->setup<Event>(this);
-        return m_events.at<Event>().add(std::move(callback));
+        return m_events.get<Event>().add(std::move(callback));
     }
 
     void webview::register_scheme(const std::string &name)

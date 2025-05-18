@@ -9,9 +9,6 @@
 
 #include <flagpp/flags.hpp>
 
-#include <fmt/core.h>
-#include <fmt/xchar.h>
-
 #include <QWindow>
 
 template <>
@@ -214,7 +211,6 @@ namespace saucer
         }
 
         m_impl->window->show();
-        m_parent->native<false>()->instances[m_impl->window.get()] = true;
     }
 
     void window::close()
@@ -447,15 +443,15 @@ namespace saucer
     }
 
     template <window_event Event>
-    void window::once(events::type<Event> callback)
+    void window::once(events::event<Event>::callback callback)
     {
-        m_events.at<Event>().once(std::move(callback));
+        m_events.get<Event>().once(std::move(callback));
     }
 
     template <window_event Event>
-    std::uint64_t window::on(events::type<Event> callback)
+    std::uint64_t window::on(events::event<Event>::callback callback)
     {
-        return m_events.at<Event>().add(std::move(callback));
+        return m_events.get<Event>().add(std::move(callback));
     }
 
     SAUCER_INSTANTIATE_EVENTS(7, window, window_event);

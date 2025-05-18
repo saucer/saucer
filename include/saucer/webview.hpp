@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 
-#include <ereignis/manager.hpp>
+#include <ereignis/manager/manager.hpp>
 
 namespace saucer
 {
@@ -63,10 +63,10 @@ namespace saucer
       public:
         using events = ereignis::manager<                                     //
             ereignis::event<web_event::dom_ready, void()>,                    //
-            ereignis::event<web_event::navigated, void(const std::string &)>, //
+            ereignis::event<web_event::navigated, void(std::string_view)>,    //
             ereignis::event<web_event::navigate, policy(const navigation &)>, //
             ereignis::event<web_event::favicon, void(const icon &)>,          //
-            ereignis::event<web_event::title, void(const std::string &)>,     //
+            ereignis::event<web_event::title, void(std::string_view)>,        //
             ereignis::event<web_event::load, void(const state &)>             //
             >;
 
@@ -156,11 +156,11 @@ namespace saucer
 
         using window::once;
         template <web_event Event>
-        [[sc::thread_safe]] void once(events::type<Event> callback);
+        [[sc::thread_safe]] void once(events::event<Event>::callback callback);
 
         using window::on;
         template <web_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::type<Event> callback);
+        [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);

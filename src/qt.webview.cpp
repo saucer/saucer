@@ -4,8 +4,7 @@
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
 
-#include <fmt/core.h>
-#include <fmt/xchar.h>
+#include <ranges>
 
 #include <QWebEngineScriptCollection>
 #include <QWebEngineProfile>
@@ -27,7 +26,7 @@ namespace saucer
             flags.emplace("--ignore-gpu-blocklist");
         }
 
-        const auto args = fmt::format("{}", fmt::join(flags, " "));
+        const auto args = flags | std::views::join_with(' ') | std::ranges::to<std::string>();
         qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
 
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
@@ -65,7 +64,7 @@ namespace saucer
                                   [this]
                                   {
                                       m_impl->dom_loaded = false;
-                                      m_events.at<web_event::load>().fire(state::started);
+                                      m_events.get<web_event::load>().fire(state::started);
                                   });
 
         window::m_impl->on_closed = [this]
@@ -332,7 +331,7 @@ namespace saucer
             return;
         }
 
-        auto handler = scheme::handler{m_parent.get(), std::move(resolver)};
+        auto handler = scheme::handler{m_parent, std::move(resolver)};
         auto &scheme = m_impl->schemes.emplace(name, std::move(handler)).first->second;
 
         m_impl->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);
@@ -377,29 +376,27 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type<Event> callback)
+    void webview::once(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return once<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        m_events.at<Event>().once(std::move(callback));
+        m_events.get<Event>().once(std::move(callback));
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type<Event> callback)
+    std::uint64_t webview::on(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return on<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        return m_events.at<Event>().add(std::move(callback));
+        return m_events.get<Event>().add(std::move(callback));
     }
 
     void webview::register_scheme(const std::string &name)
