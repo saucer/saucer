@@ -9,7 +9,7 @@ namespace saucer
     template <>
     natives<application, true> application::native<true>() const
     {
-        return {.application = m_impl->application};
+        return {.application = m_impl->application.get()};
     }
 
     template <>

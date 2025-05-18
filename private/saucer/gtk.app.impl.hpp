@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app.hpp"
+#include "gtk.utils.hpp"
 
 #include <thread>
 #include <unordered_map>
@@ -11,15 +12,21 @@ namespace saucer
 {
     struct application::impl
     {
-        AdwApplication *application;
+        utils::g_object_ptr<AdwApplication> application;
+
+      public:
+        int argc;
+        char **argv;
+
+      public:
+        coco::future<void> future;
 
       public:
         std::thread::id thread;
-        bool initialized{false};
+        std::unordered_map<void *, bool> instances;
 
       public:
-        bool should_quit{false};
-        std::unordered_map<void *, bool> instances;
+        callback_t callback;
 
       public:
         static screen convert(GdkMonitor *);

@@ -55,7 +55,7 @@ namespace saucer
 
     struct preferences
     {
-        required<std::shared_ptr<saucer::application>> application;
+        required<saucer::application *> application;
 
       public:
         bool persistent_cookies{true};
@@ -89,7 +89,7 @@ namespace saucer
 
       protected:
         std::unique_ptr<impl> m_impl;
-        std::shared_ptr<application> m_parent;
+        application *m_parent;
 
       protected:
         window(const preferences &);

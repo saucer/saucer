@@ -2,9 +2,6 @@
 
 #include "app.hpp"
 
-#include <vector>
-#include <unordered_map>
-
 #include <QEvent>
 #include <QScreen>
 #include <QApplication>
@@ -14,20 +11,19 @@ namespace saucer
     struct application::impl
     {
         std::unique_ptr<QApplication> application;
-        std::unique_ptr<QEventLoop> loop;
-
-      public:
-        std::unordered_map<void *, bool> instances;
 
       public:
         std::string id;
 
       public:
-        int argc;
-        std::vector<char *> argv;
+        coco::future<void> future;
 
       public:
         static screen convert(QScreen *);
+
+      public:
+        static inline int argc;
+        static inline std::vector<char *> argv;
     };
 
     class safe_event : public QEvent

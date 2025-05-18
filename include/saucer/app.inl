@@ -7,12 +7,13 @@
 namespace saucer
 {
     template <typename T>
-    struct safe_deleter
+    struct safe_delete
     {
-        void operator()(T *ptr)
-        {
-            const auto app = application::active();
+        const application *app;
 
+      public:
+        void operator()(T *ptr) const
+        {
             if (!app->thread_safe())
             {
                 return app->dispatch([this, ptr] { return operator()(ptr); });
@@ -41,14 +42,13 @@ namespace saucer
     }
 
     template <typename T, typename... Ts>
-    application::safe_ptr<T> application::make(Ts &&...args) const
+    safe_ptr<T> application::make(Ts &&...args) const
     {
         if (!thread_safe())
         {
-            return dispatch([this, ... args = std::forward<Ts>(args)]() mutable
-                            { return make<T>(std::forward<Ts>(args)...); });
+            return dispatch([this, ... args = std::forward<Ts>(args)]() mutable { return make<T>(std::forward<Ts>(args)...); });
         }
 
-        return safe_ptr<T>{new T{std::forward<Ts>(args)...}};
+        return safe_ptr<T>{new T{std::forward<Ts>(args)...}, safe_delete<T>{.app = this}};
     }
 } // namespace saucer

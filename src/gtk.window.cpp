@@ -3,7 +3,6 @@
 #include "instantiate.hpp"
 #include "gtk.app.impl.hpp"
 
-#include <fmt/core.h>
 #include <rebind/enum.hpp>
 
 #include <cassert>
@@ -14,7 +13,7 @@ namespace saucer
     {
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 
-        auto *const application = GTK_APPLICATION(m_parent->native<false>()->application);
+        auto *const application = GTK_APPLICATION(m_parent->native<false>()->application.get());
         m_impl->window.reset(GTK_WINDOW(adw_application_window_new(application)));
 
         m_impl->style   = gtk_css_provider_new();

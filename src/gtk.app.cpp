@@ -1,42 +1,22 @@
 #include "gtk.app.impl.hpp"
 
-#include <fmt/format.h>
+#include <format>
+#include <cassert>
 
 namespace saucer
 {
-    template void application::run<true>() const;
-    template void application::run<false>() const;
+    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    application::application(const options &opts) : extensible(this), m_impl(std::make_unique<impl>())
-    {
-        const auto id = g_application_id_is_valid(opts.id.value().c_str())
-                            ? opts.id.value()
-                            : fmt::format("app.saucer.{}", impl::fix_id(opts.id.value()));
-
-        m_impl->thread      = std::this_thread::get_id();
-        m_impl->application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
-
-        auto callback = [](GtkApplication *, application *self)
-        {
-            self->quit();
-        };
-        g_signal_connect(m_impl->application, "activate", G_CALLBACK(+callback), this);
-
-        run<true>();
-    }
-
-    application::~application()
-    {
-        auto fut = dispatch<false>([this] { g_application_quit(G_APPLICATION(m_impl->application)); });
-        {
-            g_application_run(G_APPLICATION(m_impl->application), 0, nullptr);
-        }
-        fut.get();
-    }
+    application::~application() = default;
 
     bool application::thread_safe() const
     {
         return m_impl->thread == std::this_thread::get_id();
+    }
+
+    coco::future<void> application::finish()
+    {
+        return std::move(m_impl->future);
     }
 
     std::vector<screen> application::screens() const
@@ -62,50 +42,51 @@ namespace saucer
         return rtn;
     }
 
-    void application::post(callback_t callback) const // NOLINT(*-static)
+    void application::post(post_callback_t callback) const // NOLINT(*-static)
     {
-        auto once = [](callback_t *data)
+        auto once = [](post_callback_t *data)
         {
-            auto callback = std::unique_ptr<callback_t>{data};
+            auto callback = std::unique_ptr<post_callback_t>{data};
             std::invoke(*callback);
         };
 
-        g_idle_add_once(reinterpret_cast<GSourceOnceFunc>(+once), new callback_t{std::move(callback)});
+        g_idle_add_once(reinterpret_cast<GSourceOnceFunc>(+once), new post_callback_t{std::move(callback)});
     }
 
-    template <bool Blocking>
-    void application::run() const
+    int application::run(callback_t callback)
     {
-        // https://github.com/GNOME/glib/blob/ce5e11aef4be46594941662a521c7f5e026cfce9/gio/gapplication.c#L2591
+        static bool once{false};
 
-        m_impl->should_quit = false;
-        auto *context       = g_main_context_default();
-
-        if (!g_main_context_acquire(context))
+        if (!thread_safe())
         {
-            return;
+            assert(false && "saucer::application::run() may only be called from the thread it was created in");
+            return -1;
         }
 
-        if (!m_impl->initialized) [[unlikely]]
+        if (once)
         {
-            g_application_register(G_APPLICATION(m_impl->application), nullptr, nullptr);
-            g_application_activate(G_APPLICATION(m_impl->application));
-            m_impl->initialized = true;
+            assert(false && "saucer::application::run() may only be called once");
+            return -1;
         }
 
-        if constexpr (Blocking)
-        {
-            while (!m_impl->should_quit)
-            {
-                g_main_context_iteration(context, true);
-            }
-        }
-        else
-        {
-            g_main_context_iteration(context, false);
-        }
+        auto promise = coco::promise<void>{};
 
-        g_main_context_release(context);
+        once             = true;
+        m_impl->callback = std::move(callback);
+        m_impl->future   = promise.get_future();
+
+        auto activate = [](GtkApplication *, application *data)
+        {
+            static std::once_flag flag;
+            std::call_once(flag, data->m_impl->callback, data);
+        };
+
+        g_signal_connect(m_impl->application.get(), "activate", G_CALLBACK(+activate), this);
+        const auto rtn = g_application_run(G_APPLICATION(m_impl->application.get()), m_impl->argc, m_impl->argv);
+
+        promise.set_value();
+
+        return rtn;
     }
 
     void application::quit()
@@ -115,6 +96,30 @@ namespace saucer
             return dispatch([this] { return quit(); });
         }
 
-        m_impl->should_quit = true;
+        g_application_quit(G_APPLICATION(m_impl->application.get()));
+    }
+
+    std::optional<application> application::create(const options &opts)
+    {
+        static bool once{false};
+
+        if (once)
+        {
+            assert(false && "saucer::application may only be created once");
+            return std::nullopt;
+        }
+
+        once = true;
+
+        const auto id = g_application_id_is_valid(opts.id->c_str()) //
+                            ? opts.id.value()
+                            : std::format("app.saucer.{}", impl::fix_id(opts.id.value()));
+
+        return impl{
+            .application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS),
+            .argc        = opts.argc.value_or(0),
+            .argv        = opts.argv.value_or(nullptr),
+            .thread      = std::this_thread::get_id(),
+        };
     }
 } // namespace saucer

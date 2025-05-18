@@ -11,10 +11,19 @@
 #include <string>
 #include <memory>
 
+#include <coco/stray/stray.hpp>
+#include <coco/promise/promise.hpp>
+
 namespace saucer
 {
-    template <typename T>
-    struct safe_deleter;
+    struct options
+    {
+        required<std::string> id;
+
+      public:
+        std::optional<int> argc;
+        std::optional<char **> argv;
+    };
 
     struct screen
     {
@@ -25,29 +34,25 @@ namespace saucer
         std::pair<int, int> position;
     };
 
-    struct options
-    {
-        required<std::string> id;
+    template <typename T>
+    struct safe_delete;
 
-      public:
-        std::optional<int> argc;
-        std::optional<char **> argv;
-    };
+    template <typename T>
+    using safe_ptr = std::unique_ptr<T, safe_delete<T>>;
 
     struct application : extensible<application>
     {
         struct impl;
 
       private:
-        template <typename T>
-        using safe_ptr   = std::unique_ptr<T, safe_deleter<T>>;
-        using callback_t = std::move_only_function<void()>;
+        using post_callback_t = std::move_only_function<void()>;
+        using callback_t      = std::move_only_function<coco::stray(application *)>;
 
       private:
         std::unique_ptr<impl> m_impl;
 
-      private:
-        application(const options &);
+      public:
+        application(impl);
 
       public:
         ~application();
@@ -58,29 +63,28 @@ namespace saucer
 
       public:
         [[nodiscard]] bool thread_safe() const;
+        [[nodiscard]] coco::future<void> finish();
         [[nodiscard]] std::vector<screen> screens() const;
 
       public:
-        void post(callback_t) const;
+        void post(post_callback_t) const;
 
       public:
         template <bool Get = true, typename Callback>
         [[sc::thread_safe]] auto dispatch(Callback &&) const;
 
-      public:
         template <typename T, typename... Ts>
         [[sc::thread_safe]] safe_ptr<T> make(Ts &&...) const;
 
       public:
-        template <bool Blocking = true>
-        [[sc::may_block]] void run() const;
-
-      public:
         void quit();
+        int run(callback_t);
 
       public:
-        [[nodiscard]] static std::shared_ptr<application> init(const options &);
-        [[nodiscard]] static std::shared_ptr<application> active();
+        void operator&() = delete;
+
+      public:
+        [[nodiscard]] static std::optional<application> create(const options &);
     };
 } // namespace saucer
 
