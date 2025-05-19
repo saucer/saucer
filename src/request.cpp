@@ -35,9 +35,11 @@ namespace saucer
         constexpr auto members  = rebind::utils::member_names<Message>;
         constexpr auto contains = std::ranges::contains(members, "id");
 
-        auto params = members                                                            //
-                      | std::views::filter([](auto &&member) { return member != "id"; }) //
-                      | std::views::join_with(',')                                       //
+        auto filtered = members //
+                        | std::views::filter([](auto &&member) { return member != "id"; });
+
+        auto params = filtered                     //
+                      | std::views::join_with(',') //
                       | std::ranges::to<std::string>();
 
         const auto invocation = contains //

@@ -6,7 +6,8 @@
 #include "cocoa.window.impl.hpp"
 #include "wk.navigation.impl.hpp"
 
-#include <fmt/core.h>
+#include <format>
+
 #include <flagpp/flags.hpp>
 
 #import <objc/objc-runtime.h>
@@ -24,18 +25,17 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::navigated>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::navigated>();
+        auto &event = self->m_events.get<web_event::navigated>();
 
         if (!event.empty())
         {
             return;
         }
 
-        const utils::objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]
-                              {
-                                  self->m_events.at<web_event::navigated>().fire(self->url());
-                              }];
+        const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
+                                                                     {
+                                                                         self->m_events.get<web_event::navigated>().fire(self->url());
+                                                                     }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
         event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
@@ -54,7 +54,7 @@ namespace saucer
     template <>
     void saucer::webview::impl::setup<web_event::title>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::title>();
+        auto &event = self->m_events.get<web_event::title>();
 
         if (!event.empty())
         {
@@ -64,7 +64,7 @@ namespace saucer
         const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
-                                  self->m_events.at<web_event::title>().fire(self->page_title());
+                                  self->m_events.get<web_event::title>().fire(self->page_title());
                               }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"title" options:0 context:nullptr];
@@ -85,10 +85,9 @@ namespace saucer
             }
         )js";
 
-        static const auto script = fmt::format(scripts::webview_script,            //
-                                               fmt::arg("internal", internal),     //
-                                               fmt::arg("stubs", request::stubs()) //
-        );
+        static const auto script = std::format(scripts::webview_script, //
+                                               internal,                //
+                                               request::stubs());
 
         return script;
     }
@@ -99,11 +98,9 @@ namespace saucer
     {
         using event_func_t = void (*)(id, SEL, NSEvent *);
 
-        auto mouse_down =
-            reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseDown:)));
+        auto mouse_down = reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseDown:)));
 
-        auto mouse_up =
-            reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseUp:)));
+        auto mouse_up = reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseUp:)));
 
         auto mouse_dragged =
             reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseDragged:)));
@@ -213,7 +210,7 @@ namespace saucer
                                         }
 
                                         self.m_impl->pending.clear();
-                                        self.m_events.at<web_event::dom_ready>().fire();
+                                        self.m_events.get<web_event::dom_ready>().fire();
 
                                         return;
                                     }
@@ -222,28 +219,28 @@ namespace saucer
                                 }),
                             "v@:@");
 
-        class_replaceMethod([NavigationDelegate class], @selector(webView:decidePolicyForNavigationAction:decisionHandler:),
-                            imp_implementationWithBlock(
-                                [](NavigationDelegate *delegate, WKWebView *, WKNavigationAction *action,
-                                   void (^decision)(WKNavigationActionPolicy))
-                                {
-                                    const utils::autorelease_guard guard{};
+        class_replaceMethod(
+            [NavigationDelegate class], @selector(webView:decidePolicyForNavigationAction:decisionHandler:),
+            imp_implementationWithBlock(
+                [](NavigationDelegate *delegate, WKWebView *, WKNavigationAction *action, void (^decision)(WKNavigationActionPolicy))
+                {
+                    const utils::autorelease_guard guard{};
 
-                                    auto request = navigation{{action}};
+                    auto request = navigation{{action}};
 
-                                    if (delegate->m_parent->m_events.at<web_event::navigate>().until(policy::block, request))
-                                    {
-                                        return decision(WKNavigationActionPolicyCancel);
-                                    }
+                    if (delegate->m_parent->m_events.get<web_event::navigate>().fire(request).find(policy::block))
+                    {
+                        return decision(WKNavigationActionPolicyCancel);
+                    }
 
-                                    decision(WKNavigationActionPolicyAllow);
-                                }),
-                            "v@:@");
+                    decision(WKNavigationActionPolicyAllow);
+                }),
+            "v@:@");
 
         class_replaceMethod(
             [NavigationDelegate class], @selector(webView:didFinishNavigation:),
             imp_implementationWithBlock([](NavigationDelegate *delegate, WKWebView *, WKNavigation *)
-                                        { delegate->m_parent->m_events.at<web_event::load>().fire(state::finished); }),
+                                        { delegate->m_parent->m_events.get<web_event::load>().fire(state::finished); }),
             "v@:@");
 
         class_replaceMethod([NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
@@ -251,7 +248,7 @@ namespace saucer
                                 [](NavigationDelegate *delegate, WKWebView *, WKNavigation *)
                                 {
                                     delegate->m_parent->m_impl->dom_loaded = false;
-                                    delegate->m_parent->m_events.at<web_event::load>().fire(state::started);
+                                    delegate->m_parent->m_events.get<web_event::load>().fire(state::started);
                                 }),
                             "v@:@");
     }
@@ -287,7 +284,7 @@ namespace saucer
             auto key   = flag.substr(0, delim);
             auto value = flag.substr(delim + 1);
 
-            const auto data = fmt::format(R"json({{ "value": {} }})json", value);
+            const auto data = std::format(R"json({{ "value": {} }})json", value);
             auto *const str = [NSString stringWithUTF8String:data.c_str()];
 
             NSError *error{};
@@ -372,9 +369,7 @@ namespace saucer
 @end
 
 @implementation SaucerView
-- (instancetype)initWithParent:(saucer::webview *)parent
-                 configuration:(WKWebViewConfiguration *)configuration
-                         frame:(CGRect)frame
+- (instancetype)initWithParent:(saucer::webview *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame
 {
     self           = [super initWithFrame:frame configuration:configuration];
     self->m_parent = parent;

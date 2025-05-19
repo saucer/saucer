@@ -1,5 +1,6 @@
-#include "app.hpp"
+#pragma once
 
+#include "app.hpp"
 #include "cocoa.utils.hpp"
 
 #include <unordered_map>
@@ -13,7 +14,7 @@ namespace saucer
         NSApplication *application;
 
       public:
-        utils::autorelease_guard pool;
+        coco::future<void> future;
 
       public:
         std::thread::id thread;

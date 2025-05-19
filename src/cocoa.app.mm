@@ -2,11 +2,8 @@
 
 namespace saucer
 {
-    application::application(const options &) : extensible(this), m_impl(std::make_unique<impl>())
+    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data)))
     {
-        m_impl->thread      = std::this_thread::get_id();
-        m_impl->application = [NSApplication sharedApplication];
-
         [NSApp activateIgnoringOtherApps:YES];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
@@ -18,6 +15,11 @@ namespace saucer
     bool application::thread_safe() const
     {
         return m_impl->thread == std::this_thread::get_id();
+    }
+
+    coco::future<void> application::finish()
+    {
+        return std::move(m_impl->future);
     }
 
     std::vector<screen> application::screens() const
@@ -42,47 +44,70 @@ namespace saucer
         return rtn;
     }
 
-    void application::post(callback_t callback) const // NOLINT(*-static)
+    void application::post(post_callback_t callback) const // NOLINT(*-static)
     {
         auto *const queue = dispatch_get_main_queue();
-        auto *const ptr   = new callback_t{std::move(callback)};
+        auto *const ptr   = new post_callback_t{std::move(callback)};
 
         dispatch_async(queue,
                        [ptr]
                        {
-                           const utils::autorelease_guard guard{};
-
-                           auto callback = std::unique_ptr<callback_t>{ptr};
+                           const auto guard = utils::autorelease_guard{};
+                           auto callback    = std::unique_ptr<post_callback_t>{ptr};
                            std::invoke(*callback);
                        });
     }
 
-    template <>
-    void application::run<true>() const // NOLINT(*-static)
+    int application::run(callback_t callback)
     {
-        [NSApp run];
-    }
+        static bool once{false};
 
-    template <>
-    void application::run<false>() const // NOLINT(*-static)
-    {
-        const utils::autorelease_guard guard{};
-
-        auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                               untilDate:[NSDate now]
-                                                  inMode:NSDefaultRunLoopMode
-                                                 dequeue:YES];
-
-        if (!event)
+        if (!thread_safe())
         {
-            return;
+            assert(false && "saucer::application::run() may only be called from the thread it was created in");
+            return -1;
         }
 
-        [NSApp sendEvent:event];
+        if (once)
+        {
+            assert(false && "saucer::application::run() may only be called once");
+            return -1;
+        }
+
+        const auto guard = utils::autorelease_guard{};
+        auto promise     = coco::promise<void>{};
+
+        once           = true;
+        m_impl->future = promise.get_future();
+
+        post([this, callback = std::move(callback)]() mutable { std::invoke(callback, this); });
+        [NSApp run];
+
+        promise.set_value();
+
+        return 0;
     }
 
     void application::quit() // NOLINT(*-static)
     {
         [NSApp stop:nil];
+    }
+
+    std::optional<application> application::create(const options &)
+    {
+        static bool once{false};
+
+        if (once)
+        {
+            assert(false && "saucer::application may only be created once");
+            return std::nullopt;
+        }
+
+        once = true;
+
+        return impl{
+            .application = [NSApplication sharedApplication],
+            .thread      = std::this_thread::get_id(),
+        };
     }
 } // namespace saucer

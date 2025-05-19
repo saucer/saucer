@@ -78,7 +78,5 @@ namespace saucer
   @public
     saucer::webview *m_parent;
 }
-- (instancetype)initWithParent:(saucer::webview *)parent
-                 configuration:(WKWebViewConfiguration *)configuration
-                         frame:(CGRect)frame;
+- (instancetype)initWithParent:(saucer::webview *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame;
 @end

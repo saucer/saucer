@@ -10,38 +10,34 @@ namespace saucer
 {
     void window::impl::init_objc()
     {
-        class_replaceMethod(
-            [WindowDelegate class], @selector(windowDidMiniaturize:),
-            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                        { delegate->m_parent->m_events.at<window_event::minimize>().fire(true); }),
-            "v@:@");
+        class_replaceMethod([WindowDelegate class], @selector(windowDidMiniaturize:),
+                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                                        { delegate->m_parent->m_events.get<window_event::minimize>().fire(true); }),
+                            "v@:@");
 
-        class_replaceMethod(
-            [WindowDelegate class], @selector(windowDidDeminiaturize:),
-            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                        { delegate->m_parent->m_events.at<window_event::minimize>().fire(false); }),
-            "v@:@");
+        class_replaceMethod([WindowDelegate class], @selector(windowDidDeminiaturize:),
+                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                                        { delegate->m_parent->m_events.get<window_event::minimize>().fire(false); }),
+                            "v@:@");
 
         class_replaceMethod([WindowDelegate class], @selector(windowDidResize:),
                             imp_implementationWithBlock(
                                 [](WindowDelegate *delegate, NSNotification *)
                                 {
                                     const auto [width, height] = delegate->m_parent->size();
-                                    delegate->m_parent->m_events.at<window_event::resize>().fire(width, height);
+                                    delegate->m_parent->m_events.get<window_event::resize>().fire(width, height);
                                 }),
                             "v@:@");
 
-        class_replaceMethod(
-            [WindowDelegate class], @selector(windowDidBecomeKey:),
-            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                        { delegate->m_parent->m_events.at<window_event::focus>().fire(true); }),
-            "v@:@");
+        class_replaceMethod([WindowDelegate class], @selector(windowDidBecomeKey:),
+                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                                        { delegate->m_parent->m_events.get<window_event::focus>().fire(true); }),
+                            "v@:@");
 
-        class_replaceMethod(
-            [WindowDelegate class], @selector(windowDidResignKey:),
-            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                        { delegate->m_parent->m_events.at<window_event::focus>().fire(false); }),
-            "v@:@");
+        class_replaceMethod([WindowDelegate class], @selector(windowDidResignKey:),
+                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
+                                                        { delegate->m_parent->m_events.get<window_event::focus>().fire(false); }),
+                            "v@:@");
 
         class_replaceMethod([WindowDelegate class], @selector(windowShouldClose:),
                             imp_implementationWithBlock(
@@ -50,7 +46,7 @@ namespace saucer
                                     auto *self = delegate->m_parent;
                                     auto &impl = self->m_impl;
 
-                                    if (self->m_events.at<window_event::close>().until(policy::block))
+                                    if (self->m_events.get<window_event::close>().fire().find(policy::block))
                                     {
                                         return false;
                                     }
@@ -64,7 +60,7 @@ namespace saucer
                                     }
 
                                     self->hide();
-                                    self->m_events.at<window_event::closed>().fire();
+                                    self->m_events.get<window_event::closed>().fire();
 
                                     auto &instances = parent->native<false>()->instances;
                                     instances.erase(identifier);
@@ -82,7 +78,7 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::decorated>(saucer::window *self)
     {
-        auto &event = self->m_events.at<window_event::decorated>();
+        auto &event = self->m_events.get<window_event::decorated>();
 
         if (!event.empty())
         {
@@ -92,7 +88,7 @@ namespace saucer
         const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
-                                  self->m_events.at<window_event::decorated>().fire(self->decoration());
+                                  self->m_events.get<window_event::decorated>().fire(self->decoration());
                               }];
 
         [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];
@@ -102,7 +98,7 @@ namespace saucer
     template <>
     void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
     {
-        auto &event = self->m_events.at<window_event::maximize>();
+        auto &event = self->m_events.get<window_event::maximize>();
 
         if (!event.empty())
         {
@@ -112,7 +108,7 @@ namespace saucer
         const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
-                                  self->m_events.at<window_event::maximize>().fire(self->maximized());
+                                  self->m_events.get<window_event::maximize>().fire(self->maximized());
                               }];
 
         [window addObserver:observer.get() forKeyPath:@"isZoomed" options:0 context:nullptr];

@@ -3,9 +3,8 @@
 #include "instantiate.hpp"
 #include "cocoa.window.impl.hpp"
 
+#include <format>
 #include <algorithm>
-
-#include <fmt/core.h>
 
 #import <objc/objc-runtime.h>
 #import <CoreImage/CoreImage.h>
@@ -33,7 +32,7 @@ namespace saucer
         {
             // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            auto id          = prefs.storage_path.empty() ? "saucer" : fmt::format("saucer.{}", prefs.storage_path.string());
+            auto id          = prefs.storage_path.empty() ? "saucer" : std::format("saucer.{}", prefs.storage_path.string());
             auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
             unsigned char hash[32] = "";
@@ -389,8 +388,10 @@ namespace saucer
             return m_parent->dispatch([this, script] { return inject(script); });
         }
 
-        const auto time      = script.time == load_time::creation ? WKUserScriptInjectionTimeAtDocumentStart
-                                                                  : WKUserScriptInjectionTimeAtDocumentEnd;
+        const auto time = script.time == load_time::creation //
+                              ? WKUserScriptInjectionTimeAtDocumentStart
+                              : WKUserScriptInjectionTimeAtDocumentEnd;
+
         const auto main_only = static_cast<BOOL>(script.frame == web_frame::top);
 
         auto *const user_script = [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
@@ -443,8 +444,7 @@ namespace saucer
             return;
         }
 
-        [impl::schemes[name].get() add_callback:{.app = m_parent.get(), .resolver = std::move(resolver)}
-                                        webview:m_impl->web_view.get()];
+        [impl::schemes[name].get() add_callback:{.app = m_parent, .resolver = std::move(resolver)} webview:m_impl->web_view.get()];
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -478,29 +478,27 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type<Event> callback)
+    void webview::once(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return once<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        m_events.at<Event>().once(std::move(callback));
+        m_events.get<Event>().once(std::move(callback));
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type<Event> callback)
+    std::uint64_t webview::on(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return on<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        return m_events.at<Event>().add(std::move(callback));
+        return m_events.get<Event>().add(std::move(callback));
     }
 
     void webview::register_scheme(const std::string &name)

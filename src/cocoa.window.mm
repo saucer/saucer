@@ -6,6 +6,7 @@
 #include "cocoa.icon.impl.hpp"
 
 #include <cassert>
+
 #include <rebind/enum.hpp>
 
 namespace saucer
@@ -373,7 +374,7 @@ namespace saucer
             return m_parent->dispatch([this, enabled] { return set_click_through(enabled); });
         }
 
-        m_impl->window.ignoresMouseEvents = enabled;
+        m_impl->window.ignoresMouseEvents = static_cast<BOOL>(enabled);
     }
 
     void window::set_icon(const icon &icon)
@@ -522,33 +523,31 @@ namespace saucer
     }
 
     template <window_event Event>
-    void window::once(events::type<Event> callback)
+    void window::once(events::event<Event>::callback callback)
     {
         const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return once<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        m_events.at<Event>().once(std::move(callback));
+        m_events.get<Event>().once(std::move(callback));
     }
 
     template <window_event Event>
-    std::uint64_t window::on(events::type<Event> callback)
+    std::uint64_t window::on(events::event<Event>::callback callback)
     {
         const utils::autorelease_guard guard{};
 
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable
-                                      { return on<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        return m_events.at<Event>().add(std::move(callback));
+        return m_events.get<Event>().add(std::move(callback));
     }
 
     SAUCER_INSTANTIATE_EVENTS(7, window, window_event);
