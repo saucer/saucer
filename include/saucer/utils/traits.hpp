@@ -11,12 +11,26 @@
 
 #include <coco/utils/utils.hpp>
 #include <coco/traits/traits.hpp>
-#include <boost/callable_traits.hpp>
 
 namespace saucer::traits
 {
     namespace impl
     {
+        template <typename T>
+        struct function_traits : function_traits<decltype(std::function{std::declval<T>()})>
+        {
+        };
+
+        template <typename R, typename... Ts>
+        struct function_traits<std::function<R(Ts...)>>
+        {
+            using result = R;
+            using args   = std::tuple<Ts...>;
+
+          public:
+            using signature = R(Ts...);
+        };
+
         template <bool Success, typename T = void>
         struct apply_info
         {
@@ -52,16 +66,8 @@ namespace saucer::traits
         using arg_transformer_t = std::conditional_t<std::same_as<D, std::string_view>, std::string, D>;
     } // namespace impl
 
-    using apply_failure = impl::apply_info<false>;
-
     template <typename T>
-    using apply_success = impl::apply_info<true, T>;
-
-    template <typename T, typename Args>
-    using apply_t = impl::apply<T, Args>::type;
-
-    template <typename T>
-    using raw_args_t = boost::callable_traits::args_t<T>;
+    using raw_args_t = impl::function_traits<T>::args;
 
     template <typename T>
     concept NonRefCallable = !impl::has_reference<raw_args_t<T>>::value;
@@ -70,13 +76,24 @@ namespace saucer::traits
     using args_t = tuple::transform_t<raw_args_t<T>, Transform>;
 
     template <typename T>
-    using result_t = boost::callable_traits::return_type_t<T>;
+    using signature_t = impl::function_traits<T>::signature;
 
-    template <typename T,                                                                                                 //
-              typename Args,                                                                                              //
-              typename Executor,                                                                                          //
-              typename WithExecutor = apply_t<T, tuple::add_t<Args, Executor>>,                                           //
-              typename Result = apply_t<T, std::conditional_t<WithExecutor::success, tuple::add_t<Args, Executor>, Args>> //
+    template <typename T>
+    using result_t = impl::function_traits<T>::result;
+
+    using apply_failure = impl::apply_info<false>;
+
+    template <typename T>
+    using apply_success = impl::apply_info<true, T>;
+
+    template <typename T, typename Args>
+    using apply_t = impl::apply<T, Args>::type;
+
+    template <typename T,                                                                                                       //
+              typename Args,                                                                                                    //
+              typename Executor,                                                                                                //
+              typename WithExecutor = apply_t<T, tuple::add_t<Args, Executor>>,                                                 //
+              typename Result       = apply_t<T, std::conditional_t<WithExecutor::success, tuple::add_t<Args, Executor>, Args>> //
               >
     struct converter
     {

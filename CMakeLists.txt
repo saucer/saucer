@@ -60,9 +60,8 @@ endif()
 
 set(saucer_webview2_version "1.0.3179.45"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_windows_arch     "Default"       CACHE STRING "The windows architecture (Win32, x64, ARM64) used for linking against NuGet packages")
-set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropiate one for the current platform by default")
+set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropriate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
-set(saucer_polyfills        "Default"       CACHE STRING "The polyfills to use. Set to 'None' to avoid any polyfills from being used. Uses 'try_compile' by default")
 
 # --------------------------------------------------------------------------------------------------------
 # Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
@@ -171,11 +170,14 @@ endif()
 # Include directories
 # --------------------------------------------------------------------------------------------------------
 
-target_include_directories(${PROJECT_NAME} PUBLIC  "include")
-target_include_directories(${PROJECT_NAME} PRIVATE "private")
-
-target_include_directories(${PROJECT_NAME} PRIVATE "private/saucer")
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
+target_include_directories(${PROJECT_NAME} PRIVATE "private")
+target_include_directories(${PROJECT_NAME} PRIVATE "private/saucer")
+
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup feature macros
@@ -221,7 +223,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/request.cpp"
     "src/module/unstable.cpp"
     
-    "src/app.cpp"
     "src/window.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
@@ -272,12 +273,6 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           poolparty
-  VERSION        3.0.1
-  GIT_REPOSITORY "https://github.com/Curve/poolparty"
-)
-
-CPMFindPackage(
   NAME           fill
   VERSION        1.0.0
   GIT_REPOSITORY "https://github.com/saucer/fill"
@@ -290,14 +285,8 @@ CPMFindPackage(
   GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
 )
 
-CPMFindPackage(
-  NAME           boost_callable_traits
-  GIT_TAG        boost-1.87.0
-  GIT_REPOSITORY "https://github.com/boostorg/callable_traits"
-)
-
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp boost_preprocessor)
-target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::eraser cr::ereignis cr::poolparty saucer::fill boost_callable_traits)
+target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::eraser cr::ereignis saucer::fill)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
@@ -327,8 +316,8 @@ if (saucer_backend STREQUAL "WebKit")
 
   target_sources(${PROJECT_NAME} PRIVATE ${cocoa_sources})
 
-  find_library(cocoa Cocoa REQUIRED)
-  find_library(webkit WebKit REQUIRED)
+  find_library(cocoa  Cocoa     REQUIRED)
+  find_library(webkit WebKit    REQUIRED)
   find_library(cimage CoreImage REQUIRED)
 
   target_link_libraries(${PROJECT_NAME} ${saucer_linkage} ${cocoa} ${webkit} ${cimage})
@@ -371,28 +360,21 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_serializer STREQUAL "Glaze")
-  file(GLOB_RECURSE glaze_sources 
-    "src/glaze.*cpp"
-  )
-
-  target_sources(${PROJECT_NAME} PRIVATE ${glaze_sources})
-
   CPMFindPackage(
     NAME           glaze
     VERSION        5.2.1
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
+  file(GLOB_RECURSE glaze_sources 
+    "src/glaze.*cpp"
+  )
+
+  target_sources(${PROJECT_NAME} PRIVATE ${glaze_sources})
   target_link_libraries(${PROJECT_NAME} PUBLIC glaze::glaze)
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
-  file(GLOB_RECURSE rflpp_sources 
-    "src/rfl.*cpp"
-  )
-
-  target_sources(${PROJECT_NAME} PRIVATE ${rflpp_sources})
-
   CPMFindPackage(
     NAME           reflectcpp
     VERSION        0.19.0
@@ -400,6 +382,11 @@ if (saucer_serializer STREQUAL "Rflpp")
     SYSTEM         ON
   )
 
+  file(GLOB_RECURSE rflpp_sources 
+    "src/rfl.*cpp"
+  )
+
+  target_sources(${PROJECT_NAME} PRIVATE ${rflpp_sources})
   target_link_libraries(${PROJECT_NAME} PUBLIC reflectcpp)
 endif()
 
