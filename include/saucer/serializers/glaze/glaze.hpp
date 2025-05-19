@@ -28,10 +28,6 @@ namespace saucer::serializers::glaze
         using function_data = function_data;
 
       public:
-        template <typename... Ts>
-        using format_string = std::format_string<std::enable_if_t<Writable<Ts>, std::string>...>;
-
-      public:
         ~serializer() override;
 
       public:

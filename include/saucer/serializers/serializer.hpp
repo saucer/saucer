@@ -60,7 +60,6 @@ namespace saucer
         requires Readable<int, T>;
         requires Readable<int, T, typename T::result_data>;
         requires Readable<int, T, typename T::function_data>;
-        requires std::same_as<typename T::template format_string<int>, std::format_string<std::string>>;
     };
 
     template <typename Interface>
@@ -86,8 +85,8 @@ namespace saucer
     template <typename T>
     concept Serializer = is_serializer<T>::value;
 
-    template <typename Serializer, typename... Ts>
-    using format_string = Serializer::template format_string<Ts...>;
+    template <Serializer Serializer, typename... Ts>
+    using format_string = std::format_string<std::enable_if_t<Writable<Ts, Serializer>, std::string>...>;
 } // namespace saucer
 
 #include "serializer.inl"
