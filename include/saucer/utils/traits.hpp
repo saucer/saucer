@@ -89,12 +89,11 @@ namespace saucer::traits
     template <typename T, typename Args>
     using apply_t = impl::apply<T, Args>::type;
 
-    template <typename T,                                                                                                       //
-              typename Args,                                                                                                    //
-              typename Executor,                                                                                                //
-              typename WithExecutor = apply_t<T, tuple::add_t<Args, Executor>>,                                                 //
-              typename Result       = apply_t<T, std::conditional_t<WithExecutor::success, tuple::add_t<Args, Executor>, Args>> //
-              >
+    template <typename T,                                                       //
+              typename Args,                                                    //
+              typename Executor,                                                //
+              typename WithExecutor = apply_t<T, tuple::add_t<Args, Executor>>, //
+              typename Result       = apply_t<T, std::conditional_t<WithExecutor::success, tuple::add_t<Args, Executor>, Args>>>
     struct converter
     {
         static_assert(std::same_as<WithExecutor, apply_failure> && std::same_as<Result, apply_failure>,
