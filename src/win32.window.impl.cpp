@@ -40,7 +40,7 @@ namespace saucer
             }
 
             prev.emplace(current);
-            window->m_events.at<window_event::decorated>().fire(current);
+            window->m_events.get<window_event::decorated>().fire(current);
 
             break;
         }
@@ -83,25 +83,25 @@ namespace saucer
             break;
         }
         case WM_NCACTIVATE:
-            window->m_events.at<window_event::focus>().fire(w_param);
+            window->m_events.get<window_event::focus>().fire(w_param);
             break;
         case WM_SIZE: {
             switch (w_param)
             {
             case SIZE_MAXIMIZED:
-                window->m_events.at<window_event::maximize>().fire(true);
+                window->m_events.get<window_event::maximize>().fire(true);
                 break;
             case SIZE_MINIMIZED:
-                window->m_events.at<window_event::minimize>().fire(true);
+                window->m_events.get<window_event::minimize>().fire(true);
                 break;
             case SIZE_RESTORED:
                 switch (window->m_impl->prev_state)
                 {
                 case SIZE_MAXIMIZED:
-                    window->m_events.at<window_event::maximize>().fire(false);
+                    window->m_events.get<window_event::maximize>().fire(false);
                     break;
                 case SIZE_MINIMIZED:
-                    window->m_events.at<window_event::minimize>().fire(false);
+                    window->m_events.get<window_event::minimize>().fire(false);
                     break;
                 }
                 break;
@@ -110,20 +110,20 @@ namespace saucer
             window->m_impl->prev_state = w_param;
 
             auto [width, height] = window->size();
-            window->m_events.at<window_event::resize>().fire(width, height);
+            window->m_events.get<window_event::resize>().fire(width, height);
 
             break;
         }
         case WM_CLOSE: {
-            if (window->m_events.at<window_event::close>().until(policy::block))
+            if (window->m_events.get<window_event::close>().fire().find(policy::block))
             {
                 return 0;
             }
 
-            auto parent = window->m_parent;
+            auto *parent = window->m_parent;
 
             window->hide();
-            window->m_events.at<window_event::closed>().fire();
+            window->m_events.get<window_event::closed>().fire();
 
             auto &instances = parent->native<false>()->instances;
             instances.erase(hwnd);

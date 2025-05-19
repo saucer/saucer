@@ -8,12 +8,11 @@
 #include "win32.window.impl.hpp"
 #include "wv2.navigation.impl.hpp"
 
+#include <format>
 #include <ranges>
+
 #include <cassert>
 #include <filesystem>
-
-#include <fmt/core.h>
-#include <fmt/xchar.h>
 
 #include <shlobj.h>
 #include <WebView2EnvironmentOptions.h>
@@ -73,7 +72,7 @@ namespace saucer
             {
                 auto request = navigation{{args}};
 
-                m_events.at<web_event::navigate>().until(policy::block, request);
+                m_events.get<web_event::navigate>().fire(request).find(policy::block);
                 deferral->Complete();
             };
 
@@ -87,11 +86,11 @@ namespace saucer
         auto navigation_starting = [this](auto, ICoreWebView2NavigationStartingEventArgs *args)
         {
             m_impl->dom_loaded = false;
-            m_parent->post([this] { m_events.at<web_event::load>().fire(state::started); });
+            m_parent->post([this] { m_events.get<web_event::load>().fire(state::started); });
 
             auto request = navigation{{args}};
 
-            if (m_events.at<web_event::navigate>().until(policy::block, request))
+            if (m_events.get<web_event::navigate>().fire(request).find(policy::block))
             {
                 args->put_Cancel(true);
             }
@@ -121,7 +120,7 @@ namespace saucer
             }
 
             m_impl->pending.clear();
-            m_parent->post([this] { m_events.at<web_event::dom_ready>().fire(); });
+            m_parent->post([this] { m_events.get<web_event::dom_ready>().fire(); });
 
             return S_OK;
         };
@@ -133,7 +132,7 @@ namespace saucer
             auto icon_received = [this](auto, auto *stream)
             {
                 m_impl->favicon = icon{{std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream))}};
-                m_events.at<web_event::favicon>().fire(m_impl->favicon);
+                m_events.get<web_event::favicon>().fire(m_impl->favicon);
 
                 return S_OK;
             };
@@ -359,8 +358,15 @@ namespace saucer
 
     void webview::set_file(const fs::path &file)
     {
-        auto path = fmt::format("file://{}", fs::canonical(file).string());
-        set_url(path);
+        auto error     = std::error_code{};
+        auto canonical = fs::canonical(file, error);
+
+        if (error)
+        {
+            return;
+        }
+
+        set_url(std::format("file://{}", canonical.string()));
     }
 
     void webview::set_url(const std::string &url)
@@ -452,7 +458,7 @@ namespace saucer
 
         if (script.frame == web_frame::top)
         {
-            source = fmt::format(R"js(
+            source = std::format(R"js(
             if (self === top)
             {{
                 {}
@@ -461,8 +467,7 @@ namespace saucer
                                  source);
         }
 
-        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(source).c_str(),
-                                                              Callback<ScriptInjected>(callback).Get());
+        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(source).c_str(), Callback<ScriptInjected>(callback).Get());
     }
 
     void webview::execute(const std::string &code)
@@ -503,7 +508,7 @@ namespace saucer
 
         m_impl->schemes.emplace(name, std::move(resolver));
 
-        const auto pattern = utils::widen(fmt::format("{}*", name));
+        const auto pattern = utils::widen(std::format("{}*", name));
 
         webview->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
                                                                      COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
@@ -530,10 +535,10 @@ namespace saucer
             return;
         }
 
-        const auto pattern = utils::widen(fmt::format("{}*", name));
+        const auto pattern = utils::widen(std::format("{}*", name));
 
-        webview->RemoveWebResourceRequestedFilterWithRequestSourceKinds(
-            pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL, COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+        webview->RemoveWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                        COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
 
         m_impl->schemes.erase(it);
     }
@@ -559,29 +564,27 @@ namespace saucer
     }
 
     template <web_event Event>
-    void webview::once(events::type<Event> callback)
+    void webview::once(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)]() mutable
-                                      { return once<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)]() mutable { return once<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        m_events.at<Event>().once(std::move(callback));
+        m_events.get<Event>().once(std::move(callback));
     }
 
     template <web_event Event>
-    std::uint64_t webview::on(events::type<Event> callback)
+    std::uint64_t webview::on(events::event<Event>::callback callback)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this, callback = std::move(callback)]() mutable
-                                      { return on<Event>(std::move(callback)); });
+            return m_parent->dispatch([this, callback = std::move(callback)]() mutable { return on<Event>(std::move(callback)); });
         }
 
         m_impl->setup<Event>(this);
-        return m_events.at<Event>().add(std::move(callback));
+        return m_events.get<Event>().add(std::move(callback));
     }
 
     void webview::register_scheme(const std::string &name)

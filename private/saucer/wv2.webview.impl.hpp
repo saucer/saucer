@@ -49,7 +49,7 @@ namespace saucer
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:
-        void create_webview(const std::shared_ptr<application> &, HWND, preferences);
+        void create_webview(application *, HWND, preferences);
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *, webview *);
 
       public:

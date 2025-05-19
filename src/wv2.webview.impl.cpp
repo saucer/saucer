@@ -7,12 +7,12 @@
 #include "win32.app.impl.hpp"
 #include "wv2.scheme.impl.hpp"
 
+#include <format>
+#include <ranges>
+
 #include <cassert>
 
 #include <rebind/utils/enum.hpp>
-
-#include <fmt/core.h>
-#include <fmt/xchar.h>
 
 #include <windows.h>
 #include <gdiplus.h>
@@ -31,10 +31,9 @@ namespace saucer
             }
         )js";
 
-        static const auto script = fmt::format(scripts::webview_script,            //
-                                               fmt::arg("internal", internal),     //
-                                               fmt::arg("stubs", request::stubs()) //
-        );
+        static const auto script = std::format(scripts::webview_script, //
+                                               internal,                //
+                                               request::stubs());
 
         return script;
     }
@@ -51,14 +50,14 @@ namespace saucer
         return instance;
     }
 
-    void webview::impl::create_webview(const std::shared_ptr<application> &app, HWND hwnd, preferences prefs)
+    void webview::impl::create_webview(application *app, HWND hwnd, preferences prefs)
     {
         if (!prefs.hardware_acceleration)
         {
             prefs.browser_flags.emplace("--disable-gpu");
         }
 
-        const auto args        = fmt::format("{}", fmt::join(prefs.browser_flags, " "));
+        const auto args        = prefs.browser_flags | std::views::join_with(' ') | std::ranges::to<std::string>();
         const auto env_options = impl::env_options();
 
         env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
@@ -82,7 +81,7 @@ namespace saucer
             if (BYTE data[hash_size]{}; HashData(reinterpret_cast<BYTE *>(id.data()), id.size(), data, hash_size) == S_OK)
             {
                 hash = data                                                                    //
-                       | std::views::transform([](auto x) { return fmt::format(L"{:x}", x); }) //
+                       | std::views::transform([](auto x) { return std::format(L"{:x}", x); }) //
                        | std::views::join                                                      //
                        | std::ranges::to<std::wstring>();
             }
@@ -91,7 +90,7 @@ namespace saucer
                 assert(false && "Failedd to compute hash of id");
             }
 
-            prefs.storage_path = std::filesystem::temp_directory_path() / fmt::format(L"saucer-{}", hash);
+            prefs.storage_path = std::filesystem::temp_directory_path() / std::format(L"saucer-{}", hash);
             temp_path          = prefs.storage_path;
         }
 
@@ -135,7 +134,7 @@ namespace saucer
 
         while (!controller)
         {
-            app->run<false>();
+            app->native<false>()->run_once();
         }
 
         web_view->get_BrowserProcessId(&browser_pid);
@@ -194,15 +193,15 @@ namespace saucer
             const auto *raw = reinterpret_cast<const BYTE *>(response.data.data());
             const auto size = static_cast<const UINT>(response.data.size());
 
-            ComPtr<IStream> buffer           = SHCreateMemStream(raw, size);
-            std::vector<std::string> headers = {fmt::format("Content-Type: {}", response.mime)};
+            ComPtr<IStream> buffer            = SHCreateMemStream(raw, size);
+            std::vector<std::wstring> headers = {std::format(L"Content-Type: {}", utils::widen(response.mime))};
 
             for (const auto &[name, value] : response.headers)
             {
-                headers.emplace_back(fmt::format("{}: {}", name, value));
+                headers.emplace_back(std::format(L"{}: {}", utils::widen(name), utils::widen(value)));
             }
 
-            const auto combined = utils::widen(fmt::format("{}", fmt::join(headers, "\n")));
+            const auto combined = headers | std::views::join_with('\n') | std::ranges::to<std::wstring>();
 
             ComPtr<ICoreWebView2WebResourceResponse> result;
             environment->CreateWebResourceResponse(buffer.Get(), response.status, L"OK", combined.c_str(), &result);
@@ -272,7 +271,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::navigated>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::navigated>();
+        auto &event = self->m_events.get<web_event::navigated>();
 
         if (!event.empty())
         {
@@ -282,7 +281,7 @@ namespace saucer
         auto handler = [self](auto...)
         {
             auto url = self->url();
-            self->m_parent->post([self, url] { self->m_events.at<web_event::navigated>().fire(url); });
+            self->m_parent->post([self, url] { self->m_events.get<web_event::navigated>().fire(url); });
 
             return S_OK;
         };
@@ -306,7 +305,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::title>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::title>();
+        auto &event = self->m_events.get<web_event::title>();
 
         if (!event.empty())
         {
@@ -316,7 +315,7 @@ namespace saucer
         auto handler = [self](auto...)
         {
             auto title = self->page_title();
-            self->m_parent->post([self, title] { self->m_events.at<web_event::title>().fire(title); });
+            self->m_parent->post([self, title] { self->m_events.get<web_event::title>().fire(title); });
 
             return S_OK;
         };
@@ -330,7 +329,7 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::load>(webview *self)
     {
-        auto &event = self->m_events.at<web_event::load>();
+        auto &event = self->m_events.get<web_event::load>();
 
         if (!event.empty())
         {
@@ -339,7 +338,7 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->m_parent->post([self] { self->m_events.at<web_event::load>().fire(state::finished); });
+            self->m_parent->post([self] { self->m_events.get<web_event::load>().fire(state::finished); });
             return S_OK;
         };
 

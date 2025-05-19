@@ -2,6 +2,19 @@
 
 namespace saucer
 {
+    void application::impl::run_once()
+    {
+        MSG msg{};
+
+        if (!PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            return;
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
     screen application::impl::convert(MONITORINFOEXW info)
     {
         const auto width  = info.rcMonitor.right - info.rcMonitor.left;

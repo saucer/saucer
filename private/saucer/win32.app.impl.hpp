@@ -24,10 +24,14 @@ namespace saucer
         std::wstring id;
 
       public:
+        coco::future<void> future;
+
+      public:
         std::unordered_map<HWND, bool> instances;
         utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
+        static void run_once();
         static screen convert(MONITORINFOEXW);
 
       public:
