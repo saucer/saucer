@@ -415,5 +415,5 @@ namespace saucer
         QWebEngineUrlScheme::registerScheme(scheme);
     }
 
-    SAUCER_INSTANTIATE_EVENTS(6, webview, web_event);
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS;
 } // namespace saucer

@@ -445,5 +445,5 @@ namespace saucer
         return m_events.get<Event>().add(std::move(callback));
     }
 
-    SAUCER_INSTANTIATE_EVENTS(7, window, window_event);
+    SAUCER_INSTANTIATE_WINDOW_EVENTS;
 } // namespace saucer

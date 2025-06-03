@@ -79,14 +79,6 @@ endif()
 set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
 
 # --------------------------------------------------------------------------------------------------------
-# Global Configuration
-# --------------------------------------------------------------------------------------------------------
-
-if (saucer_msvc_hack)
-  add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
-endif()
-
-# --------------------------------------------------------------------------------------------------------
 # Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
@@ -105,7 +97,7 @@ if (NOT saucer_serializer IN_LIST saucer_valid_serializers)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Determine appropiate default backend
+# Determine appropriate default backend
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_backend STREQUAL "Default")
@@ -155,9 +147,21 @@ else()
 endif()
 
 # --------------------------------------------------------------------------------------------------------
+# Setup Compile Definitions
+# --------------------------------------------------------------------------------------------------------
+
+if (saucer_msvc_hack)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+endif()
+
+if (saucer_private_webkit)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT_PRIVATE)
+endif()
+
+# --------------------------------------------------------------------------------------------------------
 # Setup Linkage
-# └ To make module development eaiser, all system libraries will be linked publicly if module
-#   support is enabled. 
+# └ To make module development easier, all system libraries will be linked publicly if module
+#   support is enabled.
 # --------------------------------------------------------------------------------------------------------
 
 set(saucer_linkage PRIVATE)
@@ -180,39 +184,25 @@ target_include_directories(
 )
 
 # --------------------------------------------------------------------------------------------------------
-# Setup feature macros
+# Miscellaneous CMake-Setup
 # --------------------------------------------------------------------------------------------------------
-
-if (saucer_tests)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_TESTS)
-endif()
-
-if (saucer_private_webkit)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT_PRIVATE)
-endif()
 
 if (saucer_backend STREQUAL "Qt5")
   set(QT_VERSION 5)
   set(QT_REQUIRED_VERSION 5.0.0)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT5)
 endif()
 
 if (saucer_backend STREQUAL "Qt6")
   set(QT_VERSION 6)
   set(QT_REQUIRED_VERSION 6.7.0)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT6)
 endif()
 
-if (saucer_backend STREQUAL "WebKitGtk")
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKITGTK)
+if (saucer_serializer STREQUAL "Glaze")
+  set(SERIALIZER_DEP "glaze 5.3.1")
 endif()
 
-if (saucer_backend STREQUAL "WebView2")
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBVIEW2)
-endif()
-
-if (saucer_backend STREQUAL "WebKit")
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT)
+if (saucer_serializer STREQUAL "Rflpp")
+  set(SERIALIZER_DEP "reflectcpp 0.19.0")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -238,7 +228,7 @@ include("cmake/module.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        3.0
+  VERSION        3.1.0
   GIT_REPOSITORY "https://github.com/Curve/lockpp"
 )
 
@@ -250,13 +240,13 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        5.2.2
+  VERSION        5.3.0
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
 CPMFindPackage(
   NAME           eraser
-  VERSION        2.2.1
+  VERSION        2.3.0
   GIT_REPOSITORY "https://github.com/Curve/eraser"
 )
 
@@ -268,24 +258,18 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           flagpp
-  VERSION        3.0
+  VERSION        3.1.0
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
 )
 
 CPMFindPackage(
   NAME           fill
-  VERSION        1.1.1
+  VERSION        1.2.0
   GIT_REPOSITORY "https://github.com/saucer/fill"
   OPTIONS        "fill_namespace std" "fill_silent ON"
 )
 
-CPMFindPackage(
-  NAME           boost_preprocessor
-  GIT_TAG        boost-1.87.0
-  GIT_REPOSITORY "https://github.com/boostorg/preprocessor"
-)
-
-target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp boost_preprocessor)
+target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::eraser cr::ereignis saucer::fill)
 
 # --------------------------------------------------------------------------------------------------------
@@ -300,6 +284,8 @@ if (saucer_backend MATCHES "^Qt.$")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT${QT_VERSION})
+
   set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
 
   find_package(Qt${QT_VERSION} ${QT_REQUIRED_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
@@ -315,6 +301,7 @@ if (saucer_backend STREQUAL "WebKit")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${cocoa_sources})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT)
 
   find_library(cocoa  Cocoa     REQUIRED)
   find_library(webkit WebKit    REQUIRED)
@@ -330,6 +317,7 @@ if (saucer_backend STREQUAL "WebKitGtk")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${gtk_sources})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKITGTK)
 
   find_package(PkgConfig REQUIRED)
 
@@ -347,6 +335,7 @@ if (saucer_backend STREQUAL "WebView2")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBVIEW2)
   
   target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
   target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
@@ -362,7 +351,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        5.2.1
+    VERSION        5.3.1
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -431,26 +420,21 @@ if (saucer_examples)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Packaging Target
-# └ We build this artifact so that people who don't use CMake can manually include all required headers
-#   of our dependencies and link against our static-lib.
+# Package Config
 # --------------------------------------------------------------------------------------------------------
 
-install(TARGETS ${PROJECT_NAME} 
-        EXPORT  ${PROJECT_NAME}-artifact
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
+CPMFindPackage(
+  NAME           PackageProject
+  VERSION        1.13.0
+  GIT_REPOSITORY "https://github.com/TheLartians/PackageProject.cmake"
 )
 
-install(DIRECTORY "include/saucer" TYPE INCLUDE)
-
-if (NOT saucer_package_all)
-    return()
-endif()
-
-if (saucer_backend STREQUAL "WebView2")
-  install(FILES ${webview2_lib_path} DESTINATION lib)
-endif()
-
-install(DIRECTORY "$<TARGET_PROPERTY:boost_callable_traits,INTERFACE_INCLUDE_DIRECTORIES>/boost" TYPE INCLUDE)
+packageProject(
+  NAMESPACE saucer
+  NAME ${PROJECT_NAME}
+  VERSION ${PROJECT_VERSION}
+  BINARY_DIR ${PROJECT_BINARY_DIR}
+  INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
+  INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
+  DEPENDENCIES "lockpp 3.1.0;coco 3.2.0;rebind 5.3.0;eraser 2.3.0;ereignis 5.1.0;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
+)

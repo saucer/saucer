@@ -1,14 +1,22 @@
 #pragma once
 
-#include <boost/preprocessor.hpp>
+#include <tuple>
+#include <utility>
 
-#define SAUCER_INSTANTIATE_IMPL(_, N, DATA) BOOST_PP_TUPLE_ELEM(0, DATA)(N, BOOST_PP_TUPLE_ELEM(1, DATA))
-#define SAUCER_INSTANTIATE(COUNT, MACRO, DATA) BOOST_PP_REPEAT(COUNT, SAUCER_INSTANTIATE_IMPL, (MACRO, DATA))
+#define SAUCER_INSTANTIATE_EVENTS(class, type, n)                                                                                     \
+    template <typename>                                                                                                               \
+    struct instantiate_##class##_##type                                                                                               \
+    {                                                                                                                                 \
+    };                                                                                                                                \
+                                                                                                                                      \
+    template <std::size_t... N>                                                                                                       \
+    struct instantiate_##class##_##type<std::index_sequence<N...>>                                                                    \
+    {                                                                                                                                 \
+        static constexpr auto table =                                                                                                 \
+            std::make_tuple(std::make_pair(&class ::on<static_cast<type>(N)>, &class ::once<static_cast<type>(N)>)...);               \
+    };                                                                                                                                \
+                                                                                                                                      \
+    template struct instantiate_##class##_##type<std::make_index_sequence<n>>;
 
-#define SAUCER_INSTANTIATE_EVENTS_IMPL(N, DATA)                                                                                       \
-    template std::uint64_t BOOST_PP_TUPLE_ELEM(0, DATA)::on<static_cast<BOOST_PP_TUPLE_ELEM(1, DATA)>(N)>(                            \
-        events::event<static_cast<BOOST_PP_TUPLE_ELEM(1, DATA)>(N)>::callback);                                                       \
-    template void BOOST_PP_TUPLE_ELEM(0, DATA)::once<static_cast<BOOST_PP_TUPLE_ELEM(1, DATA)>(N)>(                                   \
-        events::event<static_cast<BOOST_PP_TUPLE_ELEM(1, DATA)>(N)>::callback);
-
-#define SAUCER_INSTANTIATE_EVENTS(COUNT, CLASS, ENUM) SAUCER_INSTANTIATE(COUNT, SAUCER_INSTANTIATE_EVENTS_IMPL, (CLASS, ENUM))
+#define SAUCER_INSTANTIATE_WINDOW_EVENTS SAUCER_INSTANTIATE_EVENTS(window, window_event, 7)
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENTS SAUCER_INSTANTIATE_EVENTS(webview, web_event, 6)

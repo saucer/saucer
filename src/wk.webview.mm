@@ -511,5 +511,5 @@ namespace saucer
         impl::schemes.emplace(name, [[SchemeHandler alloc] init]);
     }
 
-    SAUCER_INSTANTIATE_EVENTS(6, webview, web_event);
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS;
 } // namespace saucer

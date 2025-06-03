@@ -523,5 +523,5 @@ namespace saucer
         webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
     }
 
-    SAUCER_INSTANTIATE_EVENTS(6, webview, web_event);
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS;
 } // namespace saucer
