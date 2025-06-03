@@ -26,9 +26,6 @@ namespace saucer
         std::unordered_map<void *, bool> instances;
 
       public:
-        callback_t callback;
-
-      public:
         static screen convert(GdkMonitor *);
         static std::string fix_id(const std::string &);
     };

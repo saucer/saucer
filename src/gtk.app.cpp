@@ -70,18 +70,19 @@ namespace saucer
         }
 
         auto promise = coco::promise<void>{};
+        auto data    = std::make_tuple(std::move(callback), this);
 
-        once             = true;
-        m_impl->callback = std::move(callback);
-        m_impl->future   = promise.get_future();
+        once           = true;
+        m_impl->future = promise.get_future();
 
-        auto activate = [](GtkApplication *, application *data)
+        auto activate = [](GtkApplication *, void *raw)
         {
             static std::once_flag flag;
-            std::call_once(flag, data->m_impl->callback, data);
+            auto &[callback, self] = *reinterpret_cast<decltype(data) *>(raw);
+            std::call_once(flag, callback, self);
         };
 
-        g_signal_connect(m_impl->application.get(), "activate", G_CALLBACK(+activate), this);
+        g_signal_connect(m_impl->application.get(), "activate", G_CALLBACK(+activate), &data);
         const auto rtn = g_application_run(G_APPLICATION(m_impl->application.get()), m_impl->argc, m_impl->argv);
 
         promise.set_value();
