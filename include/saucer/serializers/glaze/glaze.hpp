@@ -24,8 +24,8 @@ namespace saucer::serializers::glaze
 
     struct serializer : saucer::serializer<serializer>
     {
-        using result_data   = result_data;
-        using function_data = function_data;
+        using result_data   = glaze::result_data;
+        using function_data = glaze::function_data;
 
       public:
         ~serializer() override;
