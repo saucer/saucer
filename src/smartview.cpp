@@ -24,8 +24,8 @@ namespace saucer
         std::shared_ptr<lockpp::lock<smartview_core *>> self;
     };
 
-    smartview_core::smartview_core(std::unique_ptr<serializer_core> serializer, const preferences &prefs)
-        : webview(prefs), m_impl(std::make_unique<impl>())
+    smartview_core::smartview_core(std::unique_ptr<serializer_core> serializer, preferences prefs)
+        : webview(std::move(prefs)), m_impl(std::make_unique<impl>())
     {
         using namespace scripts;
 

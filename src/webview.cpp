@@ -13,6 +13,11 @@ namespace saucer
             return true;
         }
 
+        if (!m_preferences.enable_attributes)
+        {
+            return false;
+        }
+
         auto request = request::parse(message);
 
         if (!request)

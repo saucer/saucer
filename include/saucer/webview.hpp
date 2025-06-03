@@ -72,6 +72,7 @@ namespace saucer
 
       private:
         events m_events;
+        preferences m_preferences;
         embedded_files m_embedded_files;
 
       protected:
@@ -86,7 +87,7 @@ namespace saucer
         void resolve(std::uint64_t, std::string_view);
 
       public:
-        webview(const preferences &);
+        webview(preferences);
 
       public:
         ~webview() override;

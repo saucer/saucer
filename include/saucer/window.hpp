@@ -58,6 +58,7 @@ namespace saucer
         required<saucer::application *> application;
 
       public:
+        bool enable_attributes{true};
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
 

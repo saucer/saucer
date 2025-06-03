@@ -11,28 +11,28 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs) : window(prefs), extensible(this), m_impl(std::make_unique<impl>())
+    webview::webview(preferences prefs) : window(prefs), extensible(this), m_preferences(std::move(prefs)), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-        m_impl->settings = impl::make_settings(prefs);
+        m_impl->settings = impl::make_settings(m_preferences);
 
         auto *const session      = webkit_web_view_get_network_session(m_impl->web_view);
         auto *const data_manager = webkit_network_session_get_website_data_manager(session);
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
-        if (!prefs.user_agent.empty())
+        if (!m_preferences.user_agent.empty())
         {
-            webkit_settings_set_user_agent(m_impl->settings.get(), prefs.user_agent.c_str());
+            webkit_settings_set_user_agent(m_impl->settings.get(), m_preferences.user_agent.c_str());
         }
 
-        if (prefs.persistent_cookies)
+        if (m_preferences.persistent_cookies)
         {
             auto *const manager = webkit_network_session_get_cookie_manager(session);
-            auto path           = prefs.storage_path;
+            auto path           = m_preferences.storage_path;
 
             if (path.empty())
             {
@@ -42,7 +42,7 @@ namespace saucer
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
-        webkit_settings_set_hardware_acceleration_policy(m_impl->settings.get(), prefs.hardware_acceleration
+        webkit_settings_set_hardware_acceleration_policy(m_impl->settings.get(), m_preferences.hardware_acceleration
                                                                                      ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
                                                                                      : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
@@ -398,8 +398,8 @@ namespace saucer
             return m_parent->dispatch([this, script] { return inject(script); });
         }
 
-        const auto time  = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                              : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
+        const auto time =
+            script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
         const auto frame = script.frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
                                                           : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
 

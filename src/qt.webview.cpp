@@ -13,14 +13,14 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs) : window(prefs), extensible(this), m_impl(std::make_unique<impl>())
+    webview::webview(preferences prefs) : window(prefs), extensible(this), m_preferences(std::move(prefs)), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
-        auto flags = prefs.browser_flags;
+        auto flags = m_preferences.browser_flags;
 
-        if (prefs.hardware_acceleration)
+        if (m_preferences.hardware_acceleration)
         {
             flags.emplace("--gpu");
             flags.emplace("--ignore-gpu-blocklist");
@@ -31,21 +31,21 @@ namespace saucer
 
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
-        if (!prefs.user_agent.empty())
+        if (!m_preferences.user_agent.empty())
         {
-            m_impl->profile->setHttpUserAgent(QString::fromStdString(prefs.user_agent));
+            m_impl->profile->setHttpUserAgent(QString::fromStdString(m_preferences.user_agent));
         }
 
-        if (!prefs.storage_path.empty())
+        if (!m_preferences.storage_path.empty())
         {
-            const auto path = QString::fromStdString(prefs.storage_path.string());
+            const auto path = QString::fromStdString(m_preferences.storage_path.string());
 
             m_impl->profile->setCachePath(path);
             m_impl->profile->setPersistentStoragePath(path);
         }
 
-        m_impl->profile->setPersistentCookiesPolicy(prefs.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
-                                                                             : QWebEngineProfile::NoPersistentCookies);
+        m_impl->profile->setPersistentCookiesPolicy(m_preferences.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
+                                                                                     : QWebEngineProfile::NoPersistentCookies);
 
         m_impl->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
@@ -204,8 +204,7 @@ namespace saucer
             return m_parent->dispatch([this, enabled] { return set_context_menu(enabled); });
         }
 
-        m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
-                                                       : Qt::ContextMenuPolicy::NoContextMenu);
+        m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
     void webview::set_background(const color &color)

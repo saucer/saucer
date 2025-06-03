@@ -19,20 +19,20 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs) : window(prefs), extensible(this), m_impl(std::make_unique<impl>())
+    webview::webview(preferences prefs) : window(prefs), extensible(this), m_preferences(std::move(prefs)), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
         m_impl->o_wnd_proc = utils::overwrite_wndproc(window::m_impl->hwnd.get(), impl::wnd_proc);
-        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), prefs);
+        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), m_preferences);
 
         m_impl->web_view->get_Settings(&m_impl->settings);
         m_impl->settings->put_IsStatusBarEnabled(false);
 
-        if (ComPtr<ICoreWebView2Settings2> settings; !prefs.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
+        if (ComPtr<ICoreWebView2Settings2> settings; !m_preferences.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
         {
-            settings->put_UserAgent(utils::widen(prefs.user_agent).c_str());
+            settings->put_UserAgent(utils::widen(m_preferences.user_agent).c_str());
         }
 
         if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
@@ -334,8 +334,7 @@ namespace saucer
             return;
         }
 
-        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK
-                                                  : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
+        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
     }
 
     void webview::set_background(const color &color)
