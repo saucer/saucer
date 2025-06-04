@@ -2,10 +2,13 @@
 
 #include "win32.utils.hpp"
 
+#include <wrl.h>
 #include <shlwapi.h>
 
 namespace saucer
 {
+    using Microsoft::WRL::ComPtr;
+
     // https://stackoverflow.com/questions/5345803/does-gdi-have-standard-image-encoder-clsids
     static constexpr CLSID png_encoder = {0x557cf406, 0x1a04, 0x11d3, {0x9a, 0x73, 0x00, 0x00, 0xf8, 0x1e, 0xf3, 0x2e}};
 

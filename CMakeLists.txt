@@ -56,7 +56,7 @@ endif()
 # Library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_webview2_version "1.0.3179.45"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
+set(saucer_webview2_version "1.0.3296.44"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_windows_arch     "Default"       CACHE STRING "The windows architecture (Win32, x64, ARM64) used for linking against NuGet packages")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropriate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")

@@ -35,6 +35,7 @@ namespace saucer
         }
 
         delete reinterpret_cast<safe_message *>(l_param);
+
         return 0;
     }
 

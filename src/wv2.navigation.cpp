@@ -19,7 +19,6 @@ namespace saucer
         {
             utils::string_handle raw;
             request->get_Uri(&raw.reset());
-
             return utils::narrow(raw.get());
         };
 

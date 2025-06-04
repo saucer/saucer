@@ -1,12 +1,12 @@
 #include "wv2.webview.impl.hpp"
 
-#include "instantiate.hpp"
-#include "win32.utils.hpp"
-
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 #include "win32.window.impl.hpp"
 #include "wv2.navigation.impl.hpp"
+
+#include "instantiate.hpp"
+#include "win32.utils.hpp"
 
 #include <format>
 #include <ranges>
@@ -128,24 +128,21 @@ namespace saucer
 
         m_impl->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
 
-        if (ComPtr<ICoreWebView2_15> webview; SUCCEEDED(m_impl->web_view.As(&webview)))
+        auto icon_received = [this](auto, auto *stream)
         {
-            auto icon_received = [this](auto, auto *stream)
-            {
-                m_impl->favicon = icon{{std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream))}};
-                m_events.get<web_event::favicon>().fire(m_impl->favicon);
+            m_impl->favicon = icon{{std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream))}};
+            m_events.get<web_event::favicon>().fire(m_impl->favicon);
 
-                return S_OK;
-            };
+            return S_OK;
+        };
 
-            auto icon_changed = [webview, icon_received](auto...)
-            {
-                webview->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(icon_received).Get());
-                return S_OK;
-            };
+        auto icon_changed = [this, icon_received](auto...)
+        {
+            m_impl->web_view->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(icon_received).Get());
+            return S_OK;
+        };
 
-            webview->add_FaviconChanged(Callback<FaviconChanged>(icon_changed).Get(), nullptr);
-        }
+        m_impl->web_view->add_FaviconChanged(Callback<FaviconChanged>(icon_changed).Get(), nullptr);
 
         set_dev_tools(false);
 

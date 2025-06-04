@@ -1,7 +1,7 @@
 #include "win32.utils.hpp"
 
-#include <shellscalingapi.h>
 #include <dwmapi.h>
+#include <shellscalingapi.h>
 
 namespace saucer::utils
 {

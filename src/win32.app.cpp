@@ -8,8 +8,8 @@ namespace saucer
 
     application::~application()
     {
-        CoUninitialize();
         UnregisterClassW(m_impl->id.c_str(), m_impl->handle);
+        CoUninitialize();
     }
 
     bool application::thread_safe() const

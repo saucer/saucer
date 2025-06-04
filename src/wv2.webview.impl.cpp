@@ -1,11 +1,11 @@
 #include "wv2.webview.impl.hpp"
 
-#include "scripts.hpp"
-#include "request.hpp"
-
 #include "win32.utils.hpp"
 #include "win32.app.impl.hpp"
 #include "wv2.scheme.impl.hpp"
+
+#include "scripts.hpp"
+#include "request.hpp"
 
 #include <format>
 #include <ranges>
@@ -16,8 +16,8 @@
 
 #include <windows.h>
 #include <gdiplus.h>
-
 #include <shlwapi.h>
+
 #include <WebView2EnvironmentOptions.h>
 
 namespace saucer
@@ -40,13 +40,7 @@ namespace saucer
 
     ComPtr<CoreWebView2EnvironmentOptions> webview::impl::env_options()
     {
-        static ComPtr<CoreWebView2EnvironmentOptions> instance;
-
-        if (!instance)
-        {
-            instance = Make<CoreWebView2EnvironmentOptions>();
-        }
-
+        static auto instance = Make<CoreWebView2EnvironmentOptions>();
         return instance;
     }
 
@@ -87,7 +81,7 @@ namespace saucer
             }
             else
             {
-                assert(false && "Failedd to compute hash of id");
+                assert(false && "Failed to compute hash of id");
             }
 
             prefs.storage_path = std::filesystem::temp_directory_path() / std::format(L"saucer-{}", hash);
@@ -107,7 +101,7 @@ namespace saucer
 
             if (!SUCCEEDED(webview.As(&web_view)))
             {
-                assert(false && "Failed to get CoreWebView2_2");
+                assert(false && "Failed to get CoreWebView2_15");
             }
 
             return S_OK;
@@ -233,17 +227,18 @@ namespace saucer
 
         auto &resolver = scheme->second;
 
-        auto req      = scheme::request{{request, content}};
+        auto req      = scheme::request{{.request = request, .body = content}};
         auto executor = scheme::executor{forward(std::move(resolve)), forward(std::move(reject))};
 
         std::invoke(resolver, std::move(req), std::move(executor));
+
         return S_OK;
     }
 
     LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         auto userdata       = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-        const auto *webview = reinterpret_cast<saucer::webview *>(userdata);
+        auto *const webview = reinterpret_cast<saucer::webview *>(userdata);
 
         if (!webview || !webview->m_impl->controller)
         {
