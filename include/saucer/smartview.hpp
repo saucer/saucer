@@ -24,7 +24,7 @@ namespace saucer
         std::atomic_uint64_t m_id_counter{0};
 
       protected:
-        smartview_core(std::unique_ptr<serializer_core>, preferences);
+        smartview_core(std::unique_ptr<serializer_core>, const preferences &);
 
       public:
         ~smartview_core() override;
@@ -48,7 +48,7 @@ namespace saucer
     template <Serializer Serializer = default_serializer>
     struct smartview : public smartview_core
     {
-        smartview(preferences);
+        smartview(const preferences &);
 
       public:
         template <typename T>

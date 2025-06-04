@@ -12,7 +12,7 @@
 
 namespace saucer
 {
-    webview::webview(preferences prefs) : window(prefs), extensible(this), m_preferences(std::move(prefs)), m_impl(std::make_unique<impl>())
+    webview::webview(const preferences &prefs) : window(prefs), extensible(this), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag,
@@ -24,15 +24,15 @@ namespace saucer
 
         const utils::autorelease_guard guard{};
 
-        m_impl->config = impl::make_config(m_preferences);
+        m_impl->config = impl::make_config(prefs);
 
         NSUUID *uuid{};
 
-        if (m_preferences.persistent_cookies)
+        if (prefs.persistent_cookies)
         {
             // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            auto id = m_preferences.storage_path.empty() ? "saucer" : std::format("saucer.{}", m_preferences.storage_path.string());
+            auto id          = prefs.storage_path.empty() ? "saucer" : std::format("saucer.{}", prefs.storage_path.string());
             auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
             unsigned char hash[32] = "";
@@ -76,9 +76,9 @@ namespace saucer
         static constexpr auto resize_mask = NSViewWidthSizable | NSViewMaxXMargin | NSViewHeightSizable | NSViewMaxYMargin;
         [m_impl->web_view.get() setAutoresizingMask:resize_mask];
 
-        if (!m_preferences.user_agent.empty())
+        if (!prefs.user_agent.empty())
         {
-            m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:m_preferences.user_agent.c_str()];
+            m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
         }
 
         m_impl->view = [[NSView alloc] init];
