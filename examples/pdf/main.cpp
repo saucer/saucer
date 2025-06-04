@@ -1,7 +1,7 @@
+#include <print>
+
 #include <saucer/webview.hpp>
 #include <saucer/modules/pdf.hpp>
-
-#include <print>
 
 int main(int argc, char **argv)
 {
@@ -11,35 +11,34 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto app = saucer::application::init({
-        .id = "pdf",
-    });
+    auto start = [argc, argv](saucer::application *app) -> coco::stray
+    {
+        auto webview = saucer::webview{{
+            .application = app,
+        }};
 
-    saucer::webview webview{{
-        .application = app,
-    }};
+        auto &print = webview.add_module<saucer::modules::pdf>();
 
-    auto &print = webview.add_module<saucer::modules::pdf>();
+        auto *url  = argv[1];
+        auto *file = argv[2];
 
-    auto *url  = argv[1];
-    auto *file = argv[2];
-
-    webview.on<saucer::web_event::load>(
-        [&](saucer::state state)
-        {
-            if (state != saucer::state::finished)
+        webview.on<saucer::web_event::load>(
+            [&](saucer::state state)
             {
-                return;
-            }
+                if (state != saucer::state::finished)
+                {
+                    return;
+                }
 
-            print.save({.file = file});
-            webview.close();
-        });
+                print.save({.file = file, .size = {27.2, 15.3}});
+                webview.close();
+            });
 
-    webview.set_url(url);
-    webview.show();
+        webview.set_url(url);
+        webview.show();
 
-    app->run();
+        co_await app->finish();
+    };
 
-    return 0;
+    return saucer::application::create({.id = "pdf"})->run(start);
 }

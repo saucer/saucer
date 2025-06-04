@@ -1,8 +1,5 @@
 #include <print>
 
-#include <coco/task/task.hpp>
-#include <coco/utils/utils.hpp>
-
 #include <saucer/smartview.hpp>
 
 struct custom_data
@@ -10,15 +7,9 @@ struct custom_data
     int field;
 };
 
-int main()
+coco::stray start(saucer::application *app)
 {
-    using coco::then;
-
-    auto app = saucer::application::init({
-        .id = "example",
-    });
-
-    saucer::smartview webview{{
+    auto webview = saucer::smartview{{
         .application = app,
     }};
 
@@ -82,8 +73,8 @@ int main()
                            return;
                        }
 
-                       then(webview.evaluate<double>("Math.pow({}, {})", a, b),
-                            [executor](auto result) { executor.resolve(result); });
+                       coco::then(webview.evaluate<double>("Math.pow({}, {})", a, b),
+                                  [executor](auto result) { executor.resolve(result); });
                    });
 
     webview.expose("func6",
@@ -99,35 +90,31 @@ int main()
                        thread.detach();
                    });
 
-    // Evaluate JavaScript code and capture the result
-
-    then(webview.evaluate<float>("Math.random()"), [](auto result) { //
-        std::println("Random: {}", result);
-    });
-
-    then(webview.evaluate<int>("Math.pow({},{})", 5, 2), [](auto result) { //
-        std::println("Pow(5,2): {}", result);
-    });
-
-    [&](this auto) -> coco::stray
-    {
-        std::println("Func1: {}", co_await webview.evaluate<int>("await saucer.exposed.func1({}, {})", 1, 2));
-        std::println("Func2: {}", co_await webview.evaluate<int>("await saucer.exposed.func2({})", saucer::make_args(2, 3)));
-
-        std::println("Func3: {}", co_await webview.evaluate<double>("await saucer.exposed.func3({}, {})", 3, 4));
-        std::println("Func4: {}", co_await webview.evaluate<double>("await saucer.exposed.func4({}, {})", 4, 5));
-        std::println("Func5: {}", co_await webview.evaluate<double>("await saucer.exposed.func5({}, {})", 5, 6));
-
-        std::println("Func6: {}", co_await webview.evaluate<int>("await saucer.exposed.func6({})", custom_data{10}));
-    }();
-
     // Set the URL, Show the Dev-Tools and run
 
     webview.set_url("https://github.com/saucer/saucer");
     webview.set_dev_tools(true);
 
     webview.show();
-    app->run();
 
-    return 0;
+    // Evaluate JavaScript code and capture the result
+
+    std::println("Random: {}", co_await webview.evaluate<float>("Math.random()"));
+    std::println("Pow(5,2): {}", co_await webview.evaluate<int>("Math.pow({},{})", 5, 2));
+
+    std::println("Func1: {}", co_await webview.evaluate<int>("await saucer.exposed.func1({}, {})", 1, 2));
+    std::println("Func2: {}", co_await webview.evaluate<int>("await saucer.exposed.func2({})", saucer::make_args(2, 3)));
+
+    std::println("Func3: {}", co_await webview.evaluate<double>("await saucer.exposed.func3({}, {})", 3, 4));
+    std::println("Func4: {}", co_await webview.evaluate<double>("await saucer.exposed.func4({}, {})", 4, 5));
+    std::println("Func5: {}", co_await webview.evaluate<double>("await saucer.exposed.func5({}, {})", 5, 6));
+
+    std::println("Func6: {}", co_await webview.evaluate<int>("await saucer.exposed.func6({})", custom_data{10}));
+
+    co_await app->finish(); // Is resolved when the last window is closed
+}
+
+int main()
+{
+    return saucer::application::create({.id = "example"})->run(start);
 }

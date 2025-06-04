@@ -1,18 +1,13 @@
 #include <saucer/smartview.hpp>
 #include <saucer/modules/desktop.hpp>
 
-int main()
+coco::stray start(saucer::application *app)
 {
-    namespace modules = saucer::modules;
-    using modules::picker::type;
+    using saucer::modules::picker::type;
 
-    auto app = saucer::application::init({
-        .id = "example",
-    });
+    auto &desktop = app->add_module<saucer::modules::desktop>();
 
-    auto &desktop = app->add_module<modules::desktop>();
-
-    saucer::smartview webview{{
+    auto webview = saucer::smartview{{
         .application = app,
     }};
 
@@ -23,7 +18,11 @@ int main()
     webview.set_dev_tools(true);
 
     webview.show();
-    app->run();
 
-    return 0;
+    co_await app->finish();
+}
+
+int main()
+{
+    return saucer::application::create({.id = "example"})->run(start);
 }
