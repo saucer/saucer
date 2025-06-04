@@ -44,17 +44,14 @@ namespace saucer
     template <typename T, typename Interface = eraser::interface<>>
     class extensible
     {
-        friend T;
-
-      private:
         using module_map = std::unordered_map<std::size_t, eraser::erased<Interface>>;
 
       private:
-        T *m_parent;
+        T *m_class;
         module_map m_modules;
 
       public:
-        extensible(T *parent);
+        extensible(T *clazz);
 
       protected:
         auto modules() const;

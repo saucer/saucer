@@ -58,6 +58,7 @@ namespace saucer
         required<saucer::application *> application;
 
       public:
+        bool attributes{true};
         bool persistent_cookies{true};
         bool hardware_acceleration{true};
 
@@ -88,8 +89,8 @@ namespace saucer
         events m_events;
 
       protected:
-        std::unique_ptr<impl> m_impl;
         application *m_parent;
+        std::unique_ptr<impl> m_impl;
 
       protected:
         window(const preferences &);
