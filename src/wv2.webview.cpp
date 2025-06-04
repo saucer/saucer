@@ -25,7 +25,7 @@ namespace saucer
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
-        m_impl->o_wnd_proc = utils::overwrite_wndproc(window::m_impl->hwnd.get(), impl::wnd_proc);
+        m_impl->hook = {window::m_impl->hwnd.get(), impl::wnd_proc};
         m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), prefs);
 
         m_impl->web_view->get_Settings(&m_impl->settings);
@@ -154,7 +154,6 @@ namespace saucer
 
     webview::~webview()
     {
-        std::ignore = utils::overwrite_wndproc(window::m_impl->hwnd.get(), m_impl->o_wnd_proc);
         m_impl->controller->Close();
 
         if (!m_impl->temp_path)

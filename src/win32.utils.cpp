@@ -3,6 +3,48 @@
 #include <shellscalingapi.h>
 #include <dwmapi.h>
 
+namespace saucer::utils
+{
+    wnd_proc_hook::wnd_proc_hook() = default;
+
+    wnd_proc_hook::wnd_proc_hook(HWND hwnd, WNDPROC proc) : m_hwnd(hwnd)
+    {
+        auto ptr   = reinterpret_cast<LONG_PTR>(proc);
+        m_original = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
+    }
+
+    wnd_proc_hook::wnd_proc_hook(wnd_proc_hook &&other) noexcept
+        : m_hwnd(std::exchange(other.m_hwnd, nullptr)), m_original(std::exchange(other.m_original, nullptr))
+    {
+    }
+
+    wnd_proc_hook &wnd_proc_hook::operator=(wnd_proc_hook &&other) noexcept
+    {
+        if (this != &other)
+        {
+            m_hwnd     = std::exchange(other.m_hwnd, nullptr);
+            m_original = std::exchange(other.m_original, nullptr);
+        }
+
+        return *this;
+    }
+
+    wnd_proc_hook::~wnd_proc_hook()
+    {
+        if (!m_hwnd)
+        {
+            return;
+        }
+
+        SetWindowLongPtrW(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_original));
+    }
+
+    WNDPROC wnd_proc_hook::original() const
+    {
+        return m_original;
+    }
+} // namespace saucer::utils
+
 namespace saucer
 {
     template <auto Func, typename T, typename... Ts>
@@ -71,10 +113,20 @@ namespace saucer
         call_as<DwmExtendFrameIntoClientArea>(func, hwnd, &margins);
     }
 
-    WNDPROC utils::overwrite_wndproc(HWND hwnd, WNDPROC wndproc)
+    std::string utils::narrow(const std::wstring &wide)
     {
-        auto ptr = reinterpret_cast<LONG_PTR>(wndproc);
-        return reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
+        auto wide_size = static_cast<int>(wide.size());
+        auto size      = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide_size, nullptr, 0, nullptr, nullptr);
+
+        if (!size)
+        {
+            return {};
+        }
+
+        std::string out(size, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide_size, out.data(), size, nullptr, nullptr);
+
+        return out;
     }
 
     std::wstring utils::widen(const std::string &narrow)
@@ -89,22 +141,6 @@ namespace saucer
 
         std::wstring out(size, '\0');
         MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, narrow.c_str(), narrow_size, out.data(), size);
-
-        return out;
-    }
-
-    std::string utils::narrow(const std::wstring &wide)
-    {
-        auto wide_size = static_cast<int>(wide.size());
-        auto size      = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide_size, nullptr, 0, nullptr, nullptr);
-
-        if (!size)
-        {
-            return {};
-        }
-
-        std::string out(size, '\0');
-        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide_size, out.data(), size, nullptr, nullptr);
 
         return out;
     }

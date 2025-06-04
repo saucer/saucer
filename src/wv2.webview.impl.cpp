@@ -260,7 +260,7 @@ namespace saucer
             break;
         }
 
-        return CallWindowProcW(impl->o_wnd_proc, hwnd, msg, w_param, l_param);
+        return CallWindowProcW(impl->hook.original(), hwnd, msg, w_param, l_param);
     }
 
     template <>

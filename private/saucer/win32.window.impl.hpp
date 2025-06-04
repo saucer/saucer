@@ -24,11 +24,9 @@ namespace saucer
         bool titlebar{true};
 
       public:
+        utils::wnd_proc_hook hook;
         utils::handle<HICON, DestroyIcon> icon;
         std::optional<std::pair<int, int>> max_size, min_size;
-
-      public:
-        WNDPROC o_wnd_proc;
 
       public:
         static void set_style(HWND, long);

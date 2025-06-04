@@ -43,8 +43,7 @@ namespace saucer
 
         set_resizable(true);
 
-        m_impl->o_wnd_proc = utils::overwrite_wndproc(m_impl->hwnd.get(), impl::wnd_proc);
-
+        m_impl->hook = {m_impl->hwnd.get(), impl::wnd_proc};
         SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     }
 

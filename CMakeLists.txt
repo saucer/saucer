@@ -7,8 +7,6 @@ project(saucer LANGUAGES CXX VERSION 7.0.0)
 
 option(saucer_static            "Build a static library"                            ON)
 option(saucer_modules           "Enable module support"                             ON)
-
-option(saucer_package_all       "Add all required dependencies to install target"  OFF)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
 option(saucer_examples          "Build examples"                                   OFF)
@@ -34,7 +32,7 @@ macro(saucer_mark_outdated)
 endmacro()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 19.38)
+  saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 19.44)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   saucer_mark_outdated(CMAKE_CXX_COMPILER_VERSION LESS 14)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
@@ -66,11 +64,6 @@ set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serialize
 # --------------------------------------------------------------------------------------------------------
 # Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
 # --------------------------------------------------------------------------------------------------------
-
-if (saucer_package_all AND NOT saucer_prefer_remote)
-  message(WARNING "[saucer] Cannot use 'saucer_package_all' without 'saucer_prefer_remote'")
-  set(saucer_prefer_remote ON)
-endif()
 
 if (saucer_prefer_remote)
   message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
@@ -175,8 +168,9 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
-target_include_directories(${PROJECT_NAME} PRIVATE "private")
 target_include_directories(${PROJECT_NAME} PRIVATE "private/saucer")
+
+target_include_directories(${PROJECT_NAME} PRIVATE "private")
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "webview.hpp"
+#include "win32.utils.hpp"
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -49,6 +50,9 @@ namespace saucer
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:
+        utils::wnd_proc_hook hook;
+
+      public:
         void create_webview(application *, HWND, preferences);
         HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *, webview *);
 
@@ -61,7 +65,6 @@ namespace saucer
         static ComPtr<CoreWebView2EnvironmentOptions> env_options();
 
       public:
-        WNDPROC o_wnd_proc;
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer
