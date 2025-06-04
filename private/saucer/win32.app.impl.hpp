@@ -31,7 +31,7 @@ namespace saucer
         utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
-        static void run_once();
+        static void iteration();
         static screen convert(MONITORINFOEXW);
 
       public:

@@ -26,7 +26,10 @@ namespace saucer
         std::unordered_map<void *, bool> instances;
 
       public:
+        static void iteration();
         static screen convert(GdkMonitor *);
+
+      public:
         static std::string fix_id(const std::string &);
     };
 } // namespace saucer

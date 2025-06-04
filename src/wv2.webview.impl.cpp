@@ -128,7 +128,7 @@ namespace saucer
 
         while (!controller)
         {
-            app->native<false>()->run_once();
+            app->native<false>()->iteration();
         }
 
         web_view->get_BrowserProcessId(&browser_pid);

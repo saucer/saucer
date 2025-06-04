@@ -2,6 +2,11 @@
 
 namespace saucer
 {
+    void application::impl::iteration()
+    {
+        QApplication::processEvents();
+    }
+
     screen application::impl::convert(QScreen *screen)
     {
         const auto geometry = screen->geometry();

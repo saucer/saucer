@@ -4,6 +4,37 @@
 
 namespace saucer
 {
+    void application::impl::iteration()
+    {
+        const utils::autorelease_guard guard{};
+
+        auto *const event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                               untilDate:[NSDate now]
+                                                  inMode:NSDefaultRunLoopMode
+                                                 dequeue:YES];
+
+        if (!event)
+        {
+            return;
+        }
+
+        [NSApp sendEvent:event];
+    }
+
+    screen application::impl::convert(NSScreen *screen)
+    {
+        const utils::autorelease_guard guard{};
+
+        const auto size = screen.frame.size;
+        const auto pos  = screen.frame.origin;
+
+        return {
+            .name     = screen.localizedName.UTF8String,
+            .size     = {size.width, size.height},
+            .position = {pos.x, pos.y},
+        };
+    }
+
     void application::impl::init_menu()
     {
         const utils::autorelease_guard guard{};
@@ -26,21 +57,17 @@ namespace saucer
             auto *const item = [[NSMenuItem new] autorelease];
             auto *const menu = [[[NSMenu alloc] initWithTitle:@"Edit"] autorelease];
 
-            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Undo" action:@selector(undo:)
-                                               keyEquivalent:@"z"] autorelease]];
+            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"] autorelease]];
 
-            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Redo" action:@selector(redo:)
-                                               keyEquivalent:@"y"] autorelease]];
+            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"y"] autorelease]];
 
             [menu addItem:[NSMenuItem separatorItem]];
 
             [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"] autorelease]];
 
-            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Copy" action:@selector(copy:)
-                                               keyEquivalent:@"c"] autorelease]];
+            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"] autorelease]];
 
-            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Paste" action:@selector(paste:)
-                                               keyEquivalent:@"v"] autorelease]];
+            [menu addItem:[[[NSMenuItem alloc] initWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"] autorelease]];
 
             [menu addItem:[NSMenuItem separatorItem]];
 
@@ -52,19 +79,5 @@ namespace saucer
         }
 
         [NSApp setMainMenu:mainmenu];
-    }
-
-    screen application::impl::convert(NSScreen *screen)
-    {
-        const utils::autorelease_guard guard{};
-
-        const auto size = screen.frame.size;
-        const auto pos  = screen.frame.origin;
-
-        return {
-            .name     = screen.localizedName.UTF8String,
-            .size     = {size.width, size.height},
-            .position = {pos.x, pos.y},
-        };
     }
 } // namespace saucer

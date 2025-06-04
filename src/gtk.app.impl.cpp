@@ -4,6 +4,12 @@
 
 namespace saucer
 {
+    void application::impl::iteration()
+    {
+        auto *const context = g_main_context_default();
+        g_main_context_iteration(context, false);
+    }
+
     screen application::impl::convert(GdkMonitor *monitor)
     {
         const auto *model = gdk_monitor_get_model(monitor);

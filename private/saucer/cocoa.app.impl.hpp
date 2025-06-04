@@ -21,7 +21,10 @@ namespace saucer
         std::unordered_map<NSWindow *, bool> instances;
 
       public:
-        static void init_menu();
+        static void iteration();
         static screen convert(NSScreen *);
+
+      public:
+        static void init_menu();
     };
 } // namespace saucer

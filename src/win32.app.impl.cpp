@@ -2,7 +2,7 @@
 
 namespace saucer
 {
-    void application::impl::run_once()
+    void application::impl::iteration()
     {
         MSG msg{};
 

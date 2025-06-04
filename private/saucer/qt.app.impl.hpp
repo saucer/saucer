@@ -19,6 +19,7 @@ namespace saucer
         coco::future<void> future;
 
       public:
+        static void iteration();
         static screen convert(QScreen *);
 
       public:
