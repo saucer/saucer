@@ -42,15 +42,25 @@ namespace saucer
         [[nodiscard]] virtual parse_result parse(std::string_view) const = 0;
     };
 
+    namespace impl
+    {
+        template <typename T, typename Interface>
+        struct is_writable;
+
+        template <typename T>
+        struct is_serializer;
+    } // namespace impl
+
     template <typename T, typename Interface>
-    concept Writable = requires(T value) {
-        { Interface::write(value) } -> std::same_as<std::string>;
-    };
+    concept Writable = impl::is_writable<T, Interface>::value;
 
     template <typename T, typename Interface, typename V = std::string>
     concept Readable = requires(V value) {
         { Interface::template read<T>(value) } -> std::same_as<serializer_core::result<T>>;
     };
+
+    template <typename T>
+    concept Serializer = impl::is_serializer<T>::value;
 
     template <typename T>
     concept Interface = requires() {
@@ -78,12 +88,6 @@ namespace saucer
         template <Writable<Interface> T>
         static auto serialize(T &&);
     };
-
-    template <typename T>
-    struct is_serializer;
-
-    template <typename T>
-    concept Serializer = is_serializer<T>::value;
 
     template <Serializer Serializer, typename... Ts>
     using format_string = std::format_string<std::enable_if_t<Writable<Ts, Serializer>, std::string>...>;

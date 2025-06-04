@@ -44,12 +44,39 @@ namespace saucer
 
             auto unpack = [&]<typename... Us>(Us &&...args)
             {
-                (rtn.emplace_back(write(std::forward<Us>(args))), ...);
+                (rtn.emplace_back(write<Interface>(std::forward<Us>(args))), ...);
             };
             std::apply(unpack, std::move(value.tuple()));
 
             return rtn | std::views::join_with(',') | std::ranges::to<std::string>();
         }
+
+        template <typename T, typename Interface>
+        concept Writable = requires(T value) {
+            { Interface::write(value) } -> std::same_as<std::string>;
+        };
+
+        template <typename T, typename Interface>
+        struct is_writable : std::false_type
+        {
+        };
+
+        template <typename T, typename Interface>
+            requires impl::Writable<T, Interface>
+        struct is_writable<T, Interface> : std::true_type
+        {
+        };
+
+        template <typename... Ts, typename Interface>
+            requires(impl::Writable<Ts, Interface> && ...)
+        struct is_writable<arguments<Ts...>, Interface> : std::true_type
+        {
+        };
+
+        template <typename T>
+        struct is_serializer : std::is_base_of<serializer<T>, T>
+        {
+        };
     } // namespace impl
 
     template <typename Interface>
@@ -132,9 +159,4 @@ namespace saucer
     {
         return impl::write<Interface>(std::forward<T>(value));
     }
-
-    template <typename T>
-    struct is_serializer : std::is_base_of<serializer<T>, T>
-    {
-    };
 } // namespace saucer
