@@ -23,6 +23,9 @@ namespace saucer
       public:
         std::optional<int> argc;
         std::optional<char **> argv;
+
+      public:
+        bool quit_on_last_window_closed{true};
     };
 
     struct screen

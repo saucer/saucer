@@ -101,6 +101,7 @@ namespace saucer
         impl::argv = opts.argv.transform(make_args).value_or({rtn.id.data()});
 
         rtn.application = std::make_unique<QApplication>(impl::argc, impl::argv.data());
+        rtn.application->setQuitOnLastWindowClosed(opts.quit_on_last_window_closed);
 
         return rtn;
     }

@@ -23,6 +23,7 @@ namespace saucer
 
       public:
         std::thread::id thread;
+        bool quit_on_last_window_closed;
         std::unordered_map<void *, bool> instances;
 
       public:

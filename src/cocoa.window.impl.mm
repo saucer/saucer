@@ -51,9 +51,6 @@ namespace saucer
                                         return false;
                                     }
 
-                                    auto parent            = self->m_parent;
-                                    auto *const identifier = impl->window;
-
                                     if (impl->on_closed)
                                     {
                                         std::invoke(impl->on_closed);
@@ -62,8 +59,18 @@ namespace saucer
                                     self->hide();
                                     self->m_events.get<window_event::closed>().fire();
 
-                                    auto &instances = parent->native<false>()->instances;
+                                    auto *parent           = self->m_parent;
+                                    auto *const identifier = impl->window;
+
+                                    auto *const native = parent->native<false>();
+                                    auto &instances    = parent->instances;
+
                                     instances.erase(identifier);
+
+                                    if (!impl->quit_on_last_window_closed)
+                                    {
+                                        return false;
+                                    }
 
                                     if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
                                     {

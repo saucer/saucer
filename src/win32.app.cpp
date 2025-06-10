@@ -96,9 +96,10 @@ namespace saucer
 
         impl rtn;
 
-        rtn.thread    = GetCurrentThreadId();
-        rtn.handle    = GetModuleHandleW(nullptr);
-        rtn.id        = utils::widen(opts.id.value());
+        rtn.thread                     = GetCurrentThreadId();
+        rtn.handle                     = GetModuleHandleW(nullptr);
+        rtn.id                         = utils::widen(opts.id.value());
+        rtn.quit_on_last_window_closed = opts.quit_on_last_window_closed;
         rtn.wnd_class = WNDCLASSW{.lpfnWndProc = impl::wnd_proc, .hInstance = rtn.handle, .lpszClassName = rtn.id.c_str()};
 
         if (!RegisterClassW(&rtn.wnd_class))

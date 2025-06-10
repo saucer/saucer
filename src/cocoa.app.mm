@@ -87,7 +87,7 @@ namespace saucer
         [NSApp stop:nil];
     }
 
-    std::optional<application> application::create(const options &)
+    std::optional<application> application::create(const options &opts)
     {
         static bool once{false};
 
@@ -107,8 +107,9 @@ namespace saucer
         impl::init_menu();
 
         return impl{
-            .application = application,
-            .thread      = std::this_thread::get_id(),
+            .application                = application,
+            .thread                     = std::this_thread::get_id(),
+            .quit_on_last_window_closed = opts.quit_on_last_window_closed,
         };
     }
 } // namespace saucer

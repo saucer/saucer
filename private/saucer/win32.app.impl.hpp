@@ -27,6 +27,7 @@ namespace saucer
         coco::future<void> future;
 
       public:
+        bool quit_on_last_window_closed;
         std::unordered_map<HWND, bool> instances;
         utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 

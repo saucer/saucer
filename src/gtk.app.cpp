@@ -117,10 +117,11 @@ namespace saucer
                             : std::format("app.saucer.{}", impl::fix_id(opts.id.value()));
 
         return impl{
-            .application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS),
-            .argc        = opts.argc.value_or(0),
-            .argv        = opts.argv.value_or(nullptr),
-            .thread      = std::this_thread::get_id(),
+            .application                = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS),
+            .argc                       = opts.argc.value_or(0),
+            .argv                       = opts.argv.value_or(nullptr),
+            .thread                     = std::this_thread::get_id(),
+            .quit_on_last_window_closed = opts.quit_on_last_window_closed,
         };
     }
 } // namespace saucer
