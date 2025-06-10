@@ -2,13 +2,7 @@
 
 namespace saucer
 {
-    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data)))
-    {
-        [NSApp activateIgnoringOtherApps:YES];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-
-        impl::init_menu();
-    }
+    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data))) {}
 
     application::~application() = default;
 
@@ -105,8 +99,15 @@ namespace saucer
 
         once = true;
 
+        auto *const application = [NSApplication sharedApplication];
+
+        [NSApp activateIgnoringOtherApps:YES];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+
+        impl::init_menu();
+
         return impl{
-            .application = [NSApplication sharedApplication],
+            .application = application,
             .thread      = std::this_thread::get_id(),
         };
     }
