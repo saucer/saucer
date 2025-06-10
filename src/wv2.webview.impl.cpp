@@ -101,7 +101,7 @@ namespace saucer
 
             if (!SUCCEEDED(webview.As(&web_view)))
             {
-                assert(false && "Failed to get CoreWebView2_15");
+                assert(false && "Failed to get CoreWebView2_22");
             }
 
             return S_OK;

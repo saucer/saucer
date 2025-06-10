@@ -257,16 +257,9 @@ namespace saucer
             return m_parent->dispatch([this] { return force_dark_mode(); });
         }
 
-        ComPtr<ICoreWebView2_13> webview;
-
-        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
-        {
-            return {};
-        }
-
         ComPtr<ICoreWebView2Profile> profile;
 
-        if (!SUCCEEDED(webview->get_Profile(&profile)))
+        if (!SUCCEEDED(m_impl->web_view->get_Profile(&profile)))
         {
             return {};
         }
@@ -317,16 +310,9 @@ namespace saucer
 
         utils::set_immersive_dark(window::m_impl->hwnd.get(), enabled);
 
-        ComPtr<ICoreWebView2_13> webview;
-
-        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
-        {
-            return;
-        }
-
         ComPtr<ICoreWebView2Profile> profile;
 
-        if (!SUCCEEDED(webview->get_Profile(&profile)))
+        if (!SUCCEEDED(m_impl->web_view->get_Profile(&profile)))
         {
             return;
         }
@@ -491,13 +477,6 @@ namespace saucer
                                       { return handle_scheme(name, std::move(resolver)); });
         }
 
-        ComPtr<ICoreWebView2_22> webview;
-
-        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
-        {
-            return;
-        }
-
         if (m_impl->schemes.contains(name))
         {
             return;
@@ -507,8 +486,8 @@ namespace saucer
 
         const auto pattern = utils::widen(std::format("{}*", name));
 
-        webview->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
-                                                                     COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+        m_impl->web_view->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                              COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
     }
 
     void webview::remove_scheme(const std::string &name)
@@ -516,13 +495,6 @@ namespace saucer
         if (!m_parent->thread_safe())
         {
             return m_parent->dispatch([this, name] { return remove_scheme(name); });
-        }
-
-        ComPtr<ICoreWebView2_22> webview;
-
-        if (!SUCCEEDED(m_impl->web_view.As(&webview)))
-        {
-            return;
         }
 
         auto it = m_impl->schemes.find(name);
@@ -534,8 +506,8 @@ namespace saucer
 
         const auto pattern = utils::widen(std::format("{}*", name));
 
-        webview->RemoveWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
-                                                                        COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+        m_impl->web_view->RemoveWebResourceRequestedFilterWithRequestSourceKinds(
+            pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL, COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
 
         m_impl->schemes.erase(it);
     }
