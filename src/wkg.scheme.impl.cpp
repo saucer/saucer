@@ -6,7 +6,7 @@
 
 namespace saucer::scheme
 {
-    void handler::add_callback(WebKitWebView *id, callback callback)
+    void handler::add_callback(WebKitWebView *id, scheme::resolver callback)
     {
         m_callbacks.emplace(id, std::move(callback));
     }
@@ -34,7 +34,7 @@ namespace saucer::scheme
             auto bytes  = utils::g_bytes_ptr{g_bytes_new(data.data(), size)};
             auto stream = utils::g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
 
-            auto res = utils::g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
+            auto res            = utils::g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
             auto *const headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
 
             for (const auto &[name, value] : response.headers)
@@ -60,11 +60,9 @@ namespace saucer::scheme
             webkit_uri_scheme_request_finish_error(request.get(), err.get());
         };
 
-        auto &[app, resolver] = state->m_callbacks.at(identifier);
-
         auto executor = scheme::executor{std::move(resolve), std::move(reject)};
         auto req      = scheme::request{{request}};
 
-        return std::invoke(resolver, std::move(req), std::move(executor));
+        return std::invoke(state->m_callbacks[identifier], std::move(req), std::move(executor));
     }
 } // namespace saucer::scheme

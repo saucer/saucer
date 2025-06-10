@@ -442,7 +442,7 @@ namespace saucer
 
         // TODO: Use heterogenous lookup with C++26
 
-        impl::schemes[name]->add_callback(m_impl->web_view, {.app = m_parent, .resolver = std::move(resolver)});
+        impl::schemes[name]->add_callback(m_impl->web_view, std::move(resolver));
     }
 
     void webview::remove_scheme(const std::string &name)

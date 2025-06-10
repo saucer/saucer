@@ -445,7 +445,7 @@ namespace saucer
             return;
         }
 
-        [impl::schemes[name].get() add_callback:{.app = m_parent, .resolver = std::move(resolver)} webview:m_impl->web_view.get()];
+        [impl::schemes[name].get() add_callback:std::move(resolver) webview:m_impl->web_view.get()];
     }
 
     void webview::remove_scheme(const std::string &name)

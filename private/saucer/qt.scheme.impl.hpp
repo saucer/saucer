@@ -2,8 +2,6 @@
 
 #include "scheme.hpp"
 
-#include "webview.hpp"
-
 #include <QWebEngineUrlRequestJob>
 #include <QWebEngineUrlSchemeHandler>
 
@@ -19,11 +17,10 @@ namespace saucer::scheme
 
     class handler : public QWebEngineUrlSchemeHandler
     {
-        application *app;
         scheme::resolver resolver;
 
       public:
-        handler(application *, scheme::resolver);
+        handler(scheme::resolver);
 
       public:
         handler(handler &&) noexcept;

@@ -67,15 +67,9 @@ namespace saucer::scheme
                | std::ranges::to<std::map<std::string, std::string>>();
     }
 
-    handler::handler(application *app, scheme::resolver resolver)
-        : app(app), resolver(std::move(resolver))
-    {
-    }
+    handler::handler(scheme::resolver resolver) : resolver(std::move(resolver)) {}
 
-    handler::handler(handler &&other) noexcept
-        : app(std::exchange(other.app, nullptr)), resolver(std::move(other.resolver))
-    {
-    }
+    handler::handler(handler &&other) noexcept : resolver(std::move(other.resolver)) {}
 
     void handler::requestStarted(QWebEngineUrlRequestJob *raw)
     {

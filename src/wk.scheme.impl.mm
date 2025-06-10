@@ -44,10 +44,9 @@ void saucer::scheme::init_objc()
                                     auto task          = tasks->at(handle);
                                     const auto content = response.data;
 
-                                    auto *const data = [NSData dataWithBytes:content.data()
+                                    auto *const data    = [NSData dataWithBytes:content.data()
                                                                       length:static_cast<NSInteger>(content.size())];
-                                    auto *const headers =
-                                        [[[NSMutableDictionary<NSString *, NSString *> alloc] init] autorelease];
+                                    auto *const headers = [[[NSMutableDictionary<NSString *, NSString *> alloc] init] autorelease];
 
                                     for (const auto &[key, value] : response.headers)
                                     {
@@ -93,12 +92,10 @@ void saucer::scheme::init_objc()
                                     tasks->erase(handle);
                                 };
 
-                                auto &[app, resolver] = self->m_callbacks.at(instance);
-
                                 auto req      = scheme::request{{ref}};
                                 auto executor = scheme::executor{std::move(resolve), std::move(reject)};
 
-                                return std::invoke(resolver, std::move(req), std::move(executor));
+                                return std::invoke(self->m_callbacks[instance], std::move(req), std::move(executor));
                             }),
                         "v@:@");
 
@@ -106,7 +103,7 @@ void saucer::scheme::init_objc()
 }
 
 @implementation SchemeHandler
-- (void)add_callback:(saucer::scheme::callback)callback webview:(WKWebView *)instance
+- (void)add_callback:(saucer::scheme::resolver)callback webview:(WKWebView *)instance
 {
     saucer::scheme::init_objc();
     m_callbacks.emplace(instance, std::move(callback));

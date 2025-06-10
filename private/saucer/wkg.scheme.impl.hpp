@@ -2,7 +2,6 @@
 
 #include "scheme.hpp"
 
-#include "webview.hpp"
 #include "gtk.utils.hpp"
 
 #include <webkit/webkit.h>
@@ -14,18 +13,12 @@ namespace saucer::scheme
         utils::g_object_ptr<WebKitURISchemeRequest> request;
     };
 
-    struct callback
-    {
-        application *app;
-        scheme::resolver resolver;
-    };
-
     class handler
     {
-        std::unordered_map<WebKitWebView *, callback> m_callbacks;
+        std::unordered_map<WebKitWebView *, scheme::resolver> m_callbacks;
 
       public:
-        void add_callback(WebKitWebView *, callback);
+        void add_callback(WebKitWebView *, scheme::resolver);
         void del_callback(WebKitWebView *);
 
       public:
