@@ -114,34 +114,30 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 ```cpp
 #include <saucer/smartview.hpp>
 
-int main()
+coco::stray start(saucer::application *app)
 {
-    auto app = saucer::application::init({
-        .id = "example",
-    });
-
-    saucer::smartview webview{{
+    auto webview = saucer::smartview{{
         .application = app,
     }};
 
     webview.set_size(900, 700);
     webview.set_title("Hello World!");
 
-    webview.expose(
-        "add_random",
-        [&](float number)
-        {
-            auto random = webview.evaluate<float>("Math.random()").get();
-            return number + random;
-        },
-        saucer::launch::async);
+    webview.expose("add_random", [&](float number) -> coco::task<float>
+    {
+        auto random = co_await webview.evaluate<float>("Math.random()");
+        co_return number + random;
+    });
 
     webview.set_file("index.html");
-    
     webview.show();
-    app->run();
 
-    return 0;
+    co_await app->finish();
+}
+
+int main()
+{
+    return saucer::application::create({.id = "example"})->run(start);
 }
 ```
 
