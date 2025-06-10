@@ -76,6 +76,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 * 🔀 Seamless C++ / JavaScript interoperability
 
+* 🚀 Coroutine support
+
 * 📦 Supports Embedding Frontend into binary
 
 * 🪶 Lightweight
