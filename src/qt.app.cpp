@@ -1,5 +1,7 @@
 #include "qt.app.impl.hpp"
 
+#include <algorithm>
+
 #include <QThread>
 
 namespace saucer
@@ -69,6 +71,11 @@ namespace saucer
 
     void application::quit() // NOLINT(*-static)
     {
+        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<0>(); }))
+        {
+            return;
+        }
+
         QApplication::quit();
     }
 

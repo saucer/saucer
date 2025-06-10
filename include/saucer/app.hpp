@@ -43,7 +43,7 @@ namespace saucer
     template <typename T>
     using safe_ptr = std::unique_ptr<T, safe_delete<T>>;
 
-    struct application : extensible<application>
+    struct application : extensible<application, modules::application>
     {
         struct impl;
 

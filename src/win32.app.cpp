@@ -1,6 +1,7 @@
 #include "win32.app.impl.hpp"
 
 #include <cassert>
+#include <algorithm>
 
 namespace saucer
 {
@@ -79,6 +80,11 @@ namespace saucer
 
     void application::quit() // NOLINT(*-static)
     {
+        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<0>(); }))
+        {
+            return;
+        }
+
         PostQuitMessage(0);
     }
 

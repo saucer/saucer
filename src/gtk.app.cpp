@@ -2,6 +2,7 @@
 
 #include <format>
 #include <cassert>
+#include <algorithm>
 
 namespace saucer
 {
@@ -95,6 +96,11 @@ namespace saucer
         if (!thread_safe())
         {
             return dispatch([this] { return quit(); });
+        }
+
+        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<0>(); }))
+        {
+            return;
         }
 
         g_application_quit(G_APPLICATION(m_impl->application.get()));

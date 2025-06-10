@@ -1,5 +1,7 @@
 #include "cocoa.app.impl.hpp"
 
+#include <algorithm>
+
 namespace saucer
 {
     application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data))) {}
@@ -84,6 +86,11 @@ namespace saucer
 
     void application::quit() // NOLINT(*-static)
     {
+        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<0>(); }))
+        {
+            return;
+        }
+
         [NSApp stop:nil];
     }
 
