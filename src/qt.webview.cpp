@@ -332,9 +332,7 @@ namespace saucer
             return;
         }
 
-        auto handler = scheme::handler{m_parent, std::move(resolver)};
-        auto &scheme = m_impl->schemes.emplace(name, std::move(handler)).first->second;
-
+        auto &scheme = m_impl->schemes.emplace(name, std::move(resolver)).first->second;
         m_impl->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);
     }
 
