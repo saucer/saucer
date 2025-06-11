@@ -6,48 +6,10 @@
 #include <optional>
 #include <unordered_map>
 
-#include <string_view>
-
 #include <eraser/erased.hpp>
 
 namespace saucer
 {
-    namespace modules
-    {
-        struct application_methods
-        {
-            static constexpr auto on_quit = [](auto &self)
-            {
-                if constexpr (requires { self.on_quit(); })
-                {
-                    return self.on_quit();
-                }
-                else
-                {
-                    return false;
-                }
-            };
-        };
-
-        struct webview_methods
-        {
-            static constexpr auto on_message = [](auto &self, const auto &message)
-            {
-                if constexpr (requires { self.on_message(message); })
-                {
-                    return self.on_message(message);
-                }
-                else
-                {
-                    return false;
-                }
-            };
-        };
-
-        using application = eraser::interface<eraser::method<0, application_methods::on_quit, bool()>>;
-        using webview     = eraser::interface<eraser::method<0, webview_methods::on_message, bool(std::string_view)>>;
-    } // namespace modules
-
     template <typename T>
     struct stable_natives;
 

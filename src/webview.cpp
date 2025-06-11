@@ -8,7 +8,9 @@ namespace saucer
 {
     bool webview::on_message(std::string_view message)
     {
-        if (std::ranges::any_of(modules(), [&message](auto &module) { return module.template invoke<0>(message); }))
+        using traits = modules::traits<webview>;
+
+        if (std::ranges::any_of(modules(), [&](auto &module) { return module.template invoke<traits::on_message>(message); }))
         {
             return true;
         }

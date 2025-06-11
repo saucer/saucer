@@ -1,7 +1,9 @@
 #pragma once
 
-#include "utils/required.hpp"
 #include "modules/module.hpp"
+#include "modules/traits/app.hpp"
+
+#include "utils/required.hpp"
 
 #include <vector>
 #include <utility>
@@ -43,7 +45,7 @@ namespace saucer
     template <typename T>
     using safe_ptr = std::unique_ptr<T, safe_delete<T>>;
 
-    struct application : extensible<application, modules::application>
+    struct application : modules::extend<application>
     {
         struct impl;
 

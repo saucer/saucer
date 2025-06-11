@@ -93,12 +93,14 @@ namespace saucer
 
     void application::quit()
     {
+        using traits = modules::traits<application>;
+
         if (!thread_safe())
         {
             return dispatch([this] { return quit(); });
         }
 
-        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<0>(); }))
+        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))
         {
             return;
         }

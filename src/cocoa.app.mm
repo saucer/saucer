@@ -86,7 +86,9 @@ namespace saucer
 
     void application::quit() // NOLINT(*-static)
     {
-        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<0>(); }))
+        using traits = modules::traits<application>;
+
+        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))
         {
             return;
         }

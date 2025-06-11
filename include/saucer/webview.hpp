@@ -2,14 +2,16 @@
 
 #include "window.hpp"
 
-#include "stash/stash.hpp"
 #include "modules/module.hpp"
+#include "modules/traits/webview.hpp"
 
 #include "icon.hpp"
 #include "script.hpp"
 
 #include "scheme.hpp"
 #include "navigation.hpp"
+
+#include "stash/stash.hpp"
 
 #include <memory>
 
@@ -50,7 +52,7 @@ namespace saucer
 
     using color = std::array<std::uint8_t, 4>;
 
-    struct webview : window, extensible<webview, modules::webview>
+    struct webview : window, modules::extend<webview>
     {
         struct impl;
 
