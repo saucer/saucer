@@ -1,53 +1,59 @@
 #pragma once
 
+#include <random>
+#include <limits>
+
+#include <chrono>
 #include <thread>
-#include <print>
 
 #include <functional>
-#include <chrono>
-
-#include <source_location>
+#include <algorithm>
 
 namespace saucer::tests
 {
-    using namespace std::chrono_literals;
-
-    template <typename T>
-    void wait_for(const T &pred, std::chrono::seconds timeout = 5s,
-                  std::source_location source = std::source_location::current())
+    inline auto &random_engine()
     {
-        using clock      = std::chrono::system_clock;
-        const auto start = clock::now();
+        static auto device = std::random_device{};
+        static auto seed   = std::seed_seq{device(), device(), device(), device()};
+        static auto engine = std::mt19937{seed};
 
-        auto check = [&pred]
+        return engine;
+    }
+
+    template <typename T = int>
+    auto random(T min = std::numeric_limits<T>::min(), T max = std::numeric_limits<T>::max())
+    {
+        static auto dist = std::uniform_int_distribution<T>{min, max};
+        return dist(random_engine());
+    }
+
+    inline auto random_string(std::size_t length = random())
+    {
+        auto generate = [](auto...) -> char
         {
-            if constexpr (std::is_invocable_v<T>)
-            {
-                return std::invoke(pred);
-            }
-            else
-            {
-                return pred;
-            }
+            return static_cast<char>('A' + random(0, 25));
         };
 
-        while (true)
+        auto rtn = std::string(length, 'A');
+        std::ranges::generate(rtn, generate);
+
+        return rtn;
+    }
+
+    template <typename Callable>
+        requires std::invocable<Callable>
+    auto wait_for(Callable callable)
+    {
+        using clock = std::chrono::system_clock;
+
+        auto status = false;
+        auto limit  = clock::now() + std::chrono::seconds(5);
+
+        while (not(status = std::invoke(callable)) && clock::now() < limit)
         {
-            const auto now = clock::now();
-
-            if (now - start > timeout)
-            {
-                std::println("[{}:{}] Timeout reached", source.file_name(), source.line());
-                break;
-            }
-
-            if (!std::invoke(check))
-            {
-                std::this_thread::sleep_for(500ms);
-                continue;
-            }
-
-            break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
+
+        return status;
     }
 } // namespace saucer::tests

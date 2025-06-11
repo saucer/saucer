@@ -1,71 +1,69 @@
 #pragma once
 
-#include <functional>
+#include "runner.hpp"
 
 #include <boost/ut.hpp>
 #include <saucer/smartview.hpp>
 
+#include <cstdint>
+#include <functional>
+
 namespace saucer::tests
 {
-    namespace impl
+    inline saucer::application *g_application;
+
+    enum launch : std::uint8_t
     {
-        enum launch : int
-        {
-            async = 1 << 0,
-            sync  = 1 << 1,
-        };
+        sync  = 1 << 0,
+        async = 1 << 1,
+    };
 
-        template <int Policy, typename T = saucer::smartview<>>
-        struct test
-        {
-            std::string name;
+    template <std::uint8_t Policy, typename T = saucer::smartview<>>
+    struct test
+    {
+        std::string name;
 
-          private:
-            std::shared_ptr<T> get()
+      private:
+        auto make()
+        {
+            auto rtn = g_application->make<T>(saucer::preferences{.application = g_application});
+            rtn->show();
+
+            return rtn;
+        }
+
+      public:
+        constexpr void operator=(std::function<void(T &)> test) // NOLINT(*-assign*)
+        {
+            auto callback = [this, test = std::move(test)]() mutable
             {
-                auto app = application::active();
-                auto rtn = app->make<T>(preferences{.application = app});
+                std::invoke(test, *make());
+            };
 
-                rtn->show();
-
-                return rtn;
+            if constexpr (Policy & sync)
+            {
+                boost::ut::test(std::format("{}:seq", name)) = callback;
             }
 
-          public:
-            constexpr auto operator=(std::function<void(std::shared_ptr<T>)> test) // NOLINT(*-assign*)
+            if constexpr (Policy & async)
             {
-                return boost::ut::test(name) = [this, test = std::move(test)]
-                {
-                    auto app = application::active();
-
-                    if constexpr (Policy & launch::sync)
-                    {
-                        std::invoke(test, get());
-                    }
-
-                    if constexpr (Policy & launch::async)
-                    {
-                        auto fut = std::async(std::launch::async, test, get());
-                        app->run();
-                        fut.get();
-                    }
-                };
+                boost::ut::test(std::format("{}:par", name)) = callback;
             }
-        };
-    } // namespace impl
+        }
+    };
 
     inline auto operator""_test_sync(const char *name, std::size_t size)
     {
-        return impl::test<impl::launch::sync>{.name = {name, size}};
+        return test<sync>{.name = {name, size}};
     }
 
     inline auto operator""_test_async(const char *name, std::size_t size)
     {
-        return impl::test<impl::launch::async>{.name = {name, size}};
+        return test<async>{.name = {name, size}};
     }
 
     inline auto operator""_test_both(const char *name, std::size_t size)
     {
-        return impl::test<impl::launch::sync | impl::launch::async>{.name = {name, size}};
+        return test<sync | async>{.name = {name, size}};
     }
 } // namespace saucer::tests

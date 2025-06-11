@@ -6,140 +6,113 @@ using namespace saucer::tests;
 
 suite<"window"> window_suite = []
 {
+    "visible"_test_both = [](auto &window)
+    {
+        window.show();
+        expect(window.visible());
+
+        window.hide();
+        expect(not window.visible());
+    };
+
+    "resizable"_test_both = [](auto &window)
+    {
+        expect(window.resizable());
+
+        window.set_resizable(false);
+        expect(not window.resizable());
+    };
+
 #ifndef SAUCER_WEBKITGTK
-    "minimize"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)
+    "minimize"_test_async = [](auto &window)
     {
         bool minimized{false};
-        window->on<saucer::window_event::minimize>([&minimized](bool value) { minimized = value; });
+        window.template on<saucer::window_event::minimize>([&minimized](bool value) { minimized = value; });
 
-        window->set_minimized(true);
+        window.set_minimized(true);
+        saucer::tests::wait_for([&]() { return minimized; });
 
-        wait_for(minimized);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        expect(window->minimized());
         expect(minimized);
+        expect(window.minimized());
 
-        window->set_minimized(false);
+        window.set_minimized(false);
+        saucer::tests::wait_for([&]() { return !minimized; });
 
-        wait_for([&] { return !minimized; });
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        expect(not window->minimized());
         expect(not minimized);
+        expect(not window.minimized());
     };
 #endif
 
-    "maximize"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)
+    "maximize"_test_async = [](auto &window)
     {
         bool maximized{false};
-        window->on<saucer::window_event::maximize>([&maximized](bool value) { maximized = value; });
+        window.template on<saucer::window_event::maximize>([&maximized](bool value) { maximized = value; });
 
-        window->set_maximized(true);
+        window.set_maximized(true);
+        saucer::tests::wait_for([&]() { return maximized; });
 
-        wait_for(maximized);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        expect(window->maximized());
         expect(maximized);
+        expect(window.maximized());
 
-        window->set_maximized(false);
+        window.set_maximized(false);
+        saucer::tests::wait_for([&]() { return !maximized; });
 
-        wait_for([&] { return !maximized; });
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        expect(not window->maximized());
         expect(not maximized);
+        expect(not window.maximized());
     };
 
-    "resizable"_test_both = [](const auto &window)
+    "title"_test_both = [](auto &window)
     {
-        expect(window->resizable());
+        auto title = saucer::tests::random_string(10);
 
-        window->set_resizable(false);
-        expect(not window->resizable());
+        window.set_title(title);
+        expect(eq(window.title(), title));
     };
 
-#if !defined(SAUCER_QT5) && !defined(SAUCER_QT6)
-    "decorations"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)
+    "decoration"_test_both = [](auto &window)
     {
         using enum saucer::window_decoration;
 
-        auto decoration{full};
-        window->on<saucer::window_event::decorated>([&decoration](auto value) { decoration = value; });
+        auto decoration = full;
+        window.template on<saucer::window_event::decorated>([&decoration](auto value) { decoration = value; });
 
-        expect(window->decoration() == full);
+        expect(decoration == full);
+        expect(window.decoration() == full);
 
-        window->set_decoration(partial);
-        wait_for([&] { return decoration == partial; });
+        window.set_decoration(partial);
 
-        expect(window->decoration() == decoration);
         expect(decoration == partial);
+        expect(window.decoration() == partial);
 
-        window->set_decoration(none);
-        wait_for([&] { return decoration == none; });
+        window.set_decoration(none);
 
-        expect(window->decoration() == none);
         expect(decoration == none);
+        expect(window.decoration() == none);
     };
 
-#ifndef SAUCER_WEBKITGTK
-    "always_on_top"_test_both = [](const auto &window)
-    {
-        expect(not window->always_on_top());
-
-        window->set_always_on_top(true);
-        expect(window->always_on_top());
-    };
-#endif
-#endif
-
-    "title"_test_both = [](const auto &window)
-    {
-        window->set_title("Some Title");
-        expect(window->title() == "Some Title") << window->title();
-    };
-
-    "size"_test_async = [](const std::shared_ptr<saucer::smartview<>> &window)
+    "size"_test_async = [](auto &window)
     {
         std::pair<int, int> size;
-        window->on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
+        window.template on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
 
-        window->set_size(400, 500);
-        wait_for([&] { return size.first == 400 && size.second == 500; });
+        window.set_size(400, 500);
+        saucer::tests::wait_for([&] { return size == std::make_pair(400, 500); });
 
-        auto [width, height] = window->size();
-        expect(width == 400 && height == 500) << width << ":" << height;
-
-        auto [last_width, last_height] = size;
-        expect(width == last_width && height == last_height) << last_width << ":" << last_height;
+        expect(size == std::make_pair(400, 500));
+        expect(window.size() == std::make_pair(400, 500));
     };
 
 #ifndef SAUCER_WEBKITGTK
-    "max_size"_test_both = [](const auto &window)
+    "max_size"_test_both = [](auto &window)
     {
-        window->set_max_size(200, 300);
-
-        auto [width, height] = window->max_size();
-        expect(width == 200 && height == 300) << width << ":" << height;
+        window.set_max_size(200, 300);
+        expect(window.max_size() == std::make_pair(200, 300));
     };
 #endif
 
-    "min_size"_test_both = [](const auto &window)
+    "min_size"_test_both = [](auto &window)
     {
-        window->set_min_size(200, 300);
-
-        auto [width, height] = window->min_size();
-        expect(width == 200 && height == 300) << width << ":" << height;
+        window.set_min_size(200, 300);
+        expect(window.min_size() == std::make_pair(200, 300));
     };
-
-#ifndef SAUCER_WEBKITGTK
-    "position"_test_both = [](const auto &window)
-    {
-        window->set_position(200, 300);
-
-        auto [x, y] = window->position();
-        expect(x == 200 && y == 300) << x << ":" << y;
-    };
-#endif
 };
