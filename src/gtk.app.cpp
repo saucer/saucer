@@ -124,8 +124,15 @@ namespace saucer
                             ? opts.id.value()
                             : std::format("app.saucer.{}", impl::fix_id(opts.id.value()));
 
+        auto *const application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
+
+        if (!opts.quit_on_last_window_closed)
+        {
+            g_application_hold(G_APPLICATION(application));
+        }
+
         return impl{
-            .application                = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS),
+            .application                = application,
             .argc                       = opts.argc.value_or(0),
             .argv                       = opts.argv.value_or(nullptr),
             .thread                     = std::this_thread::get_id(),
