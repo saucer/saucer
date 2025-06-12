@@ -46,4 +46,4 @@ namespace saucer::tests
 } // namespace saucer::tests
 
 template <>
-static auto boost::ut::cfg<boost::ut::override> = saucer::tests::co_runner{};
+inline auto boost::ut::cfg<boost::ut::override> = saucer::tests::co_runner{};
