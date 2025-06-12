@@ -67,7 +67,7 @@ namespace saucer
 
                                     instances.erase(identifier);
 
-                                    if (!impl->quit_on_last_window_closed)
+                                    if (!native->quit_on_last_window_closed)
                                     {
                                         return false;
                                     }

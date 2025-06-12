@@ -104,8 +104,7 @@ namespace saucer
             return std::vector<char *>{argv, argv + rtn.argc};
         };
 
-        rtn.id = opts.id.value();
-
+        impl::id   = opts.id.value();
         impl::argc = opts.argc.value_or(1);
         impl::argv = opts.argv.transform(make_args).value_or({rtn.id.data()});
 

@@ -63,7 +63,7 @@ namespace saucer
         once           = true;
         m_impl->future = promise.get_future();
 
-        post([this, callback = std::move(callback)] mutable { std::invoke(callback, this); });
+        post([this, callback = std::move(callback)]() mutable { std::invoke(callback, this); });
 
         MSG msg{};
 

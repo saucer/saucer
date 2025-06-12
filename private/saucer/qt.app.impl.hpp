@@ -13,14 +13,14 @@ namespace saucer
         std::unique_ptr<QApplication> application;
 
       public:
-        std::string id;
-
-      public:
         coco::future<void> future;
 
       public:
         static void iteration();
         static screen convert(QScreen *);
+
+      public:
+        static inline std::string id;
 
       public:
         static inline int argc;
