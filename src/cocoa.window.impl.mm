@@ -63,7 +63,7 @@ namespace saucer
                                     auto *const identifier = impl->window;
 
                                     auto *const native = parent->native<false>();
-                                    auto &instances    = parent->instances;
+                                    auto &instances    = native->instances;
 
                                     instances.erase(identifier);
 
