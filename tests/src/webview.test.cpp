@@ -251,7 +251,7 @@ suite<"webview"> webview_suite = []
         webview.set_url("https://github.com");
 
         webview.execute("location.href = 'https://saucer.app'");
-        saucer::tests::wait_for([&] { return webview.url().contains("saucer"); });
+        saucer::tests::wait_for([&] { return webview.url().starts_with("https://saucer.app"); });
 
         expect(webview.url().starts_with("https://saucer.app"));
     };
