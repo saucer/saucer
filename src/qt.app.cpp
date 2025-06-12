@@ -61,7 +61,7 @@ namespace saucer
         once           = true;
         m_impl->future = promise.get_future();
 
-        post([this, callback = std::move(callback)] mutable { std::invoke(callback, this); });
+        post([this, &callback] { std::invoke(callback, this); });
         const auto rtn = QApplication::exec();
 
         promise.set_value();
@@ -72,11 +72,6 @@ namespace saucer
     void application::quit() // NOLINT(*-static)
     {
         using traits = modules::traits<application>;
-
-        if (!thread_safe())
-        {
-            return dispatch([this] { return quit(); });
-        }
 
         if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))
         {

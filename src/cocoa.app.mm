@@ -76,7 +76,7 @@ namespace saucer
         once           = true;
         m_impl->future = promise.get_future();
 
-        post([this, callback = std::move(callback)]() mutable { std::invoke(callback, this); });
+        post([this, &callback] { std::invoke(callback, this); });
         [NSApp run];
 
         promise.set_value();

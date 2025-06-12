@@ -21,7 +21,7 @@ int main()
     auto callback = [&](saucer::application *app) -> coco::stray
     {
         saucer::tests::g_application = app;
-        status                       = co_await cfg<override>.run();
+        status |= co_await cfg<override>.run();
         app->quit();
     };
 
