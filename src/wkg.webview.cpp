@@ -181,7 +181,14 @@ namespace saucer
             return m_parent->dispatch([this] { return page_title(); });
         }
 
-        return webkit_web_view_get_title(m_impl->web_view);
+        const auto *rtn = webkit_web_view_get_title(m_impl->web_view);
+
+        if (!rtn)
+        {
+            return {};
+        }
+
+        return rtn;
     }
 
     bool webview::dev_tools() const
