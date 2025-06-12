@@ -21,22 +21,25 @@ suite<"window"> window_suite = []
 
         window.set_resizable(false);
         expect(not window.resizable());
+
+        window.set_resizable(true);
+        expect(window.resizable());
     };
 
 #ifndef SAUCER_WEBKITGTK
     "minimize"_test_async = [](auto &window)
     {
         bool minimized{false};
-        window.template on<saucer::window_event::minimize>([&minimized](bool value) { minimized = value; });
+        window.template on<saucer::window_event::minimize>([&](bool value) { minimized = value; });
 
         window.set_minimized(true);
-        saucer::tests::wait_for([&]() { return minimized; });
+        saucer::tests::wait_for([&] { return minimized; });
 
         expect(minimized);
         expect(window.minimized());
 
         window.set_minimized(false);
-        saucer::tests::wait_for([&]() { return !minimized; });
+        saucer::tests::wait_for([&] { return !minimized; });
 
         expect(not minimized);
         expect(not window.minimized());
@@ -46,16 +49,16 @@ suite<"window"> window_suite = []
     "maximize"_test_async = [](auto &window)
     {
         bool maximized{false};
-        window.template on<saucer::window_event::maximize>([&maximized](bool value) { maximized = value; });
+        window.template on<saucer::window_event::maximize>([&](bool value) { maximized = value; });
 
         window.set_maximized(true);
-        saucer::tests::wait_for([&]() { return maximized; });
+        saucer::tests::wait_for([&] { return maximized; });
 
         expect(maximized);
         expect(window.maximized());
 
         window.set_maximized(false);
-        saucer::tests::wait_for([&]() { return !maximized; });
+        saucer::tests::wait_for([&] { return !maximized; });
 
         expect(not maximized);
         expect(not window.maximized());
@@ -74,7 +77,7 @@ suite<"window"> window_suite = []
         using enum saucer::window_decoration;
 
         auto decoration = full;
-        window.template on<saucer::window_event::decorated>([&decoration](auto value) { decoration = value; });
+        window.template on<saucer::window_event::decorated>([&](auto value) { decoration = value; });
 
         expect(decoration == full);
         expect(window.decoration() == full);
@@ -93,7 +96,7 @@ suite<"window"> window_suite = []
     "size"_test_async = [](auto &window)
     {
         std::pair<int, int> size;
-        window.template on<saucer::window_event::resize>([&size](int width, int height) { size = {width, height}; });
+        window.template on<saucer::window_event::resize>([&](int width, int height) { size = {width, height}; });
 
         window.set_size(400, 500);
         saucer::tests::wait_for([&] { return size == std::make_pair(400, 500); });
@@ -115,4 +118,12 @@ suite<"window"> window_suite = []
         window.set_min_size(200, 300);
         expect(window.min_size() == std::make_pair(200, 300));
     };
+
+#ifndef SAUCER_WEBKITGTK
+    "position"_test_both = [](auto &window)
+    {
+        window.set_position(200, 300);
+        expect(window.position() == std::make_pair(200, 300));
+    };
+#endif
 };
