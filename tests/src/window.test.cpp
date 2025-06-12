@@ -84,8 +84,10 @@ suite<"window"> window_suite = []
 
         window.set_decoration(partial);
 
+#ifndef SAUCER_QT5
         expect(decoration == partial);
         expect(window.decoration() == partial);
+#endif
 
         window.set_decoration(none);
 

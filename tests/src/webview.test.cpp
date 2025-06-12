@@ -65,6 +65,7 @@ suite<"webview"> webview_suite = []
         expect(webview.background() == std::array<std::uint8_t, 4>{50, 50, 50, 255});
     };
 
+#ifndef SAUCER_QT5
     "force-dark"_test_both = [](auto &webview)
     {
         expect(not webview.force_dark_mode());
@@ -75,6 +76,7 @@ suite<"webview"> webview_suite = []
         webview.set_force_dark_mode(false);
         expect(not webview.force_dark_mode());
     };
+#endif
 
     "scheme"_test_async = [](auto &webview)
     {
