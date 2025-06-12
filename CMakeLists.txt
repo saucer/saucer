@@ -258,7 +258,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fill
-  VERSION        1.2.0
+  VERSION        1.2.1
   GIT_REPOSITORY "https://github.com/saucer/fill"
   OPTIONS        "fill_namespace std" "fill_silent ON"
 )
@@ -416,6 +416,15 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 # Package Config
 # --------------------------------------------------------------------------------------------------------
+
+set(saucer_blacklist "reflectcpp" "nontype_functional" "jthread")
+
+foreach(target IN LISTS saucer_blacklist)
+  if (TARGET ${target})
+    message(WARNING "[saucer] Package-Config not supported with current configuration (${target})")
+    return()
+  endif()
+endforeach()
 
 CPMFindPackage(
   NAME           PackageProject
