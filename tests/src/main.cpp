@@ -16,14 +16,14 @@ int main()
         return 1;
     }
 
-    int status{0};
+    bool status{false};
 
     auto callback = [&](saucer::application *app) -> coco::stray
     {
         saucer::tests::g_application = app;
-        status |= co_await cfg<override>.run();
+        status                       = co_await cfg<override>.run();
         app->quit();
     };
 
-    return application->run(callback) | status;
+    return application->run(callback) | static_cast<int>(status);
 }
