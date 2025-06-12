@@ -258,7 +258,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           fill
-  VERSION        1.2.1
+  VERSION        1.2.2
   GIT_REPOSITORY "https://github.com/saucer/fill"
   OPTIONS        "fill_namespace std" "fill_silent ON"
 )
