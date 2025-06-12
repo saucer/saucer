@@ -47,7 +47,7 @@ namespace saucer::tests
         using clock = std::chrono::system_clock;
 
         auto status = false;
-        auto limit  = clock::now() + std::chrono::seconds(5);
+        auto limit  = clock::now() + std::chrono::seconds(1);
 
         while (not(status = std::invoke(callable)) && clock::now() < limit)
         {
