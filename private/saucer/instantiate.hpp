@@ -1,22 +1,28 @@
 #pragma once
 
-#include <tuple>
-#include <utility>
+#define SAUCER_RESCAN_(...) SAUCER_RESCAN2(SAUCER_RESCAN2(SAUCER_RESCAN2(SAUCER_RESCAN2(__VA_ARGS__))))
+#define SAUCER_RESCAN2(...) SAUCER_RESCAN1(SAUCER_RESCAN1(SAUCER_RESCAN1(SAUCER_RESCAN1(__VA_ARGS__))))
+#define SAUCER_RESCAN1(...) __VA_ARGS__
 
-#define SAUCER_INSTANTIATE_EVENTS(class, type, n)                                                                                     \
-    template <typename>                                                                                                               \
-    struct instantiate_##class##_##type                                                                                               \
-    {                                                                                                                                 \
-    };                                                                                                                                \
-                                                                                                                                      \
-    template <std::size_t... N>                                                                                                       \
-    struct instantiate_##class##_##type<std::index_sequence<N...>>                                                                    \
-    {                                                                                                                                 \
-        static constexpr auto table =                                                                                                 \
-            std::make_tuple(std::make_pair(&class ::on<static_cast<type>(N)>, &class ::once<static_cast<type>(N)>)...);               \
-    };                                                                                                                                \
-                                                                                                                                      \
-    template struct instantiate_##class##_##type<std::make_index_sequence<n>>;
+#define SAUCER_PARENS              ()
+#define SAUCER_RECURSE(MACRO, ...) __VA_OPT__(SAUCER_RESCAN_(SAUCER_RECURSE_IMPL(MACRO, __VA_ARGS__)))
 
-#define SAUCER_INSTANTIATE_WINDOW_EVENTS SAUCER_INSTANTIATE_EVENTS(window, window_event, 7)
-#define SAUCER_INSTANTIATE_WEBVIEW_EVENTS SAUCER_INSTANTIATE_EVENTS(webview, web_event, 6)
+#define SAUCER_RECURSE_IMPL(MACRO, ARG, ...)                                                                                          \
+    MACRO(ARG)                                                                                                                        \
+    __VA_OPT__(SAUCER_RECURSIVE_IMPL2 SAUCER_PARENS(MACRO, __VA_ARGS__))
+
+#define SAUCER_RECURSIVE_IMPL2() SAUCER_RECURSE_IMPL
+
+#define SAUCER_INSTANTIATE_EVENT(CLASS, EVENT)                                                                                        \
+    template std::uint64_t CLASS::on<EVENT>(events::event<EVENT>::callback);                                                          \
+    template void CLASS::once<EVENT>(events::event<EVENT>::callback);
+
+#define SAUCER_INSTANTIATE_WINDOW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(window, EVENT)
+#define SAUCER_INSTANTIATE_WINDOW_EVENTS                                                                                              \
+    SAUCER_RECURSE(SAUCER_INSTANTIATE_WINDOW_EVENT, window_event::decorated, window_event::maximize, window_event::minimize,          \
+                   window_event::closed, window_event::resize, window_event::focus, window_event::close)
+
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(webview, EVENT)
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENTS                                                                                             \
+    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT, web_event::dom_ready, web_event::navigated, web_event::navigate,                 \
+                   web_event::favicon, web_event::title, web_event::load)

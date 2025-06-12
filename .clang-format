@@ -2,7 +2,7 @@
 InsertNewlineAtEOF: true
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
-AlignConsecutiveMacros: false
+AlignConsecutiveMacros: true
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossComments: false
