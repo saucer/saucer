@@ -410,6 +410,7 @@ if (saucer_examples)
   add_subdirectory("examples/json-bridge")
   add_subdirectory("examples/embedding")
   add_subdirectory("examples/desktop")
+  add_subdirectory("examples/loop")
   add_subdirectory("examples/pdf")
 endif()
 

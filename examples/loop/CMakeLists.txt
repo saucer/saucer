@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(pdf_example LANGUAGES CXX VERSION 1.0)
+project(loop_example LANGUAGES CXX VERSION 1.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Create executable
@@ -14,9 +14,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
 # --------------------------------------------------------------------------------------------------------
 
 CPMFindPackage(
-  NAME           saucer-pdf
-  VERSION        2.0.0
-  GIT_REPOSITORY "https://github.com/saucer/pdf"
+  NAME           saucer-loop
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/saucer/loop"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE saucer saucer::pdf)
+target_link_libraries(${PROJECT_NAME} PRIVATE saucer saucer::loop)
