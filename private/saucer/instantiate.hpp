@@ -10,19 +10,28 @@
 #define SAUCER_RECURSE_IMPL(MACRO, ARG, ...)                                                                                          \
     MACRO(ARG)                                                                                                                        \
     __VA_OPT__(SAUCER_RECURSIVE_IMPL2 SAUCER_PARENS(MACRO, __VA_ARGS__))
-
 #define SAUCER_RECURSIVE_IMPL2() SAUCER_RECURSE_IMPL
 
 #define SAUCER_INSTANTIATE_EVENT(CLASS, EVENT)                                                                                        \
     template std::uint64_t CLASS::on<EVENT>(events::event<EVENT>::callback);                                                          \
     template void CLASS::once<EVENT>(events::event<EVENT>::callback);
+#define SAUCER_INSTANTIATE_EVENT_AWAITABLE(CLASS, EVENT)                                                                              \
+    template CLASS::events::event<EVENT>::future CLASS::await<EVENT>(event_tag<EVENT>);
 
-#define SAUCER_INSTANTIATE_WINDOW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(window, EVENT)
+#define SAUCER_INSTANTIATE_WINDOW_EVENT(EVENT)           SAUCER_INSTANTIATE_EVENT(window, EVENT)
+#define SAUCER_INSTANTIATE_WINDOW_EVENT_AWAITABLE(EVENT) SAUCER_INSTANTIATE_EVENT_AWAITABLE(window, EVENT)
+
 #define SAUCER_INSTANTIATE_WINDOW_EVENTS                                                                                              \
     SAUCER_RECURSE(SAUCER_INSTANTIATE_WINDOW_EVENT, window_event::decorated, window_event::maximize, window_event::minimize,          \
-                   window_event::closed, window_event::resize, window_event::focus, window_event::close)
+                   window_event::closed, window_event::resize, window_event::focus, window_event::close)                              \
+    SAUCER_RECURSE(SAUCER_INSTANTIATE_WINDOW_EVENT_AWAITABLE, window_event::decorated, window_event::maximize,                        \
+                   window_event::minimize, window_event::closed, window_event::resize, window_event::focus)
 
-#define SAUCER_INSTANTIATE_WEBVIEW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(webview, EVENT)
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENT(EVENT)           SAUCER_INSTANTIATE_EVENT(webview, EVENT)
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENT_AWAITABLE(EVENT) SAUCER_INSTANTIATE_EVENT_AWAITABLE(webview, EVENT)
+
 #define SAUCER_INSTANTIATE_WEBVIEW_EVENTS                                                                                             \
     SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT, web_event::dom_ready, web_event::navigated, web_event::navigate,                 \
-                   web_event::favicon, web_event::title, web_event::load)
+                   web_event::favicon, web_event::title, web_event::load)                                                             \
+    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT_AWAITABLE, web_event::dom_ready, web_event::navigated, web_event::favicon,        \
+                   web_event::title, web_event::load)

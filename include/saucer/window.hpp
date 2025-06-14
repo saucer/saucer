@@ -178,6 +178,7 @@ namespace saucer
         [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
 
         template <window_event Event>
+            requires std::is_void_v<typename events::event<Event>::result>
         [[sc::thread_safe]] events::event<Event>::future await(event_tag<Event> = {});
     };
 } // namespace saucer

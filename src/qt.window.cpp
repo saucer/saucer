@@ -455,6 +455,7 @@ namespace saucer
     }
 
     template <window_event Event>
+        requires std::is_void_v<typename window::events::event<Event>::result>
     window::events::event<Event>::future window::await(event_tag<Event>)
     {
         return m_events.get<Event>().await();

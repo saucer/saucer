@@ -166,6 +166,7 @@ namespace saucer
 
         using window::await;
         template <web_event Event>
+            requires std::is_void_v<typename events::event<Event>::result>
         [[sc::thread_safe]] events::event<Event>::future await(event_tag<Event> = {});
 
       public:

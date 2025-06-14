@@ -557,6 +557,7 @@ namespace saucer
     }
 
     template <web_event Event>
+        requires std::is_void_v<typename webview::events::event<Event>::result>
     webview::events::event<Event>::future webview::await(event_tag<Event>)
     {
         if (!m_parent->thread_safe())
