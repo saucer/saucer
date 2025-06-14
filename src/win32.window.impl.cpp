@@ -120,15 +120,14 @@ namespace saucer
                 return 0;
             }
 
-            window->hide();
-            window->m_events.get<window_event::closed>().fire();
-
             auto *const parent = window->m_parent;
             auto *const native = parent->native<false>();
 
             auto &instances = native->instances;
 
+            window->hide();
             instances.erase(hwnd);
+            window->m_events.get<window_event::closed>().fire();
 
             if (!native->quit_on_last_window_closed)
             {

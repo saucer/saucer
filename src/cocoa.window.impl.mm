@@ -56,16 +56,15 @@ namespace saucer
                                         std::invoke(impl->on_closed);
                                     }
 
-                                    self->hide();
-                                    self->m_events.get<window_event::closed>().fire();
-
                                     auto *parent           = self->m_parent;
                                     auto *const identifier = impl->window;
 
                                     auto *const native = parent->native<false>();
                                     auto &instances    = native->instances;
 
+                                    self->hide();
                                     instances.erase(identifier);
+                                    self->m_events.get<window_event::closed>().fire();
 
                                     if (!native->quit_on_last_window_closed)
                                     {

@@ -541,5 +541,11 @@ namespace saucer
         return m_events.get<Event>().add(std::move(callback));
     }
 
+    template <window_event Event>
+    window::events::event<Event>::future window::await(event_tag<Event>)
+    {
+        return m_events.get<Event>().await();
+    }
+
     SAUCER_INSTANTIATE_WINDOW_EVENTS;
 } // namespace saucer

@@ -164,6 +164,10 @@ namespace saucer
         template <web_event Event>
         [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
 
+        using window::await;
+        template <web_event Event>
+        [[sc::thread_safe]] events::event<Event>::future await(event_tag<Event> = {});
+
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);
     };

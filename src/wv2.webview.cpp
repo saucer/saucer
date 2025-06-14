@@ -556,6 +556,18 @@ namespace saucer
         return m_events.get<Event>().add(std::move(callback));
     }
 
+    template <web_event Event>
+    webview::events::event<Event>::future webview::await(event_tag<Event>)
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return await<Event>(); });
+        }
+
+        m_impl->setup<Event>(this);
+        return m_events.get<Event>().await();
+    }
+
     void webview::register_scheme(const std::string &name)
     {
         static std::unordered_map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
