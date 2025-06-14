@@ -5,6 +5,7 @@
 
 #include "qt.icon.impl.hpp"
 #include "qt.navigation.impl.hpp"
+#include "qt.permission.impl.hpp"
 
 #include <format>
 #include <cassert>
@@ -76,6 +77,41 @@ namespace saucer
         self.on_message(message);
     }
 
+    webview::impl::request_interceptor::request_interceptor(webview *parent) : m_parent(parent) {}
+
+    void webview::impl::request_interceptor::interceptRequest(QWebEngineUrlRequestInfo &request)
+    {
+        m_parent->m_events.get<saucer::web_event::request>().fire(request.requestUrl().toString().toStdString());
+    }
+
+    template <>
+    void webview::impl::setup<web_event::permission>(webview *self)
+    {
+        auto &event = self->m_events.get<web_event::permission>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](QWebEnginePermission req)
+        {
+            if (req.permissionType() == QWebEnginePermission::PermissionType::Unsupported)
+            {
+                return;
+            }
+
+            auto request = permission::request{{
+                .request = std::move(req),
+            }};
+
+            self->m_events.get<web_event::permission>().fire(request);
+        };
+
+        const auto id = web_page->connect(web_page.get(), &QWebEnginePage::permissionRequested, handler);
+        event.on_clear([this, id] { web_page->disconnect(id); });
+    }
+
     template <>
     void webview::impl::setup<web_event::dom_ready>(webview *)
     {
@@ -131,8 +167,8 @@ namespace saucer
             }
         };
 
-        const auto new_id = web_view->connect(web_page.get(), &QWebEnginePage::newWindowRequested, handler);
-        const auto nav_id = web_view->connect(web_page.get(), &QWebEnginePage::navigationRequested, handler);
+        const auto new_id = web_page->connect(web_page.get(), &QWebEnginePage::newWindowRequested, handler);
+        const auto nav_id = web_page->connect(web_page.get(), &QWebEnginePage::navigationRequested, handler);
 
         event.on_clear(
             [this, new_id, nav_id]
@@ -141,6 +177,22 @@ namespace saucer
                 web_page->disconnect(nav_id);
             });
 #endif
+    }
+
+    template <>
+    void webview::impl::setup<web_event::request>(webview *self)
+    {
+        auto &event = self->m_events.get<web_event::request>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        interceptor = std::make_unique<impl::request_interceptor>(self);
+        profile->setUrlRequestInterceptor(interceptor.get());
+
+        event.on_clear([this] { interceptor.reset(); });
     }
 
     template <>

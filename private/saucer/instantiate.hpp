@@ -31,7 +31,7 @@
 #define SAUCER_INSTANTIATE_WEBVIEW_EVENT_AWAITABLE(EVENT) SAUCER_INSTANTIATE_EVENT_AWAITABLE(webview, EVENT)
 
 #define SAUCER_INSTANTIATE_WEBVIEW_EVENTS                                                                                             \
-    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT, web_event::dom_ready, web_event::navigated, web_event::navigate,                 \
-                   web_event::favicon, web_event::title, web_event::load)                                                             \
-    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT_AWAITABLE, web_event::dom_ready, web_event::navigated, web_event::favicon,        \
-                   web_event::title, web_event::load)
+    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT, web_event::permission, web_event::dom_ready, web_event::navigated,               \
+                   web_event::navigate, web_event::request, web_event::favicon, web_event::title, web_event::load)                    \
+    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT_AWAITABLE, web_event::permission, web_event::dom_ready, web_event::navigated,     \
+                   web_event::request, web_event::favicon, web_event::title, web_event::load)

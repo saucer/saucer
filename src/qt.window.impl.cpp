@@ -85,9 +85,9 @@ namespace saucer
             std::invoke(m_parent->m_impl->on_closed);
         }
 
-        m_parent->m_events.get<window_event::closed>().fire();
-
         QMainWindow::closeEvent(event);
+
+        m_parent->m_events.get<window_event::closed>().fire();
     }
 
     void window::impl::main_window::resizeEvent(QResizeEvent *event)

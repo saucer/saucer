@@ -48,6 +48,8 @@ namespace saucer
         m_impl->profile->setPersistentCookiesPolicy(prefs.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
                                                                              : QWebEngineProfile::NoPersistentCookies);
 
+        m_impl->profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::AskEveryTime);
+
         m_impl->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
         m_impl->web_view    = std::make_unique<QWebEngineView>();

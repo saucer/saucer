@@ -7,6 +7,7 @@
 
 #include "icon.hpp"
 #include "script.hpp"
+#include "permission.hpp"
 
 #include "scheme.hpp"
 #include "navigation.hpp"
@@ -30,9 +31,11 @@ namespace saucer
 {
     enum class web_event : std::uint8_t
     {
+        permission,
         dom_ready,
         navigated,
         navigate,
+        request,
         favicon,
         title,
         load,
@@ -60,13 +63,15 @@ namespace saucer
         using embedded_files = std::unordered_map<std::string, embedded_file>;
 
       public:
-        using events = ereignis::manager<                                     //
-            ereignis::event<web_event::dom_ready, void()>,                    //
-            ereignis::event<web_event::navigated, void(std::string_view)>,    //
-            ereignis::event<web_event::navigate, policy(const navigation &)>, //
-            ereignis::event<web_event::favicon, void(const icon &)>,          //
-            ereignis::event<web_event::title, void(std::string_view)>,        //
-            ereignis::event<web_event::load, void(const state &)>             //
+        using events = ereignis::manager<                                              //
+            ereignis::event<web_event::permission, void(const permission::request &)>, //
+            ereignis::event<web_event::dom_ready, void()>,                             //
+            ereignis::event<web_event::navigated, void(std::string_view)>,             //
+            ereignis::event<web_event::navigate, policy(const navigation &)>,          //
+            ereignis::event<web_event::request, void(std::string_view)>,               //
+            ereignis::event<web_event::favicon, void(const icon &)>,                   //
+            ereignis::event<web_event::title, void(std::string_view)>,                 //
+            ereignis::event<web_event::load, void(const state &)>                      //
             >;
 
       private:

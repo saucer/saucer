@@ -13,16 +13,20 @@
 #include <QWebChannel>
 
 #include <QWebEngineView>
+#include <QWebEngineProfile>
 #include <QWebEngineUrlSchemeHandler>
+#include <QWebEngineUrlRequestInterceptor>
 
 namespace saucer
 {
     struct webview::impl
     {
         class web_class;
+        class request_interceptor;
 
       public:
         std::unique_ptr<QWebEngineProfile> profile;
+        std::unique_ptr<request_interceptor> interceptor;
 
       public:
         std::unique_ptr<QWebEngineView> web_view;
@@ -62,5 +66,19 @@ namespace saucer
 
       public slots:
         void on_message(const QString &);
+    };
+
+    class webview::impl::request_interceptor : public QWebEngineUrlRequestInterceptor
+    {
+        Q_OBJECT
+
+      private:
+        webview *m_parent;
+
+      public:
+        request_interceptor(webview *);
+
+      public:
+        void interceptRequest(QWebEngineUrlRequestInfo &) override;
     };
 } // namespace saucer

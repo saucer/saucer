@@ -1,10 +1,12 @@
 #include "wkg.webview.impl.hpp"
 
+#include "permission.hpp"
 #include "scripts.hpp"
 #include "request.hpp"
 
 #include "wkg.scheme.impl.hpp"
 #include "wkg.navigation.impl.hpp"
+#include "wkg.permission.impl.hpp"
 
 #include <regex>
 #include <optional>
@@ -12,6 +14,56 @@
 
 namespace saucer
 {
+    template <>
+    void saucer::webview::impl::setup<web_event::permission>(webview *self)
+    {
+        auto &event = self->m_events.get<web_event::permission>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto callback = [](WebKitWebView *, WebKitPermissionRequest *raw, webview *self)
+        {
+            using enum permission::type;
+
+            static constexpr auto mapping = std::array<std::pair<gboolean (*)(gpointer), permission::type>, 8>{
+                std::make_pair(WEBKIT_IS_CLIPBOARD_PERMISSION_REQUEST, clipboard),
+                std::make_pair(WEBKIT_IS_DEVICE_INFO_PERMISSION_REQUEST, device_info),
+                std::make_pair(WEBKIT_IS_GEOLOCATION_PERMISSION_REQUEST, location),
+                std::make_pair(WEBKIT_IS_MEDIA_KEY_SYSTEM_PERMISSION_REQUEST, media),
+                std::make_pair(WEBKIT_IS_NOTIFICATION_PERMISSION_REQUEST, notification),
+                std::make_pair(WEBKIT_IS_POINTER_LOCK_PERMISSION_REQUEST, pointer),
+                std::make_pair(WEBKIT_IS_USER_MEDIA_PERMISSION_REQUEST, devices),
+                std::make_pair(WEBKIT_IS_WEBSITE_DATA_ACCESS_PERMISSION_REQUEST, third_party_cookies),
+            };
+
+            auto type = permission::type{};
+            auto req  = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw);
+
+            for (const auto &[check, result] : mapping)
+            {
+                if (check(raw))
+                {
+                    type = result;
+                    break;
+                }
+            }
+
+            auto request = permission::request{{
+                .request = std::move(req),
+                .url     = self->url(),
+                .type    = type,
+            }};
+
+            self->m_events.get<web_event::permission>().fire(request);
+        };
+
+        const auto id = g_signal_connect(web_view, "permission-request", G_CALLBACK(+callback), self);
+        event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
+    }
+
     template <>
     void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
     {
@@ -57,6 +109,32 @@ namespace saucer
         };
 
         const auto id = g_signal_connect(web_view, "decide-policy", G_CALLBACK(+callback), self);
+        event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::request>(webview *self)
+    {
+        auto &event = self->m_events.get<web_event::request>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto callback = [](WebKitWebView *, WebKitWebResource *, WebKitURIRequest *request, webview *self)
+        {
+            const auto *url = webkit_uri_request_get_uri(request);
+
+            if (!url)
+            {
+                return;
+            }
+
+            self->m_events.get<web_event::request>().fire(url);
+        };
+
+        const auto id = g_signal_connect(web_view, "resource-load-started", G_CALLBACK(+callback), self);
         event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
     }
 
