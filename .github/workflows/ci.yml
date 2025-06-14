@@ -21,7 +21,6 @@ jobs:
           - WebKitGtk
           - WebKit
           - WebView2
-          - WebView2-Clang
 
         config:
           - Release
@@ -52,11 +51,6 @@ jobs:
             platform: Windows
             os: windows-latest
             cmake-args: -Dsaucer_tests=OFF
-
-          - backend: WebView2-Clang
-            platform: Windows
-            os: windows-latest
-            cmake-args: -T ClangCL -A x64
 
     name: ${{ matrix.backend }}-${{ matrix.config }}
 
