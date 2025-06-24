@@ -28,17 +28,7 @@ Learn how to create your first _saucer_ app [here](https://saucer.github.io/docs
 
 ### Community
 
-<a href="https://matrix.to/#/#saucer:matrix.org" target="_blank">
-    <picture>
-        <img alt="Matrix" src="https://img.shields.io/matrix/saucer%3Amatrix.org?style=flat&logo=matrix&label=%20">
-    </picture>
-</a>
-
-<a href="https://discord.gg/ndhmQE4225" target="_blank">
-    <picture>
-        <img alt="Discord" src="https://img.shields.io/discord/924655908292800573?style=flat&logo=discord&label=%20">
-    </picture>
-</a>
+Get in touch! ([Discord](https://discord.gg/ndhmQE4225), [Matrix](https://matrix.to/#/#saucer:matrix.org))
 
 </div> 
 
