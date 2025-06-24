@@ -87,7 +87,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!  
   
   * Community Bindings:
-  
+
     > [!NOTE]
     > These bindings are maintained by the community!
 
