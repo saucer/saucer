@@ -2,6 +2,9 @@
 
 #include "serializer.hpp"
 
+#include "format/args.hpp"
+#include "format/unquoted.hpp"
+
 #include "../utils/tuple.hpp"
 #include "../utils/traits.hpp"
 
@@ -36,6 +39,12 @@ namespace saucer
             return Interface::template write<T>(std::forward<T>(value));
         }
 
+        template <typename Interface>
+        std::string write(unquoted value)
+        {
+            return std::string{value.str};
+        }
+
         template <typename Interface, typename... Ts>
         std::string write(arguments<Ts...> value)
         {
@@ -46,7 +55,7 @@ namespace saucer
             {
                 (rtn.emplace_back(write<Interface>(std::forward<Us>(args))), ...);
             };
-            std::apply(unpack, std::move(value.tuple()));
+            std::apply(unpack, std::move(value.tuple));
 
             return rtn | std::views::join_with(',') | std::ranges::to<std::string>();
         }
@@ -70,6 +79,11 @@ namespace saucer
         template <typename... Ts, typename Interface>
             requires(impl::Writable<Ts, Interface> && ...)
         struct is_writable<arguments<Ts...>, Interface> : std::true_type
+        {
+        };
+
+        template <typename Interface>
+        struct is_writable<unquoted, Interface> : std::true_type
         {
         };
 
