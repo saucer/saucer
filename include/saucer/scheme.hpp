@@ -1,5 +1,6 @@
 #pragma once
 
+#include "uri.hpp"
 #include "executor.hpp"
 #include "stash/stash.hpp"
 
@@ -48,7 +49,7 @@ namespace saucer::scheme
         ~request();
 
       public:
-        [[nodiscard]] std::string url() const;
+        [[nodiscard]] uri url() const;
         [[nodiscard]] std::string method() const;
 
       public:

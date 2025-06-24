@@ -9,6 +9,8 @@
 #include "wkg.permission.impl.hpp"
 
 #include <regex>
+#include <cassert>
+
 #include <optional>
 #include <charconv>
 
@@ -53,7 +55,7 @@ namespace saucer
 
             auto request = permission::request{{
                 .request = std::move(req),
-                .url     = self->url(),
+                .url     = self->url()->string(),
                 .type    = type,
             }};
 
@@ -124,14 +126,22 @@ namespace saucer
 
         auto callback = [](WebKitWebView *, WebKitWebResource *, WebKitURIRequest *request, webview *self)
         {
-            const auto *url = webkit_uri_request_get_uri(request);
+            const auto *raw = webkit_uri_request_get_uri(request);
 
-            if (!url)
+            if (!raw)
             {
                 return;
             }
 
-            self->m_events.get<web_event::request>().fire(url);
+            auto url = uri::parse(raw);
+
+            if (!url.has_value())
+            {
+                assert(false);
+                return;
+            }
+
+            self->m_events.get<web_event::request>().fire(url.value());
         };
 
         const auto id = g_signal_connect(web_view, "resource-load-started", G_CALLBACK(+callback), self);
@@ -241,12 +251,12 @@ namespace saucer
         return rtn;
     }
 
-    WebKitSettings *webview::impl::make_settings(const preferences &prefs)
+    WebKitSettings *webview::impl::make_settings(const options &opts)
     {
         std::vector<GValue> values;
         std::vector<std::string> names;
 
-        for (const auto &flag : prefs.browser_flags)
+        for (const auto &flag : opts.browser_flags)
         {
             const auto delim = flag.find('=');
 

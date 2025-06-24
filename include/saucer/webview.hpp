@@ -5,6 +5,7 @@
 #include "modules/module.hpp"
 #include "modules/traits/webview.hpp"
 
+#include "uri.hpp"
 #include "icon.hpp"
 #include "script.hpp"
 #include "permission.hpp"
@@ -13,9 +14,11 @@
 #include "navigation.hpp"
 
 #include "stash/stash.hpp"
+#include "utils/required.hpp"
 
 #include <memory>
 
+#include <set>
 #include <array>
 #include <cstdint>
 
@@ -29,6 +32,8 @@
 
 namespace saucer
 {
+    namespace fs = std::filesystem;
+
     enum class web_event : std::uint8_t
     {
         permission,
@@ -58,17 +63,18 @@ namespace saucer
     struct webview : window, modules::extend<webview>
     {
         struct impl;
+        struct options;
 
       private:
-        using embedded_files = std::unordered_map<std::string, embedded_file>;
+        using embedded_files = std::unordered_map<fs::path, embedded_file>;
 
       public:
         using events = ereignis::manager<                                              //
             ereignis::event<web_event::permission, void(const permission::request &)>, //
             ereignis::event<web_event::dom_ready, void()>,                             //
-            ereignis::event<web_event::navigated, void(std::string_view)>,             //
+            ereignis::event<web_event::navigated, void(const uri &)>,                  //
             ereignis::event<web_event::navigate, policy(const navigation &)>,          //
-            ereignis::event<web_event::request, void(std::string_view)>,               //
+            ereignis::event<web_event::request, void(const uri &)>,                    //
             ereignis::event<web_event::favicon, void(const icon &)>,                   //
             ereignis::event<web_event::title, void(std::string_view)>,                 //
             ereignis::event<web_event::load, void(const state &)>                      //
@@ -93,7 +99,7 @@ namespace saucer
         void resolve(std::uint64_t, std::string_view);
 
       public:
-        webview(const preferences &);
+        webview(const options &);
 
       public:
         ~webview() override;
@@ -108,8 +114,8 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool dev_tools() const;
-        [[sc::thread_safe]] [[nodiscard]] std::string url() const;
         [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
+        [[sc::thread_safe]] [[nodiscard]] std::optional<uri> url() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] color background() const;
@@ -124,7 +130,7 @@ namespace saucer
         [[sc::thread_safe]] void set_background(const color &color);
 
       public:
-        [[sc::thread_safe]] void set_file(const fs::path &file);
+        [[sc::thread_safe]] void set_url(const uri &url);
         [[sc::thread_safe]] void set_url(const std::string &url);
 
       public:
@@ -135,15 +141,15 @@ namespace saucer
         [[sc::thread_safe]] void reload();
 
       public:
+        [[sc::thread_safe]] void serve(fs::path file);
         [[sc::thread_safe]] void embed(embedded_files files);
-        [[sc::thread_safe]] void serve(std::string_view file);
 
       public:
         [[sc::thread_safe]] void clear_scripts();
 
       public:
         [[sc::thread_safe]] void clear_embedded();
-        [[sc::thread_safe]] void clear_embedded(const std::string &file);
+        [[sc::thread_safe]] void clear_embedded(const fs::path &file);
 
       public:
         [[sc::thread_safe]] void inject(const script &script);
@@ -176,6 +182,23 @@ namespace saucer
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);
+    };
+
+    struct webview::options
+    {
+        required<saucer::application *> application;
+
+      public:
+        bool attributes{true};
+        bool persistent_cookies{true};
+        bool hardware_acceleration{true};
+
+      public:
+        fs::path storage_path;
+        std::string user_agent;
+
+      public:
+        std::set<std::string> browser_flags;
     };
 } // namespace saucer
 

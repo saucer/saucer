@@ -5,7 +5,7 @@
 namespace saucer
 {
     template <Serializer Serializer>
-    smartview<Serializer>::smartview(const preferences &prefs) : smartview_core(std::make_unique<Serializer>(), prefs)
+    smartview<Serializer>::smartview(const options &opts) : smartview_core(std::make_unique<Serializer>(), opts)
     {
     }
 

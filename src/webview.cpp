@@ -1,4 +1,6 @@
 #include "webview.hpp"
+
+#include "uri.hpp"
 #include "request.hpp"
 
 #include <format>
@@ -62,6 +64,23 @@ namespace saucer
             id, result));
     }
 
+    void webview::set_url(const std::string &url)
+    {
+        auto parsed = uri::parse(url);
+
+        if (!parsed.has_value())
+        {
+            return;
+        }
+
+        set_url(parsed.value());
+    }
+
+    void webview::serve(fs::path file)
+    {
+        set_url(uri::make({.path = std::move(file), .scheme = "saucer", .host = "embedded"}));
+    }
+
     void webview::embed(embedded_files files)
     {
         if (!m_parent->thread_safe())
@@ -71,19 +90,16 @@ namespace saucer
 
         m_embedded_files.merge(std::move(files));
 
-        auto func = [this](const auto &request) -> std::expected<scheme::response, scheme::error>
+        auto func = [this](const scheme::request &request) -> std::expected<scheme::response, scheme::error>
         {
-            static constexpr std::string_view prefix = "/embedded/";
+            auto url = request.url();
 
-            const auto url   = request.url();
-            const auto start = url.find(prefix) + prefix.size();
-
-            if (start >= url.size())
+            if (url.scheme() != "saucer" || url.host() != "embedded")
             {
                 return std::unexpected{scheme::error::invalid};
             }
 
-            const auto file = url.substr(start, url.find_first_of("#?") - start);
+            auto file = url.path();
 
             if (!m_embedded_files.contains(file))
             {
@@ -102,11 +118,6 @@ namespace saucer
         handle_scheme("saucer", func);
     }
 
-    void webview::serve(std::string_view file)
-    {
-        set_url(std::format("saucer://embedded/{}", file));
-    }
-
     void webview::clear_embedded()
     {
         if (!m_parent->thread_safe())
@@ -118,7 +129,7 @@ namespace saucer
         remove_scheme("saucer");
     }
 
-    void webview::clear_embedded(const std::string &file)
+    void webview::clear_embedded(const fs::path &file)
     {
         if (!m_parent->thread_safe())
         {

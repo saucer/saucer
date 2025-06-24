@@ -19,7 +19,7 @@ coco::stray start(saucer::application *app)
         )js");
 
     webview.embed(saucer::embedded::all());
-    webview.serve("src/index.html");
+    webview.serve("/src/index.html");
 
     webview.set_dev_tools(true);
     webview.show();

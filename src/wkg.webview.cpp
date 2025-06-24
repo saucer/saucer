@@ -4,36 +4,35 @@
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
 
-#include "handle.hpp"
 #include "instantiate.hpp"
 
-#include <format>
+#include <cassert>
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs)
-        : window(prefs), extensible(this), m_attributes(prefs.attributes), m_impl(std::make_unique<impl>())
+    webview::webview(const options &opts)
+        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
         m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-        m_impl->settings = impl::make_settings(prefs);
+        m_impl->settings = impl::make_settings(opts);
 
         auto *const session      = webkit_web_view_get_network_session(m_impl->web_view);
         auto *const data_manager = webkit_network_session_get_website_data_manager(session);
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
-        if (!prefs.user_agent.empty())
+        if (!opts.user_agent.empty())
         {
-            webkit_settings_set_user_agent(m_impl->settings.get(), prefs.user_agent.c_str());
+            webkit_settings_set_user_agent(m_impl->settings.get(), opts.user_agent.c_str());
         }
 
-        if (prefs.persistent_cookies)
+        if (opts.persistent_cookies)
         {
             auto *const manager = webkit_network_session_get_cookie_manager(session);
-            auto path           = prefs.storage_path;
+            auto path           = opts.storage_path;
 
             if (path.empty())
             {
@@ -43,7 +42,7 @@ namespace saucer
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
-        webkit_settings_set_hardware_acceleration_policy(m_impl->settings.get(), prefs.hardware_acceleration
+        webkit_settings_set_hardware_acceleration_policy(m_impl->settings.get(), opts.hardware_acceleration
                                                                                      ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
                                                                                      : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
@@ -66,7 +65,7 @@ namespace saucer
 
         auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
         {
-            auto message = std::string{utils::handle<char *, g_free>{jsc_value_to_string(value)}.get()};
+            auto message = std::string{utils::g_str_ptr{jsc_value_to_string(value)}.get()};
             auto &self   = *reinterpret_cast<webview *>(data);
 
             if (message == "dom_loaded")
@@ -92,10 +91,17 @@ namespace saucer
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
         {
             auto *const self = reinterpret_cast<webview *>(data);
+            auto url         = self->url();
+
+            if (!url.has_value())
+            {
+                assert(false);
+                return;
+            }
 
             if (event == WEBKIT_LOAD_COMMITTED)
             {
-                self->m_events.get<web_event::navigated>().fire(self->url());
+                self->m_events.get<web_event::navigated>().fire(url.value());
                 return;
             }
 
@@ -202,23 +208,6 @@ namespace saucer
         return webkit_settings_get_enable_developer_extras(settings);
     }
 
-    std::string webview::url() const
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return url(); });
-        }
-
-        const auto *rtn = webkit_web_view_get_uri(m_impl->web_view);
-
-        if (!rtn)
-        {
-            return {};
-        }
-
-        return rtn;
-    }
-
     bool webview::context_menu() const
     {
         if (!m_parent->thread_safe())
@@ -227,6 +216,23 @@ namespace saucer
         }
 
         return m_impl->context_menu;
+    }
+
+    std::optional<uri> webview::url() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return url(); });
+        }
+
+        const auto *url = webkit_web_view_get_uri(m_impl->web_view);
+
+        if (!url)
+        {
+            return std::nullopt;
+        }
+
+        return uri::parse(url).value_or({});
     }
 
     color webview::background() const
@@ -322,27 +328,14 @@ namespace saucer
         window::m_impl->make_transparent(a < 255);
     }
 
-    void webview::set_file(const fs::path &file)
-    {
-        auto error     = std::error_code{};
-        auto canonical = fs::canonical(file, error);
-
-        if (error)
-        {
-            return;
-        }
-
-        set_url(std::format("file://{}", canonical.string()));
-    }
-
-    void webview::set_url(const std::string &url)
+    void webview::set_url(const uri &url)
     {
         if (!m_parent->thread_safe())
         {
             return m_parent->dispatch([this, url] { return set_url(url); });
         }
 
-        webkit_web_view_load_uri(m_impl->web_view, url.c_str());
+        webkit_web_view_load_uri(m_impl->web_view, url.string().c_str());
     }
 
     void webview::back()

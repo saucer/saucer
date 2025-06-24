@@ -39,7 +39,7 @@ namespace saucer
 
       public:
         static std::string inject_script();
-        static WebKitSettings *make_settings(const preferences &);
+        static WebKitSettings *make_settings(const options &);
 
       public:
         static constinit std::string_view ready_script;

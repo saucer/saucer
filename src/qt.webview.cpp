@@ -1,6 +1,8 @@
 #include "qt.webview.impl.hpp"
 
 #include "instantiate.hpp"
+
+#include "qt.uri.impl.hpp"
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
 
@@ -13,15 +15,15 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs)
-        : window(prefs), extensible(this), m_attributes(prefs.attributes), m_impl(std::make_unique<impl>())
+    webview::webview(const options &opts)
+        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
-        auto flags = prefs.browser_flags;
+        auto flags = opts.browser_flags;
 
-        if (prefs.hardware_acceleration)
+        if (opts.hardware_acceleration)
         {
             flags.emplace("--gpu");
             flags.emplace("--ignore-gpu-blocklist");
@@ -32,21 +34,21 @@ namespace saucer
 
         m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
 
-        if (!prefs.user_agent.empty())
+        if (!opts.user_agent.empty())
         {
-            m_impl->profile->setHttpUserAgent(QString::fromStdString(prefs.user_agent));
+            m_impl->profile->setHttpUserAgent(QString::fromStdString(opts.user_agent));
         }
 
-        if (!prefs.storage_path.empty())
+        if (!opts.storage_path.empty())
         {
-            const auto path = QString::fromStdString(prefs.storage_path.string());
+            const auto path = QString::fromStdString(opts.storage_path.string());
 
             m_impl->profile->setCachePath(path);
             m_impl->profile->setPersistentStoragePath(path);
         }
 
-        m_impl->profile->setPersistentCookiesPolicy(prefs.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
-                                                                             : QWebEngineProfile::NoPersistentCookies);
+        m_impl->profile->setPersistentCookiesPolicy(opts.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
+                                                                            : QWebEngineProfile::NoPersistentCookies);
 
         m_impl->profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::AskEveryTime);
 
@@ -119,16 +121,6 @@ namespace saucer
         return m_impl->dev_page != nullptr;
     }
 
-    std::string webview::url() const
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return url(); });
-        }
-
-        return m_impl->web_view->url().toString().toStdString();
-    }
-
     bool webview::context_menu() const
     {
         if (!m_parent->thread_safe())
@@ -137,6 +129,23 @@ namespace saucer
         }
 
         return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
+    }
+
+    std::optional<uri> webview::url() const
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return url(); });
+        }
+
+        auto url = m_impl->web_view->url();
+
+        if (!url.isValid())
+        {
+            return std::nullopt;
+        }
+
+        return uri::impl{url};
     }
 
     color webview::background() const
@@ -240,24 +249,14 @@ namespace saucer
 #endif
     }
 
-    void webview::set_file(const fs::path &file)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, file] { return set_file(file); });
-        }
-
-        m_impl->web_view->setUrl(QUrl::fromLocalFile(QString::fromStdString(file.string())));
-    }
-
-    void webview::set_url(const std::string &url)
+    void webview::set_url(const uri &url)
     {
         if (!m_parent->thread_safe())
         {
             return m_parent->dispatch([this, url] { return set_url(url); });
         }
 
-        m_impl->web_view->setUrl(QString::fromStdString(url));
+        m_impl->web_view->setUrl(url.m_impl->uri);
     }
 
     void webview::back()

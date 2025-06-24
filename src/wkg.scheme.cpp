@@ -10,9 +10,9 @@ namespace saucer::scheme
 
     request::~request() = default;
 
-    std::string request::url() const
+    uri request::url() const
     {
-        return webkit_uri_scheme_request_get_uri(m_impl->request.get());
+        return uri::parse(webkit_uri_scheme_request_get_uri(m_impl->request.get())).value_or({});
     }
 
     std::string request::method() const

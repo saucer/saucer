@@ -18,18 +18,6 @@
 
 namespace saucer
 {
-    struct options
-    {
-        required<std::string> id;
-
-      public:
-        std::optional<int> argc;
-        std::optional<char **> argv;
-
-      public:
-        bool quit_on_last_window_closed{true};
-    };
-
     struct screen
     {
         std::string name;
@@ -48,6 +36,7 @@ namespace saucer
     struct application : modules::extend<application>
     {
         struct impl;
+        struct options;
 
       private:
         using post_callback_t = std::move_only_function<void()>;
@@ -90,6 +79,18 @@ namespace saucer
 
       public:
         [[nodiscard]] static std::optional<application> create(const options &);
+    };
+
+    struct application::options
+    {
+        required<std::string> id;
+
+      public:
+        std::optional<int> argc;
+        std::optional<char **> argv;
+
+      public:
+        bool quit_on_last_window_closed{true};
     };
 } // namespace saucer
 

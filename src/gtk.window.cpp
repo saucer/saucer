@@ -9,7 +9,7 @@
 
 namespace saucer
 {
-    window::window(const preferences &prefs) : m_parent(prefs.application.value()), m_impl(std::make_unique<impl>())
+    window::window(application *parent) : m_parent(parent), m_impl(std::make_unique<impl>())
     {
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
 

@@ -1,5 +1,7 @@
 #include "qt.scheme.impl.hpp"
 
+#include "qt.uri.impl.hpp"
+
 #include <ranges>
 
 #include <QMap>
@@ -16,7 +18,7 @@ namespace saucer::scheme
 
     request::~request() = default;
 
-    std::string request::url() const
+    uri request::url() const
     {
         const auto request = m_impl->request->write();
 
@@ -25,7 +27,7 @@ namespace saucer::scheme
             return {};
         }
 
-        return request.value()->requestUrl().toString().toStdString();
+        return uri::impl{request.value()->requestUrl()};
     }
 
     std::string request::method() const

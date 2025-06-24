@@ -1,18 +1,13 @@
 #pragma once
 
 #include "utils/tag.hpp"
-
-#include "utils/required.hpp"
 #include "modules/module.hpp"
 
 #include "app.hpp"
 #include "icon.hpp"
 
-#include <set>
 #include <string>
-
 #include <utility>
-#include <filesystem>
 
 #include <memory>
 #include <cstdint>
@@ -21,8 +16,6 @@
 
 namespace saucer
 {
-    namespace fs = std::filesystem;
-
     enum class window_event : std::uint8_t
     {
         decorated,
@@ -55,23 +48,6 @@ namespace saucer
         block,
     };
 
-    struct preferences
-    {
-        required<saucer::application *> application;
-
-      public:
-        bool attributes{true};
-        bool persistent_cookies{true};
-        bool hardware_acceleration{true};
-
-      public:
-        fs::path storage_path;
-        std::string user_agent;
-
-      public:
-        std::set<std::string> browser_flags;
-    };
-
     struct window
     {
         struct impl;
@@ -95,7 +71,7 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
-        window(const preferences &);
+        window(saucer::application *);
 
       public:
         virtual ~window();
