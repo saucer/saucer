@@ -20,7 +20,7 @@ namespace saucer::request::utils
         template <typename T, typename... Ts>
         struct contains<T, std::variant<Ts...>>
         {
-            static constexpr auto value = (std::is_same_v<T, Ts> || ...);
+            static constexpr auto value = (std::same_as<T, Ts> || ...);
         };
 
         template <typename T, bool Terminated>
@@ -41,7 +41,11 @@ namespace saucer::request::utils
     } // namespace impl
 
     template <typename T, bool Terminated = false>
-    static constexpr auto tag = std::string_view{impl::tag<T, Terminated>.data(), impl::tag<T, Terminated>.size()};
+    static constexpr auto tag = []
+    {
+        static constexpr auto content = impl::tag<T, Terminated>;
+        return std::string_view{content.data(), content.size()};
+    }();
 
     template <typename T>
     static constexpr auto is_request = impl::contains<T, request>::value;
