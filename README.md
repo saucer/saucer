@@ -86,15 +86,14 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!  
   
-  * Community Bindings:
-
-    > [!NOTE]
-    > These bindings are maintained by the community!
-
+  * Community Bindings
+    
     | Language | Repository                         |
     | -------- | ---------------------------------- |
     | Java     | https://github.com/saucer/saucer4j |
     | PHP      | https://github.com/boson-php       |
+
+    _Please note: All bindings are community maintained!_
 
 * 🦺 Thread-Safe
 
