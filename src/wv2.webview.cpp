@@ -19,21 +19,21 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs)
-        : window(prefs), extensible(this), m_attributes(prefs.attributes), m_impl(std::make_unique<impl>())
+    webview::webview(const options &opts)
+        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
         m_impl->hook = {window::m_impl->hwnd.get(), impl::wnd_proc};
-        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), prefs);
+        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), opts);
 
         m_impl->web_view->get_Settings(&m_impl->settings);
         m_impl->settings->put_IsStatusBarEnabled(false);
 
-        if (ComPtr<ICoreWebView2Settings2> settings; !prefs.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
+        if (ComPtr<ICoreWebView2Settings2> settings; !opts.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
         {
-            settings->put_UserAgent(utils::widen(prefs.user_agent).c_str());
+            settings->put_UserAgent(utils::widen(opts.user_agent).c_str());
         }
 
         if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
@@ -41,10 +41,26 @@ namespace saucer
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
-        auto resource_requested = [this](auto, auto *args)
+        auto resource_requested = [this](auto, ICoreWebView2WebResourceRequestedEventArgs *args)
         {
-            m_impl->scheme_handler(args, this);
-            return S_OK;
+            ComPtr<ICoreWebView2WebResourceRequest> request;
+
+            if (!SUCCEEDED(args->get_Request(&request)))
+            {
+                return S_OK;
+            }
+
+            utils::string_handle raw;
+            request->get_Uri(&raw.reset());
+
+            auto url = uri::parse(utils::narrow(raw.get()));
+
+            if (!url)
+            {
+                return S_OK;
+            }
+
+            return m_impl->scheme_handler(this, {.raw = args, .request = std::move(request), .url = std::move(url.value())});
         };
 
         m_impl->web_view->add_WebResourceRequested(Callback<ResourceRequested>(resource_requested).Get(), nullptr);
@@ -71,8 +87,7 @@ namespace saucer
 
             auto func = [this, args, deferral]
             {
-                auto request = navigation{{args}};
-
+                auto request = navigation{{.request = args}};
                 m_events.get<web_event::navigate>().fire(request).find(policy::block);
                 deferral->Complete();
             };
@@ -89,7 +104,7 @@ namespace saucer
             m_impl->dom_loaded = false;
             m_parent->post([this] { m_events.get<web_event::load>().fire(state::started); });
 
-            auto request = navigation{{args}};
+            auto request = navigation{{.request = args}};
 
             if (m_events.get<web_event::navigate>().fire(request).find(policy::block))
             {
@@ -204,7 +219,7 @@ namespace saucer
         return static_cast<bool>(rtn);
     }
 
-    std::string webview::url() const
+    std::optional<uri> webview::url() const
     {
         if (!m_parent->thread_safe())
         {
@@ -214,7 +229,7 @@ namespace saucer
         utils::string_handle url;
         m_impl->web_view->get_Source(&url.reset());
 
-        return utils::narrow(url.get());
+        return uri::parse(utils::narrow(url.get()));
     }
 
     bool webview::context_menu() const
@@ -339,27 +354,14 @@ namespace saucer
         controller->put_DefaultBackgroundColor({.A = a, .R = r, .G = g, .B = b});
     }
 
-    void webview::set_file(const fs::path &file)
-    {
-        auto error     = std::error_code{};
-        auto canonical = fs::canonical(file, error);
-
-        if (error)
-        {
-            return;
-        }
-
-        set_url(std::format("file://{}", canonical.string()));
-    }
-
-    void webview::set_url(const std::string &url)
+    void webview::set_url(const uri &url)
     {
         if (!m_parent->thread_safe())
         {
             return m_parent->dispatch([this, url] { return set_url(url); });
         }
 
-        m_impl->web_view->Navigate(utils::widen(url).c_str());
+        m_impl->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
     void webview::back()

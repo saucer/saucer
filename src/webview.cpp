@@ -78,7 +78,7 @@ namespace saucer
 
     void webview::serve(fs::path file)
     {
-        set_url(uri::make({.path = std::move(file), .scheme = "saucer", .host = "embedded"}));
+        set_url(uri::make({.scheme = "saucer", .host = "embedded", .path = std::move(file)}));
     }
 
     void webview::embed(embedded_files files)

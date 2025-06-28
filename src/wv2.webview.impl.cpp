@@ -46,28 +46,28 @@ namespace saucer
         return instance;
     }
 
-    void webview::impl::create_webview(application *app, HWND hwnd, preferences prefs)
+    void webview::impl::create_webview(application *app, HWND hwnd, options opts)
     {
-        if (!prefs.hardware_acceleration)
+        if (!opts.hardware_acceleration)
         {
-            prefs.browser_flags.emplace("--disable-gpu");
+            opts.browser_flags.emplace("--disable-gpu");
         }
 
-        const auto args        = prefs.browser_flags | std::views::join_with(' ') | std::ranges::to<std::string>();
+        const auto args        = opts.browser_flags | std::views::join_with(' ') | std::ranges::to<std::string>();
         const auto env_options = impl::env_options();
 
         env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
 
-        if (prefs.persistent_cookies && prefs.storage_path.empty())
+        if (opts.persistent_cookies && opts.storage_path.empty())
         {
-            prefs.storage_path = fs::current_path() / ".saucer";
+            opts.storage_path = fs::current_path() / ".saucer";
 
             std::error_code ec{};
-            fs::create_directories(prefs.storage_path, ec);
+            fs::create_directories(opts.storage_path, ec);
 
-            SetFileAttributesW(prefs.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
+            SetFileAttributesW(opts.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
         }
-        else if (prefs.storage_path.empty())
+        else if (opts.storage_path.empty())
         {
             static constexpr auto hash_size = 32;
 
@@ -86,8 +86,8 @@ namespace saucer
                 assert(false && "Failed to compute hash of id");
             }
 
-            prefs.storage_path = std::filesystem::temp_directory_path() / std::format(L"saucer-{}", hash);
-            temp_path          = prefs.storage_path;
+            opts.storage_path = std::filesystem::temp_directory_path() / std::format(L"saucer-{}", hash);
+            temp_path         = opts.storage_path;
         }
 
         auto created = [this](auto, auto *result)
@@ -119,7 +119,7 @@ namespace saucer
             return S_OK;
         };
 
-        const auto storage_path = prefs.storage_path.wstring();
+        const auto storage_path = opts.storage_path.wstring();
         const auto status       = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), env_options.Get(),
                                                                            Callback<EnvironmentCompleted>(completed).Get());
 
@@ -136,27 +136,9 @@ namespace saucer
         web_view->get_BrowserProcessId(&browser_pid);
     }
 
-    HRESULT webview::impl::scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *args, webview *self)
+    HRESULT webview::impl::scheme_handler(webview *self, const scheme_options &opts)
     {
-        ComPtr<ICoreWebView2WebResourceRequest> request;
-
-        if (!SUCCEEDED(args->get_Request(&request)))
-        {
-            return S_OK;
-        }
-
-        utils::string_handle raw;
-        request->get_Uri(&raw.reset());
-
-        auto url = utils::narrow(raw.get());
-        auto end = url.find(':');
-
-        if (end == std::string::npos)
-        {
-            return S_OK;
-        }
-
-        auto scheme = schemes.find(url.substr(0, end));
+        auto scheme = schemes.find(opts.url.scheme());
 
         if (scheme == schemes.end())
         {
@@ -172,19 +154,19 @@ namespace saucer
 
         ComPtr<ICoreWebView2Deferral> deferral;
 
-        if (!SUCCEEDED(args->GetDeferral(&deferral)))
+        if (!SUCCEEDED(opts.raw->GetDeferral(&deferral)))
         {
             return S_OK;
         }
 
         ComPtr<IStream> content;
 
-        if (!SUCCEEDED(request->get_Content(&content)))
+        if (!SUCCEEDED(opts.request->get_Content(&content)))
         {
             return S_OK;
         }
 
-        auto resolve = [environment, args, deferral](const scheme::response &response)
+        auto resolve = [environment, deferral, request = opts.raw](const scheme::response &response)
         {
             const auto *raw = reinterpret_cast<const BYTE *>(response.data.data());
             const auto size = static_cast<const UINT>(response.data.size());
@@ -202,11 +184,11 @@ namespace saucer
             ComPtr<ICoreWebView2WebResourceResponse> result;
             environment->CreateWebResourceResponse(buffer.Get(), response.status, L"OK", combined.c_str(), &result);
 
-            args->put_Response(result.Get());
+            request->put_Response(result.Get());
             deferral->Complete();
         };
 
-        auto reject = [environment, args, deferral](const scheme::error &error)
+        auto reject = [environment, deferral, request = opts.raw](const scheme::error &error)
         {
             auto name  = rebind::utils::find_enum_name(error).value_or("unknown");
             auto value = std::to_underlying(error);
@@ -214,7 +196,7 @@ namespace saucer
             ComPtr<ICoreWebView2WebResourceResponse> result;
             environment->CreateWebResourceResponse(nullptr, value, utils::widen(std::string{name}).c_str(), L"", &result);
 
-            args->put_Response(result.Get());
+            request->put_Response(result.Get());
             deferral->Complete();
         };
 
@@ -229,7 +211,7 @@ namespace saucer
 
         auto &resolver = scheme->second;
 
-        auto req      = scheme::request{{.request = request, .body = content}};
+        auto req      = scheme::request{{.request = opts.request, .body = content}};
         auto executor = scheme::executor{forward(std::move(resolve)), forward(std::move(reject))};
 
         std::invoke(resolver, std::move(req), std::move(executor));
@@ -309,7 +291,14 @@ namespace saucer
         auto handler = [self](auto...)
         {
             auto url = self->url();
-            self->m_parent->post([self, url] { self->m_events.get<web_event::navigated>().fire(url); });
+
+            if (!url.has_value())
+            {
+                assert(false);
+                return S_OK;
+            }
+
+            self->m_parent->post([self, url] { self->m_events.get<web_event::navigated>().fire(url.value()); });
 
             return S_OK;
         };
@@ -322,6 +311,11 @@ namespace saucer
 
     template <>
     void webview::impl::setup<web_event::navigate>(webview *)
+    {
+    }
+
+    template <>
+    void webview::impl::setup<web_event::request>(webview *)
     {
     }
 

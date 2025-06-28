@@ -20,6 +20,7 @@ namespace saucer
     using ResourceRequested    = ICoreWebView2WebResourceRequestedEventHandler;
     using TitleChanged         = ICoreWebView2DocumentTitleChangedEventHandler;
     using NavigationComplete   = ICoreWebView2NavigationCompletedEventHandler;
+    using PermissionRequested  = ICoreWebView2PermissionRequestedEventHandler;
     using WebMessageHandler    = ICoreWebView2WebMessageReceivedEventHandler;
     using NavigationStarting   = ICoreWebView2NavigationStartingEventHandler;
     using NewWindowRequest     = ICoreWebView2NewWindowRequestedEventHandler;
@@ -27,6 +28,15 @@ namespace saucer
     using FaviconChanged       = ICoreWebView2FaviconChangedEventHandler;
     using GetFavicon           = ICoreWebView2GetFaviconCompletedHandler;
     using SourceChanged        = ICoreWebView2SourceChangedEventHandler;
+
+    struct scheme_options
+    {
+        ICoreWebView2WebResourceRequestedEventArgs *raw;
+        ComPtr<ICoreWebView2WebResourceRequest> request;
+
+      public:
+        uri url;
+    };
 
     struct webview::impl
     {
@@ -53,8 +63,8 @@ namespace saucer
         utils::wnd_proc_hook hook;
 
       public:
-        void create_webview(application *, HWND, preferences);
-        HRESULT scheme_handler(ICoreWebView2WebResourceRequestedEventArgs *, webview *);
+        void create_webview(application *, HWND, options);
+        HRESULT scheme_handler(webview *, const scheme_options &);
 
       public:
         template <web_event>
