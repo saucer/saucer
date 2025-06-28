@@ -17,7 +17,6 @@ namespace saucer
 
       public:
         navigation(const navigation &);
-        navigation(navigation &&) noexcept;
 
       public:
         ~navigation();

@@ -4,9 +4,7 @@ namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
-
-    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+    request::request(const request &other) : request(*other.m_impl) {}
 
     request::~request() = default;
 

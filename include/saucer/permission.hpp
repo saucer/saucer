@@ -31,7 +31,6 @@ namespace saucer::permission
 
       public:
         request(const request &);
-        request(request &&) noexcept;
 
       public:
         ~request();

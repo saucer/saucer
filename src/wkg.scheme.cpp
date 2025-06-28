@@ -4,9 +4,7 @@ namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
-
-    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+    request::request(const request &other) : request(*other.m_impl) {}
 
     request::~request() = default;
 
@@ -45,12 +43,13 @@ namespace saucer::scheme
     std::map<std::string, std::string> request::headers() const
     {
         auto *const headers = webkit_uri_scheme_request_get_http_headers(m_impl->request.get());
+        auto rtn            = std::map<std::string, std::string>{};
 
-        std::map<std::string, std::string> rtn;
-
-        soup_message_headers_foreach(
-            headers, [](const auto *name, const auto *value, gpointer data)
-            { reinterpret_cast<decltype(rtn) *>(data)->emplace(name, value); }, &rtn);
+        auto emplace = [](const auto *name, const auto *value, gpointer data)
+        {
+            reinterpret_cast<decltype(rtn) *>(data)->emplace(name, value);
+        };
+        soup_message_headers_foreach(headers, emplace, &rtn);
 
         return rtn;
     }

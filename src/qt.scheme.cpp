@@ -12,33 +12,19 @@ namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
-
-    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+    request::request(const request &other) : request(*other.m_impl) {}
 
     request::~request() = default;
 
     uri request::url() const
     {
         const auto request = m_impl->request->write();
-
-        if (!request.value())
-        {
-            return {};
-        }
-
         return uri::impl{request.value()->requestUrl()};
     }
 
     std::string request::method() const
     {
         const auto request = m_impl->request->write();
-
-        if (!request.value())
-        {
-            return {};
-        }
-
         return request.value()->requestMethod().toStdString();
     }
 
@@ -51,12 +37,6 @@ namespace saucer::scheme
     std::map<std::string, std::string> request::headers() const
     {
         const auto request = m_impl->request->write();
-
-        if (!request.value())
-        {
-            return {};
-        }
-
         const auto headers = request.value()->requestHeaders();
 
         auto transform = [&headers](auto &item)

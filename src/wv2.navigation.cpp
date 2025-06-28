@@ -7,9 +7,7 @@ namespace saucer
 {
     navigation::navigation(impl data) : m_impl(std::make_unique<impl>(data)) {}
 
-    navigation::navigation(const navigation &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
-
-    navigation::navigation(navigation &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+    navigation::navigation(const navigation &other) : navigation(*other.m_impl) {}
 
     navigation::~navigation() = default;
 

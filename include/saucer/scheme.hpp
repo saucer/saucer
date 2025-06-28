@@ -43,7 +43,6 @@ namespace saucer::scheme
 
       public:
         request(const request &);
-        request(request &&) noexcept;
 
       public:
         ~request();
