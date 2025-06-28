@@ -1,6 +1,5 @@
 #pragma once
 
-#include "utils/tag.hpp"
 #include "modules/module.hpp"
 
 #include "app.hpp"
@@ -154,7 +153,7 @@ namespace saucer
         [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
 
         template <window_event Event>
-            requires std::is_void_v<typename events::event<Event>::result>
-        [[sc::thread_safe]] events::event<Event>::future await(event_tag<Event> = {});
+        [[sc::thread_safe]] events::event<Event>::future
+        await(events::event<Event>::future_args result = events::event<Event>::future_args::empty);
     };
 } // namespace saucer

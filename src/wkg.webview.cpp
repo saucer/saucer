@@ -505,16 +505,15 @@ namespace saucer
     }
 
     template <web_event Event>
-        requires std::is_void_v<typename webview::events::event<Event>::result>
-    webview::events::event<Event>::future webview::await(event_tag<Event>)
+    webview::events::event<Event>::future webview::await(events::event<Event>::future_args result)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this] { return await<Event>(); });
+            return m_parent->dispatch([this, result = std::move(result)] mutable { return await<Event>(std::move(result)); });
         }
 
         m_impl->setup<Event>(this);
-        return m_events.get<Event>().await();
+        return m_events.get<Event>().await(std::move(result));
     }
 
     void webview::register_scheme(const std::string &name)

@@ -446,16 +446,15 @@ namespace saucer
     }
 
     template <window_event Event>
-        requires std::is_void_v<typename window::events::event<Event>::result>
-    window::events::event<Event>::future window::await(event_tag<Event>)
+    window::events::event<Event>::future window::await(events::event<Event>::future_args result)
     {
         if (!m_parent->thread_safe())
         {
-            return m_parent->dispatch([this] { return await<Event>(); });
+            return m_parent->dispatch([this, result = std::move(result)] mutable { return await<Event>(std::move(result)); });
         }
 
         m_impl->setup<Event>(this);
-        return m_events.get<Event>().await();
+        return m_events.get<Event>().await(std::move(result));
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS;
