@@ -2,7 +2,9 @@
 
 #include "win32.utils.hpp"
 #include "win32.app.impl.hpp"
+
 #include "wv2.scheme.impl.hpp"
+#include "wv2.permission.impl.hpp"
 
 #include "scripts.hpp"
 #include "request.hpp"
@@ -256,6 +258,37 @@ namespace saucer
         }
 
         return CallWindowProcW(impl->hook.original(), hwnd, msg, w_param, l_param);
+    }
+
+    template <>
+    void webview::impl::setup<web_event::permission>(webview *self)
+    {
+        auto &event = self->m_events.get<web_event::permission>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto, ICoreWebView2PermissionRequestedEventArgs *args)
+        {
+            ComPtr<ICoreWebView2Deferral> deferral;
+            args->GetDeferral(&deferral);
+
+            auto request = permission::request{{
+                .request  = args,
+                .deferral = std::move(deferral),
+            }};
+
+            self->m_parent->post([self, request] { self->m_events.get<web_event::permission>().fire(request); });
+
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_PermissionRequested(Callback<PermissionRequested>(handler).Get(), &token);
+
+        event.on_clear([this, token] { web_view->remove_PermissionRequested(token); });
     }
 
     template <>

@@ -21,4 +21,10 @@ namespace saucer
     {
         return m_impl.get();
     }
+
+    template <>
+    natives<permission::request, false> permission::request::native<false>() const
+    {
+        return m_impl.get();
+    }
 } // namespace saucer

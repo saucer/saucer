@@ -29,4 +29,10 @@ namespace saucer
         ICoreWebView2_2 *webview;
         ICoreWebView2Controller *controller;
     };
+
+    template <>
+    struct stable_natives<permission::request>
+    {
+        ICoreWebView2PermissionRequestedEventArgs *request;
+    };
 } // namespace saucer
