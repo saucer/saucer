@@ -31,8 +31,8 @@ namespace saucer
         ~uri();
 
       public:
-        uri &operator=(const uri &);
-        uri &operator=(uri &&) noexcept;
+        uri &operator=(uri) noexcept;
+        friend void swap(uri &, uri &) noexcept;
 
       public:
         [[nodiscard]] std::string string() const;

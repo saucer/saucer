@@ -30,8 +30,8 @@ namespace saucer
         ~icon();
 
       public:
-        icon &operator=(const icon &);
-        icon &operator=(icon &&) noexcept;
+        icon &operator=(icon) noexcept;
+        friend void swap(icon &, icon &) noexcept;
 
       public:
         [[nodiscard]] bool empty() const;

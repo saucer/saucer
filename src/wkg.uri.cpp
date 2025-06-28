@@ -2,41 +2,31 @@
 
 #include "gtk.utils.hpp"
 
-#include <cassert>
-
 namespace saucer
 {
     uri::uri() : m_impl(std::move(make({}).m_impl)) {}
 
     uri::uri(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    uri::uri(const uri &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
+    uri::uri(const uri &other) : uri(*other.m_impl) {}
 
     uri::uri(uri &&other) noexcept : uri()
     {
-        std::swap(m_impl, other.m_impl);
+        swap(*this, other);
     }
 
     uri::~uri() = default;
 
-    uri &uri::operator=(const uri &other)
+    uri &uri::operator=(uri other) noexcept
     {
-        if (this != &other)
-        {
-            m_impl = std::make_unique<impl>(*other.m_impl);
-        }
-
+        swap(*this, other);
         return *this;
     }
 
-    uri &uri::operator=(uri &&other) noexcept
+    void swap(uri &first, uri &second) noexcept
     {
-        if (this != &other)
-        {
-            std::swap(m_impl, other.m_impl);
-        }
-
-        return *this;
+        using std::swap;
+        swap(first.m_impl, second.m_impl);
     }
 
     std::string uri::string() const
