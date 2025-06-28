@@ -32,6 +32,16 @@ namespace saucer
         return m_impl->uri.toString().toStdString();
     }
 
+    fs::path uri::path() const
+    {
+        return m_impl->uri.path().toStdString();
+    }
+
+    std::string uri::scheme() const
+    {
+        return m_impl->uri.scheme().toStdString();
+    }
+
     std::optional<std::string> uri::host() const
     {
         auto rtn = m_impl->uri.host();
@@ -54,16 +64,6 @@ namespace saucer
         return m_impl->uri.query().toStdString();
     }
 
-    fs::path uri::path() const
-    {
-        return m_impl->uri.path().toStdString();
-    }
-
-    std::string uri::scheme() const
-    {
-        return m_impl->uri.scheme().toStdString();
-    }
-
     std::optional<std::size_t> uri::port() const
     {
         auto rtn = m_impl->uri.port();
@@ -74,6 +74,30 @@ namespace saucer
         }
 
         return static_cast<std::size_t>(rtn);
+    }
+
+    std::optional<std::string> uri::user() const
+    {
+        auto rtn = m_impl->uri.userName();
+
+        if (rtn.isEmpty())
+        {
+            return std::nullopt;
+        }
+
+        return rtn.toStdString();
+    }
+
+    std::optional<std::string> uri::password() const
+    {
+        auto rtn = m_impl->uri.password();
+
+        if (rtn.isEmpty())
+        {
+            return std::nullopt;
+        }
+
+        return rtn.toStdString();
     }
 
     std::optional<uri> uri::from(const fs::path &file)

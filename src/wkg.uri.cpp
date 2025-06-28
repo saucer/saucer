@@ -34,6 +34,16 @@ namespace saucer
         return std::string{utils::g_str_ptr{g_uri_to_string(m_impl->uri.get())}.get()};
     }
 
+    fs::path uri::path() const
+    {
+        return g_uri_get_path(m_impl->uri.get());
+    }
+
+    std::string uri::scheme() const
+    {
+        return g_uri_get_scheme(m_impl->uri.get());
+    }
+
     std::optional<std::string> uri::host() const
     {
         const auto *rtn = g_uri_get_host(m_impl->uri.get());
@@ -58,16 +68,6 @@ namespace saucer
         return rtn;
     }
 
-    fs::path uri::path() const
-    {
-        return g_uri_get_path(m_impl->uri.get());
-    }
-
-    std::string uri::scheme() const
-    {
-        return g_uri_get_scheme(m_impl->uri.get());
-    }
-
     std::optional<std::size_t> uri::port() const
     {
         const auto rtn = g_uri_get_port(m_impl->uri.get());
@@ -78,6 +78,30 @@ namespace saucer
         }
 
         return static_cast<std::size_t>(rtn);
+    }
+
+    std::optional<std::string> uri::user() const
+    {
+        const auto *rtn = g_uri_get_user(m_impl->uri.get());
+
+        if (!rtn)
+        {
+            return std::nullopt;
+        }
+
+        return rtn;
+    }
+
+    std::optional<std::string> uri::password() const
+    {
+        const auto *rtn = g_uri_get_password(m_impl->uri.get());
+
+        if (!rtn)
+        {
+            return std::nullopt;
+        }
+
+        return rtn;
     }
 
     std::optional<uri> uri::from(const fs::path &file)

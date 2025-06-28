@@ -38,16 +38,19 @@ namespace saucer
         [[nodiscard]] std::string string() const;
 
       public:
-        [[nodiscard]] std::optional<std::string> host() const;
-        [[nodiscard]] std::optional<std::string> query() const;
-
-      public:
-      public:
         [[nodiscard]] fs::path path() const;
         [[nodiscard]] std::string scheme() const;
 
       public:
+        [[nodiscard]] std::optional<std::string> host() const;
+        [[nodiscard]] std::optional<std::string> query() const;
+
+      public:
         [[nodiscard]] std::optional<std::size_t> port() const;
+
+      public:
+        [[nodiscard]] std::optional<std::string> user() const;
+        [[nodiscard]] std::optional<std::string> password() const;
 
       public:
         static std::optional<uri> from(const fs::path &file);
