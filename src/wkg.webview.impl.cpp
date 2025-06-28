@@ -16,6 +16,19 @@
 
 namespace saucer
 {
+    template <auto Func>
+    static constexpr auto is_media_permission = [](gpointer raw) -> gboolean
+    {
+        if (!WEBKIT_IS_USER_MEDIA_PERMISSION_REQUEST(raw))
+        {
+            return false;
+        }
+
+        auto *const request = WEBKIT_USER_MEDIA_PERMISSION_REQUEST(raw);
+
+        return Func(request);
+    };
+
     template <>
     void saucer::webview::impl::setup<web_event::permission>(webview *self)
     {
@@ -30,33 +43,36 @@ namespace saucer
         {
             using enum permission::type;
 
-            static constexpr auto mapping = std::array<std::pair<gboolean (*)(gpointer), permission::type>, 8>{
+            static constexpr auto mappings = std::array<std::pair<gboolean (*)(gpointer), permission::type>, 9>{
                 std::make_pair(WEBKIT_IS_CLIPBOARD_PERMISSION_REQUEST, clipboard),
                 std::make_pair(WEBKIT_IS_DEVICE_INFO_PERMISSION_REQUEST, device_info),
                 std::make_pair(WEBKIT_IS_GEOLOCATION_PERMISSION_REQUEST, location),
-                std::make_pair(WEBKIT_IS_MEDIA_KEY_SYSTEM_PERMISSION_REQUEST, media),
+                std::make_pair(WEBKIT_IS_MEDIA_KEY_SYSTEM_PERMISSION_REQUEST, audio_media),
                 std::make_pair(WEBKIT_IS_NOTIFICATION_PERMISSION_REQUEST, notification),
-                std::make_pair(WEBKIT_IS_POINTER_LOCK_PERMISSION_REQUEST, pointer),
-                std::make_pair(WEBKIT_IS_USER_MEDIA_PERMISSION_REQUEST, devices),
-                std::make_pair(WEBKIT_IS_WEBSITE_DATA_ACCESS_PERMISSION_REQUEST, third_party_cookies),
+                std::make_pair(WEBKIT_IS_POINTER_LOCK_PERMISSION_REQUEST, mouse_lock),
+                std::make_pair(is_media_permission<webkit_user_media_permission_is_for_audio_device>, audio_media),
+                std::make_pair(is_media_permission<webkit_user_media_permission_is_for_video_device>, video_media),
+                std::make_pair(is_media_permission<webkit_user_media_permission_is_for_display_device>, desktop_media),
             };
 
-            auto type = permission::type{};
-            auto req  = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw);
-
-            for (const auto &[check, result] : mapping)
+            auto find_mapping = [raw](const auto &entry)
             {
-                if (check(raw))
-                {
-                    type = result;
-                    break;
-                }
+                const auto &[check, result] = entry;
+                return check(raw);
+            };
+
+            const auto *mapping = std::ranges::find_if(mappings, find_mapping);
+
+            if (mapping == mappings.end())
+            {
+                assert(false && "Could not determine permission-type");
+                return;
             }
 
             auto request = permission::request{{
-                .request = std::move(req),
+                .request = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw),
                 .url     = self->url()->string(),
-                .type    = type,
+                .type    = mapping->second,
             }};
 
             self->m_events.get<web_event::permission>().fire(request);

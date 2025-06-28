@@ -4,9 +4,7 @@ namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : m_impl(std::make_unique<impl>(*other.m_impl)) {}
-
-    request::request(request &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+    request::request(const request &other) : request(*other.m_impl) {}
 
     request::~request() = default;
 
@@ -31,13 +29,15 @@ namespace saucer::permission
         case Notifications:
             return notification;
         case MouseLock:
-            return pointer;
+            return mouse_lock;
         case MediaAudioCapture:
+            return audio_media;
         case MediaVideoCapture:
+            return video_media;
         case MediaAudioVideoCapture:
         case DesktopVideoCapture:
         case DesktopAudioVideoCapture:
-            return devices;
+            return desktop_media;
         case Unsupported:
             assert(false && "Unsupported permission type");
         }

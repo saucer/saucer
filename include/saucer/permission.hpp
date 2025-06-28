@@ -9,14 +9,14 @@ namespace saucer::permission
 {
     enum class type : std::uint8_t
     {
-        clipboard,
+        audio_media,
+        video_media,
+        desktop_media,
+        mouse_lock,
         device_info,
         location,
-        media,
+        clipboard,
         notification,
-        pointer,
-        devices,
-        third_party_cookies,
     };
 
     class request
