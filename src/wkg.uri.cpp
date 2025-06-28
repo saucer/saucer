@@ -56,18 +56,6 @@ namespace saucer
         return rtn;
     }
 
-    std::optional<std::string> uri::query() const
-    {
-        const auto *rtn = g_uri_get_query(m_impl->uri.get());
-
-        if (!rtn)
-        {
-            return std::nullopt;
-        }
-
-        return rtn;
-    }
-
     std::optional<std::size_t> uri::port() const
     {
         const auto rtn = g_uri_get_port(m_impl->uri.get());
@@ -137,7 +125,7 @@ namespace saucer
                         opts.host.transform(&std::string::c_str).value_or(nullptr),                     //
                         opts.port.transform([](auto &&x) { return static_cast<int>(x); }).value_or(-1), //
                         opts.path.c_str(),                                                              //
-                        opts.query.transform(&std::string::c_str).value_or(nullptr),                    //
+                        nullptr,                                                                        //
                         nullptr                                                                         //
                         ),
         };

@@ -18,7 +18,9 @@ namespace saucer::permission
         using enum permission::type;
         using enum QWebEnginePermission::PermissionType;
 
-        switch (m_impl->request.permissionType())
+        const auto type = m_impl->request.permissionType();
+
+        switch (type)
         {
         case ClipboardReadWrite:
             return clipboard;
@@ -38,8 +40,8 @@ namespace saucer::permission
         case DesktopVideoCapture:
         case DesktopAudioVideoCapture:
             return desktop_media;
-        case Unsupported:
-            assert(false && "Unsupported permission type");
+        default:
+            return static_cast<permission::type>(std::to_underlying(unknown) + std::to_underlying(m_impl->request.permissionType()));
         }
     }
 

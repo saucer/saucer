@@ -3,6 +3,7 @@
 #include "qt.app.impl.hpp"
 #include "qt.window.impl.hpp"
 #include "qt.webview.impl.hpp"
+#include "qt.permission.impl.hpp"
 
 namespace saucer
 {
@@ -22,5 +23,11 @@ namespace saucer
     natives<webview, true> webview::native<true>() const
     {
         return {.webview = m_impl->web_view.get()};
+    }
+
+    template <>
+    natives<permission::request, true> permission::request::native<true>() const
+    {
+        return {.request = m_impl->request};
     }
 } // namespace saucer

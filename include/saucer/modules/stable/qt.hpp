@@ -28,4 +28,10 @@ namespace saucer
     {
         QWebEngineView *webview;
     };
+
+    template <>
+    struct stable_natives<permission::request>
+    {
+        QWebEnginePermission request;
+    };
 } // namespace saucer

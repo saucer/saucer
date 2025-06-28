@@ -54,16 +54,6 @@ namespace saucer
         return rtn.toStdString();
     }
 
-    std::optional<std::string> uri::query() const
-    {
-        if (!m_impl->uri.hasQuery())
-        {
-            return std::nullopt;
-        }
-
-        return m_impl->uri.query().toStdString();
-    }
-
     std::optional<std::size_t> uri::port() const
     {
         auto rtn = m_impl->uri.port();
@@ -128,7 +118,6 @@ namespace saucer
     {
         auto rtn = QUrl{};
 
-        rtn.setPath(QString::fromStdString(opts.path.string()));
         rtn.setScheme(QString::fromStdString(opts.scheme));
 
         if (opts.host.has_value())
@@ -136,15 +125,12 @@ namespace saucer
             rtn.setHost(QString::fromStdString(opts.host.value()));
         }
 
-        if (opts.query.has_value())
-        {
-            rtn.setQuery(QString::fromStdString(opts.query.value()));
-        }
-
         if (opts.port.has_value())
         {
             rtn.setPort(static_cast<int>(opts.port.value()));
         }
+
+        rtn.setPath(QString::fromStdString(opts.path.string()));
 
         return impl{rtn};
     }

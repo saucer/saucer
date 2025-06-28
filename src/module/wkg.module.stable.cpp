@@ -3,6 +3,7 @@
 #include "gtk.app.impl.hpp"
 #include "gtk.window.impl.hpp"
 #include "wkg.webview.impl.hpp"
+#include "wkg.permission.impl.hpp"
 
 namespace saucer
 {
@@ -22,5 +23,11 @@ namespace saucer
     natives<webview, true> webview::native<true>() const
     {
         return {.webview = m_impl->web_view};
+    }
+
+    template <>
+    natives<permission::request, true> permission::request::native<true>() const
+    {
+        return {.request = m_impl->request.get()};
     }
 } // namespace saucer

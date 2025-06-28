@@ -28,4 +28,10 @@ namespace saucer
     {
         WebKitWebView *webview;
     };
+
+    template <>
+    struct stable_natives<permission::request>
+    {
+        WebKitPermissionRequest *request;
+    };
 } // namespace saucer

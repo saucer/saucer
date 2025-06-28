@@ -55,24 +55,23 @@ namespace saucer
                 std::make_pair(is_media_permission<webkit_user_media_permission_is_for_display_device>, desktop_media),
             };
 
+            auto type = unknown;
+
             auto find_mapping = [raw](const auto &entry)
             {
                 const auto &[check, result] = entry;
                 return check(raw);
             };
 
-            const auto *mapping = std::ranges::find_if(mappings, find_mapping);
-
-            if (mapping == mappings.end())
+            if (const auto *mapping = std::ranges::find_if(mappings, find_mapping); mapping != mappings.end())
             {
-                assert(false && "Could not determine permission-type");
-                return;
+                type = mapping->second;
             }
 
             auto request = permission::request{{
                 .request = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw),
                 .url     = self->url()->string(),
-                .type    = mapping->second,
+                .type    = type,
             }};
 
             self->m_events.get<web_event::permission>().fire(request);
