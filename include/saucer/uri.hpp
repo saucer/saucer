@@ -43,9 +43,6 @@ namespace saucer
 
       public:
         [[nodiscard]] std::optional<std::string> host() const;
-        [[nodiscard]] std::optional<std::string> query() const;
-
-      public:
         [[nodiscard]] std::optional<std::size_t> port() const;
 
       public:
@@ -62,14 +59,13 @@ namespace saucer
 
     struct saucer::uri::options
     {
-        fs::path path;
         std::string scheme;
 
       public:
         std::optional<std::string> host;
-        std::optional<std::string> query;
+        std::optional<std::size_t> port;
 
       public:
-        std::optional<std::size_t> port;
+        fs::path path;
     };
 } // namespace saucer
