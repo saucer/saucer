@@ -22,7 +22,7 @@ coco::stray start(saucer::application *app)
     // Add event callbacks
 
     webview.on<saucer::web_event::navigated>([](const auto &url) { //
-        std::println("New url: {}", url);
+        std::println("New url: {}", url.string());
     });
 
     webview.on<saucer::window_event::resize>([](auto width, auto height) { //
@@ -102,7 +102,7 @@ coco::stray start(saucer::application *app)
     std::println("Random: {}", co_await webview.evaluate<float>("Math.random()"));
     std::println("Pow(5,2): {}", co_await webview.evaluate<int>("Math.pow({},{})", 5, 2));
 
-    std::println("Func1: {}", co_await webview.evaluate<int>("await saucer.exposed.func1({}, {})", 1, 2));
+    std::println("Func1: {}", co_await webview.evaluate<int>("await saucer.exposed.func1({}, {})", 1, saucer::unquoted{"2"}));
     std::println("Func2: {}", co_await webview.evaluate<int>("await saucer.exposed.func2({})", saucer::make_args(2, 3)));
 
     std::println("Func3: {}", co_await webview.evaluate<double>("await saucer.exposed.func3({}, {})", 3, 4));
@@ -110,6 +110,11 @@ coco::stray start(saucer::application *app)
     std::println("Func5: {}", co_await webview.evaluate<double>("await saucer.exposed.func5({}, {})", 5, 6));
 
     std::println("Func6: {}", co_await webview.evaluate<int>("await saucer.exposed.func6({})", custom_data{10}));
+
+    do
+    {
+        co_await webview.await<saucer::window_event::close>({saucer::policy::block});
+    } while (!co_await webview.evaluate<bool>("confirm({})", "Allow close after confirming this dialog"));
 
     co_await app->finish(); // Is resolved when the last window is closed
 }
