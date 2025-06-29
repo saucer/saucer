@@ -2,13 +2,13 @@
 
 namespace saucer::permission
 {
-    request::request(impl data) : m_impl(std::make_unique<impl>(data)) {}
+    request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::request(const request &other) : request(*other.m_impl) {}
 
     request::~request() = default;
 
-    std::string request::url() const // NOLINT(*-static)
+    uri request::url() const // NOLINT(*-static)
     {
         return {};
     }

@@ -12,7 +12,7 @@ namespace saucer::permission
         utils::g_object_ptr<WebKitPermissionRequest> request;
 
       public:
-        std::string url;
+        uri url;
         permission::type type;
     };
 } // namespace saucer::permission

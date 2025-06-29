@@ -1,5 +1,7 @@
 #include "qt.permission.impl.hpp"
 
+#include "qt.uri.impl.hpp"
+
 namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
@@ -8,9 +10,9 @@ namespace saucer::permission
 
     request::~request() = default;
 
-    std::string request::url() const
+    uri request::url() const
     {
-        return m_impl->request.origin().toString().toStdString();
+        return uri::impl{m_impl->request.origin()};
     }
 
     permission::type request::type() const

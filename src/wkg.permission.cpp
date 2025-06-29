@@ -8,7 +8,7 @@ namespace saucer::permission
 
     request::~request() = default;
 
-    std::string request::url() const
+    uri request::url() const
     {
         return m_impl->url;
     }

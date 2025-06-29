@@ -70,7 +70,7 @@ namespace saucer
 
             auto request = permission::request{{
                 .request = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw),
-                .url     = self->url()->string(),
+                .url     = self->url().value_or({}),
                 .type    = type,
             }};
 

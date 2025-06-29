@@ -8,7 +8,7 @@ namespace saucer
 
     navigation::~navigation() = default;
 
-    std::string navigation::url() const // NOLINT(*-static)
+    uri navigation::url() const // NOLINT(*-static)
     {
         return {};
     }

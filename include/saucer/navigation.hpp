@@ -1,7 +1,8 @@
 #pragma once
 
+#include "uri.hpp"
+
 #include <memory>
-#include <string>
 
 namespace saucer
 {
@@ -22,7 +23,7 @@ namespace saucer
         ~navigation();
 
       public:
-        [[nodiscard]] std::string url() const;
+        [[nodiscard]] uri url() const;
 
       public:
         [[nodiscard]] bool new_window() const;

@@ -1,5 +1,6 @@
 #include "qt.navigation.impl.hpp"
 
+#include "qt.uri.impl.hpp"
 #include "utils/overload.hpp"
 
 namespace saucer
@@ -10,14 +11,14 @@ namespace saucer
 
     navigation::~navigation() = default;
 
-    std::string navigation::url() const
+    uri navigation::url() const
     {
         overload visitor = {
-            [](QWebEngineNewWindowRequest *request) { return request->requestedUrl().toString().toStdString(); },
-            [](QWebEngineNavigationRequest *request) { return request->url().toString().toStdString(); },
+            [](QWebEngineNewWindowRequest *request) { return request->requestedUrl(); },
+            [](QWebEngineNavigationRequest *request) { return request->url(); },
         };
 
-        return std::visit(visitor, m_impl->request);
+        return uri::impl{std::visit(visitor, m_impl->request)};
     }
 
     bool navigation::new_window() const
