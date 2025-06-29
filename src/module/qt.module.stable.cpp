@@ -28,6 +28,10 @@ namespace saucer
     template <>
     natives<permission::request, true> permission::request::native<true>() const
     {
+#ifdef SAUCER_QT6
         return {.request = m_impl->request};
+#else
+        return {};
+#endif
     }
 } // namespace saucer

@@ -32,6 +32,8 @@ namespace saucer
     template <>
     struct stable_natives<permission::request>
     {
+#ifdef SAUCER_QT6
         QWebEnginePermission request;
+#endif
     };
 } // namespace saucer

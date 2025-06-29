@@ -87,8 +87,9 @@ namespace saucer
     }
 
     template <>
-    void webview::impl::setup<web_event::permission>(webview *self)
+    void webview::impl::setup<web_event::permission>([[maybe_unused]] webview *self)
     {
+#ifdef SAUCER_QT6
         auto &event = self->m_events.get<web_event::permission>();
 
         if (!event.empty())
@@ -112,6 +113,7 @@ namespace saucer
 
         const auto id = web_page->connect(web_page.get(), &QWebEnginePage::permissionRequested, handler);
         event.on_clear([this, id] { web_page->disconnect(id); });
+#endif
     }
 
     template <>

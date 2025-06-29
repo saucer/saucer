@@ -50,7 +50,9 @@ namespace saucer
         m_impl->profile->setPersistentCookiesPolicy(opts.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
                                                                             : QWebEngineProfile::NoPersistentCookies);
 
+#ifdef SAUCER_QT6
         m_impl->profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::AskEveryTime);
+#endif
 
         m_impl->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
