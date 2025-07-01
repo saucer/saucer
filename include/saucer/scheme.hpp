@@ -12,13 +12,12 @@
 
 namespace saucer::scheme
 {
-    enum class error : std::uint8_t
+    enum class error : std::int16_t
     {
-        not_found,
-        invalid,
-        aborted,
-        denied,
-        failed,
+        not_found = 404,
+        invalid   = 400,
+        denied    = 401,
+        failed    = -1,
     };
 
     struct response
@@ -57,5 +56,5 @@ namespace saucer::scheme
     };
 
     using executor = saucer::executor<response, error>;
-    using resolver = std::function<void(request, executor)>;
+    using resolver = std::function<void(const request &, const executor &)>;
 } // namespace saucer::scheme
