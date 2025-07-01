@@ -8,8 +8,9 @@
 
 namespace saucer::permission
 {
-    enum class type : std::uint16_t
+    enum class type : std::uint8_t
     {
+        unknown       = 0,
         audio_media   = 1 << 0,
         video_media   = 1 << 1,
         desktop_media = 1 << 2,
@@ -18,7 +19,6 @@ namespace saucer::permission
         location      = 1 << 5,
         clipboard     = 1 << 6,
         notification  = 1 << 7,
-        unknown       = 1 << 8,
     };
 
     class request

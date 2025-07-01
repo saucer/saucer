@@ -14,19 +14,51 @@
 #include <optional>
 #include <charconv>
 
+#include <flagpp/flags.hpp>
+
+template <>
+constexpr bool flagpp::enabled<saucer::permission::type> = true;
+
 namespace saucer
 {
-    template <auto Func>
-    static constexpr auto is_media_permission = [](gpointer raw) -> gboolean
+    template <auto Func, auto Value>
+    static constexpr auto permission_update = [](gpointer raw, permission::type &result) -> gboolean
+    {
+        const auto rtn = Func(raw);
+
+        if (rtn)
+        {
+            result |= Value;
+        }
+
+        return rtn;
+    };
+
+    static constexpr auto translate_media_permission = [](gpointer raw, permission::type &result) -> gboolean
     {
         if (!WEBKIT_IS_USER_MEDIA_PERMISSION_REQUEST(raw))
         {
             return false;
         }
 
-        auto *const request = WEBKIT_USER_MEDIA_PERMISSION_REQUEST(raw);
+        auto *const permission = WEBKIT_USER_MEDIA_PERMISSION_REQUEST(raw);
 
-        return Func(request);
+        if (webkit_user_media_permission_is_for_audio_device(permission))
+        {
+            result |= permission::type::audio_media;
+        }
+
+        if (webkit_user_media_permission_is_for_video_device(permission))
+        {
+            result |= permission::type::video_media;
+        }
+
+        if (webkit_user_media_permission_is_for_display_device(permission))
+        {
+            result |= permission::type::desktop_media;
+        }
+
+        return true;
     };
 
     template <>
@@ -43,29 +75,25 @@ namespace saucer
         {
             using enum permission::type;
 
-            static constexpr auto mappings = std::array<std::pair<gboolean (*)(gpointer), permission::type>, 9>{
-                std::make_pair(WEBKIT_IS_CLIPBOARD_PERMISSION_REQUEST, clipboard),
-                std::make_pair(WEBKIT_IS_DEVICE_INFO_PERMISSION_REQUEST, device_info),
-                std::make_pair(WEBKIT_IS_GEOLOCATION_PERMISSION_REQUEST, location),
-                std::make_pair(WEBKIT_IS_MEDIA_KEY_SYSTEM_PERMISSION_REQUEST, audio_media),
-                std::make_pair(WEBKIT_IS_NOTIFICATION_PERMISSION_REQUEST, notification),
-                std::make_pair(WEBKIT_IS_POINTER_LOCK_PERMISSION_REQUEST, mouse_lock),
-                std::make_pair(is_media_permission<webkit_user_media_permission_is_for_audio_device>, audio_media),
-                std::make_pair(is_media_permission<webkit_user_media_permission_is_for_video_device>, video_media),
-                std::make_pair(is_media_permission<webkit_user_media_permission_is_for_display_device>, desktop_media),
+            static constexpr auto mappings = std::array<gboolean (*)(gpointer, permission::type &), 6>{
+                permission_update<WEBKIT_IS_CLIPBOARD_PERMISSION_REQUEST, clipboard>,
+                permission_update<WEBKIT_IS_DEVICE_INFO_PERMISSION_REQUEST, device_info>,
+                permission_update<WEBKIT_IS_GEOLOCATION_PERMISSION_REQUEST, location>,
+                permission_update<WEBKIT_IS_NOTIFICATION_PERMISSION_REQUEST, notification>,
+                permission_update<WEBKIT_IS_POINTER_LOCK_PERMISSION_REQUEST, mouse_lock>,
+                translate_media_permission,
             };
 
             auto type = unknown;
 
-            auto find_mapping = [raw](const auto &entry)
+            for (const auto &check : mappings)
             {
-                const auto &[check, result] = entry;
-                return check(raw);
-            };
+                if (!check(raw, type))
+                {
+                    continue;
+                }
 
-            if (const auto *mapping = std::ranges::find_if(mappings, find_mapping); mapping != mappings.end())
-            {
-                type = mapping->second;
+                break;
             }
 
             auto request = permission::request{{
@@ -270,6 +298,8 @@ namespace saucer
     {
         std::vector<GValue> values;
         std::vector<std::string> names;
+
+        // TODO: Use some kind of JSON here?
 
         for (const auto &flag : opts.browser_flags)
         {

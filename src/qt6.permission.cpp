@@ -2,6 +2,11 @@
 
 #include "qt.uri.impl.hpp"
 
+#include <flagpp/flags.hpp>
+
+template <>
+constexpr bool flagpp::enabled<saucer::permission::type> = true;
+
 namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
@@ -17,13 +22,13 @@ namespace saucer::permission
 
     permission::type request::type() const
     {
-        using enum permission::type;
-        using enum QWebEnginePermission::PermissionType;
-
         const auto type = m_impl->request.permissionType();
 
         switch (type)
         {
+            using enum permission::type;
+            using enum QWebEnginePermission::PermissionType;
+
         case ClipboardReadWrite:
             return clipboard;
         case LocalFontsAccess:
@@ -39,11 +44,12 @@ namespace saucer::permission
         case MediaVideoCapture:
             return video_media;
         case MediaAudioVideoCapture:
+            return audio_media | video_media;
         case DesktopVideoCapture:
         case DesktopAudioVideoCapture:
             return desktop_media;
-        default:
-            return static_cast<permission::type>(std::to_underlying(unknown) + std::to_underlying(m_impl->request.permissionType()));
+        case Unsupported:
+            return unknown;
         }
     }
 

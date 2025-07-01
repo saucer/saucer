@@ -22,13 +22,13 @@ namespace saucer::permission
 
     permission::type request::type() const
     {
-        using enum permission::type;
-
         COREWEBVIEW2_PERMISSION_KIND type{};
         m_impl->request->get_PermissionKind(&type);
 
         switch (type)
         {
+            using enum permission::type;
+
         case COREWEBVIEW2_PERMISSION_KIND_MICROPHONE:
             return audio_media;
         case COREWEBVIEW2_PERMISSION_KIND_CAMERA:
@@ -42,7 +42,7 @@ namespace saucer::permission
         case COREWEBVIEW2_PERMISSION_KIND_NOTIFICATIONS:
             return notification;
         default:
-            return static_cast<permission::type>(std::to_underlying(unknown) + type);
+            return unknown;
         }
     }
 
