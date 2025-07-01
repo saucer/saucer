@@ -93,6 +93,17 @@ namespace saucer
         m_impl->web_view->disconnect();
     }
 
+    template <web_event Event>
+    void webview::setup()
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return setup<Event>(); });
+        }
+
+        m_impl->setup<Event>(this);
+    }
+
     icon webview::favicon() const
     {
         if (!m_parent->thread_safe())
@@ -375,42 +386,6 @@ namespace saucer
         }
 
         m_events.remove(event, id);
-    }
-
-    template <web_event Event>
-    void webview::once(events::event<Event>::callback callback)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        m_events.get<Event>().once(std::move(callback));
-    }
-
-    template <web_event Event>
-    std::uint64_t webview::on(events::event<Event>::callback callback)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().add(std::move(callback));
-    }
-
-    template <web_event Event>
-    webview::events::event<Event>::future webview::await(events::event<Event>::future_args result)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, result = std::move(result)] mutable { return await<Event>(std::move(result)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().await(std::move(result));
     }
 
     void webview::register_scheme(const std::string &name)
