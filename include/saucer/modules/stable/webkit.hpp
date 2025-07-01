@@ -28,4 +28,23 @@ namespace saucer
     {
         WKWebView *webview;
     };
+
+    template <>
+    struct stable_natives<permission::request>
+    {
+        WKFrameInfo *frame;
+        WKMediaCaptureType type;
+    };
+
+    template <>
+    struct stable_natives<uri>
+    {
+        NSURL *url;
+    };
+
+    template <>
+    struct stable_natives<icon>
+    {
+        NSImage *icon;
+    };
 } // namespace saucer

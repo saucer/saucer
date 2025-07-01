@@ -391,7 +391,7 @@ namespace saucer
             return m_parent->dispatch([this, icon] { return set_icon(icon); });
         }
 
-        auto *const view = [NSImageView imageViewWithImage:icon.m_impl->icon.get()];
+        auto *const view = [NSImageView imageViewWithImage:icon.native<false>()->icon.get()];
         auto *const tile = m_parent->native<false>()->application.dockTile;
 
         [tile setContentView:view];

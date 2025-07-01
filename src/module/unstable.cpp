@@ -27,4 +27,16 @@ namespace saucer
     {
         return m_impl.get();
     }
+
+    template <>
+    natives<uri, false> uri::native<false>() const
+    {
+        return m_impl.get();
+    }
+
+    template <>
+    natives<icon, false> icon::native<false>() const
+    {
+        return m_impl.get();
+    }
 } // namespace saucer

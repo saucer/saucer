@@ -1,5 +1,6 @@
 #pragma once
 
+#include "modules/module.hpp"
 #include "stash/stash.hpp"
 
 #include <memory>
@@ -12,7 +13,6 @@ namespace saucer
 
     class icon
     {
-        friend struct window;
         struct impl;
 
       private:
@@ -32,6 +32,10 @@ namespace saucer
       public:
         icon &operator=(icon) noexcept;
         friend void swap(icon &, icon &) noexcept;
+
+      public:
+        template <bool Stable = true>
+        [[nodiscard]] natives<icon, Stable> native() const;
 
       public:
         [[nodiscard]] bool empty() const;

@@ -303,20 +303,7 @@ namespace saucer
         draw_bg(m_impl->web_view.get(), selector, static_cast<BOOL>(!transparent));
     }
 
-    void webview::set_file(const fs::path &file)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, file] { return set_file(file); });
-        }
-
-        auto *const url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
-        [m_impl->web_view.get() loadFileURL:url allowingReadAccessToURL:url.URLByDeletingLastPathComponent];
-    }
-
-    void webview::set_url(const std::string &url)
+    void webview::set_url(const uri &url)
     {
         const utils::autorelease_guard guard{};
 
@@ -325,8 +312,15 @@ namespace saucer
             return m_parent->dispatch([this, url] { return set_url(url); });
         }
 
-        auto *const ns_url  = [NSURL URLWithString:[NSString stringWithUTF8String:url.c_str()]];
-        auto *const request = [NSURLRequest requestWithURL:ns_url];
+        auto *const raw = url.native<false>()->url.get();
+
+        if (url.scheme() == "file")
+        {
+            [m_impl->web_view.get() loadFileURL:raw allowingReadAccessToURL:raw.URLByDeletingLastPathComponent];
+            return;
+        }
+
+        auto *const request = [NSURLRequest requestWithURL:raw];
 
         [m_impl->web_view.get() loadRequest:request];
     }

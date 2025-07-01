@@ -1,5 +1,7 @@
 #pragma once
 
+#include "modules/module.hpp"
+
 #include <string>
 #include <filesystem>
 
@@ -12,7 +14,6 @@ namespace saucer
 
     struct uri
     {
-        friend struct webview;
         struct impl;
         struct options;
 
@@ -33,6 +34,10 @@ namespace saucer
       public:
         uri &operator=(uri) noexcept;
         friend void swap(uri &, uri &) noexcept;
+
+      public:
+        template <bool Stable = true>
+        [[nodiscard]] natives<uri, Stable> native() const;
 
       public:
         [[nodiscard]] std::string string() const;
