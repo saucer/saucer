@@ -18,6 +18,15 @@
 
 namespace saucer
 {
+    namespace impl
+    {
+        template <typename T, typename Interface>
+        struct is_writable;
+
+        template <typename T>
+        struct is_serializer;
+    } // namespace impl
+
     struct serializer_core
     {
         using parse_result = std::variant<std::unique_ptr<function_data>, std::unique_ptr<result_data>, std::monostate>;
@@ -39,15 +48,6 @@ namespace saucer
         [[nodiscard]] virtual std::string js_serializer() const          = 0;
         [[nodiscard]] virtual parse_result parse(std::string_view) const = 0;
     };
-
-    namespace impl
-    {
-        template <typename T, typename Interface>
-        struct is_writable;
-
-        template <typename T>
-        struct is_serializer;
-    } // namespace impl
 
     template <typename T, typename Interface>
     concept Writable = impl::is_writable<T, Interface>::value;

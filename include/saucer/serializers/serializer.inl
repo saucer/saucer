@@ -14,6 +14,38 @@ namespace saucer
 {
     namespace impl
     {
+        template <typename T, typename Interface>
+        struct is_writable : std::false_type
+        {
+        };
+
+        template <typename T, typename Interface>
+        concept Writable = requires(T value) {
+            { Interface::write(value) } -> std::same_as<std::string>;
+        };
+
+        template <typename T, typename Interface>
+            requires Writable<T, Interface>
+        struct is_writable<T, Interface> : std::true_type
+        {
+        };
+
+        template <typename... Ts, typename Interface>
+            requires(Writable<Ts, Interface> && ...)
+        struct is_writable<arguments<Ts...>, Interface> : std::true_type
+        {
+        };
+
+        template <typename Interface>
+        struct is_writable<unquoted, Interface> : std::true_type
+        {
+        };
+
+        template <typename T>
+        struct is_serializer : std::is_base_of<serializer<T>, T>
+        {
+        };
+
         template <typename Interface, typename T>
         std::expected<T, std::string> read(const auto &value)
         {
@@ -59,38 +91,6 @@ namespace saucer
 
             return rtn | std::views::join_with(',') | std::ranges::to<std::string>();
         }
-
-        template <typename T, typename Interface>
-        concept Writable = requires(T value) {
-            { Interface::write(value) } -> std::same_as<std::string>;
-        };
-
-        template <typename T, typename Interface>
-        struct is_writable : std::false_type
-        {
-        };
-
-        template <typename T, typename Interface>
-            requires impl::Writable<T, Interface>
-        struct is_writable<T, Interface> : std::true_type
-        {
-        };
-
-        template <typename... Ts, typename Interface>
-            requires(impl::Writable<Ts, Interface> && ...)
-        struct is_writable<arguments<Ts...>, Interface> : std::true_type
-        {
-        };
-
-        template <typename Interface>
-        struct is_writable<unquoted, Interface> : std::true_type
-        {
-        };
-
-        template <typename T>
-        struct is_serializer : std::is_base_of<serializer<T>, T>
-        {
-        };
     } // namespace impl
 
     template <typename Interface>
