@@ -6,7 +6,7 @@
 #include "format/unquoted.hpp"
 
 #include "../utils/tuple.hpp"
-#include "../utils/traits.hpp"
+#include "../traits/traits.hpp"
 
 #include <ranges>
 
@@ -105,12 +105,15 @@ namespace saucer
     {
         using resolver = traits::resolver<T>;
 
-        using converter = resolver::converter;
-        using executor  = resolver::executor;
-        using args      = resolver::args;
+        using args        = resolver::args;
+        using executor    = resolver::executor;
+        using transformer = resolver::transformer;
 
-        return [converted = converter::convert(std::forward<T>(callable))](std::unique_ptr<function_data> data,
-                                                                           serializer_core::executor exec) mutable
+        static_assert(transformer::valid,
+                      "Could not transform callable. Please refer to the documentation on how to expose functions!");
+
+        return [converted = transformer::transform(std::forward<T>(callable))](std::unique_ptr<function_data> data,
+                                                                               serializer_core::executor exec) mutable
         {
             const auto &message = *static_cast<Interface::function_data *>(data.get());
             auto parsed         = impl::read<Interface, args>(message);
@@ -130,8 +133,8 @@ namespace saucer
                 std::invoke(reject, impl::write<Interface>(std::forward<Ts>(value)...));
             };
 
-            auto converted_exec = executor{std::move(resolve), std::move(reject)};
-            auto params         = std::tuple_cat(std::move(parsed.value()), std::make_tuple(std::move(converted_exec)));
+            auto transformed_exec = executor{std::move(resolve), std::move(reject)};
+            auto params           = std::tuple_cat(std::move(parsed.value()), std::make_tuple(std::move(transformed_exec)));
 
             std::apply(converted, std::move(params));
         };
