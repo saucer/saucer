@@ -12,6 +12,7 @@
 #import <WebKit/WebKit.h>
 
 @class MessageHandler;
+@class UIDelegate;
 @class NavigationDelegate;
 
 namespace saucer
@@ -23,7 +24,10 @@ namespace saucer
 
       public:
         utils::objc_ptr<NSView> view;
-        utils::objc_ptr<NavigationDelegate> delegate;
+
+      public:
+        utils::objc_ptr<UIDelegate> ui_delegate;
+        utils::objc_ptr<NavigationDelegate> navigation_delegate;
 
       public:
         WKUserContentController *controller;
@@ -45,8 +49,7 @@ namespace saucer
         void setup(webview *);
 
       public:
-        static void init_objc();
-        static WKWebViewConfiguration *make_config(const preferences &);
+        static WKWebViewConfiguration *make_config(const options &);
 
       public:
         static std::string inject_script();
@@ -55,22 +58,38 @@ namespace saucer
       public:
         static inline std::unordered_map<std::string, utils::objc_ptr<SchemeHandler>> schemes;
     };
+
+    using on_message_t = bool (saucer::webview::*)(std::string_view);
 } // namespace saucer
 
 @interface MessageHandler : NSObject <WKScriptMessageHandler>
 {
   @public
     saucer::webview *m_parent;
+    saucer::webview::events *m_events;
+    saucer::on_message_t m_on_message;
 }
-- (instancetype)initWithParent:(saucer::webview *)parent;
+- (instancetype)initWithParent:(saucer::webview *)parent
+                        events:(saucer::webview::events *)events
+                     onMessage:(saucer::on_message_t)on_message;
+@end
+
+@interface UIDelegate : NSObject <WKUIDelegate>
+{
+  @public
+    saucer::webview *m_parent;
+    saucer::webview::events *m_events;
+}
+- (instancetype)initWithParent:(saucer::webview *)parent events:(saucer::webview::events *)events;
 @end
 
 @interface NavigationDelegate : NSObject <WKNavigationDelegate>
 {
   @public
     saucer::webview *m_parent;
+    saucer::webview::events *m_events;
 }
-- (instancetype)initWithParent:(saucer::webview *)parent;
+- (instancetype)initWithParent:(saucer::webview *)parent events:(saucer::webview::events *)events;
 @end
 
 @interface SaucerView : WKWebView

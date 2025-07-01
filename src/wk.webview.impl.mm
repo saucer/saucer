@@ -4,19 +4,25 @@
 #include "request.hpp"
 
 #include "cocoa.window.impl.hpp"
+
 #include "wk.navigation.impl.hpp"
+#include "wk.permission.impl.hpp"
 
 #include <format>
+#include <cassert>
 
 #include <flagpp/flags.hpp>
-
-#import <objc/objc-runtime.h>
 
 template <>
 constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
+    template <>
+    void saucer::webview::impl::setup<web_event::permission>(webview *)
+    {
+    }
+
     template <>
     void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
     {
@@ -34,11 +40,24 @@ namespace saucer
 
         const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
                                                                      {
-                                                                         self->m_events.get<web_event::navigated>().fire(self->url());
+                                                                         auto url = self->url();
+
+                                                                         if (!url.has_value())
+                                                                         {
+                                                                             assert(false);
+                                                                             return;
+                                                                         }
+
+                                                                         self->m_events.get<web_event::navigated>().fire(url.value());
                                                                      }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
         event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"URL"]; });
+    }
+
+    template <>
+    void saucer::webview::impl::setup<web_event::request>(webview *)
+    {
     }
 
     template <>
@@ -94,166 +113,7 @@ namespace saucer
 
     constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";
 
-    void webview::impl::init_objc()
-    {
-        using event_func_t = void (*)(id, SEL, NSEvent *);
-
-        auto mouse_down = reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseDown:)));
-
-        auto mouse_up = reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseUp:)));
-
-        auto mouse_dragged =
-            reinterpret_cast<event_func_t>(class_getMethodImplementation([WKWebView class], @selector(mouseDragged:)));
-
-        class_replaceMethod([SaucerView class], @selector(mouseDown:),
-                            imp_implementationWithBlock(
-                                [mouse_down](SaucerView *view, NSEvent *event)
-                                {
-                                    const utils::autorelease_guard guard{};
-
-                                    auto &impl = *view->m_parent->window::m_impl;
-
-                                    impl.prev_click.emplace(click_event{
-                                        .frame    = impl.window.frame,
-                                        .position = NSEvent.mouseLocation,
-                                    });
-
-                                    mouse_down(view, @selector(mouseDown:), event);
-                                }),
-                            "v@:@");
-
-        class_replaceMethod([SaucerView class], @selector(mouseUp:),
-                            imp_implementationWithBlock(
-                                [mouse_up](SaucerView *view, NSEvent *event)
-                                {
-                                    const utils::autorelease_guard guard{};
-
-                                    auto &impl = *view->m_parent->window::m_impl;
-                                    impl.edge.reset();
-
-                                    mouse_up(view, @selector(mouseUp:), event);
-                                }),
-                            "v@:@");
-
-        class_replaceMethod([SaucerView class], @selector(mouseDragged:),
-                            imp_implementationWithBlock(
-                                [mouse_dragged](SaucerView *view, NSEvent *event)
-                                {
-                                    const utils::autorelease_guard guard{};
-
-                                    mouse_dragged(view, @selector(mouseDragged:), event);
-
-                                    auto &impl = *view->m_parent->window::m_impl;
-
-                                    if (!impl.edge || !impl.prev_click)
-                                    {
-                                        return;
-                                    }
-
-                                    auto [frame, prev] = impl.prev_click.value();
-                                    auto edge          = impl.edge.value();
-
-                                    auto current = NSEvent.mouseLocation;
-                                    auto diff    = NSPoint{current.x - prev.x, current.y - prev.y};
-
-                                    using enum window_edge;
-
-                                    auto new_frame = frame;
-
-                                    if (edge & right)
-                                    {
-                                        new_frame.size.width += diff.x;
-                                    }
-                                    else if (edge & left)
-                                    {
-                                        new_frame.origin.x += diff.x;
-                                        new_frame.size.width -= diff.x;
-                                    }
-
-                                    if (edge & top)
-                                    {
-                                        new_frame.size.height += diff.y;
-                                    }
-                                    else if (edge & bottom)
-                                    {
-                                        new_frame.origin.y += diff.y;
-                                        new_frame.size.height -= diff.y;
-                                    }
-
-                                    [impl.window setFrame:new_frame display:YES animate:NO];
-                                }),
-                            "v@:@");
-
-        class_replaceMethod([MessageHandler class], @selector(userContentController:didReceiveScriptMessage:),
-                            imp_implementationWithBlock(
-                                [](MessageHandler *handler, WKUserContentController *, WKScriptMessage *raw)
-                                {
-                                    const utils::autorelease_guard guard{};
-
-                                    const id body = raw.body;
-
-                                    if (![body isKindOfClass:[NSString class]])
-                                    {
-                                        return;
-                                    }
-
-                                    auto message = std::string{static_cast<NSString *>(body).UTF8String};
-                                    auto &self   = *handler->m_parent;
-
-                                    if (message == "dom_loaded")
-                                    {
-                                        self.m_impl->dom_loaded = true;
-
-                                        for (const auto &pending : self.m_impl->pending)
-                                        {
-                                            self.execute(pending);
-                                        }
-
-                                        self.m_impl->pending.clear();
-                                        self.m_events.get<web_event::dom_ready>().fire();
-
-                                        return;
-                                    }
-
-                                    self.on_message(message);
-                                }),
-                            "v@:@");
-
-        class_replaceMethod(
-            [NavigationDelegate class], @selector(webView:decidePolicyForNavigationAction:decisionHandler:),
-            imp_implementationWithBlock(
-                [](NavigationDelegate *delegate, WKWebView *, WKNavigationAction *action, void (^decision)(WKNavigationActionPolicy))
-                {
-                    const utils::autorelease_guard guard{};
-
-                    auto request = navigation{{action}};
-
-                    if (delegate->m_parent->m_events.get<web_event::navigate>().fire(request).find(policy::block))
-                    {
-                        return decision(WKNavigationActionPolicyCancel);
-                    }
-
-                    decision(WKNavigationActionPolicyAllow);
-                }),
-            "v@:@");
-
-        class_replaceMethod(
-            [NavigationDelegate class], @selector(webView:didFinishNavigation:),
-            imp_implementationWithBlock([](NavigationDelegate *delegate, WKWebView *, WKNavigation *)
-                                        { delegate->m_parent->m_events.get<web_event::load>().fire(state::finished); }),
-            "v@:@");
-
-        class_replaceMethod([NavigationDelegate class], @selector(webView:didStartProvisionalNavigation:),
-                            imp_implementationWithBlock(
-                                [](NavigationDelegate *delegate, WKWebView *, WKNavigation *)
-                                {
-                                    delegate->m_parent->m_impl->dom_loaded = false;
-                                    delegate->m_parent->m_events.get<web_event::load>().fire(state::started);
-                                }),
-                            "v@:@");
-    }
-
-    WKWebViewConfiguration *webview::impl::make_config(const preferences &prefs)
+    WKWebViewConfiguration *webview::impl::make_config(const options &opts)
     {
         const utils::autorelease_guard guard{};
 
@@ -272,7 +132,7 @@ namespace saucer
         auto *const config = [[WKWebViewConfiguration alloc] init];
         auto *const pool   = [config processPool];
 
-        for (const auto &flag : prefs.browser_flags)
+        for (const auto &flag : opts.browser_flags)
         {
             const auto delim = flag.find('=');
 
@@ -324,6 +184,7 @@ namespace saucer
         for (const auto &[name, handler] : schemes)
         {
             auto *const scheme = [NSString stringWithUTF8String:name.c_str()];
+
             [config setURLSchemeHandler:handler.get() forURLScheme:scheme];
 
 #ifdef SAUCER_WEBKIT_PRIVATE
@@ -335,41 +196,160 @@ namespace saucer
     }
 } // namespace saucer
 
+using namespace saucer;
+
 @implementation MessageHandler
-- (instancetype)initWithParent:(saucer::webview *)parent
+- (instancetype)initWithParent:(webview *)parent events:(webview::events *)events onMessage:(on_message_t)on_message
 {
-    self           = [super init];
-    self->m_parent = parent;
+    self               = [super init];
+    self->m_parent     = parent;
+    self->m_events     = events;
+    self->m_on_message = on_message;
 
     return self;
 }
 
-- (void)userContentController:(nonnull WKUserContentController *)userContentController
-      didReceiveScriptMessage:(nonnull WKScriptMessage *)message
+- (void)userContentController:(WKUserContentController *)controller didReceiveScriptMessage:(WKScriptMessage *)raw
 {
+    const utils::autorelease_guard guard{};
+
+    const id body = raw.body;
+
+    if (![body isKindOfClass:[NSString class]])
+    {
+        return;
+    }
+
+    std::string message{static_cast<NSString *>(body).UTF8String};
+
+    auto *const thiz = m_parent;
+    auto *const impl = m_parent->native<false>();
+
+    if (message == "dom_loaded")
+    {
+        impl->dom_loaded = true;
+
+        for (const auto &pending : impl->pending)
+        {
+            thiz->execute(pending);
+        }
+
+        impl->pending.clear();
+        m_events->get<web_event::dom_ready>().fire();
+
+        return;
+    }
+
+    (thiz->*m_on_message)(message);
+}
+@end
+
+@implementation UIDelegate
+- (instancetype)initWithParent:(webview *)parent events:(webview::events *)events
+{
+    self           = [super init];
+    self->m_parent = parent;
+    self->m_events = events;
+
+    return self;
+}
+
+- (void)webView:(WKWebView *)webview
+    runJavaScriptAlertPanelWithMessage:(NSString *)message
+                      initiatedByFrame:(WKFrameInfo *)frame
+                     completionHandler:(void (^)(void))complete
+{
+    const utils::autorelease_guard guard{};
+
+    auto *const alert = [[[NSAlert alloc] init] autorelease];
+
+    alert.messageText = message;
+    alert.alertStyle  = NSAlertStyleInformational;
+
+    [alert runModal];
+
+    std::invoke(complete);
+}
+
+- (void)webView:(WKWebView *)webview
+    runJavaScriptConfirmPanelWithMessage:(NSString *)message
+                        initiatedByFrame:(WKFrameInfo *)frame
+                       completionHandler:(void (^)(BOOL))complete
+{
+    const utils::autorelease_guard guard{};
+
+    auto *const alert = [[[NSAlert alloc] init] autorelease];
+
+    alert.messageText = message;
+    alert.alertStyle  = NSAlertStyleInformational;
+
+    [alert addButtonWithTitle:@"OK"];
+    [alert addButtonWithTitle:@"Cancel"];
+
+    std::invoke(complete, static_cast<BOOL>([alert runModal] == NSAlertFirstButtonReturn));
+}
+
+- (void)webView:(WKWebView *)webview
+    requestMediaCapturePermissionForOrigin:(WKSecurityOrigin *)origin
+                          initiatedByFrame:(WKFrameInfo *)frame
+                                      type:(WKMediaCaptureType)type
+                           decisionHandler:(void (^)(enum WKPermissionDecision))handler
+{
+    using permission::block_t;
+    const utils::autorelease_guard guard{};
+
+    auto request = permission::request{{
+        .frame   = utils::objc_ptr<WKFrameInfo>::ref(frame),
+        .handler = utils::objc_obj<block_t>::ref(handler),
+        .type    = type,
+    }};
+
+    m_events->get<web_event::permission>().fire(request);
 }
 @end
 
 @implementation NavigationDelegate
-- (instancetype)initWithParent:(saucer::webview *)parent
+- (instancetype)initWithParent:(webview *)parent events:(webview::events *)events
 {
     self           = [super init];
     self->m_parent = parent;
+    self->m_events = events;
 
     return self;
 }
 
-- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation
+- (void)webView:(WKWebView *)webview didStartProvisionalNavigation:(WKNavigation *)navigation
 {
+    m_parent->native<false>()->dom_loaded = false;
+    m_events->get<web_event::load>().fire(state::started);
 }
 
-- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation
+- (void)webView:(WKWebView *)webview
+    decidePolicyForNavigationAction:(WKNavigationAction *)action
+                    decisionHandler:(void (^)(enum WKNavigationActionPolicy))handler
 {
+    const utils::autorelease_guard guard{};
+
+    auto request = navigation{{
+        .action = utils::objc_ptr<WKNavigationAction>::ref(action),
+    }};
+
+    if (m_events->get<web_event::navigate>().fire(request).find(policy::block))
+    {
+        return std::invoke(handler, WKNavigationActionPolicyCancel);
+    }
+
+    return std::invoke(handler, WKNavigationActionPolicyAllow);
+}
+
+- (void)webView:(WKWebView *)webview didFinishNavigation:(WKNavigation *)navigation
+{
+    m_events->get<web_event::load>().fire(state::finished);
 }
 @end
 
 @implementation SaucerView
-- (instancetype)initWithParent:(saucer::webview *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame
+- (instancetype)initWithParent:(webview *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame
 {
     self           = [super initWithFrame:frame configuration:configuration];
     self->m_parent = parent;
@@ -379,7 +359,7 @@ namespace saucer
 
 - (void)willOpenMenu:(NSMenu *)menu withEvent:(NSEvent *)event
 {
-    const saucer::utils::autorelease_guard guard{};
+    const utils::autorelease_guard guard{};
 
     [super willOpenMenu:menu withEvent:event];
 
@@ -389,5 +369,74 @@ namespace saucer
     }
 
     [menu removeAllItems];
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+    const utils::autorelease_guard guard{};
+
+    auto *const impl = m_parent->window::native<false>();
+
+    impl->prev_click.emplace(click_event{
+        .frame    = impl->window.frame,
+        .position = NSEvent.mouseLocation,
+    });
+
+    [super mouseDown:event];
+}
+
+- (void)mouseUp:(NSEvent *)event
+{
+    const utils::autorelease_guard guard{};
+
+    m_parent->window::native<false>()->edge.reset();
+
+    [super mouseUp:event];
+}
+
+- (void)mouseDragged:(NSEvent *)event
+{
+    const utils::autorelease_guard guard{};
+
+    [super mouseDragged:event];
+
+    auto *const impl = m_parent->window::native<false>();
+
+    if (!impl->edge || !impl->prev_click)
+    {
+        return;
+    }
+
+    auto [frame, prev] = impl->prev_click.value();
+    auto edge          = impl->edge.value();
+
+    auto current = NSEvent.mouseLocation;
+    auto diff    = NSPoint{current.x - prev.x, current.y - prev.y};
+
+    using enum window_edge;
+
+    auto new_frame = frame;
+
+    if (edge & right)
+    {
+        new_frame.size.width += diff.x;
+    }
+    else if (edge & left)
+    {
+        new_frame.origin.x += diff.x;
+        new_frame.size.width -= diff.x;
+    }
+
+    if (edge & top)
+    {
+        new_frame.size.height += diff.y;
+    }
+    else if (edge & bottom)
+    {
+        new_frame.origin.y += diff.y;
+        new_frame.size.height -= diff.y;
+    }
+
+    [impl->window setFrame:new_frame display:YES animate:NO];
 }
 @end

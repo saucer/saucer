@@ -13,13 +13,8 @@ namespace saucer::scheme
 
     struct request::impl
     {
-        friend void init_objc();
-
-      public:
         task_ref task;
     };
-
-    void init_objc();
 } // namespace saucer::scheme
 
 @interface SchemeHandler : NSObject <WKURLSchemeHandler>

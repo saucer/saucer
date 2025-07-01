@@ -4,83 +4,8 @@
 
 #include <algorithm>
 
-#import <objc/objc-runtime.h>
-
 namespace saucer
 {
-    void window::impl::init_objc()
-    {
-        class_replaceMethod([WindowDelegate class], @selector(windowDidMiniaturize:),
-                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                                        { delegate->m_parent->m_events.get<window_event::minimize>().fire(true); }),
-                            "v@:@");
-
-        class_replaceMethod([WindowDelegate class], @selector(windowDidDeminiaturize:),
-                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                                        { delegate->m_parent->m_events.get<window_event::minimize>().fire(false); }),
-                            "v@:@");
-
-        class_replaceMethod([WindowDelegate class], @selector(windowDidResize:),
-                            imp_implementationWithBlock(
-                                [](WindowDelegate *delegate, NSNotification *)
-                                {
-                                    const auto [width, height] = delegate->m_parent->size();
-                                    delegate->m_parent->m_events.get<window_event::resize>().fire(width, height);
-                                }),
-                            "v@:@");
-
-        class_replaceMethod([WindowDelegate class], @selector(windowDidBecomeKey:),
-                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                                        { delegate->m_parent->m_events.get<window_event::focus>().fire(true); }),
-                            "v@:@");
-
-        class_replaceMethod([WindowDelegate class], @selector(windowDidResignKey:),
-                            imp_implementationWithBlock([](WindowDelegate *delegate, NSNotification *)
-                                                        { delegate->m_parent->m_events.get<window_event::focus>().fire(false); }),
-                            "v@:@");
-
-        class_replaceMethod([WindowDelegate class], @selector(windowShouldClose:),
-                            imp_implementationWithBlock(
-                                [](WindowDelegate *delegate, NSNotification *)
-                                {
-                                    auto *self = delegate->m_parent;
-                                    auto &impl = self->m_impl;
-
-                                    if (self->m_events.get<window_event::close>().fire().find(policy::block))
-                                    {
-                                        return false;
-                                    }
-
-                                    if (impl->on_closed)
-                                    {
-                                        std::invoke(impl->on_closed);
-                                    }
-
-                                    auto *parent           = self->m_parent;
-                                    auto *const identifier = impl->window;
-
-                                    auto *const native = parent->native<false>();
-                                    auto &instances    = native->instances;
-
-                                    self->hide();
-                                    instances.erase(identifier);
-                                    self->m_events.get<window_event::closed>().fire();
-
-                                    if (!native->quit_on_last_window_closed)
-                                    {
-                                        return false;
-                                    }
-
-                                    if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
-                                    {
-                                        parent->quit();
-                                    }
-
-                                    return false;
-                                }),
-                            "v@:@");
-    }
-
     template <>
     void saucer::window::impl::setup<window_event::decorated>(saucer::window *self)
     {
@@ -157,8 +82,10 @@ namespace saucer
     }
 } // namespace saucer
 
+using namespace saucer;
+
 @implementation Observer
-- (instancetype)initWithCallback:(saucer::observer_callback_t)callback
+- (instancetype)initWithCallback:(observer_callback_t)callback
 {
     self             = [super init];
     self->m_callback = std::move(callback);
@@ -176,11 +103,76 @@ namespace saucer
 @end
 
 @implementation WindowDelegate
-- (instancetype)initWithParent:(saucer::window *)parent
+- (instancetype)initWithParent:(window *)parent events:(window::events *)events
 {
     self           = [super init];
     self->m_parent = parent;
+    self->m_events = events;
 
     return self;
+}
+
+- (void)windowDidMiniaturize:(NSNotification *)notification
+{
+    m_events->get<window_event::minimize>().fire(true);
+}
+
+- (void)windowDidDeminiaturize:(NSNotification *)notification
+{
+    m_events->get<window_event::minimize>().fire(false);
+}
+
+- (void)windowDidResize:(NSNotification *)notification
+{
+    const auto [width, height] = m_parent->size();
+    m_events->get<window_event::resize>().fire(width, height);
+}
+
+- (void)windowDidBecomeKey:(NSNotification *)notification
+{
+    m_events->get<window_event::focus>().fire(true);
+}
+
+- (void)windowDidResignKey:(NSNotification *)notification
+{
+    m_events->get<window_event::focus>().fire(false);
+}
+
+- (BOOL)windowShouldClose:(NSWindow *)sender
+{
+    auto *const thiz = m_parent;
+    auto *const impl = thiz->native<false>();
+
+    if (m_events->get<window_event::close>().fire().find(policy::block))
+    {
+        return false;
+    }
+
+    if (impl->on_closed)
+    {
+        std::invoke(impl->on_closed);
+    }
+
+    auto &parent           = thiz->parent();
+    auto *const identifier = impl->window;
+
+    auto *const native = parent.native<false>();
+    auto &instances    = native->instances;
+
+    thiz->hide();
+    instances.erase(identifier);
+    m_events->get<window_event::closed>().fire();
+
+    if (!native->quit_on_last_window_closed)
+    {
+        return false;
+    }
+
+    if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
+    {
+        parent.quit();
+    }
+
+    return false;
 }
 @end

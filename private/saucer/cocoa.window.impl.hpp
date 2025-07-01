@@ -46,7 +46,6 @@ namespace saucer
         void set_alpha(std::uint8_t alpha) const;
 
       public:
-        static void init_objc();
         static void init_menu();
     };
 } // namespace saucer
@@ -63,6 +62,7 @@ namespace saucer
 {
   @public
     saucer::window *m_parent;
+    saucer::window::events *m_events;
 }
-- (instancetype)initWithParent:(saucer::window *)parent;
+- (instancetype)initWithParent:(saucer::window *)parent events:(saucer::window::events *)events;
 @end

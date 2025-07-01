@@ -16,12 +16,7 @@ namespace saucer
         : window(prefs), extensible(this), m_attributes(prefs.attributes), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
-        std::call_once(flag,
-                       []
-                       {
-                           impl::init_objc();
-                           register_scheme("saucer");
-                       });
+        std::call_once(flag, [] { register_scheme("saucer"); });
 
         const utils::autorelease_guard guard{};
 
@@ -66,11 +61,13 @@ namespace saucer
 
         m_impl->controller = m_impl->config.get().userContentController;
 
-        auto *const handler = [[[MessageHandler alloc] initWithParent:this] autorelease];
+        auto *const handler = [[[MessageHandler alloc] initWithParent:this events:&m_events
+                                                            onMessage:&webview::on_message] autorelease];
+
         [m_impl->controller addScriptMessageHandler:handler name:@"saucer"];
 
-        m_impl->web_view = [[SaucerView alloc] initWithParent:this configuration:m_impl->config.get() frame:NSZeroRect];
-        m_impl->delegate = [[NavigationDelegate alloc] initWithParent:this];
+        m_impl->web_view            = [[SaucerView alloc] initWithParent:this configuration:m_impl->config.get() frame:NSZeroRect];
+        m_impl->navigation_delegate = [[NavigationDelegate alloc] initWithParent:this events:&m_events];
 
         [m_impl->web_view.get() setNavigationDelegate:m_impl->delegate.get()];
 

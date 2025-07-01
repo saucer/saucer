@@ -11,12 +11,9 @@
 
 namespace saucer
 {
-    window::window(const preferences &prefs) : m_parent(prefs.application.value()), m_impl(std::make_unique<impl>())
+    window::window(application *parent) : m_parent(parent), m_impl(std::make_unique<impl>())
     {
         assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
-
-        static std::once_flag flag;
-        std::call_once(flag, [] { impl::init_objc(); });
 
         const utils::autorelease_guard guard{};
 
@@ -27,7 +24,7 @@ namespace saucer
 
         set_resizable(true);
 
-        m_impl->delegate = [[WindowDelegate alloc] initWithParent:this];
+        m_impl->delegate = [[WindowDelegate alloc] initWithParent:this events:&m_events];
 
         [m_impl->window setDelegate:m_impl->delegate.get()];
         [m_impl->window center];
@@ -46,6 +43,17 @@ namespace saucer
 
         close();
         [m_impl->window close];
+    }
+
+    template <window_event Event>
+    void window::setup()
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return setup<Event>(); });
+        }
+
+        m_impl->setup<Event>(this);
     }
 
     bool window::visible() const
@@ -520,46 +528,6 @@ namespace saucer
         }
 
         m_events.remove(event, id);
-    }
-
-    template <window_event Event>
-    void window::once(events::event<Event>::callback callback)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        m_events.get<Event>().once(std::move(callback));
-    }
-
-    template <window_event Event>
-    std::uint64_t window::on(events::event<Event>::callback callback)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().add(std::move(callback));
-    }
-
-    template <window_event Event>
-    window::events::event<Event>::future window::await(events::event<Event>::future_args result)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, result = std::move(result)] mutable { return await<Event>(std::move(result)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().await(std::move(result));
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS;
