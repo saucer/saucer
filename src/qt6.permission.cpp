@@ -48,7 +48,7 @@ namespace saucer::permission
         case DesktopVideoCapture:
         case DesktopAudioVideoCapture:
             return desktop_media;
-        case Unsupported:
+        default:
             return unknown;
         }
     }
