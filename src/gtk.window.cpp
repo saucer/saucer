@@ -48,6 +48,17 @@ namespace saucer
         gtk_window_close(GTK_WINDOW(m_impl->window.get()));
     }
 
+    template <window_event Event>
+    void window::setup()
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return setup<Event>(); });
+        }
+
+        m_impl->setup<Event>(this);
+    }
+
     bool window::visible() const
     {
         if (!m_parent->thread_safe())
@@ -419,42 +430,6 @@ namespace saucer
         }
 
         m_events.remove(event, id);
-    }
-
-    template <window_event Event>
-    void window::once(events::event<Event>::callback callback)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        m_events.get<Event>().once(std::move(callback));
-    }
-
-    template <window_event Event>
-    std::uint64_t window::on(events::event<Event>::callback callback)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().add(std::move(callback));
-    }
-
-    template <window_event Event>
-    window::events::event<Event>::future window::await(events::event<Event>::future_args result)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, result = std::move(result)] mutable { return await<Event>(std::move(result)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().await(std::move(result));
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS;

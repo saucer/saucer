@@ -75,6 +75,10 @@ namespace saucer
       public:
         virtual ~window();
 
+      protected:
+        template <window_event Event>
+        void setup();
+
       public:
         template <bool Stable = true>
         [[nodiscard]] natives<window, Stable> native() const;
@@ -146,14 +150,15 @@ namespace saucer
         [[sc::thread_safe]] void clear(window_event event);
         [[sc::thread_safe]] void remove(window_event event, std::uint64_t id);
 
-        template <window_event Event>
-        [[sc::thread_safe]] void once(events::event<Event>::callback callback);
+        template <window_event Event, typename T>
+        [[sc::thread_safe]] void once(T &&callback);
 
-        template <window_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
+        template <window_event Event, typename T>
+        [[sc::thread_safe]] auto on(T &&callback);
 
-        template <window_event Event>
-        [[sc::thread_safe]] events::event<Event>::future
-        await(events::event<Event>::future_args result = events::event<Event>::future_args::empty);
+        template <window_event Event, typename... Ts>
+        [[sc::thread_safe]] auto await(Ts &&...result);
     };
 } // namespace saucer
+
+#include "window.inl"

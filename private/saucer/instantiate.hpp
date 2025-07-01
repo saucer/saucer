@@ -12,10 +12,7 @@
     __VA_OPT__(SAUCER_RECURSIVE_IMPL2 SAUCER_PARENS(MACRO, __VA_ARGS__))
 #define SAUCER_RECURSIVE_IMPL2() SAUCER_RECURSE_IMPL
 
-#define SAUCER_INSTANTIATE_EVENT(CLASS, EVENT)                                                                                        \
-    template std::uint64_t CLASS::on<EVENT>(events::event<EVENT>::callback);                                                          \
-    template void CLASS::once<EVENT>(events::event<EVENT>::callback);                                                                 \
-    template CLASS::events::event<EVENT>::future CLASS::await<EVENT>(events::event<EVENT>::future_args);
+#define SAUCER_INSTANTIATE_EVENT(CLASS, EVENT) template void CLASS::setup<EVENT>();
 
 #define SAUCER_INSTANTIATE_WINDOW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(window, EVENT)
 #define SAUCER_INSTANTIATE_WINDOW_EVENTS                                                                                              \
