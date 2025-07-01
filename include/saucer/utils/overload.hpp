@@ -3,13 +3,7 @@
 namespace saucer
 {
     template <typename... Ts>
-    struct overload : Ts...
-    {
-        using Ts::operator()...;
-    };
-
-#ifdef __APPLE__
-    template <class... Ts>
-    overload(Ts...) -> overload<Ts...>;
-#endif
+    struct overload;
 } // namespace saucer
+
+#include "overload.inl"

@@ -1,81 +1,30 @@
 #pragma once
 
-#include <utility>
-#include <tuple>
-
-#include <type_traits>
-#include <cstddef>
-
 namespace saucer::tuple
 {
-    namespace impl
-    {
-        template <typename T>
-        struct is_tuple : std::false_type
-        {
-        };
-
-        template <typename... Ts>
-        struct is_tuple<std::tuple<Ts...>> : std::true_type
-        {
-        };
-
-        template <typename Tuple, template <typename...> typename Transform>
-        struct transform;
-
-        template <typename... Ts, template <typename...> typename Transform>
-        struct transform<std::tuple<Ts...>, Transform>
-        {
-            using type = std::tuple<Transform<Ts>...>;
-        };
-
-        template <std::size_t Count, typename... Ts, typename Tuple = std::tuple<Ts...>>
-        consteval auto extract(const Tuple &)
-        {
-            auto unpack = []<auto... Is>(std::index_sequence<Is...>)
-            {
-                return std::type_identity<std::tuple<std::tuple_element_t<Is, Tuple>...>>{};
-            };
-
-            return unpack(std::make_index_sequence<Count>());
-        }
-
-        template <typename... Ts, typename Tuple = std::tuple<Ts...>, auto Size = std::tuple_size_v<Tuple>>
-        consteval auto drop_last(const Tuple &value)
-        {
-            static constexpr auto count = Size <= 1 ? 0 : Size - 1;
-            return extract<count>(value);
-        }
-
-        template <typename... Ts, typename Tuple = std::tuple<Ts...>, auto Size = std::tuple_size_v<Tuple>>
-        consteval auto last(const Tuple &)
-        {
-            if constexpr (Size >= 1)
-            {
-                return std::type_identity<std::tuple_element_t<Size - 1, Tuple>>{};
-            }
-            else
-            {
-                return std::type_identity<void>{};
-            }
-        }
-    } // namespace impl
+    template <typename T>
+    struct is_tuple;
 
     template <typename T>
-    concept Tuple = impl::is_tuple<T>::value;
+    concept Tuple = is_tuple<T>::value;
 
     template <typename T, template <typename...> typename Transform>
-    using transform_t = impl::transform<T, Transform>::type;
+    struct transform;
+
+    template <typename T, template <typename...> typename Transform>
+    using transform_t = transform<T, Transform>::type;
 
     template <typename T>
-    using drop_last_t = decltype(impl::drop_last(std::declval<T>()))::type;
+    struct drop_last;
 
     template <typename T>
-    using last_t = decltype(impl::last(std::declval<T>()))::type;
+    using drop_last_t = drop_last<T>::type;
 
-    template <typename T, typename O>
-    using cat_t = decltype(std::tuple_cat(std::declval<T>(), std::declval<O>()));
+    template <typename T>
+    struct last;
 
-    template <typename T, typename... Ts>
-    using add_t = cat_t<T, std::tuple<Ts...>>;
+    template <typename T>
+    using last_t = last<T>::type;
 } // namespace saucer::tuple
+
+#include "tuple.inl"
