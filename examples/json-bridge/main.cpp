@@ -21,18 +21,12 @@ coco::stray start(saucer::application *app)
 
     // Add event callbacks
 
-    webview.on<saucer::web_event::navigated>([](const auto &url) { //
-        std::println("New url: {}", url.string());
-    });
-
-    webview.on<saucer::window_event::resize>([](auto width, auto height) { //
-        std::println("Resize {}:{}", width, height);
-    });
+    webview.on<saucer::web_event::navigated>([](const auto &url) { std::println("New url: {}", url.string()); });
+    webview.on<saucer::window_event::resize>([](int width, int height) { std::println("Resize {}:{}", width, height); });
 
     // Expose Functions
 
-    webview.expose("func1",
-                   [](int a, int b)
+    webview.expose("func1", [](int a, int b)
                    { //
                        return a + b;
                    });
@@ -113,7 +107,7 @@ coco::stray start(saucer::application *app)
 
     do
     {
-        co_await webview.await<saucer::window_event::close>({saucer::policy::block});
+        co_await webview.await<saucer::window_event::close>(saucer::policy::block);
     } while (!co_await webview.evaluate<bool>("confirm({})", "Allow close after confirming this dialog"));
 
     co_await app->finish(); // Is resolved when the last window is closed
