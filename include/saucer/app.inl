@@ -2,8 +2,6 @@
 
 #include "app.hpp"
 
-#include "utils/future.hpp"
-
 namespace saucer
 {
     template <typename T>
@@ -26,7 +24,7 @@ namespace saucer
     template <bool Get, typename Callback>
     auto application::dispatch(Callback &&callback) const
     {
-        auto task = packaged_task{std::forward<Callback>(callback)};
+        auto task = std::packaged_task{std::forward<Callback>(callback)};
         auto rtn  = task.get_future();
 
         post([task = std::move(task)]() mutable { std::invoke(task); });
