@@ -98,15 +98,15 @@ namespace saucer
 
     std::optional<application> application::create(const options &opts)
     {
-        static bool once{false};
-
-        if (once)
+        if (static bool once{false}; once)
         {
             assert(false && "saucer::application may only be created once");
             return std::nullopt;
         }
-
-        once = true;
+        else
+        {
+            once = true;
+        }
 
         auto *const application = [NSApplication sharedApplication];
 
