@@ -14,23 +14,23 @@
 
 namespace saucer
 {
-    webview::webview(const preferences &prefs)
-        : window(prefs), extensible(this), m_attributes(prefs.attributes), m_impl(std::make_unique<impl>())
+    webview::webview(const options &opts)
+        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
         const utils::autorelease_guard guard{};
 
-        m_impl->config = impl::make_config(prefs);
+        m_impl->config = impl::make_config(opts);
 
         NSUUID *uuid{};
 
-        if (prefs.persistent_cookies)
+        if (opts.persistent_cookies)
         {
             // https://stackoverflow.com/questions/64011825/generate-the-same-uuid-from-the-same-string
 
-            auto id          = prefs.storage_path.empty() ? "saucer" : std::format("saucer.{}", prefs.storage_path.string());
+            auto id          = opts.storage_path.empty() ? "saucer" : std::format("saucer.{}", opts.storage_path.string());
             auto *const data = [NSString stringWithUTF8String:id.c_str()];
 
             unsigned char hash[32] = "";
@@ -59,6 +59,7 @@ namespace saucer
 #ifdef SAUCER_WEBKIT_PRIVATE
         auto *const settings = m_impl->config.get().preferences;
         [settings setValue:@YES forKey:@"fullScreenEnabled"];
+        [settings setValue:@YES forKey:@"mediaDevicesEnabled"];
 #endif
 
         m_impl->controller = m_impl->config.get().userContentController;
@@ -69,16 +70,18 @@ namespace saucer
         [m_impl->controller addScriptMessageHandler:handler name:@"saucer"];
 
         m_impl->web_view            = [[SaucerView alloc] initWithParent:this configuration:m_impl->config.get() frame:NSZeroRect];
+        m_impl->ui_delegate         = [[UIDelegate alloc] initWithParent:this events:&m_events];
         m_impl->navigation_delegate = [[NavigationDelegate alloc] initWithParent:this events:&m_events];
 
-        [m_impl->web_view.get() setNavigationDelegate:m_impl->delegate.get()];
+        [m_impl->web_view.get() setUIDelegate:m_impl->ui_delegate.get()];
+        [m_impl->web_view.get() setNavigationDelegate:m_impl->navigation_delegate.get()];
 
         static constexpr auto resize_mask = NSViewWidthSizable | NSViewMaxXMargin | NSViewHeightSizable | NSViewMaxYMargin;
         [m_impl->web_view.get() setAutoresizingMask:resize_mask];
 
-        if (!prefs.user_agent.empty())
+        if (!opts.user_agent.empty())
         {
-            m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:prefs.user_agent.c_str()];
+            m_impl->web_view.get().customUserAgent = [NSString stringWithUTF8String:opts.user_agent.c_str()];
         }
 
         m_impl->view = [[NSView alloc] init];
@@ -116,6 +119,17 @@ namespace saucer
 
         [m_impl->view.get() setSubviews:[NSArray array]];
         [window::m_impl->window setContentView:nil];
+    }
+
+    template <web_event Event>
+    void webview::setup()
+    {
+        if (!m_parent->thread_safe())
+        {
+            return m_parent->dispatch([this] { return setup<Event>(); });
+        }
+
+        m_impl->setup<Event>(this);
     }
 
     icon webview::favicon() const // NOLINT(*-static)
@@ -476,42 +490,6 @@ namespace saucer
         }
 
         m_events.remove(event, id);
-    }
-
-    template <web_event Event>
-    void webview::once(events::event<Event>::callback callback)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return once<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        m_events.get<Event>().once(std::move(callback));
-    }
-
-    template <web_event Event>
-    std::uint64_t webview::on(events::event<Event>::callback callback)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, callback = std::move(callback)] mutable { return on<Event>(std::move(callback)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().add(std::move(callback));
-    }
-
-    template <web_event Event>
-    webview::events::event<Event>::future webview::await(events::event<Event>::future_args result)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, result = std::move(result)] mutable { return await<Event>(std::move(result)); });
-        }
-
-        m_impl->setup<Event>(this);
-        return m_events.get<Event>().await(std::move(result));
     }
 
     void webview::register_scheme(const std::string &name)
