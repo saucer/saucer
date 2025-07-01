@@ -369,7 +369,7 @@ namespace saucer
             return m_parent->dispatch([this, icon] { return set_icon(icon); });
         }
 
-        m_impl->window->setWindowIcon(icon.m_impl->icon);
+        m_impl->window->setWindowIcon(icon.native<false>()->icon);
     }
 
     void window::set_title(const std::string &title)

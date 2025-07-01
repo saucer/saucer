@@ -36,4 +36,16 @@ namespace saucer
         QWebEnginePermission request;
 #endif
     };
+
+    template <>
+    struct stable_natives<uri>
+    {
+        QUrl uri;
+    };
+
+    template <>
+    struct stable_natives<icon>
+    {
+        QIcon icon;
+    };
 } // namespace saucer

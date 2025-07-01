@@ -34,4 +34,16 @@ namespace saucer
     {
         WebKitPermissionRequest *request;
     };
+
+    template <>
+    struct stable_natives<uri>
+    {
+        GUri *uri;
+    };
+
+    template <>
+    struct stable_natives<icon>
+    {
+        GdkTexture *icon;
+    };
 } // namespace saucer

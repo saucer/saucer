@@ -269,7 +269,7 @@ namespace saucer
             return m_parent->dispatch([this, url] { return set_url(url); });
         }
 
-        m_impl->web_view->setUrl(url.m_impl->uri);
+        m_impl->web_view->setUrl(url.native<false>()->uri);
     }
 
     void webview::back()
