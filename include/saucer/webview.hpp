@@ -91,6 +91,10 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
+        template <web_event Event>
+        void setup();
+
+      protected:
         virtual bool on_message(std::string_view);
         void handle_scheme(const std::string &, scheme::resolver &&);
 
@@ -167,18 +171,20 @@ namespace saucer
         using window::remove;
         [[sc::thread_safe]] void remove(web_event event, std::uint64_t id);
 
-        using window::once;
-        template <web_event Event>
-        [[sc::thread_safe]] void once(events::event<Event>::callback callback);
+        template <window_event Event, typename T>
+        [[sc::thread_safe]] void once(T &&callback);
+        template <web_event Event, typename T>
+        [[sc::thread_safe]] void once(T &&callback);
 
-        using window::on;
-        template <web_event Event>
-        [[sc::thread_safe]] std::uint64_t on(events::event<Event>::callback callback);
+        template <window_event Event, typename T>
+        [[sc::thread_safe]] auto on(T &&callback);
+        template <web_event Event, typename T>
+        [[sc::thread_safe]] auto on(T &&callback);
 
-        using window::await;
-        template <web_event Event>
-        [[sc::thread_safe]] events::event<Event>::future
-        await(events::event<Event>::future_args result = events::event<Event>::future_args::empty);
+        template <window_event Event, typename... Ts>
+        [[sc::thread_safe]] auto await(Ts &&...result);
+        template <web_event Event, typename... Ts>
+        [[sc::thread_safe]] auto await(Ts &&...result);
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);
