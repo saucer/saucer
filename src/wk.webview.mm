@@ -1,6 +1,8 @@
 #include "wk.webview.impl.hpp"
 
 #include "instantiate.hpp"
+
+#include "wk.uri.impl.hpp"
 #include "cocoa.window.impl.hpp"
 
 #include <format>
@@ -152,7 +154,7 @@ namespace saucer
 #endif
     }
 
-    std::string webview::url() const
+    std::optional<uri> webview::url() const
     {
         const utils::autorelease_guard guard{};
 
@@ -161,7 +163,14 @@ namespace saucer
             return m_parent->dispatch([this] { return url(); });
         }
 
-        return m_impl->web_view.get().URL.absoluteString.UTF8String;
+        auto *const url = m_impl->web_view.get().URL;
+
+        if (!url)
+        {
+            return std::nullopt;
+        }
+
+        return uri::impl{[url copy]};
     }
 
     bool webview::context_menu() const

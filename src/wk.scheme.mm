@@ -1,5 +1,7 @@
 #include "wk.scheme.impl.hpp"
 
+#include "wk.uri.impl.hpp"
+
 namespace saucer::scheme
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
@@ -8,9 +10,9 @@ namespace saucer::scheme
 
     request::~request() = default;
 
-    std::string request::url() const
+    uri request::url() const
     {
-        return m_impl->task.get().request.URL.absoluteString.UTF8String;
+        return uri::impl{[m_impl->task.get().request.URL copy]};
     }
 
     std::string request::method() const
