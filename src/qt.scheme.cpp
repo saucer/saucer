@@ -113,12 +113,32 @@ namespace saucer::scheme
                 return;
             }
 
-            const auto offset = std::to_underlying(error) + 1;
-            req.value()->fail(static_cast<QWebEngineUrlRequestJob::Error>(offset));
+            QWebEngineUrlRequestJob::Error err{};
+
+            switch (error)
+            {
+                using enum scheme::error;
+                using enum QWebEngineUrlRequestJob::Error;
+
+            case not_found:
+                err = UrlNotFound;
+                break;
+            case invalid:
+                err = UrlInvalid;
+                break;
+            case denied:
+                err = RequestDenied;
+                break;
+            case failed:
+                err = RequestFailed;
+                break;
+            }
+
+            req.value()->fail(err);
         };
 
         auto executor = scheme::executor{std::move(resolve), std::move(reject)};
-        auto req      = scheme::request{{request, std::move(content)}};
+        auto req      = scheme::request{{.request = request, .body = std::move(content)}};
 
         connect(raw, &QObject::destroyed, [request]() { request->assign(nullptr); });
 
