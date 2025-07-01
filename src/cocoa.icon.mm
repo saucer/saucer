@@ -4,7 +4,7 @@
 
 namespace saucer
 {
-    icon::icon() : m_impl(std::make_unique<impl>()) {}
+    icon::icon() : m_impl(std::make_unique<impl>([[NSImage alloc] init])) {}
 
     icon::icon(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
