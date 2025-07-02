@@ -190,11 +190,28 @@ namespace saucer
 
         auto reject = [environment, deferral, request = opts.raw](const scheme::error &error)
         {
-            auto name  = rebind::utils::find_enum_name(error).value_or("unknown");
-            auto value = std::to_underlying(error);
+            auto status = std::to_underlying(error);
+            std::wstring phrase;
+
+            switch (error)
+            {
+                using enum scheme::error;
+
+            case not_found:
+                phrase = L"Not Found";
+                break;
+            case invalid:
+                phrase = L"Bad Request";
+                break;
+            case denied:
+                phrase = L"Unauthorized";
+                break;
+            default:
+                break;
+            }
 
             ComPtr<ICoreWebView2WebResourceResponse> result;
-            environment->CreateWebResourceResponse(nullptr, value, utils::widen(std::string{name}).c_str(), L"", &result);
+            environment->CreateWebResourceResponse(nullptr, status, L"", phrase.c_str(), &result);
 
             request->put_Response(result.Get());
             deferral->Complete();
