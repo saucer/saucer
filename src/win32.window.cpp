@@ -59,6 +59,11 @@ namespace saucer
         SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, 0);
     }
 
+    template <window_event Event>
+    void window::setup()
+    {
+    }
+
     bool window::visible() const
     {
         if (!m_parent->thread_safe())
@@ -437,7 +442,7 @@ namespace saucer
             return m_parent->dispatch([this, icon] { return set_icon(icon); });
         }
 
-        if (icon.m_impl->bitmap->GetHICON(&m_impl->icon.reset()) != Gdiplus::Status::Ok)
+        if (icon.native<false>()->bitmap->GetHICON(&m_impl->icon.reset()) != Gdiplus::Status::Ok)
         {
             return;
         }
@@ -527,24 +532,6 @@ namespace saucer
     void window::remove(window_event event, std::uint64_t id)
     {
         m_events.remove(event, id);
-    }
-
-    template <window_event Event>
-    void window::once(events::event<Event>::callback callback)
-    {
-        m_events.get<Event>().once(std::move(callback));
-    }
-
-    template <window_event Event>
-    std::uint64_t window::on(events::event<Event>::callback callback)
-    {
-        return m_events.get<Event>().add(std::move(callback));
-    }
-
-    template <window_event Event>
-    window::events::event<Event>::future window::await(events::event<Event>::future_args result)
-    {
-        return m_events.get<Event>().await(std::move(result));
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS;
