@@ -11,54 +11,54 @@ namespace saucer
 
     navigation::~navigation() = default;
 
-    std::string navigation::url() const
+    uri navigation::url() const
     {
-        auto visitor = [](auto *request)
-        {
-            utils::string_handle raw;
-            request->get_Uri(&raw.reset());
-            return utils::narrow(raw.get());
-        };
+        utils::string_handle raw;
 
-        return std::visit(visitor, m_impl->request);
+        auto visitor = [&](auto *request)
+        {
+            request->get_Uri(&raw.reset());
+        };
+        std::visit(visitor, m_impl->request);
+
+        return uri::parse(utils::narrow(raw.get())).value_or({});
     }
 
     bool navigation::new_window() const
     {
-        overload visitor = {
-            [](ICoreWebView2NewWindowRequestedEventArgs *) { return true; },
-            [](ICoreWebView2NavigationStartingEventArgs *) { return false; },
-        };
+        auto visitor = overload{[](ICoreWebView2NewWindowRequestedEventArgs *) { return true; },
+                                [](ICoreWebView2NavigationStartingEventArgs *)
+                                {
+                                    return false;
+                                }};
 
         return std::visit(visitor, m_impl->request);
     }
 
     bool navigation::redirection() const
     {
-        overload visitor = {
-            [](ICoreWebView2NewWindowRequestedEventArgs *) { return false; },
-            [](ICoreWebView2NavigationStartingEventArgs *request)
-            {
-                BOOL rtn{};
-                request->get_IsRedirected(&rtn);
+        auto visitor = overload{[](ICoreWebView2NewWindowRequestedEventArgs *) { return false; },
+                                [](ICoreWebView2NavigationStartingEventArgs *request)
+                                {
+                                    BOOL rtn{};
+                                    request->get_IsRedirected(&rtn);
 
-                return static_cast<bool>(rtn);
-            },
-        };
+                                    return static_cast<bool>(rtn);
+                                }};
 
         return std::visit(visitor, m_impl->request);
     }
 
     bool navigation::user_initiated() const
     {
-        auto visitor = [](auto *request)
+        BOOL rtn{};
+
+        auto visitor = [&](auto *request)
         {
-            BOOL rtn{};
             request->get_IsUserInitiated(&rtn);
-
-            return static_cast<bool>(rtn);
         };
+        std::visit(visitor, m_impl->request);
 
-        return std::visit(visitor, m_impl->request);
+        return static_cast<bool>(rtn);
     }
 } // namespace saucer
