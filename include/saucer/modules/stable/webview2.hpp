@@ -7,6 +7,9 @@
 #include <saucer/webview.hpp>
 
 #include <windows.h>
+#include <gdiplus.h>
+#include <wininet.h>
+
 #include <WebView2.h>
 
 namespace saucer
@@ -34,5 +37,18 @@ namespace saucer
     struct stable_natives<permission::request>
     {
         ICoreWebView2PermissionRequestedEventArgs *request;
+    };
+
+    template <>
+    struct stable_natives<uri>
+    {
+        std::wstring *uri;
+        URL_COMPONENTSW *components;
+    };
+
+    template <>
+    struct stable_natives<icon>
+    {
+        Gdiplus::Bitmap *icon;
     };
 } // namespace saucer
