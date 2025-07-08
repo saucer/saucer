@@ -52,6 +52,12 @@ namespace saucer
         finished,
     };
 
+    enum class status : std::uint8_t
+    {
+        handled,
+        unhandled,
+    };
+
     struct embedded_file
     {
         stash<> content;
@@ -69,15 +75,15 @@ namespace saucer
         using embedded_files = std::unordered_map<fs::path, embedded_file>;
 
       public:
-        using events = ereignis::manager<                                              //
-            ereignis::event<web_event::permission, void(const permission::request &)>, //
-            ereignis::event<web_event::dom_ready, void()>,                             //
-            ereignis::event<web_event::navigated, void(const uri &)>,                  //
-            ereignis::event<web_event::navigate, policy(const navigation &)>,          //
-            ereignis::event<web_event::request, void(const uri &)>,                    //
-            ereignis::event<web_event::favicon, void(const icon &)>,                   //
-            ereignis::event<web_event::title, void(std::string_view)>,                 //
-            ereignis::event<web_event::load, void(const state &)>                      //
+        using events = ereignis::manager<                                                                 //
+            ereignis::event<web_event::permission, status(const std::shared_ptr<permission::request> &)>, //
+            ereignis::event<web_event::dom_ready, void()>,                                                //
+            ereignis::event<web_event::navigated, void(const uri &)>,                                     //
+            ereignis::event<web_event::navigate, policy(const navigation &)>,                             //
+            ereignis::event<web_event::request, void(const uri &)>,                                       //
+            ereignis::event<web_event::favicon, void(const icon &)>,                                      //
+            ereignis::event<web_event::title, void(std::string_view)>,                                    //
+            ereignis::event<web_event::load, void(const state &)>                                         //
             >;
 
       private:

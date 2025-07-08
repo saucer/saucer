@@ -89,6 +89,8 @@ namespace saucer
     template <>
     void webview::impl::setup<web_event::permission>([[maybe_unused]] webview *self)
     {
+        using permission::request;
+
 #ifdef SAUCER_QT6
         auto &event = self->m_events.get<web_event::permission>();
 
@@ -97,18 +99,20 @@ namespace saucer
             return;
         }
 
-        auto handler = [self](QWebEnginePermission req)
+        auto handler = [self](QWebEnginePermission raw)
         {
-            if (req.permissionType() == QWebEnginePermission::PermissionType::Unsupported)
+            if (!raw.isValid())
             {
                 return;
             }
 
-            auto request = permission::request{{
-                .request = std::move(req),
-            }};
+            auto req = std::make_shared<request>(request::impl{
+                .request = std::move(raw),
+                .type    = raw.permissionType(),
+                .origin  = raw.origin(),
+            });
 
-            self->m_events.get<web_event::permission>().fire(request);
+            self->m_events.get<web_event::permission>().fire(req).find(status::handled);
         };
 
         const auto id = web_page->connect(web_page.get(), &QWebEnginePage::permissionRequested, handler);

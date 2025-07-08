@@ -1,7 +1,6 @@
 #pragma once
 
 #include "navigation.hpp"
-#include "gtk.utils.hpp"
 
 #include <webkit/webkit.h>
 
@@ -9,9 +8,7 @@ namespace saucer
 {
     struct navigation::impl
     {
-        utils::g_object_ptr<WebKitNavigationPolicyDecision> decision;
-
-      public:
+        WebKitNavigationPolicyDecision *decision;
         WebKitPolicyDecisionType type;
     };
 } // namespace saucer

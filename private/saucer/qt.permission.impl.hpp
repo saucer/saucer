@@ -12,6 +12,10 @@ namespace saucer::permission
     {
 #ifdef SAUCER_QT6
         QWebEnginePermission request;
+
+      public:
+        QWebEnginePermission::PermissionType type;
+        QUrl origin;
 #endif
     };
 } // namespace saucer::permission

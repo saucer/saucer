@@ -11,20 +11,19 @@ namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : request(*other.m_impl) {}
-
-    request::~request() = default;
+    request::~request()
+    {
+        accept(false);
+    }
 
     uri request::url() const
     {
-        return uri::impl{m_impl->request.origin()};
+        return uri::impl{m_impl->origin};
     }
 
     permission::type request::type() const
     {
-        const auto type = m_impl->request.permissionType();
-
-        switch (type)
+        switch (m_impl->type)
         {
             using enum permission::type;
             using enum QWebEnginePermission::PermissionType;
@@ -55,6 +54,13 @@ namespace saucer::permission
 
     void request::accept(bool value) const
     {
-        (m_impl->request.*(value ? &QWebEnginePermission::grant : &QWebEnginePermission::deny))();
+        if (!m_impl->request.isValid())
+        {
+            return;
+        }
+
+        auto request = std::move(m_impl->request);
+
+        (request.*(value ? &QWebEnginePermission::grant : &QWebEnginePermission::deny))();
     }
 } // namespace saucer::permission

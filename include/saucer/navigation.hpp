@@ -6,7 +6,7 @@
 
 namespace saucer
 {
-    class navigation
+    struct navigation
     {
         struct impl;
 
@@ -15,9 +15,6 @@ namespace saucer
 
       public:
         navigation(impl);
-
-      public:
-        navigation(const navigation &);
 
       public:
         ~navigation();

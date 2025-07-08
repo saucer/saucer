@@ -1,6 +1,5 @@
 #include "wkg.webview.impl.hpp"
 
-#include "permission.hpp"
 #include "scripts.hpp"
 #include "request.hpp"
 
@@ -73,6 +72,7 @@ namespace saucer
 
         auto callback = [](WebKitWebView *, WebKitPermissionRequest *raw, webview *self)
         {
+            using permission::request;
             using enum permission::type;
 
             static constexpr auto mappings = std::array<gboolean (*)(gpointer, permission::type &), 6>{
@@ -96,13 +96,13 @@ namespace saucer
                 break;
             }
 
-            auto request = permission::request{{
+            auto req = std::make_shared<request>(request::impl{
                 .request = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw),
                 .url     = self->url().value_or({}),
                 .type    = type,
-            }};
+            });
 
-            self->m_events.get<web_event::permission>().fire(request);
+            self->m_events.get<web_event::permission>().fire(req).find(status::handled);
         };
 
         const auto id = g_signal_connect(web_view, "permission-request", G_CALLBACK(+callback), self);
@@ -129,24 +129,23 @@ namespace saucer
             return;
         }
 
-        auto callback = [](WebKitWebView *, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, webview *self) -> gboolean
+        auto callback = [](WebKitWebView *, WebKitPolicyDecision *raw, WebKitPolicyDecisionType type, webview *self) -> gboolean
         {
             if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION && type != WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION)
             {
                 return false;
             }
 
-            auto *converted = reinterpret_cast<WebKitNavigationPolicyDecision *>(decision);
-            auto nav        = utils::g_object_ptr<WebKitNavigationPolicyDecision>::ref(converted);
+            auto *const decision = WEBKIT_NAVIGATION_POLICY_DECISION(raw);
 
-            auto request = navigation{{
-                .decision = std::move(nav),
+            auto nav = navigation{{
+                .decision = decision,
                 .type     = type,
             }};
 
-            if (self->m_events.get<web_event::navigate>().fire(request).find(policy::block))
+            if (self->m_events.get<web_event::navigate>().fire(nav).find(policy::block))
             {
-                webkit_policy_decision_ignore(decision);
+                webkit_policy_decision_ignore(raw);
                 return true;
             }
 

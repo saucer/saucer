@@ -4,9 +4,10 @@ namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : request(*other.m_impl) {}
-
-    request::~request() = default;
+    request::~request()
+    {
+        accept(false);
+    }
 
     uri request::url() const
     {
@@ -20,6 +21,13 @@ namespace saucer::permission
 
     void request::accept(bool value) const
     {
-        (value ? webkit_permission_request_allow : webkit_permission_request_deny)(m_impl->request.get());
+        if (!m_impl->request)
+        {
+            return;
+        }
+
+        auto request = std::move(m_impl->request);
+
+        (value ? webkit_permission_request_allow : webkit_permission_request_deny)(request.get());
     }
 } // namespace saucer::permission

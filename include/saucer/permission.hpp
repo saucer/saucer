@@ -21,7 +21,7 @@ namespace saucer::permission
         notification  = 1 << 7,
     };
 
-    class request
+    struct request
     {
         struct impl;
 
@@ -30,9 +30,6 @@ namespace saucer::permission
 
       public:
         request(impl);
-
-      public:
-        request(const request &);
 
       public:
         ~request();
