@@ -6,8 +6,6 @@ namespace saucer
 {
     navigation::navigation(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    navigation::navigation(const navigation &other) : navigation(*other.m_impl) {}
-
     navigation::~navigation() = default;
 
     uri navigation::url() const

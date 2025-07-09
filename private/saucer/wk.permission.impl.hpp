@@ -7,12 +7,12 @@
 
 namespace saucer::permission
 {
-    using block_t = void (^)(WKPermissionDecision);
+    using block_ptr = utils::objc_obj<void (^)(WKPermissionDecision)>;
 
     struct request::impl
     {
         utils::objc_ptr<WKFrameInfo> frame;
-        utils::objc_obj<block_t> handler;
+        block_ptr handler;
 
       public:
         WKMediaCaptureType type;

@@ -295,16 +295,18 @@ using namespace saucer;
                                       type:(WKMediaCaptureType)type
                            decisionHandler:(void (^)(enum WKPermissionDecision))handler
 {
-    using permission::block_t;
+    using permission::block_ptr;
+    using permission::request;
+
     const utils::autorelease_guard guard{};
 
-    auto request = permission::request{{
+    auto req = std::make_shared<request>(request::impl{
         .frame   = utils::objc_ptr<WKFrameInfo>::ref(frame),
-        .handler = utils::objc_obj<block_t>::ref(handler),
+        .handler = block_ptr::ref(handler),
         .type    = type,
-    }};
+    });
 
-    m_events->get<web_event::permission>().fire(request);
+    m_events->get<web_event::permission>().fire(req).find(status::handled);
 }
 @end
 
@@ -330,11 +332,11 @@ using namespace saucer;
 {
     const utils::autorelease_guard guard{};
 
-    auto request = navigation{{
+    auto nav = navigation{{
         .action = utils::objc_ptr<WKNavigationAction>::ref(action),
     }};
 
-    if (m_events->get<web_event::navigate>().fire(request).find(policy::block))
+    if (m_events->get<web_event::navigate>().fire(nav).find(policy::block))
     {
         return std::invoke(handler, WKNavigationActionPolicyCancel);
     }

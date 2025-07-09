@@ -11,9 +11,10 @@ namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : request(*other.m_impl) {}
-
-    request::~request() = default;
+    request::~request()
+    {
+        accept(false);
+    }
 
     uri request::url() const
     {
@@ -40,6 +41,13 @@ namespace saucer::permission
 
     void request::accept(bool value) const
     {
-        std::invoke(m_impl->handler.get(), value ? WKPermissionDecisionGrant : WKPermissionDecisionDeny);
+        if (!m_impl->handler)
+        {
+            return;
+        }
+
+        auto handler = std::move(m_impl->handler);
+
+        std::invoke(handler.get(), value ? WKPermissionDecisionGrant : WKPermissionDecisionDeny);
     }
 } // namespace saucer::permission
