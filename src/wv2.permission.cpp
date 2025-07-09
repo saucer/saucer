@@ -8,9 +8,10 @@ namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    request::request(const request &other) : request(*other.m_impl) {}
-
-    request::~request() = default;
+    request::~request()
+    {
+        accept(false);
+    }
 
     uri request::url() const
     {
@@ -47,7 +48,15 @@ namespace saucer::permission
 
     void request::accept(bool value) const
     {
-        m_impl->request->put_State(value ? COREWEBVIEW2_PERMISSION_STATE_ALLOW : COREWEBVIEW2_PERMISSION_STATE_DENY);
-        m_impl->deferral->Complete();
+        if (!m_impl->deferral)
+        {
+            return;
+        }
+
+        auto deferral = std::move(m_impl->deferral);
+        {
+            m_impl->request->put_State(value ? COREWEBVIEW2_PERMISSION_STATE_ALLOW : COREWEBVIEW2_PERMISSION_STATE_DENY);
+        }
+        deferral->Complete();
     }
 } // namespace saucer::permission

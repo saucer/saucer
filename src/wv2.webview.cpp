@@ -85,14 +85,16 @@ namespace saucer
             ComPtr<ICoreWebView2Deferral> deferral;
             args->GetDeferral(&deferral);
 
-            auto func = [this, args, deferral]
-            {
-                auto request = navigation{{.request = args}};
-                m_events.get<web_event::navigate>().fire(request).find(policy::block);
-                deferral->Complete();
-            };
+            m_parent->post(
+                [this, args, deferral]
+                {
+                    auto nav = navigation{{
+                        .request = args,
+                    }};
 
-            m_parent->post(func);
+                    m_events.get<web_event::navigate>().fire(nav).find(policy::block);
+                    deferral->Complete();
+                });
 
             return S_OK;
         };
@@ -104,9 +106,11 @@ namespace saucer
             m_impl->dom_loaded = false;
             m_parent->post([this] { m_events.get<web_event::load>().fire(state::started); });
 
-            auto request = navigation{{.request = args}};
+            auto nav = navigation{{
+                .request = args,
+            }};
 
-            if (m_events.get<web_event::navigate>().fire(request).find(policy::block))
+            if (m_events.get<web_event::navigate>().fire(nav).find(policy::block))
             {
                 args->put_Cancel(true);
             }

@@ -271,15 +271,17 @@ namespace saucer
 
         auto handler = [self](auto, ICoreWebView2PermissionRequestedEventArgs *args)
         {
+            using permission::request;
+
             ComPtr<ICoreWebView2Deferral> deferral;
             args->GetDeferral(&deferral);
 
-            auto request = permission::request{{
+            auto req = std::make_shared<request>(request::impl{
                 .request  = args,
                 .deferral = std::move(deferral),
-            }};
+            });
 
-            self->m_parent->post([self, request] { self->m_events.get<web_event::permission>().fire(request); });
+            self->m_parent->post([self, req] { self->m_events.get<web_event::permission>().fire(req).find(status::handled); });
 
             return S_OK;
         };
