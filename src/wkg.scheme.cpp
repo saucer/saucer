@@ -27,17 +27,25 @@ namespace saucer::scheme
             return stash<>::empty();
         }
 
-        auto content = utils::g_bytes_ptr{g_input_stream_read_bytes(stream.get(), G_MAXSSIZE, nullptr, nullptr)};
+        static constexpr auto chunk_size = 4096;
 
-        if (!content)
+        std::vector<std::uint8_t> content;
+        content.reserve(chunk_size);
+
+        gssize read{};
+        guint8 buffer[chunk_size];
+
+        while ((read = g_input_stream_read(stream.get(), buffer, chunk_size, nullptr, nullptr)) > 0)
+        {
+            content.insert(content.end(), buffer, buffer + read);
+        }
+
+        if (read == -1)
         {
             return stash<>::empty();
         }
 
-        gsize size{};
-        const auto *data = reinterpret_cast<const std::uint8_t *>(g_bytes_get_data(content.get(), &size));
-
-        return stash<>::from({data, data + size});
+        return stash<>::from(std::move(content));
     }
 
     std::map<std::string, std::string> request::headers() const
