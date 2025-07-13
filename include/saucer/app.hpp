@@ -64,11 +64,12 @@ namespace saucer
         void post(post_callback_t) const;
 
       public:
-        template <bool Get = true, typename Callback>
-        [[sc::thread_safe]] auto dispatch(Callback &&) const;
+        template <typename Callback, typename... Ts>
+        [[sc::thread_safe]] auto invoke(Callback &&, Ts &&...) const;
 
+      public:
         template <typename T, typename... Ts>
-        [[sc::thread_safe]] safe_ptr<T> make(Ts &&...) const;
+        [[sc::thread_safe]] safe_ptr<T> make(Ts &&...) const; // TODO: Remove (?)
 
       public:
         void quit();

@@ -7,7 +7,7 @@
 
 namespace saucer::serializers::glaze
 {
-    namespace impl
+    namespace detail
     {
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
@@ -48,12 +48,12 @@ namespace saucer::serializers::glaze
 
             return std::format("Expected parameter {} to be of type '{}'", I, rebind::type_name<current>);
         }
-    } // namespace impl
+    } // namespace detail
 
     template <Writable T>
     std::string serializer::write(T &&value)
     {
-        return glz::write<impl::opts>(std::forward<T>(value)).value_or("null");
+        return glz::write<detail::opts>(std::forward<T>(value)).value_or("null");
     }
 
     template <Readable T>
@@ -61,20 +61,20 @@ namespace saucer::serializers::glaze
     {
         T rtn{};
 
-        if (auto err = glz::read<impl::opts>(rtn, data); !err)
+        if (auto err = glz::read<detail::opts>(rtn, data); !err)
         {
             return rtn;
         }
 
         glz::json_t json{};
 
-        if (auto err = glz::read<impl::opts>(json, data); err)
+        if (auto err = glz::read<detail::opts>(json, data); err)
         {
             const auto name = rebind::utils::find_enum_name(err.ec).value_or("Unknown");
             return std::unexpected{std::string{name}};
         }
 
-        return std::unexpected{impl::mismatch(rtn, json).value_or("Unknown Mismatch")};
+        return std::unexpected{detail::mismatch(rtn, json).value_or("Unknown Mismatch")};
     }
 
     template <Readable T>

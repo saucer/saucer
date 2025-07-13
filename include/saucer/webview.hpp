@@ -34,18 +34,6 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    enum class web_event : std::uint8_t
-    {
-        permission,
-        dom_ready,
-        navigated,
-        navigate,
-        request,
-        favicon,
-        title,
-        load,
-    };
-
     enum class state : std::uint8_t
     {
         started,
@@ -66,47 +54,54 @@ namespace saucer
 
     using color = std::array<std::uint8_t, 4>;
 
+    // TODO: Rework modules
+
     struct webview : window, modules::extend<webview>
     {
         struct impl;
+
+      public:
         struct options;
 
       private:
         using embedded_files = std::unordered_map<fs::path, embedded_file>;
 
       public:
-        using events = ereignis::manager<                                                                 //
-            ereignis::event<web_event::permission, status(const std::shared_ptr<permission::request> &)>, //
-            ereignis::event<web_event::dom_ready, void()>,                                                //
-            ereignis::event<web_event::navigated, void(const uri &)>,                                     //
-            ereignis::event<web_event::navigate, policy(const navigation &)>,                             //
-            ereignis::event<web_event::request, void(const uri &)>,                                       //
-            ereignis::event<web_event::favicon, void(const icon &)>,                                      //
-            ereignis::event<web_event::title, void(std::string_view)>,                                    //
-            ereignis::event<web_event::load, void(const state &)>                                         //
+        enum class event : std::uint8_t
+        {
+            permission,
+            dom_ready,
+            navigated,
+            navigate,
+            request,
+            favicon,
+            title,
+            load,
+        };
+
+      public:
+        using events = ereignis::manager<                                                             //
+            ereignis::event<event::permission, status(const std::shared_ptr<permission::request> &)>, //
+            ereignis::event<event::dom_ready, void()>,                                                //
+            ereignis::event<event::navigated, void(const uri &)>,                                     //
+            ereignis::event<event::navigate, policy(const navigation &)>,                             //
+            ereignis::event<event::request, void(const uri &)>,                                       //
+            ereignis::event<event::favicon, void(const icon &)>,                                      //
+            ereignis::event<event::title, void(std::string_view)>,                                    //
+            ereignis::event<event::load, void(const state &)>                                         //
             >;
 
-      private:
-        events m_events;
-
-      private:
-        bool m_attributes;
-        embedded_files m_embedded_files;
-
       protected:
+        std::unique_ptr<events> m_events;
         std::unique_ptr<impl> m_impl;
 
       protected:
-        template <web_event Event>
+        template <event Event>
         void setup();
 
       protected:
-        virtual bool on_message(std::string_view);
+        virtual bool on_message(std::string_view); // TODO: This could be solved without the need for virtual functions
         void handle_scheme(const std::string &, scheme::resolver &&);
-
-      protected:
-        void reject(std::uint64_t, std::string_view);
-        void resolve(std::uint64_t, std::string_view);
 
       public:
         webview(const options &);
@@ -132,16 +127,16 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
 
       public:
-        [[sc::thread_safe]] void set_dev_tools(bool enabled);
-        [[sc::thread_safe]] void set_context_menu(bool enabled);
+        [[sc::thread_safe]] void set_dev_tools(bool);
+        [[sc::thread_safe]] void set_context_menu(bool);
 
       public:
-        [[sc::thread_safe]] void set_force_dark_mode(bool enabled);
-        [[sc::thread_safe]] void set_background(const color &color);
+        [[sc::thread_safe]] void set_force_dark_mode(bool);
+        [[sc::thread_safe]] void set_background(const color &);
 
       public:
-        [[sc::thread_safe]] void set_url(const uri &url);
-        [[sc::thread_safe]] void set_url(const std::string &url);
+        [[sc::thread_safe]] void set_url(const uri &);
+        [[sc::thread_safe]] void set_url(const std::string &);
 
       public:
         [[sc::thread_safe]] void back();
@@ -151,19 +146,19 @@ namespace saucer
         [[sc::thread_safe]] void reload();
 
       public:
-        [[sc::thread_safe]] void serve(fs::path file);
-        [[sc::thread_safe]] void embed(embedded_files files);
+        [[sc::thread_safe]] void serve(fs::path);
+        [[sc::thread_safe]] void embed(embedded_files);
 
       public:
         [[sc::thread_safe]] void clear_scripts();
 
       public:
-        [[sc::thread_safe]] void clear_embedded();
-        [[sc::thread_safe]] void clear_embedded(const fs::path &file);
+        [[sc::thread_safe]] void unembed();
+        [[sc::thread_safe]] void unembed(const fs::path &);
 
       public:
-        [[sc::thread_safe]] void inject(const script &script);
-        [[sc::thread_safe]] void execute(const std::string &code);
+        [[sc::thread_safe]] void inject(const script &);
+        [[sc::thread_safe]] void execute(const std::string &);
 
       public:
         template <typename T>
@@ -171,26 +166,25 @@ namespace saucer
         [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:
-        using window::clear;
-        [[sc::thread_safe]] void clear(web_event event);
-
-        using window::remove;
-        [[sc::thread_safe]] void remove(web_event event, std::uint64_t id);
-
-        template <window_event Event, typename T>
-        [[sc::thread_safe]] void once(T &&callback);
-        template <web_event Event, typename T>
-        [[sc::thread_safe]] void once(T &&callback);
-
-        template <window_event Event, typename T>
+        template <window::event Event, typename T>
         [[sc::thread_safe]] auto on(T &&callback);
-        template <web_event Event, typename T>
+        template <event Event, typename T>
         [[sc::thread_safe]] auto on(T &&callback);
 
-        template <window_event Event, typename... Ts>
+        template <window::event Event, typename T>
+        [[sc::thread_safe]] void once(T &&callback);
+        template <event Event, typename T>
+        [[sc::thread_safe]] void once(T &&callback);
+
+        template <window::event Event, typename... Ts>
         [[sc::thread_safe]] auto await(Ts &&...result);
-        template <web_event Event, typename... Ts>
+        template <event Event, typename... Ts>
         [[sc::thread_safe]] auto await(Ts &&...result);
+
+      public:
+        using window::off;
+        [[sc::thread_safe]] void off(event);
+        [[sc::thread_safe]] void off(event, std::uint64_t id);
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);

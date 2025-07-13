@@ -7,11 +7,14 @@
 #include <flagpp/flags.hpp>
 
 template <>
-constexpr bool flagpp::enabled<saucer::window_edge> = true;
+constexpr bool flagpp::enabled<saucer::window::edge> = true;
 
 namespace saucer
 {
-    std::optional<event_data> window::impl::prev_data() const
+    using native = window::impl::impl_native;
+    using event  = window::event;
+
+    std::optional<event_data> native::prev_data() const
     {
         if (!prev_click)
         {
@@ -41,24 +44,24 @@ namespace saucer
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::decorated>(saucer::window *)
+    void native::setup<event::decorated>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::resize>(saucer::window *self)
+    void native::setup<event::resize>(impl *self)
     {
-        auto &event = self->m_events.get<window_event::resize>();
+        auto &event = self->events->get<event::resize>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](void *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, impl *self)
         {
             auto [width, height] = self->size();
-            self->m_events.get<window_event::resize>().fire(width, height);
+            self->events->get<event::resize>().fire(width, height);
         };
 
         const auto width  = g_signal_connect(window.get(), "notify::default-width", G_CALLBACK(+callback), self);
@@ -73,18 +76,18 @@ namespace saucer
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
+    void native::setup<event::maximize>(impl *self)
     {
-        auto &event = self->m_events.get<window_event::maximize>();
+        auto &event = self->events->get<event::maximize>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](void *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->m_events.get<window_event::maximize>().fire(self->maximized());
+            self->events->get<event::maximize>().fire(self->maximized());
         };
 
         const auto id = g_signal_connect(window.get(), "notify::maximized", G_CALLBACK(+callback), self);
@@ -92,23 +95,23 @@ namespace saucer
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::minimize>(saucer::window *)
+    void native::setup<event::minimize>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::focus>(saucer::window *self)
+    void native::setup<event::focus>(impl *self)
     {
-        auto &event = self->m_events.get<window_event::focus>();
+        auto &event = self->events->get<event::focus>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](void *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->m_events.get<window_event::focus>().fire(self->focused());
+            self->events->get<event::focus>().fire(self->focused());
         };
 
         const auto id = g_signal_connect(window.get(), "notify::is-active", G_CALLBACK(+callback), self);
@@ -116,22 +119,22 @@ namespace saucer
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::close>(saucer::window *)
+    void native::setup<event::close>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::closed>(saucer::window *)
+    void native::setup<event::closed>(impl *)
     {
     }
 
-    void window::impl::start_resize(window_edge edge) const
+    void native::start_resize(edge edge) const
     {
         GdkSurfaceEdge translated{};
 
         switch (std::to_underlying(edge))
         {
-            using enum window_edge;
+            using enum edge;
 
         case std::to_underlying(top):
             translated = GDK_SURFACE_EDGE_NORTH;
@@ -170,7 +173,7 @@ namespace saucer
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 
-    void window::impl::make_transparent(bool enabled) const
+    void native::make_transparent(bool enabled) const
     {
         if (!enabled)
         {
@@ -181,23 +184,23 @@ namespace saucer
         gtk_widget_add_css_class(GTK_WIDGET(window.get()), "transparent");
     }
 
-    void window::impl::track(saucer::window *self) const
+    void native::track(impl *self) const
     {
-        auto callback = [](void *, saucer::window *self) -> gboolean
+        auto callback = [](void *, impl *self) -> gboolean
         {
-            if (self->m_events.get<window_event::close>().fire().find(policy::block))
+            if (self->events->get<event::close>().fire().find(policy::block))
             {
                 return true;
             }
 
-            auto *parent     = self->m_parent;
-            auto *identifier = self->m_impl->window.get();
+            auto *parent     = self->parent;
+            auto *identifier = self->native->window.get();
 
             auto *const impl = parent->native<false>();
             auto &instances  = impl->instances;
 
             instances.erase(identifier);
-            self->m_events.get<window_event::closed>().fire();
+            self->events->get<event::closed>().fire();
 
             if (!impl->quit_on_last_window_closed)
             {
@@ -215,11 +218,11 @@ namespace saucer
         g_signal_connect(window.get(), "close-request", G_CALLBACK(+callback), self);
     }
 
-    void window::impl::update_region(saucer::window *self) const
+    void native::update_region(impl *self) const
     {
-        auto callback = [](void *, double, double, saucer::window *self)
+        auto callback = [](void *, double, double, impl *self)
         {
-            auto *widget  = GTK_WIDGET(self->m_impl->window.get());
+            auto *widget  = GTK_WIDGET(self->native->window.get());
             auto *native  = gtk_widget_get_native(widget);
             auto *surface = gtk_native_get_surface(native);
 
@@ -228,19 +231,19 @@ namespace saucer
                 return;
             }
 
-            gdk_surface_set_input_region(surface, self->m_impl->region.get());
+            gdk_surface_set_input_region(surface, self->native->region.get());
         };
 
         g_signal_connect(motion_controller, "motion", G_CALLBACK(+callback), self);
-        gtk_widget_add_controller(GTK_WIDGET(self->m_impl->window.get()), motion_controller);
+        gtk_widget_add_controller(GTK_WIDGET(self->native->window.get()), motion_controller);
     }
 
-    void window::impl::update_decorations(saucer::window *self) const
+    void native::update_decorations(impl *self) const
     {
-        auto callback = [](void *, GParamSpec *, saucer::window *self)
+        auto callback = [](void *, GParamSpec *, impl *self)
         {
-            auto &prev         = self->m_impl->prev_decoration;
-            const auto current = self->decoration();
+            auto &prev         = self->native->prev_decoration;
+            const auto current = self->decorations();
 
             if (prev.has_value() && prev.value() == current)
             {
@@ -248,7 +251,7 @@ namespace saucer
             }
 
             prev.emplace(current);
-            self->m_events.get<window_event::decorated>().fire(current);
+            self->events->get<event::decorated>().fire(current);
         };
 
         g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);

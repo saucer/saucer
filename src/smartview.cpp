@@ -1,6 +1,7 @@
 #include "smartview.hpp"
 
 #include "scripts.hpp"
+#include "webview.impl.hpp"
 
 #include <lockpp/lock.hpp>
 
@@ -21,7 +22,7 @@ namespace saucer
 
       public:
         std::unique_ptr<serializer_core> serializer;
-        std::shared_ptr<lockpp::lock<smartview_core *>> self;
+        std::shared_ptr<lockpp::lock<webview::impl *>> parent;
     };
 
     smartview_core::smartview_core(std::unique_ptr<serializer_core> serializer, const options &opts)
@@ -30,7 +31,7 @@ namespace saucer
         using namespace scripts;
 
         m_impl->serializer = std::move(serializer);
-        m_impl->self       = std::make_shared<lockpp::lock<smartview_core *>>(this);
+        m_impl->parent     = std::make_shared<lockpp::lock<webview::impl *>>(webview::m_impl.get());
 
         auto script = std::format(smartview_script, m_impl->serializer->js_serializer());
 
@@ -40,8 +41,7 @@ namespace saucer
 
     smartview_core::~smartview_core()
     {
-        auto locked = m_impl->self->write();
-        *locked     = nullptr;
+        m_impl->parent->assign(nullptr);
     }
 
     bool smartview_core::on_message(std::string_view message)
@@ -83,31 +83,31 @@ namespace saucer
         }
         else
         {
-            return reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
+            return webview::m_impl->reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
         }
 
-        auto resolve = [shared = m_impl->self, id = message->id](const auto &result)
+        auto resolve = [shared = m_impl->parent, id = message->id](const auto &result)
         {
-            auto self = shared->read();
+            auto parent = shared->read();
 
-            if (!self.value())
+            if (!parent.value())
             {
                 return;
             }
 
-            self.value()->webview::resolve(id, result);
+            parent.value()->resolve(id, result);
         };
 
-        auto reject = [shared = m_impl->self, id = message->id](const auto &error)
+        auto reject = [shared = m_impl->parent, id = message->id](const auto &error)
         {
-            auto self = shared->read();
+            auto parent = shared->read();
 
-            if (!self.value())
+            if (!parent.value())
             {
                 return;
             }
 
-            self.value()->reject(id, error);
+            parent.value()->reject(id, error);
         };
 
         auto executor = serializer_core::executor{std::move(resolve), std::move(reject)};

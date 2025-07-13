@@ -10,23 +10,25 @@
 
 namespace saucer
 {
-    webview::webview(const options &opts)
-        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
+    using impl = webview::impl;
+
+    impl::impl(webview *self, const options &opts, window::impl *parent, webview::events *events)
+        : self(self), parent(parent), events(events), native(std::make_unique<impl_native>())
     {
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
-        m_impl->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-        m_impl->settings = impl::make_settings(opts);
+        native->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+        native->settings = impl_native::make_settings(opts);
 
-        auto *const session      = webkit_web_view_get_network_session(m_impl->web_view);
+        auto *const session      = webkit_web_view_get_network_session(native->web_view);
         auto *const data_manager = webkit_network_session_get_website_data_manager(session);
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
         if (!opts.user_agent.empty())
         {
-            webkit_settings_set_user_agent(m_impl->settings.get(), opts.user_agent.c_str());
+            webkit_settings_set_user_agent(native->settings.get(), opts.user_agent.c_str());
         }
 
         if (opts.persistent_cookies)
@@ -42,56 +44,54 @@ namespace saucer
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
-        webkit_settings_set_hardware_acceleration_policy(m_impl->settings.get(), opts.hardware_acceleration
+        webkit_settings_set_hardware_acceleration_policy(native->settings.get(), opts.hardware_acceleration
                                                                                      ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
                                                                                      : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
-        webkit_web_view_set_settings(m_impl->web_view, m_impl->settings.get());
+        webkit_web_view_set_settings(native->web_view, native->settings.get());
 
-        gtk_widget_set_size_request(GTK_WIDGET(m_impl->web_view), 1, 1);
-        gtk_widget_set_vexpand(GTK_WIDGET(m_impl->web_view), true);
-        gtk_widget_set_hexpand(GTK_WIDGET(m_impl->web_view), true);
+        gtk_widget_set_size_request(GTK_WIDGET(native->web_view), 1, 1);
+        gtk_widget_set_vexpand(GTK_WIDGET(native->web_view), true);
+        gtk_widget_set_hexpand(GTK_WIDGET(native->web_view), true);
 
-        gtk_box_append(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
+        gtk_box_append(parent->native->content, GTK_WIDGET(native->web_view));
 
         auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *data) -> gboolean
         {
-            return !data->context_menu;
+            return !data->native->context_menu;
         };
-        g_signal_connect(m_impl->web_view, "context-menu", G_CALLBACK(+on_context), m_impl.get());
+        g_signal_connect(native->web_view, "context-menu", G_CALLBACK(+on_context), this);
 
-        m_impl->manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
-        webkit_user_content_manager_register_script_message_handler(m_impl->manager, "saucer", nullptr);
+        native->manager = webkit_web_view_get_user_content_manager(native->web_view);
+        webkit_user_content_manager_register_script_message_handler(native->manager, "saucer", nullptr);
 
-        auto on_message = [](WebKitWebView *, JSCValue *value, void *data)
+        auto on_message = [](WebKitWebView *, JSCValue *value, webview *self)
         {
             auto message = std::string{utils::g_str_ptr{jsc_value_to_string(value)}.get()};
-            auto &self   = *reinterpret_cast<webview *>(data);
 
             if (message == "dom_loaded")
             {
-                self.m_impl->dom_loaded = true;
+                self->m_impl->native->dom_loaded = true;
 
-                for (const auto &pending : self.m_impl->pending)
+                for (const auto &pending : self->m_impl->native->pending)
                 {
-                    self.execute(pending);
+                    self->execute(pending);
                 }
 
-                self.m_impl->pending.clear();
-                self.m_events.get<web_event::dom_ready>().fire();
+                self->m_impl->native->pending.clear();
+                self->m_impl->events->get<event::dom_ready>().fire();
 
                 return;
             }
 
-            self.on_message(message);
+            self->on_message(message);
         };
 
-        m_impl->msg_received = g_signal_connect(m_impl->manager, "script-message-received", G_CALLBACK(+on_message), this);
+        native->msg_received = g_signal_connect(native->manager, "script-message-received", G_CALLBACK(+on_message), self);
 
-        auto on_load = [](WebKitWebView *, WebKitLoadEvent event, void *data)
+        auto on_load = [](WebKitWebView *, WebKitLoadEvent event, impl *self)
         {
-            auto *const self = reinterpret_cast<webview *>(data);
-            auto url         = self->url();
+            auto url = self->url();
 
             if (!url.has_value())
             {
@@ -101,13 +101,13 @@ namespace saucer
 
             if (event == WEBKIT_LOAD_COMMITTED)
             {
-                self->m_events.get<web_event::navigated>().fire(url.value());
+                self->events->get<event::navigated>().fire(url.value());
                 return;
             }
 
             if (event == WEBKIT_LOAD_FINISHED)
             {
-                self->m_events.get<web_event::load>().fire(state::finished);
+                self->events->get<event::load>().fire(state::finished);
                 return;
             }
 
@@ -116,89 +116,72 @@ namespace saucer
                 return;
             }
 
-            self->m_impl->dom_loaded = false;
-            self->m_events.get<web_event::load>().fire(state::started);
+            self->native->dom_loaded = false;
+            self->events->get<event::load>().fire(state::started);
         };
 
-        g_signal_connect(m_impl->web_view, "load-changed", G_CALLBACK(+on_load), this);
+        g_signal_connect(native->web_view, "load-changed", G_CALLBACK(+on_load), this);
 
         auto *const controller = gtk_gesture_click_new();
 
-        auto on_click = [](GtkGestureClick *gesture, gint, gdouble, gdouble, void *data)
+        auto on_click = [](GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)
         {
-            auto *const self       = reinterpret_cast<webview *>(data);
             auto *const controller = GTK_EVENT_CONTROLLER(gesture);
             auto *const event      = gtk_event_controller_get_current_event(controller);
 
-            self->window::m_impl->prev_click.emplace(click_event{
+            self->parent->native->prev_click.emplace(click_event{
                 .event      = utils::g_event_ptr::ref(event),
                 .controller = controller,
             });
         };
 
-        auto release = [](GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, void *data)
+        auto release = [](GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, impl *self)
         {
-            auto *const self = reinterpret_cast<webview *>(data);
-            auto &previous   = self->window::m_impl->prev_resizable;
+            auto &previous = self->parent->native->prev_resizable;
 
             if (!previous.has_value())
             {
                 return;
             }
 
-            self->set_resizable(previous.value());
+            self->parent->set_resizable(previous.value());
             previous.reset();
         };
 
         g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
         g_signal_connect(controller, "unpaired-release", G_CALLBACK(+release), this);
 
-        gtk_widget_add_controller(GTK_WIDGET(m_impl->web_view), GTK_EVENT_CONTROLLER(controller));
+        gtk_widget_add_controller(GTK_WIDGET(native->web_view), GTK_EVENT_CONTROLLER(controller));
 
-        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
-        inject({.code = std::string{impl::ready_script}, .time = load_time::ready, .permanent = true});
+        inject({.code = impl_native::inject_script(), .time = load_time::creation, .permanent = true});
+        inject({.code = std::string{impl_native::ready_script}, .time = load_time::ready, .permanent = true});
     }
 
-    webview::~webview()
+    impl::~impl()
     {
-        for (const auto &[name, _] : impl::schemes)
+        for (const auto &[name, _] : impl_native::schemes)
         {
             remove_scheme(name);
         }
 
-        gtk_box_remove(window::m_impl->content, GTK_WIDGET(m_impl->web_view));
-        g_signal_handler_disconnect(m_impl->manager, m_impl->msg_received);
+        gtk_box_remove(parent->native->content, GTK_WIDGET(native->web_view));
+        g_signal_handler_disconnect(native->manager, native->msg_received);
     }
 
-    template <web_event Event>
-    void webview::setup()
+    template <webview::event Event>
+    void impl::setup()
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return setup<Event>(); });
-        }
-
-        m_impl->setup<Event>(this);
+        native->setup<Event>(this);
     }
 
-    icon webview::favicon() const
+    icon impl::favicon() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return favicon(); });
-        }
-
-        return {{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(m_impl->web_view))}};
+        return {{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(native->web_view))}};
     }
 
-    std::string webview::page_title() const
+    std::string impl::page_title() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return page_title(); });
-        }
-
-        const auto *rtn = webkit_web_view_get_title(m_impl->web_view);
+        const auto *rtn = webkit_web_view_get_title(native->web_view);
 
         if (!rtn)
         {
@@ -208,35 +191,20 @@ namespace saucer
         return rtn;
     }
 
-    bool webview::dev_tools() const
+    bool impl::dev_tools() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return dev_tools(); });
-        }
-
-        auto *const settings = webkit_web_view_get_settings(m_impl->web_view);
+        auto *const settings = webkit_web_view_get_settings(native->web_view);
         return webkit_settings_get_enable_developer_extras(settings);
     }
 
-    bool webview::context_menu() const
+    bool impl::context_menu() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return context_menu(); });
-        }
-
-        return m_impl->context_menu;
+        return native->context_menu;
     }
 
-    std::optional<uri> webview::url() const
+    std::optional<uri> impl::url() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return url(); });
-        }
-
-        const auto *url = webkit_web_view_get_uri(m_impl->web_view);
+        const auto *url = webkit_web_view_get_uri(native->web_view);
 
         if (!url)
         {
@@ -246,15 +214,10 @@ namespace saucer
         return uri::parse(url).value_or({});
     }
 
-    color webview::background() const
+    color impl::background() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return background(); });
-        }
-
         GdkRGBA color{};
-        webkit_web_view_get_background_color(m_impl->web_view, &color);
+        webkit_web_view_get_background_color(native->web_view, &color);
 
         return {
             static_cast<std::uint8_t>(color.red * 255.f),
@@ -264,28 +227,18 @@ namespace saucer
         };
     }
 
-    bool webview::force_dark_mode() const
+    bool impl::force_dark_mode() const // NOLINT(*-static)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return force_dark_mode(); });
-        }
-
         AdwColorScheme scheme{};
         g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
 
         return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
     }
 
-    void webview::set_dev_tools(bool enabled)
+    void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_dev_tools(enabled); });
-        }
-
-        auto *const settings  = webkit_web_view_get_settings(m_impl->web_view);
-        auto *const inspector = webkit_web_view_get_inspector(m_impl->web_view);
+        auto *const settings  = webkit_web_view_get_settings(native->web_view);
+        auto *const inspector = webkit_web_view_get_inspector(native->web_view);
 
         webkit_settings_set_enable_developer_extras(settings, enabled);
 
@@ -298,34 +251,19 @@ namespace saucer
         webkit_web_inspector_show(inspector);
     }
 
-    void webview::set_context_menu(bool enabled)
+    void impl::set_context_menu(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_context_menu(enabled); });
-        }
-
-        m_impl->context_menu = enabled;
+        native->context_menu = enabled;
     }
 
-    void webview::set_force_dark_mode(bool enabled)
+    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-static, *-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_force_dark_mode(enabled); });
-        }
-
         g_object_set(adw_style_manager_get_default(), "color-scheme", enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT,
                      nullptr);
     }
 
-    void webview::set_background(const color &color)
+    void impl::set_background(const color &color) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, color] { return set_background(color); });
-        }
-
         const auto [r, g, b, a] = color;
 
         GdkRGBA rgba{
@@ -335,60 +273,35 @@ namespace saucer
             .alpha = static_cast<float>(a) / 255.f,
         };
 
-        webkit_web_view_set_background_color(m_impl->web_view, &rgba);
-        window::m_impl->make_transparent(a < 255);
+        webkit_web_view_set_background_color(native->web_view, &rgba);
+        parent->native->make_transparent(a < 255);
     }
 
-    void webview::set_url(const uri &url)
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, url] { return set_url(url); });
-        }
-
-        webkit_web_view_load_uri(m_impl->web_view, url.string().c_str());
+        webkit_web_view_load_uri(native->web_view, url.string().c_str());
     }
 
-    void webview::back()
+    void impl::back() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return back(); });
-        }
-
-        webkit_web_view_go_back(m_impl->web_view);
+        webkit_web_view_go_back(native->web_view);
     }
 
-    void webview::forward()
+    void impl::forward() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return forward(); });
-        }
-
-        webkit_web_view_go_forward(m_impl->web_view);
+        webkit_web_view_go_forward(native->web_view);
     }
 
-    void webview::reload()
+    void impl::reload() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return reload(); });
-        }
-
-        webkit_web_view_reload(m_impl->web_view);
+        webkit_web_view_reload(native->web_view);
     }
 
-    void webview::clear_scripts()
+    void impl::clear_scripts() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return clear_scripts(); });
-        }
+        auto *const manager = webkit_web_view_get_user_content_manager(native->web_view);
 
-        auto *const manager = webkit_web_view_get_user_content_manager(m_impl->web_view);
-
-        for (auto it = m_impl->scripts.begin(); it != m_impl->scripts.end();)
+        for (auto it = native->scripts.begin(); it != native->scripts.end();)
         {
             const auto &[script, permanent] = *it;
 
@@ -399,101 +312,61 @@ namespace saucer
             }
 
             webkit_user_content_manager_remove_script(manager, script.get());
-            it = m_impl->scripts.erase(it);
+            it = native->scripts.erase(it);
         }
     }
 
-    void webview::inject(const script &script)
+    void impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, script] { return inject(script); });
-        }
+        const auto time = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
+                                                             : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
 
-        const auto time  = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                              : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
         const auto frame = script.frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
                                                           : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
 
-        auto *const manager     = webkit_web_view_get_user_content_manager(m_impl->web_view);
+        auto *const manager     = webkit_web_view_get_user_content_manager(native->web_view);
         auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
 
-        m_impl->scripts.emplace_back(user_script, script.permanent);
+        native->scripts.emplace_back(user_script, script.permanent);
         webkit_user_content_manager_add_script(manager, user_script);
     }
 
-    void webview::execute(const std::string &code)
+    void impl::execute(const std::string &code) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
+        if (!native->dom_loaded)
         {
-            return m_parent->dispatch([this, code] { return execute(code); });
-        }
-
-        if (!m_impl->dom_loaded)
-        {
-            m_impl->pending.emplace_back(code);
+            native->pending.emplace_back(code);
             return;
         }
 
-        webkit_web_view_evaluate_javascript(m_impl->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
+        webkit_web_view_evaluate_javascript(native->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver)
+    void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, name, handler = std::move(resolver)] mutable
-                                      { return handle_scheme(name, std::move(handler)); });
-        }
-
-        if (!impl::schemes.contains(name))
+        if (!impl_native::schemes.contains(name))
         {
             return;
         }
 
         // TODO: Use heterogenous lookup with C++26
 
-        impl::schemes[name]->add_callback(m_impl->web_view, std::move(resolver));
+        impl_native::schemes[name]->add_callback(native->web_view, std::move(resolver));
     }
 
-    void webview::remove_scheme(const std::string &name)
+    void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, name] { return remove_scheme(name); });
-        }
-
-        if (!impl::schemes.contains(name))
+        if (!impl_native::schemes.contains(name))
         {
             return;
         }
 
-        impl::schemes[name]->del_callback(m_impl->web_view);
+        impl_native::schemes[name]->del_callback(native->web_view);
     }
 
-    void webview::clear(web_event event)
+    void impl::register_scheme(const std::string &name)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event] { return clear(event); });
-        }
-
-        m_events.clear(event);
-    }
-
-    void webview::remove(web_event event, std::uint64_t id)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event, id] { return remove(event, id); });
-        }
-
-        m_events.remove(event, id);
-    }
-
-    void webview::register_scheme(const std::string &name)
-    {
-        if (impl::schemes.contains(name))
+        if (impl_native::schemes.contains(name))
         {
             return;
         }
@@ -505,11 +378,11 @@ namespace saucer
         auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::handler::handle);
 
         webkit_web_context_register_uri_scheme(context, name.c_str(), callback, handler.get(), nullptr);
-        impl::schemes.emplace(name, std::move(handler));
+        impl_native::schemes.emplace(name, std::move(handler));
 
         webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
         webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
     }
 
-    SAUCER_INSTANTIATE_WEBVIEW_EVENTS;
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS(SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT);
 } // namespace saucer

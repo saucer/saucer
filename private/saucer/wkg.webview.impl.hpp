@@ -1,6 +1,6 @@
 #pragma once
 
-#include "webview.hpp"
+#include "webview.impl.hpp"
 
 #include "gtk.utils.hpp"
 #include "wkg.scheme.impl.hpp"
@@ -14,7 +14,7 @@ namespace saucer
 {
     using script_ptr = utils::ref_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
 
-    struct webview::impl
+    struct webview::impl::impl_native
     {
         WebKitWebView *web_view;
 
@@ -34,8 +34,8 @@ namespace saucer
         utils::g_object_ptr<WebKitSettings> settings;
 
       public:
-        template <web_event>
-        void setup(webview *);
+        template <event>
+        void setup(impl *);
 
       public:
         static std::string inject_script();

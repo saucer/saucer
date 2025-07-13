@@ -4,7 +4,7 @@
 
 namespace saucer::serializers::rflpp
 {
-    namespace impl
+    namespace detail
     {
         template <typename T>
         struct is_fixed_string : std::false_type
@@ -55,29 +55,29 @@ namespace saucer::serializers::rflpp
 
             return rtn.value();
         }
-    } // namespace impl
+    } // namespace detail
 
     template <Writable T>
     std::string serializer::write(T &&value)
     {
-        return impl::write(std::forward<T>(value));
+        return detail::write(std::forward<T>(value));
     }
 
     template <Readable T>
     serializer::result<T> serializer::read(std::string_view value)
     {
-        return impl::read<T>(value);
+        return detail::read<T>(value);
     }
 
     template <Readable T>
     serializer::result<T> serializer::read(const result_data &data)
     {
-        return impl::read<T>(data.result);
+        return detail::read<T>(data.result);
     }
 
     template <Readable T>
     serializer::result<T> serializer::read(const function_data &data)
     {
-        return impl::read<T>(data.params);
+        return detail::read<T>(data.params);
     }
 } // namespace saucer::serializers::rflpp

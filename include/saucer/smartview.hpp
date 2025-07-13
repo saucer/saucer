@@ -17,11 +17,9 @@ namespace saucer
     {
         struct impl;
 
-      private:
-        std::unique_ptr<impl> m_impl;
-
       protected:
         std::atomic_uint64_t m_id_counter{0};
+        std::unique_ptr<impl> m_impl;
 
       protected:
         smartview_core(std::unique_ptr<serializer_core>, const options &);

@@ -14,29 +14,32 @@ namespace saucer
         {
             if (!app->thread_safe())
             {
-                return app->dispatch([this, ptr] { return operator()(ptr); });
+                return app->invoke([this, ptr] { return operator()(ptr); });
             }
 
             delete ptr;
         }
     };
 
-    template <bool Get, typename Callback>
-    auto application::dispatch(Callback &&callback) const
+    template <typename Callback, typename... Ts>
+    auto application::invoke(Callback &&callback, Ts &&...args) const
     {
-        auto task = std::packaged_task{std::forward<Callback>(callback)};
-        auto rtn  = task.get_future();
+        if (thread_safe())
+        {
+            return std::invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
+        }
+
+        auto task_callback = [callback = std::forward<Callback>(callback), ... args = std::forward<Ts>(args)]() mutable
+        {
+            return std::invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
+        };
+
+        auto task   = std::packaged_task{task_callback};
+        auto future = task.get_future();
 
         post([task = std::move(task)]() mutable { std::invoke(task); });
 
-        if constexpr (Get)
-        {
-            return rtn.get();
-        }
-        else
-        {
-            return rtn;
-        }
+        return future.get();
     }
 
     template <typename T, typename... Ts>
@@ -44,7 +47,7 @@ namespace saucer
     {
         if (!thread_safe())
         {
-            return dispatch([this, ... args = std::forward<Ts>(args)]() mutable { return make<T>(std::forward<Ts>(args)...); });
+            return invoke([this, ... args = std::forward<Ts>(args)]() mutable { return make<T>(std::forward<Ts>(args)...); });
         }
 
         return safe_ptr<T>{new T{std::forward<Ts>(args)...}, safe_delete<T>{.app = this}};

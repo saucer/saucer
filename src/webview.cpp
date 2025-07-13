@@ -1,13 +1,40 @@
-#include "webview.hpp"
+#include "webview.impl.hpp"
 
-#include "uri.hpp"
 #include "request.hpp"
+#include "instantiate.hpp"
 
 #include <format>
+#include <cassert>
 #include <algorithm>
+
+#include <rebind/enum.hpp>
 
 namespace saucer
 {
+    using impl = webview::impl;
+
+    // TODO: When adding move-semantics, make sure to update `self` pointer in impl (!)
+    webview::webview(const options &opts)
+        : window(opts.application.value()), extensible(this), m_events(std::make_unique<events>()),
+          m_impl(std::make_unique<impl>(this, opts, window::m_impl.get(), m_events.get()))
+    {
+        assert(window::m_impl->parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+    }
+
+    webview::~webview()
+    {
+        for (const auto &event : rebind::enum_values<event>)
+        {
+            m_events->clear(event);
+        }
+    }
+
+    template <webview::event Event>
+    void webview::setup()
+    {
+        return invoke(m_impl.get(), &impl::setup<Event>);
+    }
+
     bool webview::on_message(std::string_view message)
     {
         using traits = modules::traits<webview>;
@@ -17,7 +44,7 @@ namespace saucer
             return true;
         }
 
-        if (!m_attributes)
+        if (!m_impl->attributes)
         {
             return false;
         }
@@ -29,14 +56,16 @@ namespace saucer
             return false;
         }
 
+        auto *const impl = m_impl.get();
+
         overload visitor = {
-            [this](const request::start_resize &data) { start_resize(static_cast<window_edge>(data.edge)); },
-            [this](const request::start_drag &) { start_drag(); },
-            [this](const request::maximize &data) { set_maximized(data.value); },
-            [this](const request::minimize &data) { set_minimized(data.value); },
-            [this](const request::close &) { close(); },
-            [this](const request::maximized &data) { resolve(data.id, std::format("{}", maximized())); },
-            [this](const request::minimized &data) { resolve(data.id, std::format("{}", minimized())); },
+            [impl](const request::start_resize &data) { impl->parent->start_resize(static_cast<window::edge>(data.edge)); },
+            [impl](const request::start_drag &) { impl->parent->start_drag(); },
+            [impl](const request::maximize &data) { impl->parent->set_maximized(data.value); },
+            [impl](const request::minimize &data) { impl->parent->set_minimized(data.value); },
+            [impl](const request::close &) { impl->parent->close(); },
+            [impl](const request::maximized &data) { impl->resolve(data.id, std::format("{}", impl->parent->maximized())); },
+            [impl](const request::minimized &data) { impl->resolve(data.id, std::format("{}", impl->parent->minimized())); },
         };
 
         std::visit(visitor, request.value());
@@ -44,7 +73,12 @@ namespace saucer
         return true;
     }
 
-    void webview::reject(std::uint64_t id, std::string_view reason)
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&handler)
+    {
+        return invoke(m_impl.get(), &impl::handle_scheme, name, std::move(handler));
+    }
+
+    void impl::reject(std::uint64_t id, std::string_view reason)
     {
         execute(std::format(
             R"(
@@ -54,7 +88,7 @@ namespace saucer
             id, reason));
     }
 
-    void webview::resolve(std::uint64_t id, std::string_view result)
+    void impl::resolve(std::uint64_t id, std::string_view result)
     {
         execute(std::format(
             R"(
@@ -64,78 +98,175 @@ namespace saucer
             id, result));
     }
 
+    icon webview::favicon() const
+    {
+        return invoke(m_impl.get(), &impl::favicon);
+    }
+
+    std::string webview::page_title() const
+    {
+        return invoke(m_impl.get(), &impl::page_title);
+    }
+
+    bool webview::dev_tools() const
+    {
+        return invoke(m_impl.get(), &impl::dev_tools);
+    }
+
+    bool webview::context_menu() const
+    {
+        return invoke(m_impl.get(), &impl::context_menu);
+    }
+
+    std::optional<uri> webview::url() const
+    {
+        return invoke(m_impl.get(), &impl::url);
+    }
+
+    color webview::background() const
+    {
+        return invoke(m_impl.get(), &impl::background);
+    }
+
+    bool webview::force_dark_mode() const
+    {
+        return invoke(m_impl.get(), &impl::force_dark_mode);
+    }
+
+    void webview::set_dev_tools(bool value)
+    {
+        return invoke(m_impl.get(), &impl::set_dev_tools, value);
+    }
+
+    void webview::set_context_menu(bool value)
+    {
+        return invoke(m_impl.get(), &impl::set_context_menu, value);
+    }
+
+    void webview::set_force_dark_mode(bool value)
+    {
+        return invoke(m_impl.get(), &impl::set_force_dark_mode, value);
+    }
+
+    void webview::set_background(const color &color)
+    {
+        return invoke(m_impl.get(), &impl::set_background, color);
+    }
+
+    void webview::set_url(const uri &url)
+    {
+        return invoke(m_impl.get(), &impl::set_url, url);
+    }
+
     void webview::set_url(const std::string &url)
     {
-        auto parsed = uri::parse(url);
+        auto uri = saucer::uri::parse(url);
 
-        if (!parsed.has_value())
+        if (!uri.has_value())
         {
             return;
         }
 
-        set_url(parsed.value());
+        set_url(uri.value());
+    }
+
+    void webview::back()
+    {
+        return invoke(m_impl.get(), &impl::back);
+    }
+
+    void webview::forward()
+    {
+        return invoke(m_impl.get(), &impl::forward);
+    }
+
+    void webview::reload()
+    {
+        return invoke(m_impl.get(), &impl::reload);
     }
 
     void webview::serve(fs::path file)
     {
-        set_url(uri::make({.scheme = "saucer", .host = "embedded", .path = std::move(file)}));
+        return set_url(uri::make({.scheme = "saucer", .host = "embedded", .path = std::move(file)}));
     }
 
     void webview::embed(embedded_files files)
     {
-        if (!m_parent->thread_safe())
+        auto handler = [impl = m_impl.get()](const scheme::request &request, const scheme::executor &exec)
         {
-            return m_parent->dispatch([this, files = std::move(files)]() mutable { return embed(std::move(files)); });
-        }
-
-        m_embedded_files.merge(std::move(files));
-
-        auto func = [this](const scheme::request &request) -> std::expected<scheme::response, scheme::error>
-        {
-            auto url = request.url();
+            const auto &[resolve, reject] = exec;
+            auto url                      = request.url();
 
             if (url.scheme() != "saucer" || url.host() != "embedded")
             {
-                return std::unexpected{scheme::error::invalid};
+                return reject(scheme::error::invalid);
             }
 
             auto file = url.path();
 
-            if (!m_embedded_files.contains(file))
+            if (!impl->embedded.contains(file))
             {
-                return std::unexpected{scheme::error::not_found};
+                return reject(scheme::error::not_found);
             }
 
-            const auto &data = m_embedded_files.at(file);
+            const auto &data = impl->embedded.at(file);
 
-            return scheme::response{
+            return resolve({
                 .data    = data.content,
                 .mime    = data.mime,
                 .headers = {{"Access-Control-Allow-Origin", "*"}},
-            };
+            });
         };
 
-        handle_scheme("saucer", func);
-    }
-
-    void webview::clear_embedded()
-    {
-        if (!m_parent->thread_safe())
+        auto embed = [impl = m_impl.get()](auto files, auto handler)
         {
-            return m_parent->dispatch([this] { return clear_embedded(); });
-        }
+            impl->embedded.merge(std::move(files));
+            impl->handle_scheme("saucer", std::move(handler));
+        };
 
-        m_embedded_files.clear();
-        remove_scheme("saucer");
+        return invoke(m_impl.get(), embed, std::move(files), std::move(handler));
     }
 
-    void webview::clear_embedded(const fs::path &file)
+    void webview::clear_scripts()
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, file] { return clear_embedded(file); });
-        }
-
-        m_embedded_files.erase(file);
+        return invoke(m_impl.get(), &impl::clear_scripts);
     }
+
+    void webview::unembed()
+    {
+        auto unembed = [impl = m_impl.get()]
+        {
+            impl->embedded.clear();
+            impl->remove_scheme("saucer");
+        };
+
+        return invoke(m_impl.get(), std::move(unembed));
+    }
+
+    void webview::unembed(const fs::path &file)
+    {
+        return invoke(m_impl.get(), [impl = m_impl.get(), file] { impl->embedded.erase(file); });
+    }
+
+    void webview::inject(const script &script)
+    {
+        return invoke(m_impl.get(), &impl::inject, script);
+    }
+
+    void webview::execute(const std::string &code)
+    {
+        return invoke(m_impl.get(), &impl::execute, code);
+    }
+
+    void webview::remove_scheme(const std::string &name)
+    {
+        return invoke(m_impl.get(), &impl::remove_scheme, name);
+    }
+
+    void webview::register_scheme(const std::string &name)
+    {
+        return impl::register_scheme(name);
+    }
+
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS(SAUCER_INSTANTIATE_WEBVIEW_EVENT);
 } // namespace saucer

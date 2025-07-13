@@ -24,7 +24,7 @@ namespace saucer
     {
         if (!thread_safe())
         {
-            return dispatch([this] { return screens(); });
+            return invoke([this] { return screens(); });
         }
 
         auto *const display  = gdk_display_get_default();
@@ -97,7 +97,7 @@ namespace saucer
 
         if (!thread_safe())
         {
-            return dispatch([this] { return quit(); });
+            return invoke([this] { return quit(); });
         }
 
         if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))

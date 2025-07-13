@@ -12,7 +12,7 @@
 
 namespace saucer
 {
-    namespace impl
+    namespace detail
     {
         template <typename T, typename Interface>
         struct is_writable : std::false_type
@@ -91,7 +91,7 @@ namespace saucer
 
             return rtn | std::views::join_with(',') | std::ranges::to<std::string>();
         }
-    } // namespace impl
+    } // namespace detail
 
     template <typename Interface>
     serializer<Interface>::serializer()
@@ -116,21 +116,21 @@ namespace saucer
                                                                                serializer_core::executor exec) mutable
         {
             const auto &message = *static_cast<Interface::function_data *>(data.get());
-            auto parsed         = impl::read<Interface, args>(message);
+            auto parsed         = detail::read<Interface, args>(message);
 
             if (!parsed)
             {
-                return std::invoke(exec.reject, impl::write<Interface>(parsed.error()));
+                return std::invoke(exec.reject, detail::write<Interface>(parsed.error()));
             }
 
             auto resolve = [resolve = std::move(exec.resolve)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(resolve, impl::write<Interface>(std::forward<Ts>(value)...));
+                std::invoke(resolve, detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
             auto reject = [reject = std::move(exec.reject)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(reject, impl::write<Interface>(std::forward<Ts>(value)...));
+                std::invoke(reject, detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
             auto transformed_exec = executor{std::move(resolve), std::move(reject)};
@@ -150,7 +150,7 @@ namespace saucer
 
             if constexpr (!std::is_void_v<T>)
             {
-                auto parsed = impl::read<Interface, T>(res);
+                auto parsed = detail::read<Interface, T>(res);
 
                 if (!parsed)
                 {
@@ -174,6 +174,6 @@ namespace saucer
     template <Writable<Interface> T>
     auto serializer<Interface>::serialize(T &&value)
     {
-        return impl::write<Interface>(std::forward<T>(value));
+        return detail::write<Interface>(std::forward<T>(value));
     }
 } // namespace saucer

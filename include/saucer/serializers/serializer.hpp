@@ -18,14 +18,14 @@
 
 namespace saucer
 {
-    namespace impl
+    namespace detail
     {
         template <typename T, typename Interface>
         struct is_writable;
 
         template <typename T>
         struct is_serializer;
-    } // namespace impl
+    } // namespace detail
 
     struct serializer_core
     {
@@ -50,7 +50,7 @@ namespace saucer
     };
 
     template <typename T, typename Interface>
-    concept Writable = impl::is_writable<T, Interface>::value;
+    concept Writable = detail::is_writable<T, Interface>::value;
 
     template <typename T, typename Interface, typename V = std::string>
     concept Readable = requires(V value) {
@@ -58,7 +58,7 @@ namespace saucer
     };
 
     template <typename T>
-    concept Serializer = impl::is_serializer<T>::value;
+    concept Serializer = detail::is_serializer<T>::value;
 
     template <typename T>
     concept Interface = requires() {

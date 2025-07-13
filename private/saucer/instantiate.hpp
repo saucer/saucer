@@ -14,12 +14,16 @@
 
 #define SAUCER_INSTANTIATE_EVENT(CLASS, EVENT) template void CLASS::setup<EVENT>();
 
-#define SAUCER_INSTANTIATE_WINDOW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(window, EVENT)
-#define SAUCER_INSTANTIATE_WINDOW_EVENTS                                                                                              \
-    SAUCER_RECURSE(SAUCER_INSTANTIATE_WINDOW_EVENT, window_event::decorated, window_event::maximize, window_event::minimize,          \
-                   window_event::closed, window_event::resize, window_event::focus, window_event::close)
+#define SAUCER_INSTANTIATE_WINDOW_EVENT(EVENT)      SAUCER_INSTANTIATE_EVENT(window, EVENT)
+#define SAUCER_INSTANTIATE_WINDOW_IMPL_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(window::impl, EVENT)
 
-#define SAUCER_INSTANTIATE_WEBVIEW_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(webview, EVENT)
-#define SAUCER_INSTANTIATE_WEBVIEW_EVENTS                                                                                             \
-    SAUCER_RECURSE(SAUCER_INSTANTIATE_WEBVIEW_EVENT, web_event::permission, web_event::dom_ready, web_event::navigated,               \
-                   web_event::navigate, web_event::request, web_event::favicon, web_event::title, web_event::load)
+#define SAUCER_INSTANTIATE_WINDOW_EVENTS(MACRO)                                                                                       \
+    SAUCER_RECURSE(MACRO, window::event::decorated, window::event::maximize, window::event::minimize, window::event::closed,          \
+                   window::event::resize, window::event::focus, window::event::close)
+
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENT(EVENT)      SAUCER_INSTANTIATE_EVENT(webview, EVENT)
+#define SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(webview::impl, EVENT)
+
+#define SAUCER_INSTANTIATE_WEBVIEW_EVENTS(MACRO)                                                                                      \
+    SAUCER_RECURSE(MACRO, webview::event::permission, webview::event::dom_ready, webview::event::navigated, webview::event::navigate, \
+                   webview::event::request, webview::event::favicon, webview::event::title, webview::event::load)

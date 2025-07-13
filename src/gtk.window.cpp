@@ -5,195 +5,136 @@
 
 #include <cassert>
 
-#include <rebind/enum.hpp>
-
 namespace saucer
 {
-    window::window(application *parent) : m_parent(parent), m_impl(std::make_unique<impl>())
+    using impl = window::impl;
+
+    impl::impl(application *parent, window::events *events) : parent(parent), events(events), native(std::make_unique<impl_native>())
     {
-        assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+        auto *const application = GTK_APPLICATION(parent->native<false>()->application.get());
+        native->window.reset(GTK_WINDOW(adw_application_window_new(application)));
 
-        auto *const application = GTK_APPLICATION(m_parent->native<false>()->application.get());
-        m_impl->window.reset(GTK_WINDOW(adw_application_window_new(application)));
+        native->style   = gtk_css_provider_new();
+        native->header  = ADW_HEADER_BAR(adw_header_bar_new());
+        native->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
 
-        m_impl->style   = gtk_css_provider_new();
-        m_impl->header  = ADW_HEADER_BAR(adw_header_bar_new());
-        m_impl->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+        gtk_box_append(native->content, GTK_WIDGET(native->header));
+        gtk_css_provider_load_from_string(native->style.get(), ".transparent { background-color: transparent; }");
 
-        gtk_box_append(m_impl->content, GTK_WIDGET(m_impl->header));
-        gtk_css_provider_load_from_string(m_impl->style.get(), ".transparent { background-color: transparent; }");
+        gtk_window_set_hide_on_close(GTK_WINDOW(native->window.get()), true);
+        adw_application_window_set_content(ADW_APPLICATION_WINDOW(native->window.get()), GTK_WIDGET(native->content));
 
-        gtk_window_set_hide_on_close(GTK_WINDOW(m_impl->window.get()), true);
-        adw_application_window_set_content(ADW_APPLICATION_WINDOW(m_impl->window.get()), GTK_WIDGET(m_impl->content));
-
-        auto *const display  = gtk_widget_get_display(GTK_WIDGET(m_impl->window.get()));
-        auto *const provider = GTK_STYLE_PROVIDER(m_impl->style.get());
+        auto *const display  = gtk_widget_get_display(GTK_WIDGET(native->window.get()));
+        auto *const provider = GTK_STYLE_PROVIDER(native->style.get());
 
         gtk_style_context_add_provider_for_display(display, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
 
-        m_impl->track(this);
-        m_impl->update_decorations(this);
+        native->track(this);
+        native->update_decorations(this);
 
-        set_size(800, 600);
+        set_size({800, 600});
     }
 
-    window::~window()
+    impl::~impl()
     {
-        for (const auto &event : rebind::enum_values<window_event>)
-        {
-            m_events.clear(event);
-        }
-
         // We hide-on-close. This is required to make the parent quit properly.
-        gtk_window_close(GTK_WINDOW(m_impl->window.get()));
+        events->clear(event::close);
+        gtk_window_close(GTK_WINDOW(native->window.get()));
     }
 
-    template <window_event Event>
-    void window::setup()
+    template <window::event Event>
+    void impl::setup()
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return setup<Event>(); });
-        }
-
-        m_impl->setup<Event>(this);
+        native->setup<Event>(this);
     }
 
-    bool window::visible() const
+    bool impl::visible() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return visible(); });
-        }
-
-        return gtk_widget_is_visible(GTK_WIDGET(m_impl->window.get()));
+        return gtk_widget_is_visible(GTK_WIDGET(native->window.get()));
     }
 
-    bool window::focused() const
+    bool impl::focused() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return focused(); });
-        }
-
-        return gtk_window_is_active(GTK_WINDOW(m_impl->window.get()));
+        return gtk_window_is_active(GTK_WINDOW(native->window.get()));
     }
 
-    bool window::minimized() const // NOLINT(*-static)
+    bool impl::minimized() const // NOLINT(*-static)
     {
         return {};
     }
 
-    bool window::maximized() const
+    bool impl::maximized() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return maximized(); });
-        }
-
-        return gtk_window_is_maximized(GTK_WINDOW(m_impl->window.get()));
+        return gtk_window_is_maximized(GTK_WINDOW(native->window.get()));
     }
 
-    bool window::resizable() const
+    bool impl::resizable() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return resizable(); });
-        }
-
-        return gtk_window_get_resizable(GTK_WINDOW(m_impl->window.get()));
+        return gtk_window_get_resizable(GTK_WINDOW(native->window.get()));
     }
 
-    bool window::always_on_top() const // NOLINT(*-static)
+    bool impl::always_on_top() const // NOLINT(*-static)
     {
         return {};
     }
 
-    bool window::click_through() const
+    bool impl::click_through() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return click_through(); });
-        }
-
-        return m_impl->motion_controller;
+        return native->motion_controller;
     }
 
-    std::string window::title() const
+    std::string impl::title() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return title(); });
-        }
-
-        return gtk_window_get_title(GTK_WINDOW(m_impl->window.get()));
+        return gtk_window_get_title(GTK_WINDOW(native->window.get()));
     }
 
-    window_decoration window::decoration() const
+    window::decoration impl::decorations() const
     {
-        if (!m_parent->thread_safe())
+        using enum decoration;
+
+        if (!gtk_window_get_decorated(native->window.get()))
         {
-            return m_parent->dispatch([this] { return decoration(); });
+            return none;
         }
 
-        if (!gtk_window_get_decorated(m_impl->window.get()))
+        if (!gtk_widget_get_visible(GTK_WIDGET(native->header)))
         {
-            return window_decoration::none;
+            return partial;
         }
 
-        if (!gtk_widget_get_visible(GTK_WIDGET(m_impl->header)))
-        {
-            return window_decoration::partial;
-        }
-
-        return window_decoration::full;
+        return full;
     }
 
-    std::pair<int, int> window::size() const
+    size impl::size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return size(); });
-        }
-
         int width{}, height{};
-        gtk_window_get_default_size(GTK_WINDOW(m_impl->window.get()), &width, &height);
+        gtk_window_get_default_size(GTK_WINDOW(native->window.get()), &width, &height);
 
         return {width, height};
     }
 
-    std::pair<int, int> window::max_size() const // NOLINT(*-static)
+    size impl::max_size() const // NOLINT(*-static)
     {
         return {};
     }
 
-    std::pair<int, int> window::min_size() const
+    size impl::min_size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return min_size(); });
-        }
-
         int width{}, height{};
-        gtk_widget_get_size_request(GTK_WIDGET(m_impl->window.get()), &width, &height);
+        gtk_widget_get_size_request(GTK_WIDGET(native->window.get()), &width, &height);
 
         return {width, height};
     }
 
-    std::pair<int, int> window::position() const // NOLINT(*-static)
+    position impl::position() const // NOLINT(*-static)
     {
         return {};
     }
 
-    std::optional<saucer::screen> window::screen() const
+    std::optional<saucer::screen> impl::screen() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return screen(); });
-        }
-
-        auto *const native  = gtk_widget_get_native(GTK_WIDGET(m_impl->window.get()));
-        auto *const surface = gtk_native_get_surface(native);
+        auto *const widget_native = gtk_widget_get_native(GTK_WIDGET(native->window.get()));
+        auto *const surface       = gtk_native_get_surface(widget_native);
 
         if (!surface)
         {
@@ -211,49 +152,29 @@ namespace saucer
         return application::impl::convert(monitor);
     }
 
-    void window::hide()
+    void impl::hide() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return hide(); });
-        }
-
-        gtk_widget_set_visible(GTK_WIDGET(m_impl->window.get()), false);
+        gtk_widget_set_visible(GTK_WIDGET(native->window.get()), false);
     }
 
-    void window::show()
+    void impl::show() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return show(); });
-        }
-
-        m_parent->native<false>()->instances[m_impl->window.get()] = true;
-        gtk_window_present(GTK_WINDOW(m_impl->window.get()));
+        parent->native<false>()->instances[native->window.get()] = true;
+        gtk_window_present(GTK_WINDOW(native->window.get()));
     }
 
-    void window::close()
+    void impl::close() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return close(); });
-        }
-
-        gtk_window_close(GTK_WINDOW(m_impl->window.get()));
+        gtk_window_close(GTK_WINDOW(native->window.get()));
     }
 
-    void window::focus() // NOLINT(*-static)
+    void impl::focus() const // NOLINT(*-static)
     {
     }
 
-    void window::start_drag()
+    void impl::start_drag() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return start_drag(); });
-        }
-
-        const auto data = m_impl->prev_data();
+        const auto data = native->prev_data();
 
         if (!data)
         {
@@ -264,173 +185,108 @@ namespace saucer
         gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), device, button, x, y, time);
     }
 
-    void window::start_resize(window_edge edge)
+    void impl::start_resize(edge edge)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, edge] { return start_resize(edge); });
-        }
-
         if (!resizable())
         {
             set_resizable(true);
-            m_impl->prev_resizable = false;
+            native->prev_resizable = false;
         }
 
-        m_parent->post([this, edge] { m_impl->start_resize(edge); });
+        parent->post([this, edge] { native->start_resize(edge); });
     }
 
-    void window::set_minimized(bool enabled)
+    void impl::set_minimized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_minimized(enabled); });
-        }
-
         if (!enabled)
         {
-            gtk_window_unminimize(GTK_WINDOW(m_impl->window.get()));
+            gtk_window_unminimize(GTK_WINDOW(native->window.get()));
             return;
         }
 
-        gtk_window_minimize(GTK_WINDOW(m_impl->window.get()));
+        gtk_window_minimize(GTK_WINDOW(native->window.get()));
     }
 
-    void window::set_maximized(bool enabled)
+    void impl::set_maximized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_maximized(enabled); });
-        }
-
         if (!enabled)
         {
-            gtk_window_unmaximize(GTK_WINDOW(m_impl->window.get()));
+            gtk_window_unmaximize(GTK_WINDOW(native->window.get()));
             return;
         }
 
-        gtk_window_maximize(GTK_WINDOW(m_impl->window.get()));
+        gtk_window_maximize(GTK_WINDOW(native->window.get()));
     }
 
-    void window::set_resizable(bool enabled)
+    void impl::set_resizable(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_resizable(enabled); });
-        }
-
-        gtk_window_set_resizable(GTK_WINDOW(m_impl->window.get()), enabled);
+        gtk_window_set_resizable(GTK_WINDOW(native->window.get()), enabled);
     }
 
-    void window::set_always_on_top(bool) // NOLINT(*-static)
+    void impl::set_always_on_top(bool) // NOLINT(*-static, *-function-const)
     {
     }
 
-    void window::set_click_through(bool enabled)
+    void impl::set_click_through(bool enabled)
     {
-        if (!m_parent->thread_safe())
+        if (enabled && !native->motion_controller)
         {
-            return m_parent->dispatch([this, enabled] { return set_click_through(enabled); });
-        }
-
-        if (enabled && !m_impl->motion_controller)
-        {
-            m_impl->motion_controller = gtk_event_controller_motion_new();
-            m_impl->region.reset(cairo_region_create());
-            m_impl->update_region(this);
+            native->motion_controller = gtk_event_controller_motion_new();
+            native->region.reset(cairo_region_create());
+            native->update_region(this);
 
             return;
         }
 
-        if (enabled || !m_impl->motion_controller)
+        if (enabled || !native->motion_controller)
         {
             return;
         }
 
-        auto *const widget = GTK_WIDGET(m_impl->window.get());
-        gtk_widget_remove_controller(widget, m_impl->motion_controller);
+        auto *const widget = GTK_WIDGET(native->window.get());
+        gtk_widget_remove_controller(widget, native->motion_controller);
 
-        m_impl->motion_controller = nullptr;
-        m_impl->region.reset();
+        native->motion_controller = nullptr;
+        native->region.reset();
 
         gtk_widget_queue_resize(widget);
     }
 
-    void window::set_icon(const icon &) // NOLINT(*-static)
+    void impl::set_icon(const icon &) // NOLINT(*-static, *-function-const)
     {
     }
 
-    void window::set_title(const std::string &title)
+    void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, title] { return set_title(title); });
-        }
+        const auto decorated = decoration != decoration::none;
+        const auto visible   = decoration == decoration::full;
 
-        gtk_window_set_title(GTK_WINDOW(m_impl->window.get()), title.c_str());
+        gtk_window_set_decorated(native->window.get(), decorated);
+        gtk_widget_set_visible(GTK_WIDGET(native->header), visible);
     }
 
-    void window::set_decoration(window_decoration decoration)
+    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
-        }
-
-        const auto decorated = decoration != window_decoration::none;
-        const auto visible   = decoration == window_decoration::full;
-
-        gtk_window_set_decorated(m_impl->window.get(), decorated);
-        gtk_widget_set_visible(GTK_WIDGET(m_impl->header), visible);
+        gtk_window_set_title(GTK_WINDOW(native->window.get()), title.c_str());
     }
 
-    void window::set_size(int width, int height)
+    void impl::set_size(const saucer::size &size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_size(width, height); });
-        }
-
-        gtk_window_set_default_size(GTK_WINDOW(m_impl->window.get()), width, height);
+        gtk_window_set_default_size(GTK_WINDOW(native->window.get()), size.x, size.y);
     }
 
-    void window::set_max_size(int, int) // NOLINT(*-static)
+    void impl::set_max_size(const saucer::size &) // NOLINT(*-static, *-function-const)
     {
     }
 
-    void window::set_min_size(int width, int height)
+    void impl::set_min_size(const saucer::size &size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_min_size(width, height); });
-        }
-
-        gtk_widget_set_size_request(GTK_WIDGET(m_impl->window.get()), width, height);
+        gtk_widget_set_size_request(GTK_WIDGET(native->window.get()), size.x, size.y);
     }
 
-    void window::set_position(int, int) // NOLINT(*-static)
+    void impl::set_position(const saucer::position &) // NOLINT(*-static, *-function-const)
     {
     }
 
-    void window::clear(window_event event)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event] { return clear(event); });
-        }
-
-        m_events.clear(event);
-    }
-
-    void window::remove(window_event event, std::uint64_t id)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event, id] { return remove(event, id); });
-        }
-
-        m_events.remove(event, id);
-    }
-
-    SAUCER_INSTANTIATE_WINDOW_EVENTS;
+    SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_IMPL_EVENT);
 } // namespace saucer

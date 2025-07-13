@@ -9,7 +9,7 @@
 
 namespace saucer::request::utils
 {
-    namespace impl
+    namespace detail
     {
         template <typename T, typename Variant>
         struct contains
@@ -38,15 +38,15 @@ namespace saucer::request::utils
 
             return buffer;
         }();
-    } // namespace impl
+    } // namespace detail
 
     template <typename T, bool Terminated = false>
     static constexpr auto tag = []
     {
-        static constexpr auto content = impl::tag<T, Terminated>;
+        static constexpr auto content = detail::tag<T, Terminated>;
         return std::string_view{content.data(), content.size()};
     }();
 
     template <typename T>
-    static constexpr auto is_request = impl::contains<T, request>::value;
+    static constexpr auto is_request = detail::contains<T, request>::value;
 } // namespace saucer::request::utils

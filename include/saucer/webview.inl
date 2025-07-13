@@ -15,42 +15,42 @@ namespace saucer
     // TODO: The code repetition here is currently quite ugly.
     // TODO: However, this should become a lot nicer when window and webview are properly separated (i.e. no inheritance).
 
-    template <window_event Event, typename T>
-    void webview::once(T &&callback)
-    {
-        return window::once<Event>(std::forward<T>(callback));
-    }
-
-    template <window_event Event, typename T>
+    template <window::event Event, typename T>
     auto webview::on(T &&callback)
     {
         return window::on<Event>(std::forward<T>(callback));
     }
 
-    template <window_event Event, typename... Ts>
+    template <window::event Event, typename T>
+    void webview::once(T &&callback)
+    {
+        return window::once<Event>(std::forward<T>(callback));
+    }
+
+    template <window::event Event, typename... Ts>
     auto webview::await(Ts &&...result)
     {
         return window::await<Event>(std::forward<Ts>(result)...);
     }
 
-    template <web_event Event, typename T>
+    template <webview::event Event, typename T>
     void webview::once(T &&callback)
     {
         setup<Event>();
-        m_events.get<Event>().once(std::forward<T>(callback));
+        m_events->get<Event>().once(std::forward<T>(callback));
     }
 
-    template <web_event Event, typename T>
+    template <webview::event Event, typename T>
     auto webview::on(T &&callback)
     {
         setup<Event>();
-        m_events.get<Event>().add(std::forward<T>(callback));
+        m_events->get<Event>().add(std::forward<T>(callback));
     }
 
-    template <web_event Event, typename... Ts>
+    template <webview::event Event, typename... Ts>
     auto webview::await(Ts &&...result)
     {
         setup<Event>();
-        return m_events.get<Event>().await(std::forward<Ts>(result)...);
+        return m_events->get<Event>().await(std::forward<Ts>(result)...);
     }
 } // namespace saucer

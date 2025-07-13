@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window.hpp"
+#include "window.impl.hpp"
 
 #include "handle.hpp"
 #include "gtk.utils.hpp"
@@ -31,14 +31,14 @@ namespace saucer
         double y;
     };
 
-    struct window::impl
+    struct window::impl::impl_native
     {
         utils::handle<GtkWindow *, gtk_window_destroy> window;
         utils::g_object_ptr<GtkCssProvider> style;
 
       public:
         std::optional<bool> prev_resizable;
-        std::optional<window_decoration> prev_decoration;
+        std::optional<decoration> prev_decoration;
 
       public:
         GtkBox *content;
@@ -53,16 +53,16 @@ namespace saucer
         [[nodiscard]] std::optional<event_data> prev_data() const;
 
       public:
-        template <window_event>
-        void setup(saucer::window *);
+        template <event>
+        void setup(impl *);
 
       public:
+        void start_resize(edge) const;
         void make_transparent(bool) const;
-        void start_resize(window_edge) const;
 
       public:
-        void track(saucer::window *) const;
-        void update_region(saucer::window *) const;
-        void update_decorations(saucer::window *) const;
+        void track(impl *) const;
+        void update_region(impl *) const;
+        void update_decorations(impl *) const;
     };
 } // namespace saucer

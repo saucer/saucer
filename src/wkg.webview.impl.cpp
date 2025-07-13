@@ -20,6 +20,9 @@ constexpr bool flagpp::enabled<saucer::permission::type> = true;
 
 namespace saucer
 {
+    using native = webview::impl::impl_native;
+    using event  = webview::event;
+
     template <auto Func, auto Value>
     static constexpr auto permission_update = [](gpointer raw, permission::type &result) -> gboolean
     {
@@ -61,16 +64,16 @@ namespace saucer
     };
 
     template <>
-    void saucer::webview::impl::setup<web_event::permission>(webview *self)
+    void native::setup<event::permission>(impl *self)
     {
-        auto &event = self->m_events.get<web_event::permission>();
+        auto &event = self->events->get<event::permission>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](WebKitWebView *, WebKitPermissionRequest *raw, webview *self)
+        auto callback = [](WebKitWebView *, WebKitPermissionRequest *raw, impl *self)
         {
             using permission::request;
             using enum permission::type;
@@ -102,7 +105,7 @@ namespace saucer
                 .type    = type,
             });
 
-            self->m_events.get<web_event::permission>().fire(req).find(status::handled);
+            self->events->get<event::permission>().fire(req).find(status::handled);
         };
 
         const auto id = g_signal_connect(web_view, "permission-request", G_CALLBACK(+callback), self);
@@ -110,26 +113,26 @@ namespace saucer
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
+    void native::setup<event::dom_ready>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::navigated>(webview *)
+    void native::setup<event::navigated>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::navigate>(webview *self)
+    void native::setup<event::navigate>(impl *self)
     {
-        auto &event = self->m_events.get<web_event::navigate>();
+        auto &event = self->events->get<event::navigate>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](WebKitWebView *, WebKitPolicyDecision *raw, WebKitPolicyDecisionType type, webview *self) -> gboolean
+        auto callback = [](WebKitWebView *, WebKitPolicyDecision *raw, WebKitPolicyDecisionType type, impl *self) -> gboolean
         {
             if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION && type != WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION)
             {
@@ -143,7 +146,7 @@ namespace saucer
                 .type     = type,
             }};
 
-            if (self->m_events.get<web_event::navigate>().fire(nav).find(policy::block))
+            if (self->events->get<event::navigate>().fire(nav).find(policy::block))
             {
                 webkit_policy_decision_ignore(raw);
                 return true;
@@ -157,16 +160,16 @@ namespace saucer
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::request>(webview *self)
+    void native::setup<event::request>(impl *self)
     {
-        auto &event = self->m_events.get<web_event::request>();
+        auto &event = self->events->get<event::request>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](WebKitWebView *, WebKitWebResource *, WebKitURIRequest *request, webview *self)
+        auto callback = [](WebKitWebView *, WebKitWebResource *, WebKitURIRequest *request, impl *self)
         {
             const auto *raw = webkit_uri_request_get_uri(request);
 
@@ -183,7 +186,7 @@ namespace saucer
                 return;
             }
 
-            self->m_events.get<web_event::request>().fire(url.value());
+            self->events->get<event::request>().fire(url.value());
         };
 
         const auto id = g_signal_connect(web_view, "resource-load-started", G_CALLBACK(+callback), self);
@@ -191,18 +194,18 @@ namespace saucer
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::favicon>(webview *self)
+    void native::setup<event::favicon>(impl *self)
     {
-        auto &event = self->m_events.get<web_event::favicon>();
+        auto &event = self->events->get<event::favicon>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](void *, GParamSpec *, webview *self)
+        auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->m_events.get<web_event::favicon>().fire(self->favicon());
+            self->events->get<event::favicon>().fire(self->favicon());
         };
 
         const auto id = g_signal_connect(web_view, "notify::favicon", G_CALLBACK(+callback), self);
@@ -210,18 +213,18 @@ namespace saucer
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::title>(webview *self)
+    void native::setup<event::title>(impl *self)
     {
-        auto &event = self->m_events.get<web_event::title>();
+        auto &event = self->events->get<event::title>();
 
         if (!event.empty())
         {
             return;
         }
 
-        auto callback = [](void *, GParamSpec *, webview *self)
+        auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->m_events.get<web_event::title>().fire(self->page_title());
+            self->events->get<event::title>().fire(self->page_title());
         };
 
         const auto id = g_signal_connect(web_view, "notify::title", G_CALLBACK(+callback), self);
@@ -229,11 +232,11 @@ namespace saucer
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::load>(webview *)
+    void native::setup<event::load>(impl *)
     {
     }
 
-    std::string webview::impl::inject_script()
+    std::string native::inject_script()
     {
         static constexpr auto internal = R"js(
             message: async (message) =>
@@ -249,7 +252,7 @@ namespace saucer
         return script;
     }
 
-    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";
+    constinit std::string_view native::ready_script = "window.saucer.internal.message('dom_loaded')";
 
     std::optional<GValue> convert(std::string_view value)
     {
@@ -293,7 +296,7 @@ namespace saucer
         return rtn;
     }
 
-    WebKitSettings *webview::impl::make_settings(const options &opts)
+    WebKitSettings *native::make_settings(const options &opts)
     {
         std::vector<GValue> values;
         std::vector<std::string> names;

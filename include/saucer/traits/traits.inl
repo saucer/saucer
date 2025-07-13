@@ -16,7 +16,7 @@
 
 namespace saucer::traits
 {
-    namespace impl
+    namespace detail
     {
         template <typename T, typename Args, typename Executor>
         struct awaitable;
@@ -35,17 +35,17 @@ namespace saucer::traits
 
         template <typename T, typename Args = fixed_args_t<T>, typename Result = result_t<T>, typename Last = tuple::last_t<Args>>
         struct resolver;
-    } // namespace impl
+    } // namespace detail
 
     template <typename T, typename Args, typename Executor>
-    struct impl::awaitable
+    struct detail::awaitable
     {
         static constexpr auto value = false;
     };
 
     template <typename T, typename... Ts, typename Executor>
         requires coco::Awaitable<std::invoke_result_t<T, Ts...>>
-    struct impl::awaitable<T, std::tuple<Ts...>, Executor>
+    struct detail::awaitable<T, std::tuple<Ts...>, Executor>
     {
         using result      = std::invoke_result_t<T, Ts...>;
         using transformer = transformer<mock_return<T, typename coco::traits<result>::result>, std::tuple<Ts...>, Executor>;
@@ -161,7 +161,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename... Ts, typename Executor>
-        requires impl::awaitable_v<T, std::tuple<Ts...>, Executor>
+        requires detail::awaitable_v<T, std::tuple<Ts...>, Executor>
     struct transformer<T, std::tuple<Ts...>, Executor>
     {
         static constexpr auto valid = true;
@@ -170,8 +170,8 @@ namespace saucer::traits
         template <typename U, typename... Rs>
         static auto resolve(U &&executor, Rs &&...result)
         {
-            impl::awaitable<T, std::tuple<Ts...>, Executor>::transformer::resolve(std::forward<U>(executor),
-                                                                                  std::forward<Rs>(result)...);
+            detail::awaitable<T, std::tuple<Ts...>, Executor>::transformer::resolve(std::forward<U>(executor),
+                                                                                    std::forward<Rs>(result)...);
         }
 
         static auto transform(T callable)
@@ -186,7 +186,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename Args, typename Result, typename Last>
-    struct impl::resolver
+    struct detail::resolver
     {
         using args        = Args;
         using executor    = saucer::executor<Result, void>;
@@ -194,7 +194,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename Args, typename R, typename E, typename Last>
-    struct impl::resolver<T, Args, std::expected<R, E>, Last>
+    struct detail::resolver<T, Args, std::expected<R, E>, Last>
     {
         using args        = Args;
         using executor    = saucer::executor<R, E>;
@@ -202,7 +202,7 @@ namespace saucer::traits
     };
 
     template <typename T, typename Args, typename R, typename E>
-    struct impl::resolver<T, Args, void, executor<R, E>>
+    struct detail::resolver<T, Args, void, executor<R, E>>
     {
         using args        = tuple::drop_last_t<Args>;
         using executor    = saucer::executor<R, E>;
@@ -210,12 +210,12 @@ namespace saucer::traits
     };
 
     template <typename T, typename Args, coco::Awaitable Result, typename Last>
-    struct impl::resolver<T, Args, Result, Last> : impl::resolver<T, Args, typename coco::traits<Result>::result, Last>
+    struct detail::resolver<T, Args, Result, Last> : detail::resolver<T, Args, typename coco::traits<Result>::result, Last>
     {
     };
 
     template <typename T>
-    struct resolver : impl::resolver<T>
+    struct resolver : detail::resolver<T>
     {
     };
 } // namespace saucer::traits
