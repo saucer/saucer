@@ -8,9 +8,26 @@
 
 namespace saucer
 {
-    window::window(application *parent) : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>(parent, m_events.get()))
+    window::window() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
+
+    std::shared_ptr<window> window::create(application *parent)
     {
-        assert(parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+        if (!parent->thread_safe())
+        {
+            return {};
+        }
+
+        auto rtn = std::shared_ptr<window>(new window);
+
+        rtn->m_impl->parent = parent;
+        rtn->m_impl->events = rtn->m_events.get();
+
+        if (!rtn->m_impl->init_native())
+        {
+            return {};
+        }
+
+        return rtn;
     }
 
     window::~window()

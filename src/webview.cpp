@@ -1,7 +1,9 @@
 #include "webview.impl.hpp"
 
-#include "request.hpp"
+#include "window.impl.hpp"
 #include "instantiate.hpp"
+
+#include "request.hpp"
 
 #include <format>
 #include <cassert>
@@ -13,16 +15,73 @@ namespace saucer
 {
     using impl = webview::impl;
 
-    // TODO: When adding move-semantics, make sure to update `self` pointer in impl (!)
-    webview::webview(const options &opts)
-        : window(opts.application.value()), extensible(this), m_events(std::make_unique<events>()),
-          m_impl(std::make_unique<impl>(this, opts))
+    webview::webview() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
+
+    webview::webview(webview &&other) noexcept = default;
+
+    std::optional<webview> webview::create(const options &opts)
     {
-        assert(m_impl->parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+        auto *const parent = opts.application.value();
+
+        if (!parent->thread_safe())
+        {
+            return {};
+        }
+
+        auto rtn         = webview{};
+        auto *const impl = rtn.m_impl.get();
+
+        impl->window     = opts.window.value();
+        impl->parent     = parent;
+        impl->events     = rtn.m_events.get();
+        impl->attributes = opts.attributes;
+
+        if (!impl->init_native(opts))
+        {
+            return {};
+        }
+
+        auto on_message = [impl](std::string_view message) -> bool
+        {
+            if (!impl->attributes)
+            {
+                return false;
+            }
+
+            auto request = request::parse(message);
+
+            if (!request)
+            {
+                return false;
+            }
+
+            overload visitor = {
+                [impl](const request::start_resize &data) { impl->window->start_resize(static_cast<window::edge>(data.edge)); },
+                [impl](const request::start_drag &) { impl->window->start_drag(); },
+                [impl](const request::maximize &data) { impl->window->set_maximized(data.value); },
+                [impl](const request::minimize &data) { impl->window->set_minimized(data.value); },
+                [impl](const request::close &) { impl->window->close(); },
+                [impl](const request::maximized &data) { impl->resolve(data.id, std::format("{}", impl->window->maximized())); },
+                [impl](const request::minimized &data) { impl->resolve(data.id, std::format("{}", impl->window->minimized())); },
+            };
+
+            std::visit(visitor, request.value());
+
+            return true;
+        };
+
+        rtn.on<event::message>(std::move(on_message));
+
+        return rtn;
     }
 
     webview::~webview()
     {
+        if (!m_impl)
+        {
+            return;
+        }
+
         for (const auto &event : rebind::enum_values<event>)
         {
             m_events->clear(event);
@@ -33,44 +92,6 @@ namespace saucer
     void webview::setup()
     {
         return invoke(m_impl.get(), &impl::setup<Event>);
-    }
-
-    bool webview::on_message(std::string_view message)
-    {
-        using traits = modules::traits<webview>;
-
-        if (std::ranges::any_of(modules(), [&](auto &module) { return module.template invoke<traits::on_message>(message); }))
-        {
-            return true;
-        }
-
-        if (!m_impl->attributes)
-        {
-            return false;
-        }
-
-        auto request = request::parse(message);
-
-        if (!request)
-        {
-            return false;
-        }
-
-        auto *const impl = m_impl.get();
-
-        overload visitor = {
-            [impl](const request::start_resize &data) { impl->window->start_resize(static_cast<window::edge>(data.edge)); },
-            [impl](const request::start_drag &) { impl->window->start_drag(); },
-            [impl](const request::maximize &data) { impl->window->set_maximized(data.value); },
-            [impl](const request::minimize &data) { impl->window->set_minimized(data.value); },
-            [impl](const request::close &) { impl->window->close(); },
-            [impl](const request::maximized &data) { impl->resolve(data.id, std::format("{}", impl->window->maximized())); },
-            [impl](const request::minimized &data) { impl->resolve(data.id, std::format("{}", impl->window->minimized())); },
-        };
-
-        std::visit(visitor, request.value());
-
-        return true;
     }
 
     void webview::handle_scheme(const std::string &name, scheme::resolver &&handler)
@@ -96,6 +117,11 @@ namespace saucer
                 delete window.saucer.internal.rpc[{0}];
             )",
             id, result));
+    }
+
+    window &webview::parent() const
+    {
+        return *m_impl->window;
     }
 
     icon webview::favicon() const
@@ -261,6 +287,16 @@ namespace saucer
     void webview::remove_scheme(const std::string &name)
     {
         return invoke(m_impl.get(), &impl::remove_scheme, name);
+    }
+
+    void webview::off(event event)
+    {
+        return invoke(m_impl.get(), [impl = m_impl.get(), event] { impl->events->clear(event); });
+    }
+
+    void webview::off(event event, std::uint64_t id)
+    {
+        return invoke(m_impl.get(), [impl = m_impl.get(), event, id] { impl->events->remove(event, id); });
     }
 
     void webview::register_scheme(const std::string &name)

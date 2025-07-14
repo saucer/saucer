@@ -9,8 +9,12 @@ namespace saucer
 {
     using impl = window::impl;
 
-    impl::impl(application *parent, window::events *events) : parent(parent), events(events), native(std::make_unique<impl_native>())
+    impl::impl() = default;
+
+    bool impl::init_native()
     {
+        native = std::make_unique<impl_native>();
+
         auto *const application = GTK_APPLICATION(parent->native<false>()->application.get());
         native->window.reset(GTK_WINDOW(adw_application_window_new(application)));
 
@@ -33,6 +37,8 @@ namespace saucer
         native->update_decorations(this);
 
         set_size({800, 600});
+
+        return true;
     }
 
     impl::~impl()

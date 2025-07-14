@@ -16,10 +16,13 @@ namespace saucer
         std::unique_ptr<impl_native> native;
 
       public:
-        impl(application *, window::events *);
+        impl();
 
       public:
         ~impl();
+
+      public:
+        bool init_native();
 
       public:
         template <event Event>

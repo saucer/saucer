@@ -1,7 +1,8 @@
 #pragma once
 
 #include "webview.hpp"
-#include "window.impl.hpp"
+
+#include <lockpp/lock.hpp>
 
 namespace saucer
 {
@@ -10,8 +11,7 @@ namespace saucer
         struct impl_native;
 
       public:
-        webview *self; // TODO: would `on_message` not use inheritance, this could be removed!
-        window::impl *window;
+        std::shared_ptr<window> window;
 
       public:
         application *parent;
@@ -25,10 +25,13 @@ namespace saucer
         std::unique_ptr<impl_native> native;
 
       public:
-        impl(webview *, const options &);
+        impl();
 
       public:
         ~impl();
+
+      public:
+        bool init_native(const options &);
 
       public:
         template <event Event>

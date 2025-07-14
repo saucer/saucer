@@ -3,50 +3,51 @@
 #include "webview.hpp"
 #include "config.hpp"
 
-#include <atomic>
-#include <memory>
-
-#include <string>
+#include <optional>
 #include <string_view>
+
+#include <memory>
+#include <string>
 
 #include <coco/promise/promise.hpp>
 
 namespace saucer
 {
-    class smartview_core : public webview
+    struct smartview_core : webview
     {
         struct impl;
 
       protected:
-        std::atomic_uint64_t m_id_counter{0};
         std::unique_ptr<impl> m_impl;
 
       protected:
-        smartview_core(std::unique_ptr<serializer_core>, const options &);
+        smartview_core(webview &&, std::unique_ptr<serializer_core>);
 
       public:
-        ~smartview_core() override;
+        smartview_core(smartview_core &&) noexcept;
 
-      protected:
-        bool on_message(std::string_view) override;
-
-      protected:
-        void call(std::unique_ptr<function_data>);
-        void resolve(std::unique_ptr<result_data>);
+      public:
+        ~smartview_core();
 
       protected:
         void add_function(std::string, serializer_core::function &&);
         void add_evaluation(serializer_core::resolver &&, std::string_view);
 
       public:
-        [[sc::thread_safe]] void clear_exposed();
-        [[sc::thread_safe]] void clear_exposed(const std::string &name);
+        [[sc::thread_safe]] void unexpose();
+        [[sc::thread_safe]] void unexpose(const std::string &name);
     };
 
     template <Serializer Serializer = default_serializer>
-    struct smartview : public smartview_core
+    class smartview : public smartview_core
     {
-        smartview(const options &);
+        smartview(webview &&);
+
+      public:
+        smartview(smartview &&) noexcept;
+
+      public:
+        static std::optional<smartview> create(const options &);
 
       public:
         template <typename T>

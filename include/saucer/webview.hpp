@@ -56,7 +56,7 @@ namespace saucer
 
     // TODO: Rework modules
 
-    struct webview : window, modules::extend<webview>
+    struct webview
     {
         struct impl;
 
@@ -73,6 +73,7 @@ namespace saucer
             dom_ready,
             navigated,
             navigate,
+            message,
             request,
             favicon,
             title,
@@ -85,33 +86,42 @@ namespace saucer
             ereignis::event<event::dom_ready, void()>,                                                //
             ereignis::event<event::navigated, void(const uri &)>,                                     //
             ereignis::event<event::navigate, policy(const navigation &)>,                             //
-            ereignis::event<event::request, void(const uri &)>,                                       //
-            ereignis::event<event::favicon, void(const icon &)>,                                      //
-            ereignis::event<event::title, void(std::string_view)>,                                    //
-            ereignis::event<event::load, void(const state &)>                                         //
+            ereignis::event<event::message, bool(std::string_view)>, // TODO: Good idea to allow user to clear built-in handlers?
+            ereignis::event<event::request, void(const uri &)>,      //
+            ereignis::event<event::favicon, void(const icon &)>,     //
+            ereignis::event<event::title, void(std::string_view)>,   //
+            ereignis::event<event::load, void(const state &)>        //
             >;
 
       protected:
         std::unique_ptr<events> m_events;
         std::unique_ptr<impl> m_impl;
 
+      private:
+        webview();
+
+      public:
+        webview(webview &&) noexcept;
+
+      public:
+        static std::optional<webview> create(const options &);
+
+      public:
+        ~webview();
+
       protected:
         template <event Event>
         void setup();
 
       protected:
-        virtual bool on_message(std::string_view); // TODO: This could be solved without the need for virtual functions
         void handle_scheme(const std::string &, scheme::resolver &&);
-
-      public:
-        webview(const options &);
-
-      public:
-        ~webview() override;
 
       public:
         template <bool Stable = true>
         [[nodiscard]] natives<webview, Stable> native() const;
+
+      public:
+        [[nodiscard]] window &parent() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;
@@ -182,7 +192,6 @@ namespace saucer
         [[sc::thread_safe]] auto await(Ts &&...result);
 
       public:
-        using window::off;
         [[sc::thread_safe]] void off(event);
         [[sc::thread_safe]] void off(event, std::uint64_t id);
 
@@ -193,6 +202,7 @@ namespace saucer
     struct webview::options
     {
         required<saucer::application *> application;
+        required<std::shared_ptr<window>> window;
 
       public:
         bool attributes{true};

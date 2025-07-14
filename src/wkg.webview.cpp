@@ -12,10 +12,12 @@ namespace saucer
 {
     using impl = webview::impl;
 
-    impl::impl(webview *self, const options &opts)
-        : self(self), window(self->window::m_impl.get()), parent(self->window::m_impl->parent), events(self->m_events.get()),
-          attributes(opts.attributes), native(std::make_unique<impl_native>())
+    impl::impl() = default;
+
+    bool impl::init_native(const options &opts)
     {
+        native = std::make_unique<impl_native>();
+
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
@@ -55,7 +57,7 @@ namespace saucer
         gtk_widget_set_vexpand(GTK_WIDGET(native->web_view), true);
         gtk_widget_set_hexpand(GTK_WIDGET(native->web_view), true);
 
-        gtk_box_append(window->native->content, GTK_WIDGET(native->web_view));
+        gtk_box_append(window->native<false>()->native->content, GTK_WIDGET(native->web_view));
 
         auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *data) -> gboolean
         {
@@ -66,29 +68,29 @@ namespace saucer
         native->manager = webkit_web_view_get_user_content_manager(native->web_view);
         webkit_user_content_manager_register_script_message_handler(native->manager, "saucer", nullptr);
 
-        auto on_message = [](WebKitWebView *, JSCValue *value, webview *self)
+        auto on_message = [](WebKitWebView *, JSCValue *value, impl *self)
         {
             auto message = std::string{utils::g_str_ptr{jsc_value_to_string(value)}.get()};
 
             if (message == "dom_loaded")
             {
-                self->m_impl->native->dom_loaded = true;
+                self->native->dom_loaded = true;
 
-                for (const auto &pending : self->m_impl->native->pending)
+                for (const auto &pending : self->native->pending)
                 {
                     self->execute(pending);
                 }
 
-                self->m_impl->native->pending.clear();
-                self->m_impl->events->get<event::dom_ready>().fire();
+                self->native->pending.clear();
+                self->events->get<event::dom_ready>().fire();
 
                 return;
             }
 
-            self->on_message(message);
+            self->events->get<event::message>().fire(message).find(true);
         };
 
-        native->msg_received = g_signal_connect(native->manager, "script-message-received", G_CALLBACK(+on_message), self);
+        native->msg_received = g_signal_connect(native->manager, "script-message-received", G_CALLBACK(+on_message), this);
 
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, impl *self)
         {
@@ -130,7 +132,7 @@ namespace saucer
             auto *const controller = GTK_EVENT_CONTROLLER(gesture);
             auto *const event      = gtk_event_controller_get_current_event(controller);
 
-            self->window->native->prev_click.emplace(click_event{
+            self->window->native<false>()->native->prev_click.emplace(click_event{
                 .event      = utils::g_event_ptr::ref(event),
                 .controller = controller,
             });
@@ -138,7 +140,7 @@ namespace saucer
 
         auto release = [](GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, impl *self)
         {
-            auto &previous = self->window->native->prev_resizable;
+            auto &previous = self->window->native<false>()->native->prev_resizable;
 
             if (!previous.has_value())
             {
@@ -156,6 +158,8 @@ namespace saucer
 
         inject({.code = impl_native::inject_script(), .time = load_time::creation, .permanent = true});
         inject({.code = std::string{impl_native::ready_script}, .time = load_time::ready, .permanent = true});
+
+        return true;
     }
 
     impl::~impl()
@@ -165,7 +169,7 @@ namespace saucer
             remove_scheme(name);
         }
 
-        gtk_box_remove(window->native->content, GTK_WIDGET(native->web_view));
+        gtk_box_remove(window->native<false>()->native->content, GTK_WIDGET(native->web_view));
         g_signal_handler_disconnect(native->manager, native->msg_received);
     }
 
@@ -275,7 +279,7 @@ namespace saucer
         };
 
         webkit_web_view_set_background_color(native->web_view, &rgba);
-        window->native->make_transparent(a < 255);
+        window->native<false>()->native->make_transparent(a < 255);
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)

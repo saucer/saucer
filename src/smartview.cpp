@@ -1,7 +1,11 @@
 #include "smartview.hpp"
 
-#include "scripts.hpp"
 #include "webview.impl.hpp"
+
+#include "scripts.hpp"
+#include "webview.hpp"
+
+#include <atomic>
 
 #include <lockpp/lock.hpp>
 
@@ -17,109 +21,120 @@ namespace saucer
         using exposed = std::shared_ptr<function>;
 
       public:
+        std::shared_ptr<lockpp::lock<webview::impl *>> webview;
+
+      public:
+        std::atomic_uint64_t id_counter{0};
+        std::unique_ptr<serializer_core> serializer;
+
+      public:
         lock<std::unordered_map<std::string, exposed>> functions;
         lock<std::unordered_map<std::uint64_t, resolver>> evaluations;
 
       public:
-        std::unique_ptr<serializer_core> serializer;
-        std::shared_ptr<lockpp::lock<webview::impl *>> parent;
+        void call(std::unique_ptr<function_data>);
+        void resolve(std::unique_ptr<result_data>);
     };
 
-    smartview_core::smartview_core(std::unique_ptr<serializer_core> serializer, const options &opts)
-        : webview(opts), m_impl(std::make_unique<impl>())
+    smartview_core::smartview_core(webview &&base, std::unique_ptr<serializer_core> serializer)
+        : webview(std::move(base)), m_impl(std::make_unique<impl>())
     {
         using namespace scripts;
 
+        m_impl->webview    = std::make_shared<lockpp::lock<webview::impl *>>(webview::m_impl.get());
         m_impl->serializer = std::move(serializer);
-        m_impl->parent     = std::make_shared<lockpp::lock<webview::impl *>>(webview::m_impl.get());
 
         auto script = std::format(smartview_script, m_impl->serializer->js_serializer());
 
         inject({.code = std::move(script), .time = load_time::creation, .permanent = true});
         inject({.code = m_impl->serializer->script(), .time = load_time::creation, .permanent = true});
+
+        auto on_message = [impl = m_impl.get()](std::string_view message)
+        {
+            auto parsed = impl->serializer->parse(message);
+
+            overload visitor = {
+                [](std::monostate &) { return false; },
+                [impl](std::unique_ptr<function_data> &parsed)
+                {
+                    impl->call(std::move(parsed));
+                    return true;
+                },
+                [impl](std::unique_ptr<result_data> &parsed)
+                {
+                    impl->resolve(std::move(parsed));
+                    return true;
+                },
+            };
+
+            return std::visit(visitor, parsed);
+        };
+
+        on<webview::event::message>(std::move(on_message));
     }
+
+    smartview_core::smartview_core(smartview_core &&) noexcept = default;
 
     smartview_core::~smartview_core()
     {
-        m_impl->parent->assign(nullptr);
-    }
-
-    bool smartview_core::on_message(std::string_view message)
-    {
-        if (webview::on_message(message))
+        if (!m_impl)
         {
-            return true;
+            return;
         }
 
-        auto parsed = m_impl->serializer->parse(message);
-
-        overload visitor = {
-            [](std::monostate &) //
-            {                    //
-                return false;
-            },
-            [this](std::unique_ptr<function_data> &parsed)
-            {
-                call(std::move(parsed));
-                return true;
-            },
-            [this](std::unique_ptr<result_data> &parsed)
-            {
-                resolve(std::move(parsed));
-                return true;
-            },
-        };
-
-        return std::visit(visitor, parsed);
+        m_impl->webview->assign(nullptr);
     }
 
-    void smartview_core::call(std::unique_ptr<function_data> message)
+    void smartview_core::impl::call(std::unique_ptr<function_data> message)
     {
-        impl::exposed exposed;
+        exposed function;
 
-        if (auto locked = m_impl->functions.write(); locked->contains(message->name))
+        if (auto locked = functions.write(); locked->contains(message->name))
         {
-            exposed = locked->at(message->name);
+            function = locked->at(message->name);
         }
         else
         {
-            return webview::m_impl->reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
+            return webview->get_unsafe()->reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
         }
 
-        auto resolve = [shared = m_impl->parent, id = message->id](const auto &result)
+        auto resolve = [shared = webview, id = message->id](const auto &result)
         {
-            auto parent = shared->read();
+            auto webview = shared->read();
 
-            if (!parent.value())
+            if (!webview.value())
             {
                 return;
             }
 
-            parent.value()->resolve(id, result);
+            webview.value()->resolve(id, result);
         };
 
-        auto reject = [shared = m_impl->parent, id = message->id](const auto &error)
+        auto reject = [shared = webview, id = message->id](const auto &error)
         {
-            auto parent = shared->read();
+            auto webview = shared->read();
 
-            if (!parent.value())
+            if (!webview.value())
             {
                 return;
             }
 
-            parent.value()->reject(id, error);
+            webview.value()->reject(id, error);
         };
 
-        auto executor = serializer_core::executor{std::move(resolve), std::move(reject)};
+        auto executor = serializer_core::executor{
+            std::move(resolve),
+            std::move(reject),
+        };
 
-        return std::invoke(*exposed, std::move(message), std::move(executor));
+        return std::invoke(*function, std::move(message), std::move(executor));
     }
 
-    void smartview_core::resolve(std::unique_ptr<result_data> message)
+    void smartview_core::impl::resolve(std::unique_ptr<result_data> message)
     {
         resolver evaluation;
 
-        if (auto locked = m_impl->evaluations.write(); auto node = locked->extract(message->id))
+        if (auto locked = evaluations.write(); auto node = locked->extract(message->id))
         {
             evaluation = std::move(node.mapped());
         }
@@ -139,7 +154,7 @@ namespace saucer
 
     void smartview_core::add_evaluation(resolver &&resolve, std::string_view code)
     {
-        auto id = m_id_counter++;
+        auto id = m_impl->id_counter++;
 
         {
             auto locked = m_impl->evaluations.write();
@@ -155,13 +170,13 @@ namespace saucer
             id, code));
     }
 
-    void smartview_core::clear_exposed()
+    void smartview_core::unexpose()
     {
         auto locked = m_impl->functions.write();
         locked->clear();
     }
 
-    void smartview_core::clear_exposed(const std::string &name)
+    void smartview_core::unexpose(const std::string &name)
     {
         auto locked = m_impl->functions.write();
         locked->erase(name);

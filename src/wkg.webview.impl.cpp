@@ -160,6 +160,11 @@ namespace saucer
     }
 
     template <>
+    void native::setup<event::message>(impl *)
+    {
+    }
+
+    template <>
     void native::setup<event::request>(impl *self)
     {
         auto &event = self->events->get<event::request>();

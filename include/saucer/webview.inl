@@ -12,27 +12,6 @@ namespace saucer
         handle_scheme(name, scheme::resolver{transformer::transform(std::forward<T>(handler))});
     }
 
-    // TODO: The code repetition here is currently quite ugly.
-    // TODO: However, this should become a lot nicer when window and webview are properly separated (i.e. no inheritance).
-
-    template <window::event Event, typename T>
-    auto webview::on(T &&callback)
-    {
-        return window::on<Event>(std::forward<T>(callback));
-    }
-
-    template <window::event Event, typename T>
-    void webview::once(T &&callback)
-    {
-        return window::once<Event>(std::forward<T>(callback));
-    }
-
-    template <window::event Event, typename... Ts>
-    auto webview::await(Ts &&...result)
-    {
-        return window::await<Event>(std::forward<Ts>(result)...);
-    }
-
     template <webview::event Event, typename T>
     void webview::once(T &&callback)
     {

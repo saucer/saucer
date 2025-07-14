@@ -5,8 +5,24 @@
 namespace saucer
 {
     template <Serializer Serializer>
-    smartview<Serializer>::smartview(const options &opts) : smartview_core(std::make_unique<Serializer>(), opts)
+    smartview<Serializer>::smartview(webview &&webview) : smartview_core(std::move(webview), std::make_unique<Serializer>())
     {
+    }
+
+    template <Serializer Serializer>
+    smartview<Serializer>::smartview(smartview &&other) noexcept = default;
+
+    template <Serializer Serializer>
+    std::optional<smartview<Serializer>> smartview<Serializer>::create(const options &opts)
+    {
+        auto base = webview::create(opts);
+
+        if (!base.has_value())
+        {
+            return {};
+        }
+
+        return smartview{std::move(base.value())};
     }
 
     template <Serializer Serializer>

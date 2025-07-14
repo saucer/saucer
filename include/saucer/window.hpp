@@ -76,11 +76,14 @@ namespace saucer
         std::unique_ptr<events> m_events;
         std::unique_ptr<impl> m_impl;
 
-      protected:
-        window(application *);
+      private:
+        window();
 
       public:
-        virtual ~window();
+        static std::shared_ptr<window> create(application *);
+
+      public:
+        ~window();
 
       protected:
         template <event Event>
