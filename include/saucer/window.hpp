@@ -55,10 +55,14 @@ namespace saucer
       public:
         enum class edge : std::uint8_t
         {
-            top    = 1 << 0,
-            bottom = 1 << 1,
-            left   = 1 << 2,
-            right  = 1 << 3,
+            top          = 1 << 0,
+            bottom       = 1 << 1,
+            left         = 1 << 2,
+            right        = 1 << 3,
+            bottom_left  = bottom | left,
+            bottom_right = bottom | right,
+            top_left     = top | left,
+            top_right    = top | right,
         };
 
       public:
