@@ -16,9 +16,9 @@ namespace saucer
     // TODO: When adding move-semantics, make sure to update `self` pointer in impl (!)
     webview::webview(const options &opts)
         : window(opts.application.value()), extensible(this), m_events(std::make_unique<events>()),
-          m_impl(std::make_unique<impl>(this, opts, window::m_impl.get(), m_events.get()))
+          m_impl(std::make_unique<impl>(this, opts))
     {
-        assert(window::m_impl->parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+        assert(m_impl->parent->thread_safe() && "Construction outside of the main-thread is not permitted");
     }
 
     webview::~webview()
@@ -59,13 +59,13 @@ namespace saucer
         auto *const impl = m_impl.get();
 
         overload visitor = {
-            [impl](const request::start_resize &data) { impl->parent->start_resize(static_cast<window::edge>(data.edge)); },
-            [impl](const request::start_drag &) { impl->parent->start_drag(); },
-            [impl](const request::maximize &data) { impl->parent->set_maximized(data.value); },
-            [impl](const request::minimize &data) { impl->parent->set_minimized(data.value); },
-            [impl](const request::close &) { impl->parent->close(); },
-            [impl](const request::maximized &data) { impl->resolve(data.id, std::format("{}", impl->parent->maximized())); },
-            [impl](const request::minimized &data) { impl->resolve(data.id, std::format("{}", impl->parent->minimized())); },
+            [impl](const request::start_resize &data) { impl->window->start_resize(static_cast<window::edge>(data.edge)); },
+            [impl](const request::start_drag &) { impl->window->start_drag(); },
+            [impl](const request::maximize &data) { impl->window->set_maximized(data.value); },
+            [impl](const request::minimize &data) { impl->window->set_minimized(data.value); },
+            [impl](const request::close &) { impl->window->close(); },
+            [impl](const request::maximized &data) { impl->resolve(data.id, std::format("{}", impl->window->maximized())); },
+            [impl](const request::minimized &data) { impl->resolve(data.id, std::format("{}", impl->window->minimized())); },
         };
 
         std::visit(visitor, request.value());

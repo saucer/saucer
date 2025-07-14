@@ -72,7 +72,7 @@ namespace saucer
         return invoke(m_impl.get(), &impl::title);
     }
 
-    enum window::decoration window::decorations() const
+    window::decoration window::decorations() const
     {
         return invoke(m_impl.get(), &impl::decorations);
     }

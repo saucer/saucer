@@ -11,9 +11,10 @@ namespace saucer
 
       public:
         webview *self; // TODO: would `on_message` not use inheritance, this could be removed!
+        window::impl *window;
 
       public:
-        window::impl *parent;
+        application *parent;
         webview::events *events;
 
       public:
@@ -24,7 +25,7 @@ namespace saucer
         std::unique_ptr<impl_native> native;
 
       public:
-        impl(webview *, const options &, window::impl *, webview::events *);
+        impl(webview *, const options &);
 
       public:
         ~impl();
@@ -84,25 +85,4 @@ namespace saucer
       public:
         static void register_scheme(const std::string &);
     };
-
-    // TODO: Prevent code duplication here (!)
-
-    template <typename Callback, typename... Ts>
-        requires std::invocable<Callback, Ts...>
-    auto invoke(webview::impl *impl, Callback callback, Ts &&...args)
-    {
-        if (!impl)
-        {
-            return std::invoke_result_t<Callback, Ts...>{};
-        }
-
-        return impl->parent->parent->invoke(callback, std::forward<Ts>(args)...);
-    }
-
-    template <typename Callback, typename... Ts>
-        requires std::invocable<Callback, webview::impl *, Ts...>
-    auto invoke(webview::impl *impl, Callback callback, Ts &&...args)
-    {
-        return invoke(impl, callback, impl, std::forward<Ts>(args)...);
-    }
 } // namespace saucer

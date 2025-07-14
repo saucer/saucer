@@ -86,9 +86,9 @@ namespace saucer
         void set_position(const saucer::position &);
     };
 
-    template <typename Callback, typename... Ts>
+    template <typename T, typename Callback, typename... Ts>
         requires std::invocable<Callback, Ts...>
-    auto invoke(window::impl *impl, Callback callback, Ts &&...args)
+    auto invoke(T *impl, Callback callback, Ts &&...args)
     {
         if (!impl)
         {
@@ -98,9 +98,9 @@ namespace saucer
         return impl->parent->invoke(callback, std::forward<Ts>(args)...);
     }
 
-    template <typename Callback, typename... Ts>
-        requires std::invocable<Callback, window::impl *, Ts...>
-    auto invoke(window::impl *impl, Callback callback, Ts &&...args)
+    template <typename T, typename Callback, typename... Ts>
+        requires std::invocable<Callback, T *, Ts...>
+    auto invoke(T *impl, Callback callback, Ts &&...args)
     {
         return invoke(impl, callback, impl, std::forward<Ts>(args)...);
     }
