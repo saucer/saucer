@@ -14,12 +14,6 @@
 
 namespace saucer
 {
-    enum class policy : std::uint8_t
-    {
-        allow,
-        block,
-    };
-
     struct position
     {
         int x;

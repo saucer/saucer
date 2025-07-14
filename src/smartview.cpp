@@ -54,16 +54,16 @@ namespace saucer
             auto parsed = impl->serializer->parse(message);
 
             overload visitor = {
-                [](std::monostate &) { return false; },
+                [](std::monostate &) { return status::unhandled; },
                 [impl](std::unique_ptr<function_data> &parsed)
                 {
                     impl->call(std::move(parsed));
-                    return true;
+                    return status::handled;
                 },
                 [impl](std::unique_ptr<result_data> &parsed)
                 {
                     impl->resolve(std::move(parsed));
-                    return true;
+                    return status::handled;
                 },
             };
 

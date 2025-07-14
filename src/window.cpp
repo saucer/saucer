@@ -2,8 +2,6 @@
 
 #include "instantiate.hpp"
 
-#include <cassert>
-
 #include <rebind/enum.hpp>
 
 namespace saucer

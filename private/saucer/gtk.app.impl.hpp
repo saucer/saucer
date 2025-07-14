@@ -1,16 +1,15 @@
 #pragma once
 
-#include "app.hpp"
+#include "app.impl.hpp"
 #include "gtk.utils.hpp"
 
-#include <thread>
 #include <unordered_map>
 
 #include <adwaita.h>
 
 namespace saucer
 {
-    struct application::impl
+    struct application::impl::native
     {
         utils::g_object_ptr<AdwApplication> application;
 
@@ -19,10 +18,6 @@ namespace saucer
         char **argv;
 
       public:
-        coco::future<void> future;
-
-      public:
-        std::thread::id thread;
         bool quit_on_last_window_closed;
         std::unordered_map<void *, bool> instances;
 

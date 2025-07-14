@@ -87,7 +87,7 @@ namespace saucer
                 return;
             }
 
-            self->events->get<event::message>().fire(message).find(true);
+            self->events->get<event::message>().fire(message).find(status::handled);
         };
 
         platform->msg_received = utils::connect(platform->manager, "script-message-received", +on_message, this);

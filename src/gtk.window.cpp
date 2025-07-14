@@ -15,7 +15,7 @@ namespace saucer
     {
         platform = std::make_unique<native>();
 
-        auto *const application = GTK_APPLICATION(parent->native<false>()->application.get());
+        auto *const application = GTK_APPLICATION(parent->native<false>()->platform->application.get());
         platform->window.reset(GTK_WINDOW(adw_application_window_new(application)));
 
         platform->style   = gtk_css_provider_new();
@@ -155,7 +155,7 @@ namespace saucer
             return std::nullopt;
         }
 
-        return application::impl::convert(monitor);
+        return application::impl::native::convert(monitor);
     }
 
     void impl::hide() const
@@ -165,7 +165,7 @@ namespace saucer
 
     void impl::show() const
     {
-        parent->native<false>()->instances[platform->window.get()] = true;
+        parent->native<false>()->platform->instances[platform->window.get()] = true;
         gtk_window_present(GTK_WINDOW(platform->window.get()));
     }
 

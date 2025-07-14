@@ -1,32 +1,43 @@
 #include "gtk.app.impl.hpp"
 
 #include <format>
-#include <cassert>
-#include <algorithm>
 
 namespace saucer
 {
-    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data))) {}
+    using impl = application::impl;
 
-    application::~application() = default;
+    impl::impl() = default;
 
-    bool application::thread_safe() const
+    bool impl::init_platform(const options &opts)
     {
-        return m_impl->thread == std::this_thread::get_id();
-    }
+        platform = std::make_unique<native>();
 
-    coco::future<void> application::finish()
-    {
-        return std::move(m_impl->future);
-    }
+        auto id = opts.id.value();
 
-    std::vector<screen> application::screens() const
-    {
-        if (!thread_safe())
+        if (!g_application_id_is_valid(id.c_str()))
         {
-            return invoke([this] { return screens(); });
+            id = std::format("app.saucer.{}", native::fix_id(id));
         }
 
+        platform->application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
+
+        platform->argc                       = opts.argc.value_or(0);
+        platform->argv                       = opts.argv.value_or(nullptr);
+        platform->quit_on_last_window_closed = opts.quit_on_last_window_closed;
+
+        if (!opts.quit_on_last_window_closed)
+        {
+            // Required so that application does not quit immediately if there are no windows
+            g_application_hold(G_APPLICATION(platform->application.get()));
+        }
+
+        return true;
+    }
+
+    impl::~impl() = default;
+
+    std::vector<screen> impl::screens() const // NOLINT(*-static)
+    {
         auto *const display  = gdk_display_get_default();
         auto *const monitors = gdk_display_get_monitors(display);
         const auto size      = g_list_model_get_n_items(monitors);
@@ -37,7 +48,7 @@ namespace saucer
         for (auto i = 0uz; size > i; ++i)
         {
             auto *const current = reinterpret_cast<GdkMonitor *>(g_list_model_get_item(monitors, i));
-            rtn.emplace_back(impl::convert(current));
+            rtn.emplace_back(native::convert(current));
         }
 
         return rtn;
@@ -54,27 +65,12 @@ namespace saucer
         g_idle_add_once(reinterpret_cast<GSourceOnceFunc>(+once), new post_callback_t{std::move(callback)});
     }
 
-    int application::run(callback_t callback)
+    int impl::run(application *self, callback_t callback)
     {
-        static bool once{false};
-
-        if (!thread_safe())
-        {
-            assert(false && "saucer::application::run() may only be called from the thread it was created in");
-            return -1;
-        }
-
-        if (once)
-        {
-            assert(false && "saucer::application::run() may only be called once");
-            return -1;
-        }
-
         auto promise = coco::promise<void>{};
-        auto data    = std::make_tuple(std::move(callback), this);
+        auto data    = std::make_tuple(std::move(callback), self);
 
-        once           = true;
-        m_impl->future = promise.get_future();
+        finish = promise.get_future();
 
         auto activate = [](GtkApplication *, decltype(data) *data)
         {
@@ -83,60 +79,16 @@ namespace saucer
             std::call_once(flag, callback, self);
         };
 
-        utils::connect(m_impl->application.get(), "activate", +activate, &data);
-        const auto rtn = g_application_run(G_APPLICATION(m_impl->application.get()), m_impl->argc, m_impl->argv);
+        utils::connect(platform->application.get(), "activate", +activate, &data);
+        const auto rtn = g_application_run(G_APPLICATION(platform->application.get()), platform->argc, platform->argv);
 
         promise.set_value();
 
         return rtn;
     }
 
-    void application::quit()
+    void impl::quit() // NOLINT(*-const)
     {
-        using traits = modules::traits<application>;
-
-        if (!thread_safe())
-        {
-            return invoke([this] { return quit(); });
-        }
-
-        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))
-        {
-            return;
-        }
-
-        g_application_quit(G_APPLICATION(m_impl->application.get()));
-    }
-
-    std::optional<application> application::create(const options &opts)
-    {
-        static bool once{false};
-
-        if (once)
-        {
-            assert(false && "saucer::application may only be created once");
-            return std::nullopt;
-        }
-
-        once = true;
-
-        const auto id = g_application_id_is_valid(opts.id->c_str()) //
-                            ? opts.id.value()
-                            : std::format("app.saucer.{}", impl::fix_id(opts.id.value()));
-
-        auto *const application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
-
-        if (!opts.quit_on_last_window_closed)
-        {
-            g_application_hold(G_APPLICATION(application));
-        }
-
-        return impl{
-            .application                = application,
-            .argc                       = opts.argc.value_or(0),
-            .argv                       = opts.argv.value_or(nullptr),
-            .thread                     = std::this_thread::get_id(),
-            .quit_on_last_window_closed = opts.quit_on_last_window_closed,
-        };
+        g_application_quit(G_APPLICATION(platform->application.get()));
     }
 } // namespace saucer

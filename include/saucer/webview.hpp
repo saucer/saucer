@@ -86,11 +86,11 @@ namespace saucer
             ereignis::event<event::dom_ready, void()>,                                                //
             ereignis::event<event::navigated, void(const uri &)>,                                     //
             ereignis::event<event::navigate, policy(const navigation &)>,                             //
-            ereignis::event<event::message, bool(std::string_view)>, // TODO: Good idea to allow user to clear built-in handlers?
-            ereignis::event<event::request, void(const uri &)>,      //
-            ereignis::event<event::favicon, void(const icon &)>,     //
-            ereignis::event<event::title, void(std::string_view)>,   //
-            ereignis::event<event::load, void(const state &)>        //
+            ereignis::event<event::message, status(std::string_view)>, // TODO: Good idea to allow user to clear built-in handlers?
+            ereignis::event<event::request, void(const uri &)>,        //
+            ereignis::event<event::favicon, void(const icon &)>,       //
+            ereignis::event<event::title, void(std::string_view)>,     //
+            ereignis::event<event::load, void(const state &)>          //
             >;
 
       protected:

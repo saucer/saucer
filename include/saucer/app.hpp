@@ -6,7 +6,6 @@
 #include "utils/required.hpp"
 
 #include <vector>
-#include <utility>
 #include <optional>
 #include <functional>
 
@@ -16,8 +15,16 @@
 #include <coco/stray/stray.hpp>
 #include <coco/promise/promise.hpp>
 
+#include <ereignis/manager/manager.hpp>
+
 namespace saucer
 {
+    enum class policy : std::uint8_t
+    {
+        allow,
+        block,
+    };
+
     struct screen
     {
         std::string name;
@@ -27,26 +34,40 @@ namespace saucer
         std::pair<int, int> position;
     };
 
-    template <typename T>
-    struct safe_delete;
-
-    template <typename T>
-    using safe_ptr = std::unique_ptr<T, safe_delete<T>>;
-
-    struct application : modules::extend<application>
+    struct application
     {
         struct impl;
+
+      public:
         struct options;
 
       private:
         using post_callback_t = std::move_only_function<void()>;
         using callback_t      = std::move_only_function<coco::stray(application *)>;
 
-      private:
-        std::unique_ptr<impl> m_impl;
+      public:
+        enum class event : std::uint8_t
+        {
+            quit,
+        };
 
       public:
-        application(impl);
+        using events = ereignis::manager<          //
+            ereignis::event<event::quit, policy()> //
+            >;
+
+      private:
+        std::unique_ptr<events> m_events;
+        std::unique_ptr<impl> m_impl;
+
+      private:
+        application();
+
+      public:
+        application(application &&) noexcept;
+
+      public:
+        [[nodiscard]] static std::optional<application> create(const options &);
 
       public:
         ~application();
@@ -57,11 +78,20 @@ namespace saucer
 
       public:
         [[nodiscard]] bool thread_safe() const;
-        [[nodiscard]] coco::future<void> finish();
         [[nodiscard]] std::vector<screen> screens() const;
 
       public:
         void post(post_callback_t) const;
+
+      public:
+        int run(callback_t);
+        coco::future<void> finish();
+
+      public:
+        void quit();
+
+      public:
+        void operator&() = delete;
 
       public:
         template <typename Callback, typename... Ts>
@@ -69,17 +99,7 @@ namespace saucer
 
       public:
         template <typename T, typename... Ts>
-        [[sc::thread_safe]] safe_ptr<T> make(Ts &&...) const; // TODO: Remove (?)
-
-      public:
-        void quit();
-        int run(callback_t);
-
-      public:
-        void operator&() = delete;
-
-      public:
-        [[nodiscard]] static std::optional<application> create(const options &);
+        [[sc::thread_safe]] auto make(Ts &&...) const;
     };
 
     struct application::options

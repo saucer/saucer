@@ -91,20 +91,20 @@ namespace saucer
 
     template <typename T, typename Callback, typename... Ts>
         requires std::invocable<Callback, Ts...>
-    auto invoke(T *impl, Callback callback, Ts &&...args)
+    auto invoke(T *impl, Callback &&callback, Ts &&...args)
     {
         if (!impl)
         {
             return std::invoke_result_t<Callback, Ts...>{};
         }
 
-        return impl->parent->invoke(callback, std::forward<Ts>(args)...);
+        return impl->parent->invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
     }
 
     template <typename T, typename Callback, typename... Ts>
         requires std::invocable<Callback, T *, Ts...>
-    auto invoke(T *impl, Callback callback, Ts &&...args)
+    auto invoke(T *impl, Callback &&callback, Ts &&...args)
     {
-        return invoke(impl, callback, impl, std::forward<Ts>(args)...);
+        return invoke(impl, std::forward<Callback>(callback), impl, std::forward<Ts>(args)...);
     }
 } // namespace saucer

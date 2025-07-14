@@ -41,18 +41,18 @@ namespace saucer
             return {};
         }
 
-        auto on_message = [impl](std::string_view message) -> bool
+        auto on_message = [impl](std::string_view message)
         {
             if (!impl->attributes)
             {
-                return false;
+                return status::unhandled;
             }
 
             auto request = request::parse(message);
 
             if (!request)
             {
-                return false;
+                return status::unhandled;
             }
 
             overload visitor = {
@@ -67,7 +67,7 @@ namespace saucer
 
             std::visit(visitor, request.value());
 
-            return true;
+            return status::handled;
         };
 
         rtn.on<event::message>(std::move(on_message));

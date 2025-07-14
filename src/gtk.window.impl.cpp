@@ -196,7 +196,7 @@ namespace saucer
             auto *parent     = self->parent;
             auto *identifier = self->platform->window.get();
 
-            auto *const impl = parent->native<false>();
+            auto *const impl = parent->native<false>()->platform.get();
             auto &instances  = impl->instances;
 
             instances.erase(identifier);

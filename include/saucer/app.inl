@@ -14,7 +14,7 @@ namespace saucer
         {
             if (!app->thread_safe())
             {
-                return app->invoke([this, ptr] { return operator()(ptr); });
+                return app->invoke(&safe_delete::operator(), this, ptr);
             }
 
             delete ptr;
@@ -43,13 +43,13 @@ namespace saucer
     }
 
     template <typename T, typename... Ts>
-    safe_ptr<T> application::make(Ts &&...args) const
+    auto application::make(Ts &&...args) const
     {
         if (!thread_safe())
         {
-            return invoke([this, ... args = std::forward<Ts>(args)]() mutable { return make<T>(std::forward<Ts>(args)...); });
+            return invoke(&application::make, this, std::forward<Ts>(args)...);
         }
 
-        return safe_ptr<T>{new T{std::forward<Ts>(args)...}, safe_delete<T>{.app = this}};
+        return std::unique_ptr<T, safe_delete<T>>{new T{std::forward<Ts>(args)...}, safe_delete<T>{.app = this}};
     }
 } // namespace saucer

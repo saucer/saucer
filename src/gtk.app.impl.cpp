@@ -4,13 +4,15 @@
 
 namespace saucer
 {
-    void application::impl::iteration()
+    using native = application::impl::native;
+
+    void native::iteration()
     {
         auto *const context = g_main_context_default();
         g_main_context_iteration(context, false);
     }
 
-    screen application::impl::convert(GdkMonitor *monitor)
+    screen native::convert(GdkMonitor *monitor)
     {
         const auto *model = gdk_monitor_get_model(monitor);
 
@@ -24,7 +26,7 @@ namespace saucer
         };
     }
 
-    std::string application::impl::fix_id(const std::string &id)
+    std::string native::fix_id(const std::string &id)
     {
         return id                                                                                            //
                | std::views::transform([](const char c) { return std::isalpha(c) ? std::tolower(c) : '_'; }) //
