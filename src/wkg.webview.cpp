@@ -63,7 +63,7 @@ namespace saucer
         {
             return !data->platform->context_menu;
         };
-        g_signal_connect(platform->web_view, "context-menu", G_CALLBACK(+on_context), this);
+        utils::connect(platform->web_view, "context-menu", +on_context, this);
 
         platform->manager = webkit_web_view_get_user_content_manager(platform->web_view);
         webkit_user_content_manager_register_script_message_handler(platform->manager, "saucer", nullptr);
@@ -90,7 +90,7 @@ namespace saucer
             self->events->get<event::message>().fire(message).find(true);
         };
 
-        platform->msg_received = g_signal_connect(platform->manager, "script-message-received", G_CALLBACK(+on_message), this);
+        platform->msg_received = utils::connect(platform->manager, "script-message-received", +on_message, this);
 
         auto on_load = [](WebKitWebView *, WebKitLoadEvent event, impl *self)
         {
@@ -123,7 +123,7 @@ namespace saucer
             self->events->get<event::load>().fire(state::started);
         };
 
-        g_signal_connect(platform->web_view, "load-changed", G_CALLBACK(+on_load), this);
+        utils::connect(platform->web_view, "load-changed", +on_load, this);
 
         auto *const controller = gtk_gesture_click_new();
 
@@ -151,8 +151,8 @@ namespace saucer
             previous.reset();
         };
 
-        g_signal_connect(controller, "pressed", G_CALLBACK(+on_click), this);
-        g_signal_connect(controller, "unpaired-release", G_CALLBACK(+release), this);
+        utils::connect(controller, "pressed", +on_click, this);
+        utils::connect(controller, "unpaired-release", +release, this);
 
         gtk_widget_add_controller(GTK_WIDGET(platform->web_view), GTK_EVENT_CONTROLLER(controller));
 

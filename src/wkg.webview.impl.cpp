@@ -110,7 +110,7 @@ namespace saucer
             self->events->get<event::permission>().fire(req).find(status::handled);
         };
 
-        const auto id = g_signal_connect(web_view, "permission-request", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(web_view, "permission-request", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
     }
 
@@ -157,7 +157,7 @@ namespace saucer
             return false;
         };
 
-        const auto id = g_signal_connect(web_view, "decide-policy", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(web_view, "decide-policy", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
     }
 
@@ -196,7 +196,7 @@ namespace saucer
             self->events->get<event::request>().fire(url.value());
         };
 
-        const auto id = g_signal_connect(web_view, "resource-load-started", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(web_view, "resource-load-started", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
     }
 
@@ -215,7 +215,7 @@ namespace saucer
             self->events->get<event::favicon>().fire(self->favicon());
         };
 
-        const auto id = g_signal_connect(web_view, "notify::favicon", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(web_view, "notify::favicon", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
     }
 
@@ -234,7 +234,7 @@ namespace saucer
             self->events->get<event::title>().fire(self->page_title());
         };
 
-        const auto id = g_signal_connect(web_view, "notify::title", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(web_view, "notify::title", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(web_view, id); });
     }
 

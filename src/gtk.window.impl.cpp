@@ -64,8 +64,8 @@ namespace saucer
             self->events->get<event::resize>().fire(width, height);
         };
 
-        const auto width  = g_signal_connect(window.get(), "notify::default-width", G_CALLBACK(+callback), self);
-        const auto height = g_signal_connect(window.get(), "notify::default-height", G_CALLBACK(+callback), self);
+        const auto width  = utils::connect(window.get(), "notify::default-width", +callback, self);
+        const auto height = utils::connect(window.get(), "notify::default-height", +callback, self);
 
         event.on_clear(
             [this, width, height]
@@ -90,7 +90,7 @@ namespace saucer
             self->events->get<event::maximize>().fire(self->maximized());
         };
 
-        const auto id = g_signal_connect(window.get(), "notify::maximized", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(window.get(), "notify::maximized", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(window.get(), id); });
     }
 
@@ -114,7 +114,7 @@ namespace saucer
             self->events->get<event::focus>().fire(self->focused());
         };
 
-        const auto id = g_signal_connect(window.get(), "notify::is-active", G_CALLBACK(+callback), self);
+        const auto id = utils::connect(window.get(), "notify::is-active", +callback, self);
         event.on_clear([this, id] { g_signal_handler_disconnect(window.get(), id); });
     }
 
@@ -215,7 +215,7 @@ namespace saucer
             return false;
         };
 
-        g_signal_connect(window.get(), "close-request", G_CALLBACK(+callback), self);
+        utils::connect(window.get(), "close-request", +callback, self);
     }
 
     void native::update_region(impl *self) const
@@ -234,7 +234,7 @@ namespace saucer
             gdk_surface_set_input_region(surface, self->platform->region.get());
         };
 
-        g_signal_connect(motion_controller, "motion", G_CALLBACK(+callback), self);
+        utils::connect(motion_controller, "motion", +callback, self);
         gtk_widget_add_controller(GTK_WIDGET(self->platform->window.get()), motion_controller);
     }
 
@@ -254,7 +254,7 @@ namespace saucer
             self->events->get<event::decorated>().fire(current);
         };
 
-        g_signal_connect(window.get(), "notify::decorated", G_CALLBACK(+callback), self);
-        g_signal_connect(header, "notify::visible", G_CALLBACK(+callback), self);
+        utils::connect(header, "notify::visible", +callback, self);
+        utils::connect(window.get(), "notify::decorated", +callback, self);
     }
 } // namespace saucer

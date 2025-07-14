@@ -76,14 +76,14 @@ namespace saucer
         once           = true;
         m_impl->future = promise.get_future();
 
-        auto activate = [](GtkApplication *, void *raw)
+        auto activate = [](GtkApplication *, decltype(data) *data)
         {
             static std::once_flag flag;
-            auto &[callback, self] = *reinterpret_cast<decltype(data) *>(raw);
+            auto &[callback, self] = *data;
             std::call_once(flag, callback, self);
         };
 
-        g_signal_connect(m_impl->application.get(), "activate", G_CALLBACK(+activate), &data);
+        utils::connect(m_impl->application.get(), "activate", +activate, &data);
         const auto rtn = g_application_run(G_APPLICATION(m_impl->application.get()), m_impl->argc, m_impl->argv);
 
         promise.set_value();
