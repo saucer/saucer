@@ -31,7 +31,7 @@ namespace saucer
         double y;
     };
 
-    struct window::impl::impl_native
+    struct window::impl::native
     {
         utils::handle<GtkWindow *, gtk_window_destroy> window;
         utils::g_object_ptr<GtkCssProvider> style;

@@ -22,7 +22,7 @@ namespace saucer
         rtn->m_impl->parent = parent;
         rtn->m_impl->events = rtn->m_events.get();
 
-        if (!rtn->m_impl->init_native())
+        if (!rtn->m_impl->init_platform())
         {
             return {};
         }

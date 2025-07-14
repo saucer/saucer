@@ -14,7 +14,7 @@ namespace saucer
 {
     using script_ptr = utils::ref_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
 
-    struct webview::impl::impl_native
+    struct webview::impl::native
     {
         WebKitWebView *web_view;
 

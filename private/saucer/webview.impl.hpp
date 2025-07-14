@@ -8,7 +8,7 @@ namespace saucer
 {
     struct webview::impl
     {
-        struct impl_native;
+        struct native;
 
       public:
         std::shared_ptr<window> window;
@@ -22,7 +22,7 @@ namespace saucer
         embedded_files embedded;
 
       public:
-        std::unique_ptr<impl_native> native;
+        std::unique_ptr<native> platform;
 
       public:
         impl();
@@ -31,7 +31,7 @@ namespace saucer
         ~impl();
 
       public:
-        bool init_native(const options &);
+        bool init_platform(const options &);
 
       public:
         template <event Event>

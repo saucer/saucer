@@ -11,7 +11,7 @@ constexpr bool flagpp::enabled<saucer::window::edge> = true;
 
 namespace saucer
 {
-    using native = window::impl::impl_native;
+    using native = window::impl::native;
     using event  = window::event;
 
     std::optional<event_data> native::prev_data() const
@@ -194,7 +194,7 @@ namespace saucer
             }
 
             auto *parent     = self->parent;
-            auto *identifier = self->native->window.get();
+            auto *identifier = self->platform->window.get();
 
             auto *const impl = parent->native<false>();
             auto &instances  = impl->instances;
@@ -222,7 +222,7 @@ namespace saucer
     {
         auto callback = [](void *, double, double, impl *self)
         {
-            auto *widget  = GTK_WIDGET(self->native->window.get());
+            auto *widget  = GTK_WIDGET(self->platform->window.get());
             auto *native  = gtk_widget_get_native(widget);
             auto *surface = gtk_native_get_surface(native);
 
@@ -231,18 +231,18 @@ namespace saucer
                 return;
             }
 
-            gdk_surface_set_input_region(surface, self->native->region.get());
+            gdk_surface_set_input_region(surface, self->platform->region.get());
         };
 
         g_signal_connect(motion_controller, "motion", G_CALLBACK(+callback), self);
-        gtk_widget_add_controller(GTK_WIDGET(self->native->window.get()), motion_controller);
+        gtk_widget_add_controller(GTK_WIDGET(self->platform->window.get()), motion_controller);
     }
 
     void native::update_decorations(impl *self) const
     {
         auto callback = [](void *, GParamSpec *, impl *self)
         {
-            auto &prev         = self->native->prev_decoration;
+            auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
 
             if (prev.has_value() && prev.value() == current)

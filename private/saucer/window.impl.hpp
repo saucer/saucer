@@ -6,14 +6,14 @@ namespace saucer
 {
     struct window::impl
     {
-        struct impl_native;
+        struct native;
 
       public:
         application *parent;
         window::events *events;
 
       public:
-        std::unique_ptr<impl_native> native;
+        std::unique_ptr<native> platform;
 
       public:
         impl();
@@ -22,7 +22,7 @@ namespace saucer
         ~impl();
 
       public:
-        bool init_native();
+        bool init_platform();
 
       public:
         template <event Event>

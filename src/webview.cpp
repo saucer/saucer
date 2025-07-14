@@ -36,7 +36,7 @@ namespace saucer
         impl->events     = rtn.m_events.get();
         impl->attributes = opts.attributes;
 
-        if (!impl->init_native(opts))
+        if (!impl->init_platform(opts))
         {
             return {};
         }

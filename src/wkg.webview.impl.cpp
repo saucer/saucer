@@ -22,7 +22,7 @@ constexpr bool flagpp::enabled<saucer::permission::type> = true;
 
 namespace saucer
 {
-    using native = webview::impl::impl_native;
+    using native = webview::impl::native;
     using event  = webview::event;
 
     template <auto Func, auto Value>
