@@ -317,9 +317,10 @@ if (saucer_backend STREQUAL "WebKitGtk")
 
   pkg_check_modules(gtk        REQUIRED gtk4>=4.12)
   pkg_check_modules(libadwaita REQUIRED IMPORTED_TARGET libadwaita-1)
+  pkg_check_modules(json-glib  REQUIRED IMPORTED_TARGET json-glib-1.0)
   pkg_check_modules(webkitgtk  REQUIRED IMPORTED_TARGET webkitgtk-6.0)
 
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::libadwaita PkgConfig::webkitgtk)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")

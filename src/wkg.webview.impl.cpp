@@ -13,6 +13,8 @@
 #include <optional>
 #include <charconv>
 
+#include <json-glib/json-glib.h>
+
 #include <flagpp/flags.hpp>
 
 template <>
@@ -259,54 +261,12 @@ namespace saucer
 
     constinit std::string_view native::ready_script = "window.saucer.internal.message('dom_loaded')";
 
-    std::optional<GValue> convert(std::string_view value)
-    {
-        static auto regex = std::regex{"^(true|false)|(\\d+)|(.*)$", std::regex::icase};
-
-        std::match_results<std::string_view::iterator> match;
-
-        if (!std::regex_match(value.cbegin(), value.cend(), match, regex))
-        {
-            return std::nullopt;
-        }
-
-        GValue rtn = G_VALUE_INIT;
-
-        if (match[1].matched)
-        {
-            g_value_init(&rtn, G_TYPE_BOOLEAN);
-            g_value_set_boolean(&rtn, value.find_first_of("Tt") != std::string_view::npos);
-
-            return rtn;
-        }
-
-        if (match[2].matched)
-        {
-            guint32 converted{};
-
-            if (std::from_chars(match[2].first, match[2].second, converted).ec != std::errc{})
-            {
-                return std::nullopt;
-            }
-
-            g_value_init(&rtn, G_TYPE_UINT);
-            g_value_set_uint(&rtn, converted);
-
-            return rtn;
-        }
-
-        g_value_init(&rtn, G_TYPE_STRING);
-        g_value_set_string(&rtn, std::string{value}.c_str());
-
-        return rtn;
-    }
-
     WebKitSettings *native::make_settings(const options &opts)
     {
         std::vector<GValue> values;
         std::vector<std::string> names;
 
-        // TODO: Use some kind of JSON here?
+        auto parser = utils::g_object_ptr<JsonParser>(json_parser_new());
 
         for (const auto &flag : opts.browser_flags)
         {
@@ -317,24 +277,38 @@ namespace saucer
                 continue;
             }
 
-            auto name            = flag.substr(0, delim);
-            const auto value     = std::string_view{flag}.substr(delim + 1);
-            const auto converted = convert(value);
+            auto key   = flag.substr(0, delim);
+            auto value = flag.substr(delim + 1);
 
-            if (!converted)
+            const auto data = std::format(R"json({{ "value": {} }})json", value);
+
+            if (!json_parser_load_from_data(parser.get(), data.c_str(), static_cast<gssize>(data.size()), nullptr))
             {
                 continue;
             }
 
-            names.emplace_back(std::move(name));
-            values.emplace_back(converted.value());
+            auto *const root   = json_parser_get_root(parser.get());
+            auto *const object = json_node_get_object(root);
+            auto *const node   = json_object_get_member(object, "value");
+
+            GValue parsed = G_VALUE_INIT;
+            json_node_get_value(node, &parsed);
+
+            values.emplace_back(parsed);
+            names.emplace_back(std::move(key));
         }
 
-        auto names_ptr = std::views::transform(names, [](auto &value) { return value.c_str(); }) //
+        auto raw_names = std::views::transform(names, &std::string::c_str) //
                          | std::ranges::to<std::vector<const char *>>();
 
         // https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/glib/WebKitSettings.cpp#L1753
+        auto *const settings = g_object_new_with_properties(WEBKIT_TYPE_SETTINGS, values.size(), raw_names.data(), values.data());
 
-        return WEBKIT_SETTINGS(g_object_new_with_properties(WEBKIT_TYPE_SETTINGS, values.size(), names_ptr.data(), values.data()));
+        for (auto &value : values)
+        {
+            g_value_unset(&value);
+        }
+
+        return WEBKIT_SETTINGS(settings);
     }
 } // namespace saucer
