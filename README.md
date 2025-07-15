@@ -30,6 +30,10 @@ Learn how to create your first _saucer_ app [here](https://saucer.github.io/docs
 
 Get in touch: [Discord](https://discord.gg/ndhmQE4225), [Matrix](https://matrix.to/#/#saucer:matrix.org)
 
+### Mirrors
+
+Saucer is also available on: [Codeberg](https://codeberg.org/saucer/saucer)
+
 </div> 
 
 ---
