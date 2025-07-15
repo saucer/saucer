@@ -92,6 +92,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
     | -------- | ---------------------------------- |
     | Java     | https://github.com/saucer/saucer4j |
     | PHP      | https://github.com/boson-php       |
+    | Rust     | https://github.com/skjsjhb/saucers |
 
     _Please note: All bindings are community maintained!_
 
