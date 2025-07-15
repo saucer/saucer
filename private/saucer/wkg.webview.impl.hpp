@@ -14,6 +14,12 @@ namespace saucer
 {
     using script_ptr = utils::ref_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
 
+    struct wkg_script
+    {
+        script_ptr ref;
+        bool permanent;
+    };
+
     struct webview::impl::native
     {
         WebKitWebView *web_view;
@@ -24,7 +30,10 @@ namespace saucer
 
       public:
         bool context_menu{true};
-        std::vector<std::pair<script_ptr, bool>> scripts;
+
+      public:
+        std::uint64_t id_counter{0};
+        std::map<std::uint64_t, wkg_script> scripts;
 
       public:
         bool dom_loaded{false};

@@ -253,11 +253,6 @@ namespace saucer
         return invoke(m_impl.get(), embed, std::move(files), std::move(handler));
     }
 
-    void webview::clear_scripts()
-    {
-        return invoke(m_impl.get(), &impl::clear_scripts);
-    }
-
     void webview::unembed()
     {
         auto unembed = [impl = m_impl.get()]
@@ -274,14 +269,26 @@ namespace saucer
         return invoke(m_impl.get(), [impl = m_impl.get(), file] { impl->embedded.erase(file); });
     }
 
-    void webview::inject(const script &script)
+    void webview::execute(const std::string &code)
+    {
+        return invoke(m_impl.get(), &impl::execute, code);
+    }
+
+    std::uint64_t webview::inject(const script &script)
     {
         return invoke(m_impl.get(), &impl::inject, script);
     }
 
-    void webview::execute(const std::string &code)
+    void webview::uninject()
     {
-        return invoke(m_impl.get(), &impl::execute, code);
+        auto uninject = static_cast<void (impl::*)()>(&impl::uninject);
+        return invoke(m_impl.get(), uninject);
+    }
+
+    void webview::uninject(std::uint64_t id)
+    {
+        auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
+        return invoke(m_impl.get(), uninject, id);
     }
 
     void webview::remove_scheme(const std::string &name)

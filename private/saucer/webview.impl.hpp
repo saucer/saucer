@@ -76,11 +76,12 @@ namespace saucer
         void reload();
 
       public:
-        void clear_scripts();
+        void execute(const std::string &);
+        std::uint64_t inject(const script &);
 
       public:
-        void inject(const script &);
-        void execute(const std::string &);
+        void uninject();
+        void uninject(std::uint64_t);
 
       public:
         void remove_scheme(const std::string &);

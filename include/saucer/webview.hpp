@@ -157,15 +157,16 @@ namespace saucer
         [[sc::thread_safe]] void embed(embedded_files);
 
       public:
-        [[sc::thread_safe]] void clear_scripts();
-
-      public:
         [[sc::thread_safe]] void unembed();
         [[sc::thread_safe]] void unembed(const fs::path &);
 
       public:
-        [[sc::thread_safe]] void inject(const script &);
         [[sc::thread_safe]] void execute(const std::string &);
+        [[sc::thread_safe]] std::uint64_t inject(const script &);
+
+      public:
+        [[sc::thread_safe]] void uninject();
+        [[sc::thread_safe]] void uninject(std::uint64_t);
 
       public:
         template <typename T>

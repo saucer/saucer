@@ -302,40 +302,6 @@ namespace saucer
         webkit_web_view_reload(platform->web_view);
     }
 
-    void impl::clear_scripts() // NOLINT(*-function-const)
-    {
-        auto *const manager = webkit_web_view_get_user_content_manager(platform->web_view);
-
-        for (auto it = platform->scripts.begin(); it != platform->scripts.end();)
-        {
-            const auto &[script, permanent] = *it;
-
-            if (permanent)
-            {
-                ++it;
-                continue;
-            }
-
-            webkit_user_content_manager_remove_script(manager, script.get());
-            it = platform->scripts.erase(it);
-        }
-    }
-
-    void impl::inject(const script &script) // NOLINT(*-function-const)
-    {
-        const auto time = script.time == load_time::creation ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START
-                                                             : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
-
-        const auto frame = script.frame == web_frame::all ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
-                                                          : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
-
-        auto *const manager     = webkit_web_view_get_user_content_manager(platform->web_view);
-        auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
-
-        platform->scripts.emplace_back(user_script, script.permanent);
-        webkit_user_content_manager_add_script(manager, user_script);
-    }
-
     void impl::execute(const std::string &code) // NOLINT(*-function-const)
     {
         if (!platform->dom_loaded)
@@ -345,6 +311,61 @@ namespace saucer
         }
 
         webkit_web_view_evaluate_javascript(platform->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
+    }
+
+    std::uint64_t impl::inject(const script &script) // NOLINT(*-function-const)
+    {
+        using enum load_time;
+        using enum web_frame;
+
+        const auto time = (script.time == creation) ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START //
+                                                    : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
+
+        const auto frame = (script.frame == all) ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
+                                                 : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
+
+        auto *const manager     = webkit_web_view_get_user_content_manager(platform->web_view);
+        auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
+
+        webkit_user_content_manager_add_script(manager, user_script);
+
+        const auto id = platform->id_counter++;
+        platform->scripts.emplace(id, wkg_script{.ref = user_script, .permanent = script.permanent});
+
+        return id;
+    }
+
+    void impl::uninject() // NOLINT(*-function-const)
+    {
+        auto *const manager = webkit_web_view_get_user_content_manager(platform->web_view);
+
+        for (auto it = platform->scripts.begin(); it != platform->scripts.end();)
+        {
+            const auto &[id, script] = *it;
+
+            if (script.permanent)
+            {
+                ++it;
+                continue;
+            }
+
+            webkit_user_content_manager_remove_script(manager, script.ref.get());
+            it = platform->scripts.erase(it);
+        }
+    }
+
+    void impl::uninject(std::uint64_t id) // NOLINT(*-function-const)
+    {
+        if (!platform->scripts.contains(id))
+        {
+            return;
+        }
+
+        auto *const manager = webkit_web_view_get_user_content_manager(platform->web_view);
+        const auto &script  = platform->scripts.at(id);
+
+        webkit_user_content_manager_remove_script(manager, script.ref.get());
+        platform->scripts.erase(id);
     }
 
     void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
