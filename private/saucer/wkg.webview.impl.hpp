@@ -17,7 +17,7 @@ namespace saucer
     struct wkg_script
     {
         script_ptr ref;
-        bool permanent;
+        bool clearable;
     };
 
     struct webview::impl::native

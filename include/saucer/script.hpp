@@ -26,7 +26,7 @@ namespace saucer
         web_frame frame{web_frame::top};
 
       public:
-        bool permanent{false};
+        bool clearable{true};
 
       public:
         bool operator==(const script &) const = default;

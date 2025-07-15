@@ -46,8 +46,8 @@ namespace saucer
 
         auto script = std::format(smartview_script, m_impl->serializer->js_serializer());
 
-        inject({.code = std::move(script), .time = load_time::creation, .permanent = true});
-        inject({.code = m_impl->serializer->script(), .time = load_time::creation, .permanent = true});
+        inject({.code = std::move(script), .time = load_time::creation, .clearable = false});
+        inject({.code = m_impl->serializer->script(), .time = load_time::creation, .clearable = false});
 
         auto on_message = [impl = m_impl.get()](std::string_view message)
         {

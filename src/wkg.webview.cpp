@@ -156,8 +156,8 @@ namespace saucer
 
         gtk_widget_add_controller(GTK_WIDGET(platform->web_view), GTK_EVENT_CONTROLLER(controller));
 
-        inject({.code = native::inject_script(), .time = load_time::creation, .permanent = true});
-        inject({.code = std::string{native::ready_script}, .time = load_time::ready, .permanent = true});
+        inject({.code = native::inject_script(), .time = load_time::creation, .clearable = false});
+        inject({.code = std::string{native::ready_script}, .time = load_time::ready, .clearable = false});
 
         return true;
     }
@@ -330,7 +330,7 @@ namespace saucer
         webkit_user_content_manager_add_script(manager, user_script);
 
         const auto id = platform->id_counter++;
-        platform->scripts.emplace(id, wkg_script{.ref = user_script, .permanent = script.permanent});
+        platform->scripts.emplace(id, wkg_script{.ref = user_script, .clearable = script.clearable});
 
         return id;
     }
@@ -343,7 +343,7 @@ namespace saucer
         {
             const auto &[id, script] = *it;
 
-            if (script.permanent)
+            if (!script.clearable)
             {
                 ++it;
                 continue;
