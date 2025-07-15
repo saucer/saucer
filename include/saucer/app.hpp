@@ -1,8 +1,6 @@
 #pragma once
 
 #include "modules/module.hpp"
-#include "modules/traits/app.hpp"
-
 #include "utils/required.hpp"
 
 #include <vector>

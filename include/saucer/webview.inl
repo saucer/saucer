@@ -12,18 +12,18 @@ namespace saucer
         handle_scheme(name, scheme::resolver{transformer::transform(std::forward<T>(handler))});
     }
 
-    template <webview::event Event, typename T>
-    void webview::once(T &&callback)
+    template <webview::event Event>
+    auto webview::on(events::event<Event>::listener listener)
     {
         setup<Event>();
-        m_events->get<Event>().once(std::forward<T>(callback));
+        m_events->get<Event>().add(std::move(listener));
     }
 
-    template <webview::event Event, typename T>
-    auto webview::on(T &&callback)
+    template <webview::event Event>
+    void webview::once(events::event<Event>::listener::callback cb)
     {
         setup<Event>();
-        m_events->get<Event>().add(std::forward<T>(callback));
+        m_events->get<Event>().once(std::move(cb));
     }
 
     template <webview::event Event, typename... Ts>

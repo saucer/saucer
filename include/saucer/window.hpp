@@ -155,12 +155,13 @@ namespace saucer
         [[sc::thread_safe]] void set_position(const saucer::position &);
 
       public:
-        template <event Event, typename T>
-        [[sc::thread_safe]] auto on(T &&callback);
+        template <event Event>
+        [[sc::thread_safe]] auto on(events::event<Event>::listener);
 
-        template <event Event, typename T>
-        [[sc::thread_safe]] void once(T &&callback);
+        template <event Event>
+        [[sc::thread_safe]] void once(events::event<Event>::listener::callback);
 
+      public:
         template <event Event, typename... Ts>
         [[sc::thread_safe]] auto await(Ts &&...result);
 

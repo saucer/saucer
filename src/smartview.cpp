@@ -70,7 +70,7 @@ namespace saucer
             return std::visit(visitor, parsed);
         };
 
-        on<webview::event::message>(std::move(on_message));
+        on<event::message>({{.func = on_message, .clearable = false}});
     }
 
     smartview_core::smartview_core(smartview_core &&) noexcept = default;

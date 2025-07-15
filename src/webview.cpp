@@ -70,7 +70,7 @@ namespace saucer
             return status::handled;
         };
 
-        rtn.on<event::message>(std::move(on_message));
+        rtn.on<event::message>({{.func = std::move(on_message), .clearable = false}});
 
         return rtn;
     }

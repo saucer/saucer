@@ -3,7 +3,9 @@
 #include "window.hpp"
 
 #include "modules/module.hpp"
-#include "modules/traits/webview.hpp"
+#include "utils/required.hpp"
+
+#include "stash/stash.hpp"
 
 #include "uri.hpp"
 #include "icon.hpp"
@@ -12,9 +14,6 @@
 
 #include "scheme.hpp"
 #include "navigation.hpp"
-
-#include "stash/stash.hpp"
-#include "utils/required.hpp"
 
 #include <memory>
 
@@ -54,8 +53,6 @@ namespace saucer
 
     using color = std::array<std::uint8_t, 4>;
 
-    // TODO: Rework modules
-
     struct webview
     {
         struct impl;
@@ -86,11 +83,11 @@ namespace saucer
             ereignis::event<event::dom_ready, void()>,                                                //
             ereignis::event<event::navigated, void(const uri &)>,                                     //
             ereignis::event<event::navigate, policy(const navigation &)>,                             //
-            ereignis::event<event::message, status(std::string_view)>, // TODO: Good idea to allow user to clear built-in handlers?
-            ereignis::event<event::request, void(const uri &)>,        //
-            ereignis::event<event::favicon, void(const icon &)>,       //
-            ereignis::event<event::title, void(std::string_view)>,     //
-            ereignis::event<event::load, void(const state &)>          //
+            ereignis::event<event::message, status(std::string_view)>,                                //
+            ereignis::event<event::request, void(const uri &)>,                                       //
+            ereignis::event<event::favicon, void(const icon &)>,                                      //
+            ereignis::event<event::title, void(std::string_view)>,                                    //
+            ereignis::event<event::load, void(const state &)>                                         //
             >;
 
       protected:
@@ -176,18 +173,13 @@ namespace saucer
         [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:
-        template <window::event Event, typename T>
-        [[sc::thread_safe]] auto on(T &&callback);
-        template <event Event, typename T>
-        [[sc::thread_safe]] auto on(T &&callback);
+        template <event Event>
+        [[sc::thread_safe]] auto on(events::event<Event>::listener);
 
-        template <window::event Event, typename T>
-        [[sc::thread_safe]] void once(T &&callback);
-        template <event Event, typename T>
-        [[sc::thread_safe]] void once(T &&callback);
+        template <event Event>
+        [[sc::thread_safe]] void once(events::event<Event>::listener::callback);
 
-        template <window::event Event, typename... Ts>
-        [[sc::thread_safe]] auto await(Ts &&...result);
+      public:
         template <event Event, typename... Ts>
         [[sc::thread_safe]] auto await(Ts &&...result);
 

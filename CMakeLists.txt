@@ -223,7 +223,7 @@ include("cmake/module.cmake")
 
 CPMFindPackage(
   NAME           lockpp
-  VERSION        3.1.0
+  VERSION        3.2.0
   GIT_REPOSITORY "https://github.com/Curve/lockpp"
 )
 
@@ -240,14 +240,8 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           eraser
-  VERSION        2.3.0
-  GIT_REPOSITORY "https://github.com/Curve/eraser"
-)
-
-CPMFindPackage(
   NAME           ereignis
-  VERSION        5.4.0
+  VERSION        6.0.0
   GIT_REPOSITORY "https://github.com/Curve/ereignis"
 )
 
@@ -265,7 +259,7 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::eraser cr::ereignis saucer::fill)
+target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::ereignis saucer::fill)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
@@ -442,5 +436,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.1.0;coco 3.2.1;rebind 5.3.0;eraser 2.3.0;ereignis 5.4.0;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.0;ereignis 6.0.0;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
 )
