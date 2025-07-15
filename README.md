@@ -32,7 +32,7 @@ Get in touch: [Discord](https://discord.gg/ndhmQE4225), [Matrix](https://matrix.
 
 ### Mirrors
 
-Saucer is also available on: [Codeberg](https://codeberg.org/saucer/saucer)
+This repository can also be found on: [Codeberg](https://codeberg.org/saucer/saucer)
 
 </div> 
 
