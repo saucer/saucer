@@ -211,6 +211,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/window.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
+    
+    "src/webview.impl.cpp"
 )
 
 # --------------------------------------------------------------------------------------------------------
