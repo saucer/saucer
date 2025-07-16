@@ -134,7 +134,7 @@ namespace saucer
 
         switch (std::to_underlying(edge))
         {
-            using enum edge;
+            using enum window::edge;
 
         case std::to_underlying(top):
             translated = GDK_SURFACE_EDGE_NORTH;

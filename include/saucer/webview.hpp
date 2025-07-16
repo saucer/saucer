@@ -195,7 +195,7 @@ namespace saucer
     struct webview::options
     {
         required<saucer::application *> application;
-        required<std::shared_ptr<window>> window;
+        required<std::shared_ptr<saucer::window>> window;
 
       public:
         bool attributes{true};

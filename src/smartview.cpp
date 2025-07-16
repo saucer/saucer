@@ -22,7 +22,7 @@ namespace saucer
         using exposed = std::shared_ptr<function>;
 
       public:
-        std::shared_ptr<lockpp::lock<webview::impl *>> webview;
+        std::shared_ptr<lockpp::lock<saucer::webview::impl *>> webview;
 
       public:
         std::atomic_uint64_t id_counter{0};

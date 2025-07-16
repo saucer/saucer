@@ -11,7 +11,7 @@ namespace saucer
         struct native;
 
       public:
-        std::shared_ptr<window> window;
+        std::shared_ptr<saucer::window> window;
 
       public:
         application *parent;

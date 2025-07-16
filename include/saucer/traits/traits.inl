@@ -48,7 +48,7 @@ namespace saucer::traits
     struct detail::awaitable<T, std::tuple<Ts...>, Executor>
     {
         using result      = std::invoke_result_t<T, Ts...>;
-        using transformer = transformer<mock_return<T, typename coco::traits<result>::result>, std::tuple<Ts...>, Executor>;
+        using transformer = traits::transformer<mock_return<T, typename coco::traits<result>::result>, std::tuple<Ts...>, Executor>;
 
       public:
         static constexpr auto value = transformer::valid;
