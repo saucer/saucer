@@ -11,7 +11,8 @@
 
 namespace saucer
 {
-    using script_ptr = utils::ref_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
+    using script_ptr          = utils::ref_ptr<WebKitUserScript, webkit_user_script_ref, webkit_user_script_unref>;
+    using content_manager_ptr = utils::g_object_ptr<WebKitUserContentManager>;
 
     struct wkg_script
     {
@@ -25,7 +26,7 @@ namespace saucer
 
       public:
         gulong msg_received;
-        WebKitUserContentManager *manager;
+        content_manager_ptr manager;
 
       public:
         bool context_menu{true};

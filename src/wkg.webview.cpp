@@ -53,10 +53,11 @@ namespace saucer
         utils::connect(platform->web_view, "context-menu", native::on_context, this);
         utils::connect(platform->web_view, "load-changed", native::on_load, this);
 
-        platform->manager = webkit_web_view_get_user_content_manager(platform->web_view);
-        webkit_user_content_manager_register_script_message_handler(platform->manager, "saucer", nullptr);
+        // The ContentManager is ref'd to prevent it from being destroyed early when using multiple webviews
+        platform->manager = content_manager_ptr::ref(webkit_web_view_get_user_content_manager(platform->web_view));
+        webkit_user_content_manager_register_script_message_handler(platform->manager.get(), "saucer", nullptr);
 
-        platform->msg_received = utils::connect(platform->manager, "script-message-received", native::on_message, this);
+        platform->msg_received = utils::connect(platform->manager.get(), "script-message-received", native::on_message, this);
 
         auto *const controller = gtk_gesture_click_new();
 
@@ -82,7 +83,7 @@ namespace saucer
         }
 
         gtk_box_remove(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
-        g_signal_handler_disconnect(platform->manager, platform->msg_received);
+        g_signal_handler_disconnect(platform->manager.get(), platform->msg_received);
     }
 
     template <webview::event Event>
@@ -175,8 +176,8 @@ namespace saucer
 
     void impl::set_force_dark_mode(bool enabled) // NOLINT(*-static, *-function-const)
     {
-        g_object_set(adw_style_manager_get_default(), "color-scheme", enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT,
-                     nullptr);
+        const auto scheme = enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT;
+        g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
     }
 
     void impl::set_background(const color &color) // NOLINT(*-function-const)
@@ -236,12 +237,10 @@ namespace saucer
         const auto frame = (script.frame == all) ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
                                                  : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
 
-        auto *const manager     = webkit_web_view_get_user_content_manager(platform->web_view);
         auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
+        const auto id           = platform->id_counter++;
 
-        webkit_user_content_manager_add_script(manager, user_script);
-
-        const auto id = platform->id_counter++;
+        webkit_user_content_manager_add_script(platform->manager.get(), user_script);
         platform->scripts.emplace(id, wkg_script{.ref = user_script, .clearable = script.clearable});
 
         return id;
@@ -249,8 +248,6 @@ namespace saucer
 
     void impl::uninject() // NOLINT(*-function-const)
     {
-        auto *const manager = webkit_web_view_get_user_content_manager(platform->web_view);
-
         for (auto it = platform->scripts.begin(); it != platform->scripts.end();)
         {
             const auto &[id, script] = *it;
@@ -261,7 +258,7 @@ namespace saucer
                 continue;
             }
 
-            webkit_user_content_manager_remove_script(manager, script.ref.get());
+            webkit_user_content_manager_remove_script(platform->manager.get(), script.ref.get());
             it = platform->scripts.erase(it);
         }
     }
@@ -273,10 +270,7 @@ namespace saucer
             return;
         }
 
-        auto *const manager = webkit_web_view_get_user_content_manager(platform->web_view);
-        const auto &script  = platform->scripts.at(id);
-
-        webkit_user_content_manager_remove_script(manager, script.ref.get());
+        webkit_user_content_manager_remove_script(platform->manager.get(), platform->scripts[id].ref.get());
         platform->scripts.erase(id);
     }
 
