@@ -2,12 +2,14 @@
 
 namespace saucer
 {
-    void application::impl::iteration()
+    using native = application::impl::native;
+
+    void native::iteration()
     {
         QApplication::processEvents();
     }
 
-    screen application::impl::convert(QScreen *screen)
+    screen native::convert(QScreen *screen)
     {
         const auto geometry = screen->geometry();
 

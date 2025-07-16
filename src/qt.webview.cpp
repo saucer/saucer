@@ -1,5 +1,6 @@
 #include "qt.webview.impl.hpp"
 
+#include "scripts.hpp"
 #include "instantiate.hpp"
 
 #include "qt.uri.impl.hpp"
@@ -8,16 +9,30 @@
 
 #include <ranges>
 
+#include <QFile>
 #include <QWebEngineScriptCollection>
+
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
 #include <QWebEngineUrlScheme>
 
 namespace saucer
 {
-    webview::webview(const options &opts)
-        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
+    using impl = webview::impl;
+
+    impl::impl() = default;
+
+    bool impl::init_platform(const options &opts)
     {
+        using enum QWebEngineProfile::PersistentCookiesPolicy;
+
+        if (!native::init_web_channel())
+        {
+            return false;
+        }
+
+        platform = std::make_unique<native>();
+
         static std::once_flag flag;
         std::call_once(flag, [] { register_scheme("saucer"); });
 
@@ -32,126 +47,111 @@ namespace saucer
         const auto args = flags | std::views::join_with(' ') | std::ranges::to<std::string>();
         qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
 
-        m_impl->profile = std::make_unique<QWebEngineProfile>("saucer");
+        platform->profile = std::make_unique<QWebEngineProfile>("saucer");
 
-        if (!opts.user_agent.empty())
+        if (opts.user_agent.has_value())
         {
-            m_impl->profile->setHttpUserAgent(QString::fromStdString(opts.user_agent));
+            platform->profile->setHttpUserAgent(QString::fromStdString(opts.user_agent.value()));
         }
 
-        if (!opts.storage_path.empty())
+        if (opts.storage_path.has_value())
         {
-            const auto path = QString::fromStdString(opts.storage_path.string());
+            const auto path = QString::fromStdString(opts.storage_path->string());
 
-            m_impl->profile->setCachePath(path);
-            m_impl->profile->setPersistentStoragePath(path);
+            platform->profile->setCachePath(path);
+            platform->profile->setPersistentStoragePath(path);
         }
-
-        m_impl->profile->setPersistentCookiesPolicy(opts.persistent_cookies ? QWebEngineProfile::ForcePersistentCookies
-                                                                            : QWebEngineProfile::NoPersistentCookies);
 
 #ifdef SAUCER_QT6
-        m_impl->profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::AskEveryTime);
+        using enum QWebEngineProfile::PersistentPermissionsPolicy;
+        platform->profile->setPersistentPermissionsPolicy(AskEveryTime);
 #endif
 
-        m_impl->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        platform->profile->setPersistentCookiesPolicy(opts.persistent_cookies ? ForcePersistentCookies : NoPersistentCookies);
+        platform->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
-        m_impl->web_view    = std::make_unique<QWebEngineView>();
-        m_impl->web_page    = std::make_unique<QWebEnginePage>(m_impl->profile.get());
-        m_impl->channel     = std::make_unique<QWebChannel>();
-        m_impl->channel_obj = std::make_unique<impl::web_class>(this);
+        platform->web_view    = std::make_unique<QWebEngineView>();
+        platform->web_page    = std::make_unique<QWebEnginePage>(platform->profile.get());
+        platform->channel     = std::make_unique<QWebChannel>();
+        platform->channel_obj = std::make_unique<web_class>(this);
 
-        window::m_impl->window->setCentralWidget(m_impl->web_view.get());
+        platform->web_view->setPage(platform->web_page.get());
+        platform->web_page->setWebChannel(platform->channel.get());
+        platform->channel->registerObject("saucer", platform->channel_obj.get());
 
-        m_impl->web_view->setPage(m_impl->web_page.get());
-        m_impl->web_page->setWebChannel(m_impl->channel.get());
-        m_impl->channel->registerObject("saucer", m_impl->channel_obj.get());
+        QWebEngineScript script;
+        {
+            script.setRunsOnSubFrames(true);
+            script.setWorldId(QWebEngineScript::MainWorld);
+        }
 
-        m_impl->web_view->connect(m_impl->web_view.get(), &QWebEngineView::loadStarted,
-                                  [this]
-                                  {
-                                      m_impl->dom_loaded = false;
-                                      m_events.get<web_event::load>().fire(state::started);
-                                  });
+        script.setName(native::creation_script);
+        script.setInjectionPoint(QWebEngineScript::DocumentCreation);
 
-        window::m_impl->on_closed = [this]
+        platform->web_page->scripts().insert(script);
+
+        script.setName(native::ready_script);
+        script.setInjectionPoint(QWebEngineScript::DocumentReady);
+
+        platform->web_page->scripts().insert(script);
+
+        platform->web_view->connect(platform->web_view.get(), &QWebEngineView::loadStarted,
+                                    [this]
+                                    {
+                                        platform->dom_loaded = false;
+                                        events->get<event::load>().fire(state::started);
+                                    });
+
+        window->native<false>()->platform->on_closed = [this]
         {
             set_dev_tools(false);
         };
 
-        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
-        inject({.code = std::string{impl::ready_script}, .time = load_time::ready, .permanent = true});
+        window->native<false>()->platform->window->setCentralWidget(platform->web_view.get());
+        platform->web_view->show();
 
-        m_impl->web_view->show();
+        return true;
     }
 
-    webview::~webview()
+    impl::~impl()
     {
-        std::invoke(window::m_impl->on_closed);
-        window::m_impl->on_closed = {};
-
-        m_impl->web_view->disconnect();
-    }
-
-    template <web_event Event>
-    void webview::setup()
-    {
-        if (!m_parent->thread_safe())
+        if (auto *const impl = window->native<false>()->platform.get(); impl->on_closed)
         {
-            return m_parent->dispatch([this] { return setup<Event>(); });
+            std::invoke(std::exchange(impl->on_closed, {}));
         }
 
-        m_impl->setup<Event>(this);
+        platform->web_view->disconnect();
     }
 
-    icon webview::favicon() const
+    template <webview::event Event>
+    void impl::setup()
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return favicon(); });
-        }
-
-        return {{m_impl->web_view->icon()}};
+        platform->setup<Event>(this);
     }
 
-    std::string webview::page_title() const
+    icon impl::favicon() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return page_title(); });
-        }
-
-        return m_impl->web_view->title().toStdString();
+        return {icon::impl{platform->web_view->icon()}};
     }
 
-    bool webview::dev_tools() const
+    std::string impl::page_title() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return dev_tools(); });
-        }
-
-        return m_impl->dev_page != nullptr;
+        return platform->web_view->title().toStdString();
     }
 
-    bool webview::context_menu() const
+    bool impl::dev_tools() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return context_menu(); });
-        }
-
-        return m_impl->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
+        return platform->dev_page != nullptr;
     }
 
-    std::optional<uri> webview::url() const
+    bool impl::context_menu() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return url(); });
-        }
+        return platform->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
+    }
 
-        auto url = m_impl->web_view->url();
+    std::optional<uri> impl::url() const
+    {
+        auto url = platform->web_view->url();
 
         if (!url.isValid())
         {
@@ -161,14 +161,9 @@ namespace saucer
         return uri::impl{url};
     }
 
-    color webview::background() const
+    color impl::background() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return background(); });
-        }
-
-        const auto color = m_impl->web_page->backgroundColor();
+        const auto color = platform->web_page->backgroundColor();
 
         return {
             static_cast<std::uint8_t>(color.red()),
@@ -178,222 +173,208 @@ namespace saucer
         };
     }
 
-    bool webview::force_dark_mode() const
+    bool impl::force_dark_mode() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return force_dark_mode(); });
-        }
-
 #ifdef SAUCER_QT6
-        const auto *settings = m_impl->profile->settings();
+        const auto *settings = platform->profile->settings();
         return settings->testAttribute(QWebEngineSettings::ForceDarkMode);
 #else
         return false;
 #endif
     }
 
-    void webview::set_dev_tools(bool enabled)
+    void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_dev_tools(enabled); });
-        }
-
-        if (!m_impl->dev_page && !enabled)
+        if (!platform->dev_page && !enabled)
         {
             return;
         }
 
         if (!enabled)
         {
-            m_impl->web_page->setDevToolsPage(nullptr);
-            m_impl->dev_page.reset();
+            platform->web_page->setDevToolsPage(nullptr);
+            platform->dev_page.reset();
 
             return;
         }
 
-        if (!m_impl->dev_page)
+        if (!platform->dev_page)
         {
-            m_impl->dev_page = std::make_unique<QWebEngineView>();
-            m_impl->web_page->setDevToolsPage(m_impl->dev_page->page());
+            platform->dev_page = std::make_unique<QWebEngineView>();
+            platform->web_page->setDevToolsPage(platform->dev_page->page());
         }
 
-        m_impl->dev_page->show();
+        platform->dev_page->show();
     }
 
-    void webview::set_context_menu(bool enabled)
+    void impl::set_context_menu(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_context_menu(enabled); });
-        }
-
-        m_impl->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
-                                                       : Qt::ContextMenuPolicy::NoContextMenu);
+        platform->web_view->setContextMenuPolicy(enabled ? Qt::ContextMenuPolicy::DefaultContextMenu
+                                                         : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
-    void webview::set_background(const color &color)
+    void impl::set_force_dark_mode([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, color] { return set_background(color); });
-        }
-
-        const auto [r, g, b, a] = color;
-        const auto transparent  = a < 255;
-
-        m_impl->web_view->setAttribute(Qt::WA_TranslucentBackground, transparent);
-        window::m_impl->set_alpha(transparent ? 0 : 255);
-
-        m_impl->web_page->setBackgroundColor({r, g, b, a});
-    }
-
-    void webview::set_force_dark_mode(bool enabled)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_force_dark_mode(enabled); });
-        }
-
 #ifdef SAUCER_QT6
-        auto *settings = m_impl->profile->settings();
+        auto *settings = platform->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
 #endif
     }
 
-    void webview::set_url(const uri &url)
+    void impl::set_background(const color &color)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, url] { return set_url(url); });
-        }
+        const auto [r, g, b, a] = color;
+        const auto transparent  = a < 255;
 
-        m_impl->web_view->setUrl(url.native<false>()->uri);
+        platform->web_view->setAttribute(Qt::WA_TranslucentBackground, transparent);
+        window->native<false>()->platform->set_alpha(transparent ? 0 : 255);
+
+        platform->web_page->setBackgroundColor({r, g, b, a});
     }
 
-    void webview::back()
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return back(); });
-        }
-
-        m_impl->web_view->back();
+        platform->web_view->setUrl(url.native<false>()->uri);
     }
 
-    void webview::forward()
+    void impl::back() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return forward(); });
-        }
-
-        m_impl->web_view->forward();
+        platform->web_view->back();
     }
 
-    void webview::reload()
+    void impl::forward() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return reload(); });
-        }
-
-        m_impl->web_view->reload();
+        platform->web_view->forward();
     }
 
-    void webview::clear_scripts()
+    void impl::reload() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return clear_scripts(); });
-        }
-
-        m_impl->web_view->page()->scripts().clear();
-
-        for (const auto &script : m_impl->permanent_scripts)
-        {
-            inject(script);
-        }
+        platform->web_view->reload();
     }
 
-    void webview::execute(const std::string &code)
+    void impl::execute(const std::string &code) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
+        if (!platform->dom_loaded)
         {
-            return m_parent->dispatch([this, code] { execute(code); });
-        }
-
-        if (!m_impl->dom_loaded)
-        {
-            m_impl->pending.emplace_back(code);
+            platform->pending.emplace_back(code);
             return;
         }
 
-        m_impl->web_view->page()->runJavaScript(QString::fromStdString(code));
+        platform->web_view->page()->runJavaScript(QString::fromStdString(code));
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver)
+    std::uint64_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
+        using enum load_time;
+        using enum web_frame;
+
+        auto original = platform->find(script.time == creation ? native::creation_script : native::ready_script);
+        auto source   = original.sourceCode().toStdString();
+
+        auto uuid       = QUuid::createUuid();
+        auto identifier = std::format(native::script_identifier, uuid.toString().toStdString());
+
+        auto code = script.code;
+
+        if (script.frame == top)
         {
-            return m_parent->dispatch([this, name, handler = std::move(resolver)] mutable
-                                      { return handle_scheme(name, std::move(handler)); });
+            code = std::format(R"js(
+                if (self === top)
+                {{
+                    {}
+                }}
+            )js",
+                               code);
         }
 
-        if (m_impl->schemes.contains(name))
+        auto replacement = original;
+        auto new_source  = std::format("{0}\n{1}\n{2}\n{1}", source, identifier, code, identifier);
+
+        replacement.setSourceCode(QString::fromStdString(new_source));
+
+        platform->web_page->scripts().remove(original);
+        platform->web_page->scripts().insert(replacement);
+
+        const auto id = platform->id_counter++;
+        platform->scripts.emplace(id, qt_script{.id = identifier, .time = script.time, .clearable = script.clearable});
+
+        return id;
+    }
+
+    void impl::uninject()
+    {
+        auto scripts = platform->scripts;
+
+        for (const auto &[id, script] : scripts)
+        {
+            if (!script.clearable)
+            {
+                continue;
+            }
+
+            uninject(id);
+        }
+    }
+
+    void impl::uninject(std::uint64_t id) // NOLINT(*-function-const)
+    {
+        using enum load_time;
+
+        if (!platform->scripts.contains(id))
         {
             return;
         }
 
-        auto &scheme = m_impl->schemes.emplace(name, std::move(resolver)).first->second;
-        m_impl->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);
+        const auto &script = platform->scripts[id];
+
+        auto original = platform->find(script.time == creation ? native::creation_script : native::ready_script);
+        auto source   = original.sourceCode().toStdString();
+
+        auto replacement       = original;
+        const auto &identifier = script.id;
+
+        const auto begin = source.find(identifier);
+        const auto end   = source.find(identifier, begin + identifier.length()) + identifier.length();
+
+        source.erase(begin, end - begin);
+        replacement.setSourceCode(QString::fromStdString(source));
+
+        platform->web_page->scripts().remove(original);
+        platform->web_page->scripts().insert(replacement);
+
+        platform->scripts.erase(id);
     }
 
-    void webview::remove_scheme(const std::string &name)
+    void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, name] { return remove_scheme(name); });
-        }
-
-        const auto it = m_impl->schemes.find(name);
-
-        if (it == m_impl->schemes.end())
+        if (platform->schemes.contains(name))
         {
             return;
         }
 
-        m_impl->web_view->page()->profile()->removeUrlSchemeHandler(&it->second);
-        m_impl->schemes.erase(it);
+        auto &scheme = platform->schemes.emplace(name, std::move(resolver)).first->second;
+        platform->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);
     }
 
-    void webview::clear(web_event event)
+    void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
+        const auto it = platform->schemes.find(name);
+
+        if (it == platform->schemes.end())
         {
-            return m_parent->dispatch([this, event] { return clear(event); });
+            return;
         }
 
-        m_events.clear(event);
+        platform->web_view->page()->profile()->removeUrlSchemeHandler(&it->second);
+        platform->schemes.erase(it);
     }
 
-    void webview::remove(web_event event, std::uint64_t id)
+    void impl::register_scheme(const std::string &name)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event, id] { return remove(event, id); });
-        }
-
-        m_events.remove(event, id);
-    }
-
-    void webview::register_scheme(const std::string &name)
-    {
-        auto scheme = QWebEngineUrlScheme{name.c_str()};
-        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
-
         using enum QWebEngineUrlScheme::Flag;
+
+        auto scheme = QWebEngineUrlScheme{QByteArray::fromStdString(name)};
+        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
 
 #ifdef SAUCER_QT6
         scheme.setFlags(SecureScheme | FetchApiAllowed | CorsEnabled);
@@ -404,5 +385,28 @@ namespace saucer
         QWebEngineUrlScheme::registerScheme(scheme);
     }
 
-    SAUCER_INSTANTIATE_WEBVIEW_EVENTS;
+    std::string impl::ready_script()
+    {
+        return "window.saucer.internal.message('dom_loaded')";
+    }
+
+    std::string impl::creation_script()
+    {
+        static const auto script = std::format(scripts::ipc_script, R"js(
+            channel: new Promise((resolve) =>
+            {
+                new QWebChannel(qt.webChannelTransport, function(channel) {
+                    resolve(channel.objects.saucer);
+                });
+            }),
+            message: async (message) =>
+            {
+                (await window.saucer.internal.channel).on_message(message);
+            }
+        )js");
+
+        return std::format("{}\n{}", native::channel_script, script);
+    }
+
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS(SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT);
 } // namespace saucer

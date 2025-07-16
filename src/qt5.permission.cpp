@@ -2,9 +2,7 @@
 
 namespace saucer::permission
 {
-    request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
-
-    request::request(const request &other) : request(*other.m_impl) {}
+    request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {} // NOLINT(*-move-const-arg)
 
     request::~request() = default;
 
@@ -18,7 +16,5 @@ namespace saucer::permission
         return {};
     }
 
-    void request::accept([[maybe_unused]] bool value) const // NOLINT(*-static)
-    {
-    }
+    void request::accept(bool) const {}
 } // namespace saucer::permission

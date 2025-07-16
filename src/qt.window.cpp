@@ -5,447 +5,287 @@
 
 #include "instantiate.hpp"
 
-#include <cassert>
+#include <QWindow>
 
 #include <flagpp/flags.hpp>
 
-#include <QWindow>
-
 template <>
-constexpr bool flagpp::enabled<saucer::window_edge> = true;
+constexpr bool flagpp::enabled<saucer::window::edge> = true;
 
 namespace saucer
 {
-    window::window(application *parent) : m_parent(parent), m_impl(std::make_unique<impl>())
+    using impl = window::impl;
+
+    impl::impl() = default;
+
+    bool impl::init_platform()
     {
-        assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+        platform = std::make_unique<native>();
 
-        m_impl->window = std::make_unique<impl::main_window>(this);
-
-        m_impl->max_size = m_impl->window->maximumSize();
-        m_impl->min_size = m_impl->window->minimumSize();
+        platform->window   = std::make_unique<main_window>(this);
+        platform->max_size = platform->window->maximumSize();
+        platform->min_size = platform->window->minimumSize();
 
         //? Fixes QT-Bug where Web-View will not render when background color is transparent.
 
-        m_impl->set_alpha(255);
+        platform->set_alpha(255);
+
+        return true;
     }
 
-    window::~window()
+    impl::~impl()
     {
-        m_impl->window->disconnect();
-        m_impl->window->close();
+        platform->window->disconnect();
+        platform->window->close();
     }
 
-    template <window_event Event>
-    void window::setup()
+    template <window::event Event>
+    void impl::setup()
     {
     }
 
-    bool window::visible() const
+    bool impl::visible() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return visible(); });
-        }
-
-        return m_impl->window->isVisible();
+        return platform->window->isVisible();
     }
 
-    bool window::focused() const
+    bool impl::focused() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return focused(); });
-        }
-
-        return m_impl->window->isActiveWindow();
+        return platform->window->isActiveWindow();
     }
 
-    bool window::minimized() const
+    bool impl::minimized() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return minimized(); });
-        }
-
-        return m_impl->window->isMinimized();
+        return platform->window->isMinimized();
     }
 
-    bool window::maximized() const
+    bool impl::maximized() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return maximized(); });
-        }
-
-        return m_impl->window->isMaximized();
+        return platform->window->isMaximized();
     }
 
-    bool window::resizable() const
+    bool impl::resizable() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return resizable(); });
-        }
-
-        return m_impl->window->maximumSize() != m_impl->window->minimumSize();
+        return platform->window->maximumSize() != platform->window->minimumSize();
     }
 
-    window_decoration window::decoration() const
+    bool impl::always_on_top() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return decoration(); });
-        }
-
-        if (m_impl->window->windowFlags().testFlag(Qt::FramelessWindowHint))
-        {
-            return window_decoration::none;
-        }
-
-        if (m_impl->window->windowFlags().testFlag(Qt::CustomizeWindowHint))
-        {
-            return window_decoration::partial;
-        }
-
-        return window_decoration::full;
+        return platform->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
     }
 
-    std::string window::title() const
+    bool impl::click_through() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return title(); });
-        }
-
-        return m_impl->window->windowTitle().toStdString();
+        return platform->window->windowFlags().testFlag(Qt::WindowTransparentForInput);
     }
 
-    bool window::always_on_top() const
+    std::string impl::title() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return always_on_top(); });
-        }
-
-        return m_impl->window->windowFlags().testFlag(Qt::WindowStaysOnTopHint);
+        return platform->window->windowTitle().toStdString();
     }
 
-    bool window::click_through() const
+    window::decoration impl::decorations() const
     {
-        if (!m_parent->thread_safe())
+        using enum decoration;
+
+        if (platform->window->windowFlags().testFlag(Qt::FramelessWindowHint))
         {
-            return m_parent->dispatch([this] { return click_through(); });
+            return none;
         }
 
-        return m_impl->window->windowFlags().testFlag(Qt::WindowTransparentForInput);
+        if (platform->window->windowFlags().testFlag(Qt::CustomizeWindowHint))
+        {
+            return partial;
+        }
+
+        return full;
     }
 
-    std::pair<int, int> window::size() const
+    size impl::size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return size(); });
-        }
-
-        return {m_impl->window->width(), m_impl->window->height()};
+        return {platform->window->width(), platform->window->height()};
     }
 
-    std::pair<int, int> window::max_size() const
+    size impl::max_size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return max_size(); });
-        }
-
-        return {m_impl->window->maximumWidth(), m_impl->window->maximumHeight()};
+        return {platform->window->maximumWidth(), platform->window->maximumHeight()};
     }
 
-    std::pair<int, int> window::min_size() const
+    size impl::min_size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return min_size(); });
-        }
-
-        return {m_impl->window->minimumWidth(), m_impl->window->minimumHeight()};
+        return {platform->window->minimumWidth(), platform->window->minimumHeight()};
     }
 
-    std::pair<int, int> window::position() const
+    size impl::position() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return position(); });
-        }
-
-        return {m_impl->window->x(), m_impl->window->y()};
+        return {platform->window->x(), platform->window->y()};
     }
 
-    std::optional<saucer::screen> window::screen() const
+    std::optional<saucer::screen> impl::screen() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return screen(); });
-        }
-
-        auto *const screen = m_impl->window->screen();
+        auto *const screen = platform->window->screen();
 
         if (!screen)
         {
             return std::nullopt;
         }
 
-        return application::impl::convert(screen);
+        return application::impl::native::convert(screen);
     }
 
-    void window::hide()
+    void impl::hide() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return hide(); });
-        }
-
-        m_impl->window->hide();
+        platform->window->hide();
     }
 
-    void window::show()
+    void impl::show() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return show(); });
-        }
-
-        m_impl->window->show();
+        platform->window->show();
     }
 
-    void window::close()
+    void impl::close() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return close(); });
-        }
-
-        m_impl->window->close();
+        platform->window->close();
     }
 
-    void window::focus()
+    void impl::focus() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return focus(); });
-        }
-
-        m_impl->window->activateWindow();
+        platform->window->activateWindow();
     }
 
-    void window::start_drag()
+    void impl::start_drag() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return start_drag(); });
-        }
-
-        m_impl->window->windowHandle()->startSystemMove();
+        platform->window->windowHandle()->startSystemMove();
     }
 
-    void window::start_resize(window_edge edge)
+    void impl::start_resize(edge edge) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, edge] { return start_resize(edge); });
-        }
+        using enum window::edge;
+        using enum Qt::Edge;
 
         Qt::Edges translated;
 
-        if (edge & window_edge::top)
+        if (edge & top)
         {
-            translated |= Qt::Edge::TopEdge;
+            translated |= TopEdge;
         }
-        if (edge & window_edge::bottom)
+        if (edge & bottom)
         {
-            translated |= Qt::Edge::BottomEdge;
+            translated |= BottomEdge;
         }
-        if (edge & window_edge::left)
+        if (edge & left)
         {
-            translated |= Qt::Edge::LeftEdge;
+            translated |= LeftEdge;
         }
-        if (edge & window_edge::right)
+        if (edge & right)
         {
-            translated |= Qt::Edge::RightEdge;
+            translated |= RightEdge;
         }
 
-        m_impl->window->windowHandle()->startSystemResize(translated);
+        platform->window->windowHandle()->startSystemResize(translated);
     }
 
-    void window::set_minimized(bool enabled)
+    void impl::set_minimized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_minimized(enabled); });
-        }
+        using enum Qt::WindowState;
 
-        auto state = m_impl->window->windowState();
+        auto state = platform->window->windowState();
 
         if (enabled)
         {
-            state |= Qt::WindowState::WindowMinimized;
+            state |= WindowMinimized;
         }
         else
         {
-            state &= ~Qt::WindowState::WindowMinimized;
-            state |= Qt::WindowState::WindowActive;
+            state &= ~WindowMinimized;
+            state |= WindowActive;
         }
 
-        m_impl->window->setWindowState(state);
+        platform->window->setWindowState(state);
     }
 
-    void window::set_maximized(bool enabled)
+    void impl::set_maximized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_maximized(enabled); });
-        }
+        using enum Qt::WindowState;
 
-        auto state = m_impl->window->windowState();
+        auto state = platform->window->windowState();
 
         if (enabled)
         {
-            state |= Qt::WindowState::WindowMaximized;
+            state |= WindowMaximized;
         }
         else
         {
-            state &= ~Qt::WindowState::WindowMaximized;
+            state &= ~WindowMaximized;
         }
 
-        m_impl->window->setWindowState(state);
+        platform->window->setWindowState(state);
     }
 
-    void window::set_resizable(bool enabled)
+    void impl::set_resizable(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_resizable(enabled); });
-        }
-
         if (!enabled)
         {
-            m_impl->window->setFixedSize(m_impl->window->size());
+            platform->window->setFixedSize(platform->window->size());
             return;
         }
 
-        m_impl->window->setMaximumSize(m_impl->max_size);
-        m_impl->window->setMinimumSize(m_impl->min_size);
+        platform->window->setMaximumSize(platform->max_size);
+        platform->window->setMinimumSize(platform->min_size);
     }
 
-    void window::set_always_on_top(bool enabled)
+    void impl::set_always_on_top(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_always_on_top(enabled); });
-        }
-
-        m_impl->set_flags({{Qt::WindowStaysOnTopHint, enabled}});
+        platform->set_flags({{Qt::WindowStaysOnTopHint, enabled}});
     }
 
-    void window::set_click_through(bool enabled)
+    void impl::set_click_through(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_click_through(enabled); });
-        }
-
-        m_impl->set_flags({{Qt::WindowTransparentForInput, enabled}});
+        platform->set_flags({{Qt::WindowTransparentForInput, enabled}});
     }
 
-    void window::set_icon(const icon &icon)
+    void impl::set_icon(const icon &icon) // NOLINT(*-function-const)
     {
         if (icon.empty())
         {
             return;
         }
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, icon] { return set_icon(icon); });
-        }
-
-        m_impl->window->setWindowIcon(icon.native<false>()->icon);
+        platform->window->setWindowIcon(icon.native<false>()->icon);
     }
 
-    void window::set_title(const std::string &title)
+    void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, title] { return set_title(title); });
-        }
-
-        m_impl->window->setWindowTitle(QString::fromStdString(title));
+        using enum window::decoration;
+        platform->set_flags({{Qt::CustomizeWindowHint, decoration == partial}, {Qt::FramelessWindowHint, decoration == none}});
     }
 
-    void window::set_decoration(window_decoration decoration)
+    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
-        }
-
-        m_impl->set_flags({
-            {Qt::CustomizeWindowHint, decoration == window_decoration::partial},
-            {Qt::FramelessWindowHint, decoration == window_decoration::none},
-        });
+        platform->window->setWindowTitle(QString::fromStdString(title));
     }
 
-    void window::set_size(int width, int height)
+    void impl::set_size(const saucer::size &size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_size(width, height); });
-        }
-
-        m_impl->window->resize(width, height);
+        platform->window->resize(size.x, size.y);
     }
 
-    void window::set_max_size(int width, int height)
+    void impl::set_max_size(const saucer::size &size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_max_size(width, height); });
-        }
-
-        m_impl->window->setMaximumSize(width, height);
-        m_impl->max_size = m_impl->window->maximumSize();
+        platform->window->setMaximumSize(size.x, size.y);
+        platform->max_size = platform->window->maximumSize();
     }
 
-    void window::set_min_size(int width, int height)
+    void impl::set_min_size(const saucer::size &size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_min_size(width, height); });
-        }
-
-        m_impl->window->setMinimumSize(width, height);
-        m_impl->min_size = m_impl->window->minimumSize();
+        platform->window->setMinimumSize(size.x, size.y);
+        platform->min_size = platform->window->minimumSize();
     }
 
-    void window::set_position(int x, int y)
+    void impl::set_position(const saucer::position &pos) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, x, y] { return set_position(x, y); });
-        }
-
-        m_impl->window->move(x, y);
+        platform->window->move(pos.x, pos.y);
     }
 
-    void window::clear(window_event event)
-    {
-        m_events.clear(event);
-    }
-
-    void window::remove(window_event event, std::uint64_t id)
-    {
-        m_events.remove(event, id);
-    }
-
-    SAUCER_INSTANTIATE_WINDOW_EVENTS;
+    SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_IMPL_EVENT);
 } // namespace saucer

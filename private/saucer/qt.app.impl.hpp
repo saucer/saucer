@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app.hpp"
+#include "app.impl.hpp"
 
 #include <QEvent>
 #include <QScreen>
@@ -8,23 +8,18 @@
 
 namespace saucer
 {
-    struct application::impl
+    struct application::impl::native
     {
         std::unique_ptr<QApplication> application;
 
       public:
-        coco::future<void> future;
+        static inline std::string id;
+        static inline int argc;
+        static inline std::vector<char *> argv;
 
       public:
         static void iteration();
         static screen convert(QScreen *);
-
-      public:
-        static inline std::string id;
-
-      public:
-        static inline int argc;
-        static inline std::vector<char *> argv;
     };
 
     class safe_event : public QEvent

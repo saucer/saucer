@@ -1,40 +1,46 @@
 #include "qt.app.impl.hpp"
 
-#include <algorithm>
-
-#include <QThread>
-
 namespace saucer
 {
-    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data))) {}
+    using impl = application::impl;
 
-    application::~application() = default;
+    impl::impl() = default;
 
-    bool application::thread_safe() const
+    bool impl::init_platform(const options &opts)
     {
-        return m_impl->application->thread() == QThread::currentThread();
-    }
+        platform = std::make_unique<native>();
 
-    coco::future<void> application::finish()
-    {
-        return std::move(m_impl->future);
-    }
+#ifdef SAUCER_QT5
+        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
-    std::vector<screen> application::screens() const
-    {
-        if (!thread_safe())
+        auto make_args = [](auto &&argv)
         {
-            return dispatch([this] { return screens(); });
-        }
+            return std::vector<char *>{argv, argv + native::argc};
+        };
 
-        const auto screens = m_impl->application->screens();
+        native::id   = opts.id.value();
+        native::argc = opts.argc.value_or(1);
+        native::argv = opts.argv.transform(make_args).value_or({native::id.data()});
+
+        platform->application = std::make_unique<QApplication>(native::argc, native::argv.data());
+        platform->application->setQuitOnLastWindowClosed(opts.quit_on_last_window_closed);
+
+        return true;
+    }
+
+    impl::~impl() = default;
+
+    std::vector<screen> impl::screens() const
+    {
+        const auto screens = platform->application->screens();
 
         std::vector<screen> rtn;
         rtn.reserve(screens.size());
 
         for (const auto &screen : screens)
         {
-            rtn.emplace_back(impl::convert(screen));
+            rtn.emplace_back(native::convert(screen));
         }
 
         return rtn;
@@ -43,74 +49,23 @@ namespace saucer
     void application::post(post_callback_t callback) const
     {
         auto *const event = new safe_event{std::move(callback)};
-        QApplication::postEvent(m_impl->application.get(), event);
+        QApplication::postEvent(m_impl->platform->application.get(), event);
     }
 
-    int application::run(callback_t callback)
+    int impl::run(application *self, callback_t callback)
     {
-        static bool once{false};
-
-        if (once)
-        {
-            assert(false && "saucer::application::run() may only be called once");
-            return -1;
-        }
-
         auto promise = coco::promise<void>{};
+        finish       = promise.get_future();
 
-        once           = true;
-        m_impl->future = promise.get_future();
-
-        post([this, &callback] { std::invoke(callback, this); });
+        self->post([self, &callback] { std::invoke(callback, self); });
         const auto rtn = QApplication::exec();
-
         promise.set_value();
 
         return rtn;
     }
 
-    void application::quit() // NOLINT(*-static)
+    void impl::quit() // NOLINT(*-static)
     {
-        using traits = modules::traits<application>;
-
-        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))
-        {
-            return;
-        }
-
         QApplication::quit();
-    }
-
-    std::optional<application> application::create(const options &opts)
-    {
-        static bool once{false};
-
-        if (once)
-        {
-            assert(false && "saucer::application may only be created once");
-            return std::nullopt;
-        }
-
-        once = true;
-
-#ifdef SAUCER_QT5
-        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-
-        impl rtn;
-
-        auto make_args = [&](auto &&argv)
-        {
-            return std::vector<char *>{argv, argv + rtn.argc};
-        };
-
-        impl::id   = opts.id.value();
-        impl::argc = opts.argc.value_or(1);
-        impl::argv = opts.argv.transform(make_args).value_or({rtn.id.data()});
-
-        rtn.application = std::make_unique<QApplication>(impl::argc, impl::argv.data());
-        rtn.application->setQuitOnLastWindowClosed(opts.quit_on_last_window_closed);
-
-        return rtn;
     }
 } // namespace saucer

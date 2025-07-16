@@ -322,14 +322,14 @@ namespace saucer
 
     std::string impl::creation_script()
     {
-        static const auto rtn = std::format(scripts::ipc_script, R"js(
+        static const auto script = std::format(scripts::ipc_script, R"js(
             message: async (message) =>
             {
                 window.webkit.messageHandlers.saucer.postMessage(message);
             }
         )js");
 
-        return rtn;
+        return script;
     }
 
     SAUCER_INSTANTIATE_WEBVIEW_EVENTS(SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT);

@@ -1,12 +1,13 @@
 #include "qt.window.impl.hpp"
-#include "qt.app.impl.hpp"
 
-#include <QThread>
 #include <QCloseEvent>
 
 namespace saucer
 {
-    void window::impl::set_alpha(std::uint8_t alpha) const
+    using native = window::impl::native;
+    using event  = window::event;
+
+    void native::set_alpha(std::uint8_t alpha) const
     {
         auto palette = window->palette();
 
@@ -19,7 +20,7 @@ namespace saucer
         window->setPalette(palette);
     }
 
-    void window::impl::set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const
+    void native::set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const
     {
         const auto shown = window->isVisible();
 
@@ -36,21 +37,21 @@ namespace saucer
         window->show();
     }
 
-    window::impl::main_window::main_window(saucer::window *parent) : m_parent(parent) {}
+    main_window::main_window(window::impl *impl) : impl(impl) {}
 
-    void window::impl::main_window::changeEvent(QEvent *event)
+    void main_window::changeEvent(QEvent *event)
     {
         QMainWindow::changeEvent(event);
 
         if (event->type() == QEvent::ParentChange)
         {
-            m_parent->m_events.get<window_event::decorated>().fire(m_parent->decoration());
+            impl->events->get<event::decorated>().fire(impl->decorations());
             return;
         }
 
         if (event->type() == QEvent::ActivationChange)
         {
-            m_parent->m_events.get<window_event::focus>().fire(isActiveWindow());
+            impl->events->get<event::focus>().fire(isActiveWindow());
             return;
         }
 
@@ -63,36 +64,35 @@ namespace saucer
 
         if (old->oldState().testFlag(Qt::WindowState::WindowMaximized) != isMaximized())
         {
-            m_parent->m_events.get<window_event::maximize>().fire(isMaximized());
+            impl->events->get<event::maximize>().fire(isMaximized());
         }
 
         if (old->oldState().testFlag(Qt::WindowState::WindowMinimized) != isMinimized())
         {
-            m_parent->m_events.get<window_event::minimize>().fire(isMinimized());
+            impl->events->get<event::minimize>().fire(isMinimized());
         }
     }
 
-    void window::impl::main_window::closeEvent(QCloseEvent *event)
+    void main_window::closeEvent(QCloseEvent *event)
     {
-        if (m_parent->m_events.get<window_event::close>().fire().find(policy::block))
+        if (impl->events->get<event::close>().fire().find(policy::block))
         {
             event->ignore();
             return;
         }
 
-        if (m_parent->m_impl->on_closed)
+        if (impl->platform->on_closed)
         {
-            std::invoke(m_parent->m_impl->on_closed);
+            std::invoke(impl->platform->on_closed);
         }
 
         QMainWindow::closeEvent(event);
-
-        m_parent->m_events.get<window_event::closed>().fire();
+        impl->events->get<event::closed>().fire();
     }
 
-    void window::impl::main_window::resizeEvent(QResizeEvent *event)
+    void main_window::resizeEvent(QResizeEvent *event)
     {
         QMainWindow::resizeEvent(event);
-        m_parent->m_events.get<window_event::resize>().fire(width(), height());
+        impl->events->get<event::resize>().fire(width(), height());
     }
 } // namespace saucer

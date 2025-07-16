@@ -1,82 +1,99 @@
 #pragma once
 
-#include "webview.hpp"
+#include "webview.impl.hpp"
 #include "qt.scheme.impl.hpp"
 
 #include <string>
 #include <vector>
 
-#include <string_view>
 #include <unordered_map>
 
 #include <QMetaObject>
 #include <QWebChannel>
 
 #include <QWebEngineView>
+#include <QWebEngineScript>
 #include <QWebEngineProfile>
 #include <QWebEngineUrlSchemeHandler>
 #include <QWebEngineUrlRequestInterceptor>
 
 namespace saucer
 {
-    struct webview::impl
-    {
-        class web_class;
-        class request_interceptor;
+    struct web_class;
+    struct request_interceptor;
 
-      public:
+    struct qt_script
+    {
+        std::string id;
+        load_time time;
+        bool clearable;
+    };
+
+    struct webview::impl::native
+    {
         std::unique_ptr<QWebEngineProfile> profile;
-        std::unique_ptr<request_interceptor> interceptor;
 
       public:
         std::unique_ptr<QWebEngineView> web_view;
-        std::unique_ptr<QWebEngineView> dev_page;
         std::unique_ptr<QWebEnginePage> web_page;
+        std::unique_ptr<QWebEngineView> dev_page;
 
       public:
         std::unique_ptr<QWebChannel> channel;
         std::unique_ptr<QObject> channel_obj;
 
       public:
+        std::uint64_t id_counter{0};
+        std::map<std::uint64_t, qt_script> scripts;
+
+      public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
 
       public:
-        std::vector<script> permanent_scripts;
+        std::unique_ptr<request_interceptor> interceptor;
         std::unordered_map<std::string, scheme::handler> schemes;
 
       public:
-        template <web_event>
-        void setup(webview *);
+        template <event>
+        void setup(impl *);
 
       public:
-        static std::string inject_script();
-        static constinit std::string_view ready_script;
+        QWebEngineScript find(const char *) const;
+
+      public:
+        static bool init_web_channel();
+        static inline std::string channel_script{};
+
+      public:
+        static constexpr const auto *ready_script      = "saucer_ready";
+        static constexpr const auto *creation_script   = "saucer_creation";
+        static constexpr const auto *script_identifier = "//@saucer-script:{}";
     };
 
-    class webview::impl::web_class : public QObject
+    struct web_class : QObject
     {
         Q_OBJECT
 
       private:
-        webview *m_parent;
+        webview::impl *impl;
 
       public:
-        web_class(webview *);
+        web_class(webview::impl *);
 
       public slots:
         void on_message(const QString &);
     };
 
-    class webview::impl::request_interceptor : public QWebEngineUrlRequestInterceptor
+    struct request_interceptor : QWebEngineUrlRequestInterceptor
     {
         Q_OBJECT
 
       private:
-        webview *m_parent;
+        webview::impl *impl;
 
       public:
-        request_interceptor(webview *);
+        request_interceptor(webview::impl *);
 
       public:
         void interceptRequest(QWebEngineUrlRequestInfo &) override;
