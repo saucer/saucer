@@ -6,7 +6,6 @@
 #include "wkg.scheme.impl.hpp"
 
 #include <vector>
-#include <string_view>
 
 #include <webkit/webkit.h>
 

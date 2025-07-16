@@ -4,8 +4,8 @@
 #include "instantiate.hpp"
 
 #include <format>
-#include <cassert>
 #include <algorithm>
+#include <functional>
 
 #include <rebind/enum.hpp>
 
@@ -39,7 +39,7 @@ namespace saucer
             return {};
         }
 
-        rtn.on<event::message>({{.func = [impl](auto message) { return impl->on_message(std::move(message)); }, .clearable = false}});
+        rtn.on<event::message>({{.func = std::bind_front(&impl::on_message, impl), .clearable = false}});
 
         rtn.inject({.code = impl::creation_script(), .time = load_time::creation, .clearable = false});
         rtn.inject({.code = impl::ready_script(), .time = load_time::ready, .clearable = false});

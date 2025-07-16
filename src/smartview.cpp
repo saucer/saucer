@@ -6,6 +6,7 @@
 #include "webview.hpp"
 
 #include <atomic>
+#include <functional>
 
 #include <lockpp/lock.hpp>
 
@@ -59,12 +60,7 @@ namespace saucer
             .clearable = false,
         });
 
-        auto *const impl = m_impl.get();
-
-        on<event::message>({{
-            .func      = [impl](auto message) { return impl->on_message(std::move(message)); },
-            .clearable = false,
-        }});
+        on<event::message>({{.func = std::bind_front(&impl::on_message, m_impl.get()), .clearable = false}});
     }
 
     smartview_core::smartview_core(smartview_core &&) noexcept = default;
