@@ -30,7 +30,7 @@ namespace saucer::scheme
         int status{200};
     };
 
-    class request
+    struct request
     {
         struct impl;
 

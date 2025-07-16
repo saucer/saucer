@@ -3,8 +3,6 @@
 #include "window.impl.hpp"
 #include "instantiate.hpp"
 
-#include "request.hpp"
-
 #include <format>
 #include <cassert>
 #include <algorithm>
@@ -41,36 +39,15 @@ namespace saucer
             return {};
         }
 
-        auto on_message = [impl](std::string_view message)
+        rtn.on<event::message>({{.func = [impl](auto message) { return impl->on_message(std::move(message)); }, .clearable = false}});
+
+        rtn.inject({.code = impl::creation_script(), .time = load_time::creation, .clearable = false});
+        rtn.inject({.code = impl::ready_script(), .time = load_time::ready, .clearable = false});
+
+        if (opts.attributes)
         {
-            if (!impl->attributes)
-            {
-                return status::unhandled;
-            }
-
-            auto request = request::parse(message);
-
-            if (!request)
-            {
-                return status::unhandled;
-            }
-
-            overload visitor = {
-                [impl](const request::start_resize &data) { impl->window->start_resize(static_cast<window::edge>(data.edge)); },
-                [impl](const request::start_drag &) { impl->window->start_drag(); },
-                [impl](const request::maximize &data) { impl->window->set_maximized(data.value); },
-                [impl](const request::minimize &data) { impl->window->set_minimized(data.value); },
-                [impl](const request::close &) { impl->window->close(); },
-                [impl](const request::maximized &data) { impl->resolve(data.id, std::format("{}", impl->window->maximized())); },
-                [impl](const request::minimized &data) { impl->resolve(data.id, std::format("{}", impl->window->minimized())); },
-            };
-
-            std::visit(visitor, request.value());
-
-            return status::handled;
-        };
-
-        rtn.on<event::message>({{.func = std::move(on_message), .clearable = false}});
+            rtn.inject({.code = impl::attribute_script(), .time = load_time::creation, .clearable = false});
+        }
 
         return rtn;
     }

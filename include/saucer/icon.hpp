@@ -11,7 +11,7 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    class icon
+    struct icon
     {
         struct impl;
 

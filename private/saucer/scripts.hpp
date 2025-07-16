@@ -4,16 +4,9 @@
 
 namespace saucer::scripts
 {
-    static constexpr std::string_view webview_script = R"js(
+    static constexpr std::string_view ipc_script = R"js(
     window.saucer = 
     {{
-        windowEdge:
-        {{
-            top:    1 << 0,
-            bottom: 1 << 1,
-            left:   1 << 2,
-            right:  1 << 3,
-        }},
         internal: 
         {{
             idc: 0,
@@ -36,17 +29,28 @@ namespace saucer::scripts
 
                 return promise;
             }},
-            fire: async (id, message) =>
-            {{
-                await window.saucer.internal.message(JSON.stringify({{
-                    [id]: true,
-                    ...message,
-                }}));
-            }},
             {0}
         }},
-        {1}
     }};
+    )js";
+
+    static constexpr std::string_view attribute_script = R"js(
+    window.saucer.windowEdge = {{
+        top:    1 << 0,
+        bottom: 1 << 1,
+        left:   1 << 2,
+        right:  1 << 3,
+    }};
+
+    window.saucer.internal.fire = async (id, message) =>
+    {{
+        await window.saucer.internal.message(JSON.stringify({{
+            [id]: true,
+            ...message,
+        }}));
+    }};
+
+    {0}
 
     document.addEventListener("mousedown", async ({{ x, y, target, button, detail }}) => 
     {{
@@ -106,7 +110,7 @@ namespace saucer::scripts
     }});
     )js";
 
-    static constexpr std::string_view smartview_script = R"js(
+    static constexpr std::string_view bridge_script = R"js(
     window.saucer.internal.resolve = async (id, value) =>
     {{
         await window.saucer.internal.message({0}({{
@@ -114,7 +118,7 @@ namespace saucer::scripts
                 id,
                 result: value === undefined ? null : value,
         }}));
-    }}
+    }};
     
     window.saucer.call = async (name, params) =>
     {{
@@ -133,7 +137,7 @@ namespace saucer::scripts
             name,
             params,
         }}, {0});
-    }}
+    }};
 
     window.saucer.exposed = new Proxy({{}}, {{
         get: (_, prop) => (...args) => window.saucer.call(prop, args),

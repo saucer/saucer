@@ -203,8 +203,8 @@ namespace saucer
         bool hardware_acceleration{true};
 
       public:
-        fs::path storage_path;
-        std::string user_agent;
+        std::optional<fs::path> storage_path;
+        std::optional<std::string> user_agent;
 
       public:
         std::set<std::string> browser_flags;

@@ -32,6 +32,9 @@ namespace saucer
         lock<std::unordered_map<std::uint64_t, resolver>> evaluations;
 
       public:
+        status on_message(std::string_view);
+
+      public:
         void call(std::unique_ptr<function_data>);
         void resolve(std::unique_ptr<result_data>);
     };
@@ -44,33 +47,24 @@ namespace saucer
         m_impl->webview    = std::make_shared<lockpp::lock<webview::impl *>>(webview::m_impl.get());
         m_impl->serializer = std::move(serializer);
 
-        auto script = std::format(smartview_script, m_impl->serializer->js_serializer());
+        inject({
+            .code      = m_impl->serializer->script(),
+            .time      = load_time::creation,
+            .clearable = false,
+        });
 
-        inject({.code = std::move(script), .time = load_time::creation, .clearable = false});
-        inject({.code = m_impl->serializer->script(), .time = load_time::creation, .clearable = false});
+        inject({
+            .code      = std::format(bridge_script, m_impl->serializer->js_serializer()),
+            .time      = load_time::creation,
+            .clearable = false,
+        });
 
-        auto on_message = [impl = m_impl.get()](std::string_view message)
-        {
-            auto parsed = impl->serializer->parse(message);
+        auto *const impl = m_impl.get();
 
-            overload visitor = {
-                [](std::monostate &) { return status::unhandled; },
-                [impl](std::unique_ptr<function_data> &parsed)
-                {
-                    impl->call(std::move(parsed));
-                    return status::handled;
-                },
-                [impl](std::unique_ptr<result_data> &parsed)
-                {
-                    impl->resolve(std::move(parsed));
-                    return status::handled;
-                },
-            };
-
-            return std::visit(visitor, parsed);
-        };
-
-        on<event::message>({{.func = on_message, .clearable = false}});
+        on<event::message>({{
+            .func      = [impl](auto message) { return impl->on_message(std::move(message)); },
+            .clearable = false,
+        }});
     }
 
     smartview_core::smartview_core(smartview_core &&) noexcept = default;
@@ -83,6 +77,31 @@ namespace saucer
         }
 
         m_impl->webview->assign(nullptr);
+    }
+
+    status smartview_core::impl::on_message(std::string_view message)
+    {
+        auto parsed = serializer->parse(message);
+
+        overload visitor = {
+            [](std::monostate &)
+            {
+                //
+                return status::unhandled;
+            },
+            [this](std::unique_ptr<function_data> &parsed)
+            {
+                call(std::move(parsed));
+                return status::handled;
+            },
+            [this](std::unique_ptr<result_data> &parsed)
+            {
+                resolve(std::move(parsed));
+                return status::handled;
+            },
+        };
+
+        return std::visit(visitor, parsed);
     }
 
     void smartview_core::impl::call(std::unique_ptr<function_data> message)

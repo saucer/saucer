@@ -85,8 +85,14 @@ namespace saucer
 
       public:
         void remove_scheme(const std::string &);
+        static void register_scheme(const std::string &);
 
       public:
-        static void register_scheme(const std::string &);
+        status on_message(std::string_view);
+
+      public:
+        static std::string ready_script();
+        static std::string creation_script();
+        static std::string attribute_script();
     };
 } // namespace saucer

@@ -35,18 +35,14 @@ namespace saucer
         constexpr auto members  = rebind::utils::member_names<Message>;
         constexpr auto contains = std::ranges::contains(members, "id");
 
-        auto filtered = members //
-                        | std::views::filter([](auto &&member) { return member != "id"; });
-
-        auto params = filtered                     //
-                      | std::views::join_with(',') //
-                      | std::ranges::to<std::string>();
+        auto filtered = members | std::views::filter([](auto &&member) { return member != "id"; });
+        auto params   = filtered | std::views::join_with(',') | std::ranges::to<std::string>();
 
         const auto invocation = contains //
                                     ? std::format(R"(send({{ ["{}"]: true, {} }}))", tag, params)
                                     : std::format(R"(fire("{}", {{ {} }}))", tag, params);
 
-        return std::format(R"({}: ({}) => window.saucer.internal.{})", name<Message>, params, invocation);
+        return std::format("window.saucer.{} = ({}) => window.saucer.internal.{};", name<Message>, params, invocation);
     }
 
     std::string request::stubs()
@@ -56,8 +52,8 @@ namespace saucer
             return std::array<std::string, sizeof...(Is)>{make_stub<std::variant_alternative_t<Is, request>>()...};
         }(std::make_index_sequence<std::variant_size_v<request>>());
 
-        return stubs                                           //
-               | std::views::join_with(std::string{",\n\t\t"}) //
+        return stubs                         //
+               | std::views::join_with('\n') //
                | std::ranges::to<std::string>();
     }
 } // namespace saucer

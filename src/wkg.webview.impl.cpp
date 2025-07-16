@@ -1,17 +1,13 @@
 #include "wkg.webview.impl.hpp"
 
-#include "scripts.hpp"
-#include "request.hpp"
-
+#include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
+
 #include "wkg.navigation.impl.hpp"
 #include "wkg.permission.impl.hpp"
 
-#include <regex>
 #include <cassert>
-
 #include <optional>
-#include <charconv>
 
 #include <json-glib/json-glib.h>
 
@@ -143,7 +139,7 @@ namespace saucer
 
             auto *const decision = WEBKIT_NAVIGATION_POLICY_DECISION(raw);
 
-            auto nav = navigation{{
+            auto nav = navigation{navigation::impl{
                 .decision = decision,
                 .type     = type,
             }};
@@ -243,23 +239,87 @@ namespace saucer
     {
     }
 
-    std::string native::inject_script()
+    gboolean native::on_context(WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *self)
     {
-        static constexpr auto internal = R"js(
-            message: async (message) =>
-            {
-                window.webkit.messageHandlers.saucer.postMessage(message);
-            }
-        )js";
-
-        static const auto script = std::format(scripts::webview_script, //
-                                               internal,                //
-                                               request::stubs());
-
-        return script;
+        return !self->platform->context_menu;
     }
 
-    constinit std::string_view native::ready_script = "window.saucer.internal.message('dom_loaded')";
+    void native::on_message(WebKitWebView *, JSCValue *value, impl *self)
+    {
+        auto message = std::string{utils::g_str_ptr{jsc_value_to_string(value)}.get()};
+
+        if (message == "dom_loaded")
+        {
+            self->platform->dom_loaded = true;
+
+            for (const auto &pending : self->platform->pending)
+            {
+                self->execute(pending);
+            }
+
+            self->platform->pending.clear();
+            self->events->get<event::dom_ready>().fire();
+
+            return;
+        }
+
+        self->events->get<event::message>().fire(message).find(status::handled);
+    }
+
+    void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
+    {
+        auto url = self->url();
+
+        if (!url.has_value())
+        {
+            assert(false);
+            return;
+        }
+
+        if (event == WEBKIT_LOAD_COMMITTED)
+        {
+            self->events->get<event::navigated>().fire(url.value());
+            return;
+        }
+
+        if (event == WEBKIT_LOAD_FINISHED)
+        {
+            self->events->get<event::load>().fire(state::finished);
+            return;
+        }
+
+        if (event != WEBKIT_LOAD_STARTED)
+        {
+            return;
+        }
+
+        self->platform->dom_loaded = false;
+        self->events->get<event::load>().fire(state::started);
+    }
+
+    void native::on_click(GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)
+    {
+        auto *const controller = GTK_EVENT_CONTROLLER(gesture);
+        auto *const event      = gtk_event_controller_get_current_event(controller);
+
+        self->window->native<false>()->platform->prev_click.emplace(click_event{
+            .event      = utils::g_event_ptr::ref(event),
+            .controller = controller,
+        });
+    }
+
+    void native::on_release(GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, impl *self)
+    {
+        auto &previous = self->window->native<false>()->platform->prev_resizable;
+
+        if (!previous.has_value())
+        {
+            return;
+        }
+
+        self->window->set_resizable(previous.value());
+        previous.reset();
+    }
 
     WebKitSettings *native::make_settings(const options &opts)
     {

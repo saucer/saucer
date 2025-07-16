@@ -14,7 +14,7 @@
 namespace saucer
 {
     template <typename T = std::uint8_t>
-    class stash
+    struct stash
     {
         using owning_t  = std::vector<std::remove_const_t<T>>;
         using viewing_t = std::span<std::add_const_t<T>>;

@@ -1,5 +1,7 @@
 #include "wkg.webview.impl.hpp"
 
+#include "scripts.hpp"
+
 #include "gtk.icon.impl.hpp"
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
@@ -24,140 +26,50 @@ namespace saucer
         platform->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
         platform->settings = native::make_settings(opts);
 
+        const auto acceleration = opts.hardware_acceleration ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS //
+                                                             : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER;
+
+        webkit_settings_set_hardware_acceleration_policy(platform->settings.get(), acceleration);
+
+        if (opts.user_agent.has_value())
+        {
+            webkit_settings_set_user_agent(platform->settings.get(), opts.user_agent->c_str());
+        }
+
+        webkit_web_view_set_settings(platform->web_view, platform->settings.get());
+
         auto *const session      = webkit_web_view_get_network_session(platform->web_view);
         auto *const data_manager = webkit_network_session_get_website_data_manager(session);
 
         webkit_website_data_manager_set_favicons_enabled(data_manager, true);
 
-        if (!opts.user_agent.empty())
-        {
-            webkit_settings_set_user_agent(platform->settings.get(), opts.user_agent.c_str());
-        }
-
         if (opts.persistent_cookies)
         {
             auto *const manager = webkit_network_session_get_cookie_manager(session);
-            auto path           = opts.storage_path;
-
-            if (path.empty())
-            {
-                path = fs::current_path() / ".saucer";
-            }
-
+            auto path           = opts.storage_path.value_or(fs::current_path() / ".saucer");
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
-        webkit_settings_set_hardware_acceleration_policy(platform->settings.get(), opts.hardware_acceleration
-                                                                                       ? WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS
-                                                                                       : WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+        utils::connect(platform->web_view, "context-menu", native::on_context, this);
+        utils::connect(platform->web_view, "load-changed", native::on_load, this);
 
-        webkit_web_view_set_settings(platform->web_view, platform->settings.get());
+        platform->manager = webkit_web_view_get_user_content_manager(platform->web_view);
+        webkit_user_content_manager_register_script_message_handler(platform->manager, "saucer", nullptr);
+
+        platform->msg_received = utils::connect(platform->manager, "script-message-received", native::on_message, this);
+
+        auto *const controller = gtk_gesture_click_new();
+
+        utils::connect(controller, "pressed", native::on_click, this);
+        utils::connect(controller, "unpaired-release", native::on_release, this);
+
+        gtk_widget_add_controller(GTK_WIDGET(platform->web_view), GTK_EVENT_CONTROLLER(controller));
 
         gtk_widget_set_size_request(GTK_WIDGET(platform->web_view), 1, 1);
         gtk_widget_set_vexpand(GTK_WIDGET(platform->web_view), true);
         gtk_widget_set_hexpand(GTK_WIDGET(platform->web_view), true);
 
         gtk_box_append(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
-
-        auto on_context = [](WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *data) -> gboolean
-        {
-            return !data->platform->context_menu;
-        };
-        utils::connect(platform->web_view, "context-menu", +on_context, this);
-
-        platform->manager = webkit_web_view_get_user_content_manager(platform->web_view);
-        webkit_user_content_manager_register_script_message_handler(platform->manager, "saucer", nullptr);
-
-        auto on_message = [](WebKitWebView *, JSCValue *value, impl *self)
-        {
-            auto message = std::string{utils::g_str_ptr{jsc_value_to_string(value)}.get()};
-
-            if (message == "dom_loaded")
-            {
-                self->platform->dom_loaded = true;
-
-                for (const auto &pending : self->platform->pending)
-                {
-                    self->execute(pending);
-                }
-
-                self->platform->pending.clear();
-                self->events->get<event::dom_ready>().fire();
-
-                return;
-            }
-
-            self->events->get<event::message>().fire(message).find(status::handled);
-        };
-
-        platform->msg_received = utils::connect(platform->manager, "script-message-received", +on_message, this);
-
-        auto on_load = [](WebKitWebView *, WebKitLoadEvent event, impl *self)
-        {
-            auto url = self->url();
-
-            if (!url.has_value())
-            {
-                assert(false);
-                return;
-            }
-
-            if (event == WEBKIT_LOAD_COMMITTED)
-            {
-                self->events->get<event::navigated>().fire(url.value());
-                return;
-            }
-
-            if (event == WEBKIT_LOAD_FINISHED)
-            {
-                self->events->get<event::load>().fire(state::finished);
-                return;
-            }
-
-            if (event != WEBKIT_LOAD_STARTED)
-            {
-                return;
-            }
-
-            self->platform->dom_loaded = false;
-            self->events->get<event::load>().fire(state::started);
-        };
-
-        utils::connect(platform->web_view, "load-changed", +on_load, this);
-
-        auto *const controller = gtk_gesture_click_new();
-
-        auto on_click = [](GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)
-        {
-            auto *const controller = GTK_EVENT_CONTROLLER(gesture);
-            auto *const event      = gtk_event_controller_get_current_event(controller);
-
-            self->window->native<false>()->platform->prev_click.emplace(click_event{
-                .event      = utils::g_event_ptr::ref(event),
-                .controller = controller,
-            });
-        };
-
-        auto release = [](GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, impl *self)
-        {
-            auto &previous = self->window->native<false>()->platform->prev_resizable;
-
-            if (!previous.has_value())
-            {
-                return;
-            }
-
-            self->window->set_resizable(previous.value());
-            previous.reset();
-        };
-
-        utils::connect(controller, "pressed", +on_click, this);
-        utils::connect(controller, "unpaired-release", +release, this);
-
-        gtk_widget_add_controller(GTK_WIDGET(platform->web_view), GTK_EVENT_CONTROLLER(controller));
-
-        inject({.code = native::inject_script(), .time = load_time::creation, .clearable = false});
-        inject({.code = std::string{native::ready_script}, .time = load_time::ready, .clearable = false});
 
         return true;
     }
@@ -181,7 +93,7 @@ namespace saucer
 
     icon impl::favicon() const
     {
-        return {{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(platform->web_view))}};
+        return icon::impl{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(platform->web_view))};
     }
 
     std::string impl::page_title() const
@@ -407,6 +319,23 @@ namespace saucer
 
         webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
         webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
+    }
+
+    std::string impl::ready_script()
+    {
+        return "window.saucer.internal.message('dom_loaded')";
+    }
+
+    std::string impl::creation_script()
+    {
+        static const auto rtn = std::format(scripts::ipc_script, R"js(
+            message: async (message) =>
+            {
+                window.webkit.messageHandlers.saucer.postMessage(message);
+            }
+        )js");
+
+        return rtn;
     }
 
     SAUCER_INSTANTIATE_WEBVIEW_EVENTS(SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT);

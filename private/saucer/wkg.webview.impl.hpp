@@ -47,11 +47,18 @@ namespace saucer
         void setup(impl *);
 
       public:
-        static std::string inject_script();
-        static WebKitSettings *make_settings(const options &);
+        static gboolean on_context(WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *);
 
       public:
-        static constinit std::string_view ready_script;
+        static void on_message(WebKitWebView *, JSCValue *, impl *);
+        static void on_load(WebKitWebView *, WebKitLoadEvent, impl *);
+
+      public:
+        static void on_click(GtkGestureClick *, gint, gdouble, gdouble, impl *);
+        static void on_release(GtkGestureClick *, gdouble, gdouble, guint, GdkEventSequence *, impl *);
+
+      public:
+        static WebKitSettings *make_settings(const options &);
         static inline std::unordered_map<std::string, std::unique_ptr<scheme::handler>> schemes;
     };
 } // namespace saucer
