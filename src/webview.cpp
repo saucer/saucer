@@ -19,7 +19,14 @@ namespace saucer
 
     std::optional<webview> webview::create(const options &opts)
     {
-        auto *const parent = opts.application.value();
+        auto window = opts.window.value();
+
+        if (!window)
+        {
+            return {};
+        }
+
+        auto *const parent = window->native<false>()->parent;
 
         if (!parent->thread_safe())
         {
