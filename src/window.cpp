@@ -49,162 +49,162 @@ namespace saucer
 
     bool window::visible() const
     {
-        return invoke(m_impl.get(), &impl::visible);
+        return invoke<&impl::visible>(m_impl.get());
     }
 
     bool window::focused() const
     {
-        return invoke(m_impl.get(), &impl::focused);
+        return invoke<&impl::focused>(m_impl.get());
     }
 
     bool window::minimized() const
     {
-        return invoke(m_impl.get(), &impl::minimized);
+        return invoke<&impl::minimized>(m_impl.get());
     }
 
     bool window::maximized() const
     {
-        return invoke(m_impl.get(), &impl::maximized);
+        return invoke<&impl::maximized>(m_impl.get());
     }
 
     bool window::resizable() const
     {
-        return invoke(m_impl.get(), &impl::resizable);
+        return invoke<&impl::resizable>(m_impl.get());
     }
 
     bool window::always_on_top() const
     {
-        return invoke(m_impl.get(), &impl::always_on_top);
+        return invoke<&impl::always_on_top>(m_impl.get());
     }
 
     bool window::click_through() const
     {
-        return invoke(m_impl.get(), &impl::click_through);
+        return invoke<&impl::click_through>(m_impl.get());
     }
 
     std::string window::title() const
     {
-        return invoke(m_impl.get(), &impl::title);
+        return invoke<&impl::title>(m_impl.get());
     }
 
     window::decoration window::decorations() const
     {
-        return invoke(m_impl.get(), &impl::decorations);
+        return invoke<&impl::decorations>(m_impl.get());
     }
 
     size window::size() const
     {
-        return invoke(m_impl.get(), &impl::size);
+        return invoke<&impl::size>(m_impl.get());
     }
 
     size window::max_size() const
     {
-        return invoke(m_impl.get(), &impl::max_size);
+        return invoke<&impl::max_size>(m_impl.get());
     }
 
     size window::min_size() const
     {
-        return invoke(m_impl.get(), &impl::min_size);
+        return invoke<&impl::min_size>(m_impl.get());
     }
 
     position window::position() const
     {
-        return invoke(m_impl.get(), &impl::position);
+        return invoke<&impl::position>(m_impl.get());
     }
 
     std::optional<screen> window::screen() const
     {
-        return invoke(m_impl.get(), &impl::screen);
+        return invoke<&impl::screen>(m_impl.get());
     }
 
     void window::hide()
     {
-        return invoke(m_impl.get(), &impl::hide);
+        return invoke<&impl::hide>(m_impl.get());
     }
 
     void window::show()
     {
-        return invoke(m_impl.get(), &impl::show);
+        return invoke<&impl::show>(m_impl.get());
     }
 
     void window::close()
     {
-        return invoke(m_impl.get(), &impl::close);
+        return invoke<&impl::close>(m_impl.get());
     }
 
     void window::focus()
     {
-        return invoke(m_impl.get(), &impl::focus);
+        return invoke<&impl::focus>(m_impl.get());
     }
 
     void window::start_drag()
     {
-        return invoke(m_impl.get(), &impl::start_drag);
+        return invoke<&impl::start_drag>(m_impl.get());
     }
 
     void window::start_resize(edge edge)
     {
-        return invoke(m_impl.get(), &impl::start_resize, edge);
+        return invoke<&impl::start_resize>(m_impl.get(), edge);
     }
 
     void window::set_minimized(bool enabled)
     {
-        return invoke(m_impl.get(), &impl::set_minimized, enabled);
+        return invoke<&impl::set_minimized>(m_impl.get(), enabled);
     }
 
     void window::set_maximized(bool enabled)
     {
-        return invoke(m_impl.get(), &impl::set_maximized, enabled);
+        return invoke<&impl::set_maximized>(m_impl.get(), enabled);
     }
 
     void window::set_resizable(bool enabled)
     {
-        return invoke(m_impl.get(), &impl::set_resizable, enabled);
+        return invoke<&impl::set_resizable>(m_impl.get(), enabled);
     }
 
     void window::set_always_on_top(bool enabled)
     {
-        return invoke(m_impl.get(), &impl::set_always_on_top, enabled);
+        return invoke<&impl::set_always_on_top>(m_impl.get(), enabled);
     }
 
     void window::set_click_through(bool enabled)
     {
-        return invoke(m_impl.get(), &impl::set_click_through, enabled);
+        return invoke<&impl::set_click_through>(m_impl.get(), enabled);
     }
 
     void window::set_icon(const icon &icon)
     {
-        return invoke(m_impl.get(), &impl::set_icon, icon);
+        return invoke<&impl::set_icon>(m_impl.get(), icon);
     }
 
     void window::set_decorations(decoration decoration)
     {
-        return invoke(m_impl.get(), &impl::set_decorations, decoration);
+        return invoke<&impl::set_decorations>(m_impl.get(), decoration);
     }
 
     void window::set_title(const std::string &title)
     {
-        return invoke(m_impl.get(), &impl::set_title, title);
+        return invoke<&impl::set_title>(m_impl.get(), title);
     }
 
     void window::set_size(const saucer::size &size)
     {
-        return invoke(m_impl.get(), &impl::set_size, size);
+        return invoke<&impl::set_size>(m_impl.get(), size);
     }
 
     void window::set_max_size(const saucer::size &size)
     {
-        return invoke(m_impl.get(), &impl::set_max_size, size);
+        return invoke<&impl::set_max_size>(m_impl.get(), size);
     }
 
     void window::set_min_size(const saucer::size &size)
     {
-        return invoke(m_impl.get(), &impl::set_min_size, size);
+        return invoke<&impl::set_min_size>(m_impl.get(), size);
     }
 
     void window::set_position(const saucer::position &position)
     {
-        return invoke(m_impl.get(), &impl::set_position, position);
+        return invoke<&impl::set_position>(m_impl.get(), position);
     }
 
     void window::off(event event)

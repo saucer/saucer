@@ -75,12 +75,12 @@ namespace saucer
     template <webview::event Event>
     void webview::setup()
     {
-        return invoke(m_impl.get(), &impl::setup<Event>);
+        return invoke<&impl::setup<Event>>(m_impl.get());
     }
 
     void webview::handle_scheme(const std::string &name, scheme::resolver &&handler)
     {
-        return invoke(m_impl.get(), &impl::handle_scheme, name, std::move(handler));
+        return invoke<&impl::handle_scheme>(m_impl.get(), name, std::move(handler));
     }
 
     void impl::reject(std::uint64_t id, std::string_view reason)
@@ -110,62 +110,62 @@ namespace saucer
 
     icon webview::favicon() const
     {
-        return invoke(m_impl.get(), &impl::favicon);
+        return invoke<&impl::favicon>(m_impl.get());
     }
 
     std::string webview::page_title() const
     {
-        return invoke(m_impl.get(), &impl::page_title);
+        return invoke<&impl::page_title>(m_impl.get());
     }
 
     bool webview::dev_tools() const
     {
-        return invoke(m_impl.get(), &impl::dev_tools);
+        return invoke<&impl::dev_tools>(m_impl.get());
     }
 
     bool webview::context_menu() const
     {
-        return invoke(m_impl.get(), &impl::context_menu);
+        return invoke<&impl::context_menu>(m_impl.get());
     }
 
     std::optional<uri> webview::url() const
     {
-        return invoke(m_impl.get(), &impl::url);
+        return invoke<&impl::url>(m_impl.get());
     }
 
     color webview::background() const
     {
-        return invoke(m_impl.get(), &impl::background);
+        return invoke<&impl::background>(m_impl.get());
     }
 
     bool webview::force_dark_mode() const
     {
-        return invoke(m_impl.get(), &impl::force_dark_mode);
+        return invoke<&impl::force_dark_mode>(m_impl.get());
     }
 
     void webview::set_dev_tools(bool value)
     {
-        return invoke(m_impl.get(), &impl::set_dev_tools, value);
+        return invoke<&impl::set_dev_tools>(m_impl.get(), value);
     }
 
     void webview::set_context_menu(bool value)
     {
-        return invoke(m_impl.get(), &impl::set_context_menu, value);
+        return invoke<&impl::set_context_menu>(m_impl.get(), value);
     }
 
     void webview::set_force_dark_mode(bool value)
     {
-        return invoke(m_impl.get(), &impl::set_force_dark_mode, value);
+        return invoke<&impl::set_force_dark_mode>(m_impl.get(), value);
     }
 
     void webview::set_background(const color &color)
     {
-        return invoke(m_impl.get(), &impl::set_background, color);
+        return invoke<&impl::set_background>(m_impl.get(), color);
     }
 
     void webview::set_url(const uri &url)
     {
-        return invoke(m_impl.get(), &impl::set_url, url);
+        return invoke<&impl::set_url>(m_impl.get(), url);
     }
 
     void webview::set_url(const std::string &url)
@@ -182,17 +182,17 @@ namespace saucer
 
     void webview::back()
     {
-        return invoke(m_impl.get(), &impl::back);
+        return invoke<&impl::back>(m_impl.get());
     }
 
     void webview::forward()
     {
-        return invoke(m_impl.get(), &impl::forward);
+        return invoke<&impl::forward>(m_impl.get());
     }
 
     void webview::reload()
     {
-        return invoke(m_impl.get(), &impl::reload);
+        return invoke<&impl::reload>(m_impl.get());
     }
 
     void webview::serve(fs::path file)
@@ -255,29 +255,29 @@ namespace saucer
 
     void webview::execute(const std::string &code)
     {
-        return invoke(m_impl.get(), &impl::execute, code);
+        return invoke<&impl::execute>(m_impl.get(), code);
     }
 
     std::uint64_t webview::inject(const script &script)
     {
-        return invoke(m_impl.get(), &impl::inject, script);
+        return invoke<&impl::inject>(m_impl.get(), script);
     }
 
     void webview::uninject()
     {
-        auto uninject = static_cast<void (impl::*)()>(&impl::uninject);
-        return invoke(m_impl.get(), uninject);
+        static constexpr auto uninject = static_cast<void (impl::*)()>(&impl::uninject);
+        return invoke<uninject>(m_impl.get());
     }
 
     void webview::uninject(std::uint64_t id)
     {
-        auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
-        return invoke(m_impl.get(), uninject, id);
+        static constexpr auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
+        return invoke<uninject>(m_impl.get(), id);
     }
 
     void webview::remove_scheme(const std::string &name)
     {
-        return invoke(m_impl.get(), &impl::remove_scheme, name);
+        return invoke<&impl::remove_scheme>(m_impl.get(), name);
     }
 
     void webview::off(event event)

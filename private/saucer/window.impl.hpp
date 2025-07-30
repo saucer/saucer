@@ -2,6 +2,9 @@
 
 #include "window.hpp"
 
+#include <rebind/member.hpp>
+#include <rebind/utils/name.hpp>
+
 namespace saucer
 {
     struct window::impl
@@ -106,5 +109,29 @@ namespace saucer
     auto invoke(T *impl, Callback &&callback, Ts &&...args)
     {
         return invoke(impl, std::forward<Callback>(callback), impl, std::forward<Ts>(args)...);
+    }
+
+    template <typename T>
+    struct nttp_with_func
+    {
+        static constexpr std::size_t N = 128;
+
+      public:
+        T value;
+        char func[N + 1]{};
+
+      public:
+        constexpr nttp_with_func(T value, const char *builtin = __builtin_FUNCTION()) : value(value)
+        {
+            std::copy_n(builtin, std::min(N, std::char_traits<char>::length(builtin)), func);
+        }
+    };
+
+    template <nttp_with_func Callback, typename T, typename... Ts>
+    auto invoke(T *impl, Ts &&...args)
+    {
+        constexpr auto member = rebind::utils::impl::remove_namespace(rebind::member_name<Callback.value>);
+        static_assert(Callback.func == member, "Name of implementation does not match interface!");
+        return invoke(impl, Callback.value, impl, std::forward<Ts>(args)...);
     }
 } // namespace saucer

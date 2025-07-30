@@ -60,7 +60,7 @@ namespace saucer
             return {};
         }
 
-        return invoke(&impl::screens, m_impl.get());
+        return invoke(&impl::screens, m_impl.get()); // TODO: Use safe invoke overload
     }
 
     int application::run(callback_t callback)
