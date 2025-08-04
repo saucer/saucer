@@ -26,10 +26,6 @@ namespace saucer
         platform->max_size = platform->window->maximumSize();
         platform->min_size = platform->window->minimumSize();
 
-        //? Fixes QT-Bug where Web-View will not render when background color is transparent.
-
-        platform->set_alpha(255);
-
         return true;
     }
 
