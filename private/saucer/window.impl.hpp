@@ -118,26 +118,26 @@ namespace saucer
     }
 
     template <typename T>
-    struct nttp_with_func
+    struct value_with_location
     {
         static constexpr std::size_t N = 128;
 
       public:
         T value;
-        char func[N + 1]{};
+        char name[N + 1]{};
 
       public:
-        constexpr nttp_with_func(T value, const char *builtin = __builtin_FUNCTION()) : value(value)
+        constexpr value_with_location(T value, const char *builtin = __builtin_FUNCTION()) : value(value)
         {
-            std::copy_n(builtin, std::min(N, std::char_traits<char>::length(builtin)), func);
+            std::copy_n(builtin, std::min(N, std::char_traits<char>::length(builtin)), name);
         }
     };
 
-    template <nttp_with_func Callback, typename T, typename... Ts>
+    template <value_with_location Callback, typename T, typename... Ts>
     auto invoke(T *impl, Ts &&...args)
     {
         constexpr auto member = rebind::utils::impl::remove_namespace(rebind::member_name<Callback.value>);
-        static_assert(Callback.func == member, "Name of implementation does not match interface!");
+        static_assert(Callback.name == member, "Name of implementation does not match interface!");
         return invoke(impl, Callback.value, impl, std::forward<Ts>(args)...);
     }
 } // namespace saucer

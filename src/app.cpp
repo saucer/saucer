@@ -37,10 +37,7 @@ namespace saucer
             return;
         }
 
-        //  for (const auto &event : rebind::enum_values<event>)
-        //  {
-        //      m_events->clear(event);
-        //  }
+        // TODO: Clear events (?)
     }
 
     bool application::thread_safe() const
