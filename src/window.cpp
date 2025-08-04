@@ -87,6 +87,11 @@ namespace saucer
         return invoke<&impl::title>(m_impl.get());
     }
 
+    color window::background() const
+    {
+        return invoke<&impl::background>(m_impl.get());
+    }
+
     window::decoration window::decorations() const
     {
         return invoke<&impl::decorations>(m_impl.get());
@@ -177,32 +182,37 @@ namespace saucer
         return invoke<&impl::set_icon>(m_impl.get(), icon);
     }
 
-    void window::set_decorations(decoration decoration)
-    {
-        return invoke<&impl::set_decorations>(m_impl.get(), decoration);
-    }
-
     void window::set_title(const std::string &title)
     {
         return invoke<&impl::set_title>(m_impl.get(), title);
     }
 
-    void window::set_size(const saucer::size &size)
+    void window::set_background(color background)
+    {
+        return invoke<&impl::set_background>(m_impl.get(), background);
+    }
+
+    void window::set_decorations(decoration decoration)
+    {
+        return invoke<&impl::set_decorations>(m_impl.get(), decoration);
+    }
+
+    void window::set_size(saucer::size size)
     {
         return invoke<&impl::set_size>(m_impl.get(), size);
     }
 
-    void window::set_max_size(const saucer::size &size)
+    void window::set_max_size(saucer::size size)
     {
         return invoke<&impl::set_max_size>(m_impl.get(), size);
     }
 
-    void window::set_min_size(const saucer::size &size)
+    void window::set_min_size(saucer::size size)
     {
         return invoke<&impl::set_min_size>(m_impl.get(), size);
     }
 
-    void window::set_position(const saucer::position &position)
+    void window::set_position(saucer::position position)
     {
         return invoke<&impl::set_position>(m_impl.get(), position);
     }

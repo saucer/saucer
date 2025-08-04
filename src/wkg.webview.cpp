@@ -138,10 +138,10 @@ namespace saucer
         webkit_web_view_get_background_color(platform->web_view, &color);
 
         return {
-            static_cast<std::uint8_t>(color.red * 255.f),
-            static_cast<std::uint8_t>(color.green * 255.f),
-            static_cast<std::uint8_t>(color.blue * 255.f),
-            static_cast<std::uint8_t>(color.alpha * 255.f),
+            .r = static_cast<std::uint8_t>(color.red * 255.f),
+            .g = static_cast<std::uint8_t>(color.green * 255.f),
+            .b = static_cast<std::uint8_t>(color.blue * 255.f),
+            .a = static_cast<std::uint8_t>(color.alpha * 255.f),
         };
     }
 
@@ -174,13 +174,7 @@ namespace saucer
         platform->context_menu = enabled;
     }
 
-    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-static, *-function-const)
-    {
-        const auto scheme = enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT;
-        g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
-    }
-
-    void impl::set_background(const color &color) // NOLINT(*-function-const)
+    void impl::set_background(color color) // NOLINT(*-function-const)
     {
         const auto [r, g, b, a] = color;
 
@@ -192,7 +186,12 @@ namespace saucer
         };
 
         webkit_web_view_set_background_color(platform->web_view, &rgba);
-        window->native<false>()->platform->make_transparent(a < 255);
+    }
+
+    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-static, *-function-const)
+    {
+        const auto scheme = enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT;
+        g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)

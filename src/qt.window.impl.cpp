@@ -7,19 +7,6 @@ namespace saucer
     using native = window::impl::native;
     using event  = window::event;
 
-    void native::set_alpha(std::uint8_t alpha) const
-    {
-        auto palette = window->palette();
-
-        auto color = palette.color(QPalette::ColorRole::Window);
-        color.setAlpha(alpha);
-
-        palette.setColor(QPalette::ColorRole::Window, color);
-
-        window->setAttribute(Qt::WA_TranslucentBackground, alpha < 255);
-        window->setPalette(palette);
-    }
-
     void native::set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const
     {
         const auto shown = window->isVisible();

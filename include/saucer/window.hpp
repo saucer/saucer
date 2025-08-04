@@ -22,6 +22,14 @@ namespace saucer
 
     using size = position;
 
+    struct color
+    {
+        std::uint8_t r;
+        std::uint8_t g;
+        std::uint8_t b;
+        std::uint8_t a;
+    };
+
     struct window
     {
         struct impl;
@@ -109,6 +117,9 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] [[nodiscard]] std::string title() const;
+
+      public:
+        [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] decoration decorations() const;
 
       public:
@@ -143,16 +154,19 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void set_icon(const icon &);
-        [[sc::thread_safe]] void set_decorations(decoration);
         [[sc::thread_safe]] void set_title(const std::string &);
 
       public:
-        [[sc::thread_safe]] void set_size(const saucer::size &);
-        [[sc::thread_safe]] void set_max_size(const saucer::size &);
-        [[sc::thread_safe]] void set_min_size(const saucer::size &);
+        [[sc::thread_safe]] void set_background(color);
+        [[sc::thread_safe]] void set_decorations(decoration);
 
       public:
-        [[sc::thread_safe]] void set_position(const saucer::position &);
+        [[sc::thread_safe]] void set_size(saucer::size);
+        [[sc::thread_safe]] void set_max_size(saucer::size);
+        [[sc::thread_safe]] void set_min_size(saucer::size);
+
+      public:
+        [[sc::thread_safe]] void set_position(saucer::position);
 
       public:
         template <event Event>

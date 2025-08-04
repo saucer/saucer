@@ -15,7 +15,6 @@ namespace saucer
         std::move_only_function<void()> on_closed;
 
       public:
-        void set_alpha(std::uint8_t alpha) const;
         void set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const;
     };
 

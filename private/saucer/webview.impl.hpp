@@ -62,8 +62,8 @@ namespace saucer
         void set_context_menu(bool);
 
       public:
+        void set_background(color);
         void set_force_dark_mode(bool);
-        void set_background(const color &);
 
       public:
         void set_url(const uri &);

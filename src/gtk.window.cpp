@@ -23,15 +23,16 @@ namespace saucer
         platform->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
 
         gtk_box_append(platform->content, GTK_WIDGET(platform->header));
-        gtk_css_provider_load_from_string(platform->style.get(), ".transparent { background-color: transparent; }");
-
         gtk_window_set_hide_on_close(GTK_WINDOW(platform->window.get()), true);
         adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(platform->content));
 
-        auto *const display  = gtk_widget_get_display(GTK_WIDGET(platform->window.get()));
+        platform->class_name = std::format("background-{:d}", reinterpret_cast<std::uintptr_t>(platform->window.get()));
+
+        auto *const display  = gdk_display_get_default();
         auto *const provider = GTK_STYLE_PROVIDER(platform->style.get());
 
         gtk_style_context_add_provider_for_display(display, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
+        gtk_widget_add_css_class(GTK_WIDGET(platform->window.get()), platform->class_name.c_str());
 
         platform->track(this);
         platform->update_decorations(this);
@@ -44,8 +45,14 @@ namespace saucer
     impl::~impl()
     {
         // We hide-on-close. This is required to make the parent quit properly.
+
         events->clear(event::close);
         gtk_window_close(GTK_WINDOW(platform->window.get()));
+
+        auto *const display  = gdk_display_get_default();
+        auto *const provider = GTK_STYLE_PROVIDER(platform->style.get());
+
+        gtk_style_context_remove_provider_for_display(display, provider);
     }
 
     template <window::event Event>
@@ -92,6 +99,11 @@ namespace saucer
     std::string impl::title() const
     {
         return gtk_window_get_title(GTK_WINDOW(platform->window.get()));
+    }
+
+    color impl::background() const // NOLINT(*-static)
+    {
+        return {};
     }
 
     window::decoration impl::decorations() const
@@ -262,6 +274,19 @@ namespace saucer
     {
     }
 
+    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
+    {
+        gtk_window_set_title(GTK_WINDOW(platform->window.get()), title.c_str());
+    }
+
+    void impl::set_background(color color) // NOLINT(*-function-const)
+    {
+        auto [r, g, b, a] = color;
+        auto format       = std::format(".{} {{ background-color: rgba({}, {}, {}, {}); }}", platform->class_name, r, g, b, a);
+
+        gtk_css_provider_load_from_string(platform->style.get(), format.c_str());
+    }
+
     void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
     {
         const auto decorated = decoration != decoration::none;
@@ -271,26 +296,21 @@ namespace saucer
         gtk_widget_set_visible(GTK_WIDGET(platform->header), visible);
     }
 
-    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
-    {
-        gtk_window_set_title(GTK_WINDOW(platform->window.get()), title.c_str());
-    }
-
-    void impl::set_size(const saucer::size &size) // NOLINT(*-function-const)
+    void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
         gtk_window_set_default_size(GTK_WINDOW(platform->window.get()), size.x, size.y);
     }
 
-    void impl::set_max_size(const saucer::size &) // NOLINT(*-static, *-function-const)
+    void impl::set_max_size(saucer::size) // NOLINT(*-static, *-function-const)
     {
     }
 
-    void impl::set_min_size(const saucer::size &size) // NOLINT(*-function-const)
+    void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
         gtk_widget_set_size_request(GTK_WIDGET(platform->window.get()), size.x, size.y);
     }
 
-    void impl::set_position(const saucer::position &) // NOLINT(*-static, *-function-const)
+    void impl::set_position(saucer::position) // NOLINT(*-static, *-function-const)
     {
     }
 

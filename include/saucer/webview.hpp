@@ -51,8 +51,6 @@ namespace saucer
         std::string mime;
     };
 
-    using color = std::array<std::uint8_t, 4>;
-
     struct webview
     {
         struct impl;
@@ -138,8 +136,8 @@ namespace saucer
         [[sc::thread_safe]] void set_context_menu(bool);
 
       public:
+        [[sc::thread_safe]] void set_background(color);
         [[sc::thread_safe]] void set_force_dark_mode(bool);
-        [[sc::thread_safe]] void set_background(const color &);
 
       public:
         [[sc::thread_safe]] void set_url(const uri &);

@@ -34,6 +34,9 @@ namespace saucer
     struct window::impl::native
     {
         utils::handle<GtkWindow *, gtk_window_destroy> window;
+
+      public:
+        std::string class_name;
         utils::g_object_ptr<GtkCssProvider> style;
 
       public:
@@ -58,7 +61,6 @@ namespace saucer
 
       public:
         void start_resize(edge) const;
-        void make_transparent(bool) const;
 
       public:
         void track(impl *) const;

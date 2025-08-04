@@ -166,10 +166,10 @@ namespace saucer
         const auto color = platform->web_page->backgroundColor();
 
         return {
-            static_cast<std::uint8_t>(color.red()),
-            static_cast<std::uint8_t>(color.green()),
-            static_cast<std::uint8_t>(color.blue()),
-            static_cast<std::uint8_t>(color.alpha()),
+            .r = static_cast<std::uint8_t>(color.red()),
+            .g = static_cast<std::uint8_t>(color.green()),
+            .b = static_cast<std::uint8_t>(color.blue()),
+            .a = static_cast<std::uint8_t>(color.alpha()),
         };
     }
 
@@ -213,23 +213,20 @@ namespace saucer
                                                          : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
+    void impl::set_background(color color) // NOLINT(*-function-const)
+    {
+        const auto [r, g, b, a] = color;
+
+        platform->web_page->setBackgroundColor({r, g, b, a});
+        platform->web_view->setAttribute(Qt::WA_TranslucentBackground, a < 255);
+    }
+
     void impl::set_force_dark_mode([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
     {
 #ifdef SAUCER_QT6
         auto *settings = platform->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
 #endif
-    }
-
-    void impl::set_background(const color &color)
-    {
-        const auto [r, g, b, a] = color;
-        const auto transparent  = a < 255;
-
-        platform->web_view->setAttribute(Qt::WA_TranslucentBackground, transparent);
-        window->native<false>()->platform->set_alpha(transparent ? 0 : 255);
-
-        platform->web_page->setBackgroundColor({r, g, b, a});
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)

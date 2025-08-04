@@ -173,17 +173,6 @@ namespace saucer
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 
-    void native::make_transparent(bool enabled) const
-    {
-        if (!enabled)
-        {
-            gtk_widget_remove_css_class(GTK_WIDGET(window.get()), "transparent");
-            return;
-        }
-
-        gtk_widget_add_css_class(GTK_WIDGET(window.get()), "transparent");
-    }
-
     void native::track(impl *self) const
     {
         auto callback = [](void *, impl *self) -> gboolean

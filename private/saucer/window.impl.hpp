@@ -46,6 +46,9 @@ namespace saucer
 
       public:
         [[nodiscard]] std::string title() const;
+
+      public:
+        [[nodiscard]] color background() const;
         [[nodiscard]] decoration decorations() const;
 
       public:
@@ -80,16 +83,19 @@ namespace saucer
 
       public:
         void set_icon(const icon &);
-        void set_decorations(decoration);
         void set_title(const std::string &);
 
       public:
-        void set_size(const saucer::size &);
-        void set_max_size(const saucer::size &);
-        void set_min_size(const saucer::size &);
+        void set_background(color);
+        void set_decorations(decoration);
 
       public:
-        void set_position(const saucer::position &);
+        void set_size(saucer::size);
+        void set_max_size(saucer::size);
+        void set_min_size(saucer::size);
+
+      public:
+        void set_position(saucer::position);
     };
 
     template <typename T, typename Callback, typename... Ts>

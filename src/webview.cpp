@@ -153,14 +153,14 @@ namespace saucer
         return invoke<&impl::set_context_menu>(m_impl.get(), value);
     }
 
+    void webview::set_background(color background)
+    {
+        return invoke<&impl::set_background>(m_impl.get(), background);
+    }
+
     void webview::set_force_dark_mode(bool value)
     {
         return invoke<&impl::set_force_dark_mode>(m_impl.get(), value);
-    }
-
-    void webview::set_background(const color &color)
-    {
-        return invoke<&impl::set_background>(m_impl.get(), color);
     }
 
     void webview::set_url(const uri &url)

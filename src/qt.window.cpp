@@ -84,6 +84,19 @@ namespace saucer
         return platform->window->windowTitle().toStdString();
     }
 
+    color impl::background() const
+    {
+        const auto palette = platform->window->palette();
+        const auto color   = palette.color(QPalette::ColorRole::Window);
+
+        return {
+            .r = static_cast<std::uint8_t>(color.red()),
+            .g = static_cast<std::uint8_t>(color.green()),
+            .b = static_cast<std::uint8_t>(color.blue()),
+            .a = static_cast<std::uint8_t>(color.alpha()),
+        };
+    }
+
     window::decoration impl::decorations() const
     {
         using enum decoration;
@@ -254,35 +267,46 @@ namespace saucer
         platform->window->setWindowIcon(icon.native<false>()->icon);
     }
 
+    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
+    {
+        platform->window->setWindowTitle(QString::fromStdString(title));
+    }
+
+    void impl::set_background(color color) // NOLINT(*-function-const)
+    {
+        auto palette      = platform->window->palette();
+        auto [r, g, b, a] = color;
+
+        palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
+
+        platform->window->setPalette(palette);
+        platform->window->setAttribute(Qt::WA_TranslucentBackground, a < 255);
+    }
+
     void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
     {
         using enum window::decoration;
         platform->set_flags({{Qt::CustomizeWindowHint, decoration == partial}, {Qt::FramelessWindowHint, decoration == none}});
     }
 
-    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
-    {
-        platform->window->setWindowTitle(QString::fromStdString(title));
-    }
-
-    void impl::set_size(const saucer::size &size) // NOLINT(*-function-const)
+    void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
         platform->window->resize(size.x, size.y);
     }
 
-    void impl::set_max_size(const saucer::size &size) // NOLINT(*-function-const)
+    void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
         platform->window->setMaximumSize(size.x, size.y);
         platform->max_size = platform->window->maximumSize();
     }
 
-    void impl::set_min_size(const saucer::size &size) // NOLINT(*-function-const)
+    void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
         platform->window->setMinimumSize(size.x, size.y);
         platform->min_size = platform->window->minimumSize();
     }
 
-    void impl::set_position(const saucer::position &pos) // NOLINT(*-function-const)
+    void impl::set_position(saucer::position pos) // NOLINT(*-function-const)
     {
         platform->window->move(pos.x, pos.y);
     }
