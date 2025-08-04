@@ -154,10 +154,10 @@ int main()
 
 <div align="center">
 
-| ![](https://casterlabs.co/images/product/caffeinated/multi-chat.png) | ![](https://raw.githubusercontent.com/SamsidParty/TopNotify/main/Docs/Screenshot3.png) |
-| :------------------------------------------------------------------: | :------------------------------------------------------------------------------------: |
-|          [Casterlabs - Caffeinated](https://casterlabs.co/)          |                 [TopNotify](https://github.com/SamsidParty/TopNotify)                  |
-|     _(Built on [saucer4j](https://github.com/saucer/saucer4j))_      |                   _(Built on their C# Saucer Bindings "IgniteView")_                   |
+| <img src="https://casterlabs.co/images/product/caffeinated/multi-chat.png" width="1000" /> | <img src="https://raw.githubusercontent.com/SamsidParty/TopNotify/main/Docs/Screenshot3.png" width="1250" /> |
+| :----------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
+|                     [Casterlabs - Caffeinated](https://casterlabs.co/)                     |                            [TopNotify](https://github.com/SamsidParty/TopNotify)                             |
+|                _(Built on [saucer4j](https://github.com/saucer/saucer4j))_                 |                              _(Built on their C# Saucer Bindings "IgniteView")_                              |
 
 </div>
 
