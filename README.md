@@ -49,19 +49,21 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   
   <table>
     <tr>
-      <th></th>
-      <th>Windows</th>
-      <th>Linux</th>
-      <th>MacOS</th>
+      <th>Platform</th>
+      <th colspan="2">Backends</th>
     </tr>
     <tr>
-      <td rowspan="2">Backend</td>
+      <td><b>Windows</b></td>
       <td>Win32 & WebView2</td>
-      <td>GTK4 & WebKitGtk</td>
-      <td>Cocoa & WKWebView</td>
+      <td rowspan="3">Qt5 / Qt6 + QWebEngine</td>
     </tr>
-    <tr align="center">
-      <td colspan="3">Qt5 / Qt6 & QWebEngine</td>
+    <tr>
+      <td><b>Linux</b></td>
+      <td>GTK4 & WebKitGtk</td>
+    </tr>
+    <tr>
+      <td><b>MacOS</b></td>
+      <td>Cocoa & WKWebView</td>
     </tr>
   </table>
 
