@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app.hpp"
+#include "app.impl.hpp"
 
 #include "win32.utils.hpp"
 
@@ -11,25 +11,19 @@
 
 namespace saucer
 {
-    struct application::impl
+    struct application::impl::native
     {
         WNDCLASSW wnd_class;
+        std::wstring id;
 
       public:
         HMODULE handle;
         utils::window_handle msg_window;
-
-      public:
-        DWORD thread;
-        std::wstring id;
-
-      public:
-        coco::future<void> future;
+        utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
         bool quit_on_last_window_closed;
         std::unordered_map<HWND, bool> instances;
-        utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:
         static void iteration();

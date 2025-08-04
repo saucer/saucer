@@ -102,12 +102,17 @@ namespace saucer
         requires std::invocable<Callback, Ts...>
     auto invoke(T *impl, Callback &&callback, Ts &&...args)
     {
-        if (!impl)
+        using result_t = std::invoke_result_t<Callback, Ts...>;
+
+        if (impl)
         {
-            return std::invoke_result_t<Callback, Ts...>{};
+            return impl->parent->invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
         }
 
-        return impl->parent->invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
+        if constexpr (!std::is_void_v<result_t>)
+        {
+            return result_t{};
+        }
     }
 
     template <typename T, typename Callback, typename... Ts>

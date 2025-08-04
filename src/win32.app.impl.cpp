@@ -2,7 +2,9 @@
 
 namespace saucer
 {
-    void application::impl::iteration()
+    using native = application::impl::native;
+
+    void native::iteration()
     {
         MSG msg{};
 
@@ -15,7 +17,7 @@ namespace saucer
         DispatchMessage(&msg);
     }
 
-    screen application::impl::convert(MONITORINFOEXW info)
+    screen native::convert(MONITORINFOEXW info)
     {
         const auto width  = info.rcMonitor.right - info.rcMonitor.left;
         const auto height = info.rcMonitor.bottom - info.rcMonitor.top;
@@ -27,7 +29,7 @@ namespace saucer
         };
     }
 
-    LRESULT CALLBACK application::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         if (msg != WM_SAFE_CALL)
         {
@@ -39,7 +41,7 @@ namespace saucer
         return 0;
     }
 
-    BOOL CALLBACK application::impl::enum_monitor(HMONITOR monitor, HDC, LPRECT, LPARAM user_data)
+    BOOL CALLBACK native::enum_monitor(HMONITOR monitor, HDC, LPRECT, LPARAM user_data)
     {
         auto &rtn = *reinterpret_cast<std::vector<screen> *>(user_data);
 

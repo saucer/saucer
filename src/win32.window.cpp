@@ -9,228 +9,164 @@
 #include <cassert>
 
 #include <rebind/enum.hpp>
-#include <flagpp/flags.hpp>
 
 #include <dwmapi.h>
-
-template <>
-constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
     static constexpr auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
 
-    window::window(application *parent) : m_parent(parent), m_impl(std::make_unique<impl>())
-    {
-        assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+    using impl = window::impl;
 
+    impl::impl() = default;
+
+    bool impl::init_platform()
+    {
         utils::set_dpi_awareness();
 
-        m_impl->hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,             //
-                                       m_parent->native<false>()->id.c_str(), //
-                                       L"",                                   //
-                                       style,                                 //
-                                       CW_USEDEFAULT,                         //
-                                       CW_USEDEFAULT,                         //
-                                       CW_USEDEFAULT,                         //
-                                       CW_USEDEFAULT,                         //
-                                       nullptr,                               //
-                                       nullptr,                               //
-                                       m_parent->native<false>()->handle,     //
-                                       nullptr);
+        auto *const hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,                     //
+                                           parent->native<false>()->platform->id.c_str(), //
+                                           L"",                                           //
+                                           style,                                         //
+                                           CW_USEDEFAULT,                                 //
+                                           CW_USEDEFAULT,                                 //
+                                           CW_USEDEFAULT,                                 //
+                                           CW_USEDEFAULT,                                 //
+                                           nullptr,                                       //
+                                           nullptr,                                       //
+                                           parent->native<false>()->platform->handle,     //
+                                           nullptr);
 
-        assert(m_impl->hwnd.get() && "CreateWindowExW() failed");
+        if (!hwnd)
+        {
+            return false;
+        }
 
+        platform = std::make_unique<native>();
+
+        platform->hwnd = hwnd;
+        platform->hook = {platform->hwnd.get(), native::wnd_proc};
+
+        SetWindowLongPtrW(platform->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         set_resizable(true);
 
-        m_impl->hook = {m_impl->hwnd.get(), impl::wnd_proc};
-        SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        return true;
     }
 
-    window::~window()
+    impl::~impl()
     {
-        for (const auto &event : rebind::enum_values<window_event>)
-        {
-            m_events.clear(event);
-        }
-
         close();
-
-        SetWindowLongPtrW(m_impl->hwnd.get(), GWLP_USERDATA, 0);
+        SetWindowLongPtrW(platform->hwnd.get(), GWLP_USERDATA, 0);
     }
 
-    template <window_event Event>
-    void window::setup()
+    template <window::event Event>
+    void impl::setup()
     {
     }
 
-    bool window::visible() const
+    bool impl::visible() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return visible(); });
-        }
-
-        return IsWindowVisible(m_impl->hwnd.get());
+        return IsWindowVisible(platform->hwnd.get());
     }
 
-    bool window::focused() const
+    bool impl::focused() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return focused(); });
-        }
-
-        return m_impl->hwnd.get() == GetForegroundWindow();
+        return platform->hwnd.get() == GetForegroundWindow();
     }
 
-    bool window::minimized() const
+    bool impl::minimized() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return minimized(); });
-        }
-
-        return IsIconic(m_impl->hwnd.get());
+        return IsIconic(platform->hwnd.get());
     }
 
-    bool window::maximized() const
+    bool impl::maximized() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return maximized(); });
-        }
-
-        return IsZoomed(m_impl->hwnd.get());
+        return IsZoomed(platform->hwnd.get());
     }
 
-    bool window::resizable() const
+    bool impl::resizable() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return resizable(); });
-        }
-
-        return GetWindowLongPtrW(m_impl->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
+        return GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
     }
 
-    bool window::always_on_top() const
+    bool impl::always_on_top() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return always_on_top(); });
-        }
-
-        return GetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE) & WS_EX_TOPMOST;
+        return GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE) & WS_EX_TOPMOST;
     }
 
-    bool window::click_through() const
+    bool impl::click_through() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return click_through(); });
-        }
-
-        return GetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE) & WS_EX_TRANSPARENT;
+        return GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE) & WS_EX_TRANSPARENT;
     }
 
-    std::string window::title() const
+    std::string impl::title() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return title(); });
-        }
-
         std::wstring title;
 
-        title.resize(GetWindowTextLengthW(m_impl->hwnd.get()));
-        GetWindowTextW(m_impl->hwnd.get(), title.data(), static_cast<int>(title.capacity()));
+        title.resize(GetWindowTextLengthW(platform->hwnd.get()));
+        GetWindowTextW(platform->hwnd.get(), title.data(), static_cast<int>(title.capacity()));
 
         return utils::narrow(title);
     }
 
-    window_decoration window::decoration() const
+    color impl::background() const // NOLINT(*-static)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return decoration(); });
-        }
-
-        const auto style = GetWindowLongPtrW(m_impl->hwnd.get(), GWL_STYLE);
-
-        if (!(style & WS_CAPTION))
-        {
-            return window_decoration::none;
-        }
-
-        if (!m_impl->titlebar)
-        {
-            return window_decoration::partial;
-        }
-
-        return window_decoration::full;
+        // TODO: Implement
+        return {};
     }
 
-    std::pair<int, int> window::size() const
+    window::decoration impl::decorations() const
     {
-        if (!m_parent->thread_safe())
+        using enum decoration;
+
+        if (!(platform->styles & WS_CAPTION))
         {
-            return m_parent->dispatch([this] { return size(); });
+            return none;
         }
 
+        if (!platform->titlebar)
+        {
+            return partial;
+        }
+
+        return full;
+    }
+
+    size impl::size() const
+    {
         RECT rect;
-        GetWindowRect(m_impl->hwnd.get(), &rect);
+        GetWindowRect(platform->hwnd.get(), &rect);
 
         return {rect.right - rect.left, rect.bottom - rect.top};
     }
 
-    std::pair<int, int> window::max_size() const
+    size impl::max_size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return max_size(); });
-        }
-
         const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
         const auto height = GetSystemMetrics(SM_CYMAXTRACK);
 
-        return m_impl->max_size.value_or(std::make_pair(width, height));
+        return platform->max_size.value_or({.x = width, .y = height});
     }
 
-    std::pair<int, int> window::min_size() const
+    size impl::min_size() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return min_size(); });
-        }
-
         const auto width  = GetSystemMetrics(SM_CXMINTRACK);
         const auto height = GetSystemMetrics(SM_CYMINTRACK);
 
-        return m_impl->min_size.value_or(std::make_pair(width, height));
+        return platform->min_size.value_or({.x = width, .y = height});
     }
 
-    std::pair<int, int> window::position() const
+    position impl::position() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return position(); });
-        }
-
         RECT rect{};
-        GetWindowRect(m_impl->hwnd.get(), &rect);
+        GetWindowRect(platform->hwnd.get(), &rect);
 
-        return {rect.left, rect.top};
+        return {.x = rect.left, .y = rect.top};
     }
 
-    std::optional<saucer::screen> window::screen() const
+    std::optional<saucer::screen> impl::screen() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return screen(); });
-        }
-
-        auto *const monitor = MonitorFromWindow(m_impl->hwnd.get(), MONITOR_DEFAULTTONEAREST);
+        auto *const monitor = MonitorFromWindow(platform->hwnd.get(), MONITOR_DEFAULTTONEAREST);
 
         if (!monitor)
         {
@@ -245,171 +181,113 @@ namespace saucer
             return std::nullopt;
         }
 
-        return application::impl::convert(info);
+        return application::impl::native::convert(info);
     }
 
-    void window::hide()
+    void impl::hide() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { hide(); });
-        }
-
-        ShowWindow(m_impl->hwnd.get(), SW_HIDE);
+        ShowWindow(platform->hwnd.get(), SW_HIDE);
     }
 
-    void window::show()
+    void impl::show() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { show(); });
-        }
-
-        m_parent->native<false>()->instances[m_impl->hwnd.get()] = true;
-        ShowWindow(m_impl->hwnd.get(), SW_SHOW);
+        parent->native<false>()->platform->instances[platform->hwnd.get()] = true;
+        ShowWindow(platform->hwnd.get(), SW_SHOW);
     }
 
-    void window::close()
+    void impl::close() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { close(); });
-        }
-
-        SendMessage(m_impl->hwnd.get(), WM_CLOSE, 0, 0);
+        SendMessage(platform->hwnd.get(), WM_CLOSE, 0, 0);
     }
 
-    void window::focus()
+    void impl::focus() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { focus(); });
-        }
-
-        SetForegroundWindow(m_impl->hwnd.get());
+        SetForegroundWindow(platform->hwnd.get());
     }
 
     // Kudos to Qt for serving as a really good reference here:
     // https://github.com/qt/qtbase/blob/37b6f941ee210e0bc4d65e8e700b6e19eb89c414/src/plugins/platforms/windows/qwindowswindow.cpp#L3028
 
-    void window::start_drag()
+    void impl::start_drag() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { start_drag(); });
-        }
-
         ReleaseCapture();
-        SendMessage(m_impl->hwnd.get(), WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
+        SendMessage(platform->hwnd.get(), WM_SYSCOMMAND, 0xF012 /*SC_DRAGMOVE*/, 0);
     }
 
-    void window::start_resize(saucer::window_edge edge)
+    void impl::start_resize(edge edge) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, edge] { start_resize(edge); });
-        }
-
         DWORD translated{};
 
-        if (edge == window_edge::left)
+        switch (edge)
         {
-            translated = 0xF001; // SC_SIZELEFT;
-        }
-        else if (edge == window_edge::right)
-        {
-            translated = 0xF002; // SC_SIZERIGHT
-        }
-        else if (edge == window_edge::top)
-        {
+            using enum window::edge;
+
+        case top:
             translated = 0xF003; // SC_SIZETOP
-        }
-        else if (edge == (window_edge::top | window_edge::left))
-        {
-            translated = 0xF004; // SC_SIZETOPLEFT
-        }
-        else if (edge == (window_edge::top | window_edge::right))
-        {
-            translated = 0xF005; // SC_SIZETOPRIGHT
-        }
-        else if (edge == window_edge::bottom)
-        {
+            break;
+        case bottom:
             translated = 0xF006; // SC_SIZEBOTTOM
-        }
-        else if (edge == (window_edge::bottom | window_edge::left))
-        {
+            break;
+        case left:
+            translated = 0xF001; // SC_SIZELEFT;
+            break;
+        case right:
+            translated = 0xF002; // SC_SIZERIGHT
+            break;
+        case top_left:
+            translated = 0xF004; // SC_SIZETOPLEFT
+            break;
+        case top_right:
+            translated = 0xF005; // SC_SIZETOPRIGHT
+            break;
+        case bottom_left:
             translated = 0xF007; // SC_SIZEBOTTOMLEFT
-        }
-        else if (edge == (window_edge::bottom | window_edge::right))
-        {
+            break;
+        case bottom_right:
             translated = 0xF008; // SC_SIZEBOTTOMRIGHT
+            break;
         }
 
         ReleaseCapture();
-        SendMessage(m_impl->hwnd.get(), WM_SYSCOMMAND, translated, 0);
+        SendMessage(platform->hwnd.get(), WM_SYSCOMMAND, translated, 0);
     }
 
-    void window::set_minimized(bool enabled)
+    void impl::set_minimized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { set_minimized(enabled); });
-        }
-
-        ShowWindow(m_impl->hwnd.get(), enabled ? SW_MINIMIZE : SW_RESTORE);
+        ShowWindow(platform->hwnd.get(), enabled ? SW_MINIMIZE : SW_RESTORE);
     }
 
-    void window::set_maximized(bool enabled)
+    void impl::set_maximized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { set_maximized(enabled); });
-        }
-
-        ShowWindow(m_impl->hwnd.get(), enabled ? SW_MAXIMIZE : SW_RESTORE);
+        ShowWindow(platform->hwnd.get(), enabled ? SW_MAXIMIZE : SW_RESTORE);
     }
 
-    void window::set_resizable(bool enabled)
+    void impl::set_resizable(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { set_resizable(enabled); });
-        }
-
         static constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 
         if (enabled)
         {
-            m_impl->styles |= flags;
+            platform->styles |= flags;
         }
         else
         {
-            m_impl->styles &= ~flags;
+            platform->styles &= ~flags;
         }
 
-        impl::set_style(m_impl->hwnd.get(), style | m_impl->styles);
+        native::set_style(platform->hwnd.get(), style | platform->styles);
     }
 
-    void window::set_always_on_top(bool enabled)
+    void impl::set_always_on_top(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { set_always_on_top(enabled); });
-        }
-
         auto *parent = enabled ? HWND_TOPMOST : HWND_NOTOPMOST;
-        SetWindowPos(m_impl->hwnd.get(), parent, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOSIZE);
+        SetWindowPos(platform->hwnd.get(), parent, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOSIZE);
     }
 
-    void window::set_click_through(bool enabled)
+    void impl::set_click_through(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { set_click_through(enabled); });
-        }
-
         static constexpr auto flags = WS_EX_TRANSPARENT | WS_EX_LAYERED;
-        auto current                = GetWindowLongPtr(m_impl->hwnd.get(), GWL_EXSTYLE);
+        auto current                = GetWindowLongPtr(platform->hwnd.get(), GWL_EXSTYLE);
 
         if (enabled)
         {
@@ -420,119 +298,79 @@ namespace saucer
             current &= ~flags;
         }
 
-        SetWindowLongPtrW(m_impl->hwnd.get(), GWL_EXSTYLE, current);
+        SetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE, current);
 
         if (!enabled)
         {
             return;
         }
 
-        SetLayeredWindowAttributes(m_impl->hwnd.get(), RGB(255, 255, 255), 255, 0);
+        SetLayeredWindowAttributes(platform->hwnd.get(), RGB(255, 255, 255), 255, 0);
     }
 
-    void window::set_icon(const icon &icon)
+    void impl::set_icon(const icon &icon) // NOLINT(*-function-const)
     {
         if (icon.empty())
         {
             return;
         }
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, icon] { return set_icon(icon); });
-        }
-
-        if (icon.native<false>()->bitmap->GetHICON(&m_impl->icon.reset()) != Gdiplus::Status::Ok)
+        if (icon.native<false>()->bitmap->GetHICON(&platform->icon.reset()) != Gdiplus::Status::Ok)
         {
             return;
         }
 
-        SendMessage(m_impl->hwnd.get(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(m_impl->icon.get()));
+        SendMessage(platform->hwnd.get(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(platform->icon.get()));
     }
 
-    void window::set_title(const std::string &title)
+    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, title] { return set_title(title); });
-        }
-
-        SetWindowTextW(m_impl->hwnd.get(), utils::widen(title).c_str());
+        SetWindowTextW(platform->hwnd.get(), utils::widen(title).c_str());
     }
 
-    void window::set_decoration(window_decoration decoration)
+    void impl::set_background(color)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, decoration] { set_decoration(decoration); });
-        }
+        // TODO: Implement
+    }
 
-        const auto decorated = decoration != window_decoration::none;
-        const auto titlebar  = decoration != window_decoration::partial;
+    void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
+    {
+        const auto decorated = decoration != decoration::none;
+        const auto titlebar  = decoration != decoration::partial;
 
-        m_impl->titlebar = titlebar;
+        platform->titlebar = titlebar;
 
         if (!decorated)
         {
-            impl::set_style(m_impl->hwnd.get(), 0);
+            native::set_style(platform->hwnd.get(), 0);
             return;
         }
 
-        impl::set_style(m_impl->hwnd.get(), style | m_impl->styles);
-        utils::extend_frame(m_impl->hwnd.get(), {0, 0, titlebar ? 0 : 2, 0});
+        native::set_style(platform->hwnd.get(), style | platform->styles);
+        utils::extend_frame(platform->hwnd.get(), {0, 0, titlebar ? 0 : 2, 0});
 
-        SetWindowPos(m_impl->hwnd.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     }
 
-    void window::set_size(int width, int height)
+    void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { set_size(width, height); });
-        }
-
-        SetWindowPos(m_impl->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
+        SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, size.x, size.y, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
-    void window::set_max_size(int width, int height)
+    void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { set_max_size(width, height); });
-        }
-
-        m_impl->max_size = {width, height};
+        platform->max_size = size;
     }
 
-    void window::set_min_size(int width, int height)
+    void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { set_min_size(width, height); });
-        }
-
-        m_impl->min_size = {width, height};
+        platform->min_size = size;
     }
 
-    void window::set_position(int x, int y)
+    void impl::set_position(saucer::position position) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, x, y] { set_position(x, y); });
-        }
-
-        SetWindowPos(m_impl->hwnd.get(), nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+        SetWindowPos(platform->hwnd.get(), nullptr, position.x, position.y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
-    void window::clear(window_event event)
-    {
-        m_events.clear(event);
-    }
-
-    void window::remove(window_event event, std::uint64_t id)
-    {
-        m_events.remove(event, id);
-    }
-
-    SAUCER_INSTANTIATE_WINDOW_EVENTS;
+    SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_IMPL_EVENT);
 } // namespace saucer

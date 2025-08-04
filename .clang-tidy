@@ -47,7 +47,8 @@ Checks: "*,
         -*-array-to-pointer-decay,
         -readability-isolate-declaration,
         -readability-avoid-return-with-void-value,
-        -misc-use-internal-linkage
+        -misc-use-internal-linkage,
+        -readability-avoid-nested-conditional-operator,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

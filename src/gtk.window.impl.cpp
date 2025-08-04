@@ -4,11 +4,6 @@
 
 #include <algorithm>
 
-#include <flagpp/flags.hpp>
-
-template <>
-constexpr bool flagpp::enabled<saucer::window::edge> = true;
-
 namespace saucer
 {
     using native = window::impl::native;
@@ -132,32 +127,32 @@ namespace saucer
     {
         GdkSurfaceEdge translated{};
 
-        switch (std::to_underlying(edge))
+        switch (edge)
         {
             using enum window::edge;
 
-        case std::to_underlying(top):
+        case top:
             translated = GDK_SURFACE_EDGE_NORTH;
             break;
-        case std::to_underlying(bottom):
+        case bottom:
             translated = GDK_SURFACE_EDGE_SOUTH;
             break;
-        case std::to_underlying(left):
+        case left:
             translated = GDK_SURFACE_EDGE_WEST;
             break;
-        case std::to_underlying(right):
+        case right:
             translated = GDK_SURFACE_EDGE_EAST;
             break;
-        case top | left:
+        case top_left:
             translated = GDK_SURFACE_EDGE_NORTH_WEST;
             break;
-        case top | right:
+        case top_right:
             translated = GDK_SURFACE_EDGE_NORTH_EAST;
             break;
-        case bottom | left:
+        case bottom_left:
             translated = GDK_SURFACE_EDGE_SOUTH_WEST;
             break;
-        case bottom | right:
+        case bottom_right:
             translated = GDK_SURFACE_EDGE_SOUTH_EAST;
             break;
         }

@@ -1,23 +1,22 @@
 #pragma once
 
-#include "window.hpp"
+#include "window.impl.hpp"
 
 #include "win32.utils.hpp"
 
-#include <utility>
 #include <optional>
 
 #include <windows.h>
 
 namespace saucer
 {
-    struct window::impl
+    struct window::impl::native
     {
         utils::window_handle hwnd;
 
       public:
         UINT prev_state;
-        std::optional<window_decoration> prev_decoration;
+        std::optional<decoration> prev_decoration;
 
       public:
         long styles{};
@@ -26,7 +25,7 @@ namespace saucer
       public:
         utils::wnd_proc_hook hook;
         utils::handle<HICON, DestroyIcon> icon;
-        std::optional<std::pair<int, int>> max_size, min_size;
+        std::optional<saucer::size> max_size, min_size;
 
       public:
         static void set_style(HWND, long);
