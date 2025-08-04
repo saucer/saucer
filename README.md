@@ -68,6 +68,9 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 * 👾 Feature-Rich
   > Supports custom schemes, script injection, favicons, and much more!
 
+* ㊗️ Unicode Support
+  > All strings are UTF-8 encoded
+
 * 🔀 Seamless C++ / JavaScript interoperability
 
 * 🚀 Coroutine support
@@ -85,7 +88,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
       > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support
 
     * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
-      > 📄 Print current page as PDF
+      > 📄 Export current page as PDF
 
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!  
@@ -150,14 +153,16 @@ int main()
 ## 🌐 Who's using saucer?
 
 <div align="center">
-<br/>
 
-<a href="https://casterlabs.co/" target="_blank">
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://cdn.casterlabs.co/branding/casterlabs/wordmark_white.svg">
-        <img width="300" src="https://cdn.casterlabs.co/branding/casterlabs/wordmark_black.svg">
-    </picture>
-</a>
+|         ![](.github/images/casterlabs.png)         |
+| :------------------------------------------------: |
+| [Casterlabs - Caffeinated](https://casterlabs.co/) |
+
+
+|                                    ![](.github/images/topnotify.png)                                     |
+| :------------------------------------------------------------------------------------------------------: |
+| [TopNotify](https://github.com/SamsidParty/TopNotify) _(Built on their C# Saucer Bindings "IgniteView")_ |
+
 </div>
 
 <br/>
