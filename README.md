@@ -69,7 +69,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   > Supports custom schemes, script injection, favicons, and much more!
 
 * ㊗️ Unicode Support
-  > All strings are UTF-8 encoded
+  > Uses UTF-8 encoded strings
 
 * 🔀 Seamless C++ / JavaScript interoperability
 
