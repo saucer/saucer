@@ -44,27 +44,29 @@ namespace saucer
 
             break;
         }
-        case WM_NCCALCSIZE:
-            if (!self->platform->titlebar)
+        case WM_NCCALCSIZE: {
+            if (self->platform->titlebar)
             {
-                auto *const rect = w_param ? &reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param)->rgrc[0] //
-                                           : reinterpret_cast<RECT *>(l_param);
-
-                const auto maximized = self->maximized();
-                const auto keep      = !maximized || rect->top >= 0;
-
-                WINDOWINFO info{};
-                GetWindowInfo(hwnd, &info);
-
-                rect->top += keep ? (maximized ? 0 : 1) : static_cast<LONG>(info.cxWindowBorders);
-                rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
-
-                rect->left += static_cast<LONG>(info.cxWindowBorders);
-                rect->right -= static_cast<LONG>(info.cxWindowBorders);
-
-                return 0;
+                break;
             }
-            break;
+
+            auto *const rect = w_param ? &reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param)->rgrc[0] //
+                                       : reinterpret_cast<RECT *>(l_param);
+
+            const auto maximized = self->maximized();
+            const auto keep      = !maximized || rect->top >= 0;
+
+            WINDOWINFO info{};
+            GetWindowInfo(hwnd, &info);
+
+            rect->top += keep ? (maximized ? 0 : 1) : static_cast<LONG>(info.cxWindowBorders);
+            rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
+
+            rect->left += static_cast<LONG>(info.cxWindowBorders);
+            rect->right -= static_cast<LONG>(info.cxWindowBorders);
+
+            return 0;
+        }
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
 

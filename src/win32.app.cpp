@@ -8,10 +8,18 @@ namespace saucer
 
     bool impl::init_platform(const options &opts)
     {
+        auto controller = utils::create_dispatch_controller();
+
+        if (!controller.has_value())
+        {
+            return false;
+        }
+
         platform = std::make_unique<native>();
 
-        platform->handle                     = GetModuleHandleW(nullptr);
         platform->id                         = utils::widen(opts.id.value());
+        platform->handle                     = GetModuleHandleW(nullptr);
+        platform->dispatch_controller        = std::move(controller.value());
         platform->quit_on_last_window_closed = opts.quit_on_last_window_closed;
 
         platform->wnd_class = WNDCLASSW{

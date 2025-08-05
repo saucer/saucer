@@ -1,7 +1,10 @@
 #include "win32.utils.hpp"
 
-#include <dwmapi.h>
+#include <dispatcherqueue.h>
 #include <shellscalingapi.h>
+
+#include <dwmapi.h>
+#include <windows.ui.composition.interop.h>
 
 namespace saucer::utils
 {
@@ -157,5 +160,44 @@ namespace saucer
         stream->Read(data.data(), static_cast<ULONG>(data.size()), &read);
 
         return data;
+    }
+
+    std::optional<utils::dispatch_controller> utils::create_dispatch_controller()
+    {
+        using ABI::Windows::System::IDispatcherQueueController;
+
+        auto rtn         = std::optional<dispatch_controller>{nullptr};
+        auto *controller = reinterpret_cast<IDispatcherQueueController **>(winrt::put_abi(rtn.value()));
+
+        DispatcherQueueOptions options{
+            .dwSize        = sizeof(DispatcherQueueOptions),
+            .threadType    = DQTYPE_THREAD_CURRENT,
+            .apartmentType = DQTAT_COM_STA,
+        };
+
+        if (CreateDispatcherQueueController(options, controller) != S_OK)
+        {
+            return std::nullopt;
+        }
+
+        return rtn;
+    }
+
+    std::optional<utils::window_target> utils::create_window_target(const compositor &comp, HWND hwnd)
+    {
+        using ABI::Windows::UI::Composition::Desktop::ICompositorDesktopInterop;
+        using ABI::Windows::UI::Composition::Desktop::IDesktopWindowTarget;
+
+        auto interop = comp.as<ICompositorDesktopInterop>();
+
+        auto rtn     = std::optional<window_target>{nullptr};
+        auto *target = reinterpret_cast<IDesktopWindowTarget **>(winrt::put_abi(rtn.value()));
+
+        if (interop->CreateDesktopWindowTarget(hwnd, true, target) != S_OK)
+        {
+            return std::nullopt;
+        }
+
+        return rtn;
     }
 } // namespace saucer

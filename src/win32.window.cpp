@@ -11,6 +11,7 @@
 #include <rebind/enum.hpp>
 
 #include <dwmapi.h>
+#include <winrt/windows.ui.viewmanagement.core.h>
 
 namespace saucer
 {
@@ -22,30 +23,49 @@ namespace saucer
 
     bool impl::init_platform()
     {
+        using namespace winrt::Windows::UI::ViewManagement;
+
         utils::set_dpi_awareness();
 
-        auto *const hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,                     //
-                                           parent->native<false>()->platform->id.c_str(), //
-                                           L"",                                           //
-                                           style,                                         //
-                                           CW_USEDEFAULT,                                 //
-                                           CW_USEDEFAULT,                                 //
-                                           CW_USEDEFAULT,                                 //
-                                           CW_USEDEFAULT,                                 //
-                                           nullptr,                                       //
-                                           nullptr,                                       //
-                                           parent->native<false>()->platform->handle,     //
-                                           nullptr);
+        utils::window_handle hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,                     //
+                                                    parent->native<false>()->platform->id.c_str(), //
+                                                    L"",                                           //
+                                                    style,                                         //
+                                                    CW_USEDEFAULT,                                 //
+                                                    CW_USEDEFAULT,                                 //
+                                                    CW_USEDEFAULT,                                 //
+                                                    CW_USEDEFAULT,                                 //
+                                                    nullptr,                                       //
+                                                    nullptr,                                       //
+                                                    parent->native<false>()->platform->handle,     //
+                                                    nullptr);
 
-        if (!hwnd)
+        if (!hwnd.get())
+        {
+            return false;
+        }
+
+        auto compositor    = utils::compositor{};
+        auto window_target = utils::create_window_target(compositor, hwnd.get());
+
+        if (!window_target.has_value())
         {
             return false;
         }
 
         platform = std::make_unique<native>();
 
-        platform->hwnd = hwnd;
-        platform->hook = {platform->hwnd.get(), native::wnd_proc};
+        platform->hwnd          = std::move(hwnd);
+        platform->window_target = std::move(window_target.value());
+        platform->background    = compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
+        platform->hook          = {platform->hwnd.get(), native::wnd_proc};
+
+        auto root = compositor.CreateSpriteVisual();
+        {
+            root.RelativeSizeAdjustment({1.0f, 1.0f});
+            root.Brush(platform->background);
+        }
+        platform->window_target.Root(root);
 
         SetWindowLongPtrW(platform->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         set_resizable(true);
@@ -111,8 +131,8 @@ namespace saucer
 
     color impl::background() const // NOLINT(*-static)
     {
-        // TODO: Implement
-        return {};
+        auto [a, r, g, b] = platform->background.Color();
+        return {.r = r, .g = g, .b = b, .a = a};
     }
 
     window::decoration impl::decorations() const
@@ -328,9 +348,10 @@ namespace saucer
         SetWindowTextW(platform->hwnd.get(), utils::widen(title).c_str());
     }
 
-    void impl::set_background(color)
+    void impl::set_background(color color) // NOLINT(*-function-const)
     {
-        // TODO: Implement
+        auto [r, g, b, a] = color;
+        platform->background.Color({.A = a, .R = r, .G = g, .B = b});
     }
 
     void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)

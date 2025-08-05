@@ -19,6 +19,10 @@ namespace saucer
         std::optional<decoration> prev_decoration;
 
       public:
+        utils::window_target window_target{nullptr};
+        utils::composition::CompositionColorBrush background{nullptr};
+
+      public:
         long styles{};
         bool titlebar{true};
 

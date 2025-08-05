@@ -19,6 +19,9 @@ namespace saucer
       public:
         HMODULE handle;
         utils::window_handle msg_window;
+
+      public:
+        utils::dispatch_controller dispatch_controller{nullptr};
         utils::handle<ULONG_PTR, Gdiplus::GdiplusShutdown> gdi_token;
 
       public:

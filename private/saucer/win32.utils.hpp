@@ -10,8 +10,18 @@
 
 #include <windows.h>
 
+#include <winrt/windows.ui.composition.desktop.h>
+#include <winrt/windows.system.h>
+
 namespace saucer::utils
 {
+    namespace system      = winrt::Windows::System;
+    namespace composition = winrt::Windows::UI::Composition;
+
+    using dispatch_controller = system::DispatcherQueueController;
+    using compositor          = composition::Compositor;
+    using window_target       = composition::Desktop::DesktopWindowTarget;
+
     using string_handle = utils::handle<LPWSTR, CoTaskMemFree>;
     using module_handle = utils::handle<HMODULE, FreeLibrary>;
     using window_handle = utils::handle<HWND, DestroyWindow>;
@@ -44,4 +54,7 @@ namespace saucer::utils
     [[nodiscard]] std::string narrow(const std::wstring &);
 
     [[nodiscard]] std::vector<std::uint8_t> read(IStream *);
+
+    [[nodiscard]] std::optional<dispatch_controller> create_dispatch_controller();
+    [[nodiscard]] std::optional<window_target> create_window_target(const compositor &, HWND);
 } // namespace saucer::utils

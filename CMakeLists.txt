@@ -333,7 +333,7 @@ if (saucer_backend STREQUAL "WebView2")
   target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
 
   include("cmake/webview2.cmake")
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Wininet Shlwapi gdiplus webview2::webview2)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Wininet CoreMessaging Shlwapi gdiplus webview2::webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
