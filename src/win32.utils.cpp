@@ -1,10 +1,13 @@
 #include "win32.utils.hpp"
 
-#include <dispatcherqueue.h>
+#include <shlwapi.h>
 #include <shellscalingapi.h>
 
 #include <dwmapi.h>
+#include <dispatcherqueue.h>
 #include <windows.ui.composition.interop.h>
+
+#include <ranges>
 
 namespace saucer::utils
 {
@@ -175,7 +178,7 @@ namespace saucer
             .apartmentType = DQTAT_COM_STA,
         };
 
-        if (CreateDispatcherQueueController(options, controller) != S_OK)
+        if (!SUCCEEDED(CreateDispatcherQueueController(options, controller)))
         {
             return std::nullopt;
         }
@@ -193,11 +196,28 @@ namespace saucer
         auto rtn     = std::optional<window_target>{nullptr};
         auto *target = reinterpret_cast<IDesktopWindowTarget **>(winrt::put_abi(rtn.value()));
 
-        if (interop->CreateDesktopWindowTarget(hwnd, true, target) != S_OK)
+        if (!SUCCEEDED(interop->CreateDesktopWindowTarget(hwnd, false, target)))
         {
             return std::nullopt;
         }
 
         return rtn;
+    }
+
+    std::optional<std::wstring> utils::hash(std::span<std::uint8_t> value)
+    {
+        static constexpr auto size = 32;
+
+        BYTE buffer[size]{};
+
+        if (!SUCCEEDED(HashData(value.data(), value.size(), buffer, size)))
+        {
+            return std::nullopt;
+        }
+
+        return buffer                                                                  //
+               | std::views::transform([](auto x) { return std::format(L"{:x}", x); }) //
+               | std::views::join                                                      //
+               | std::ranges::to<std::wstring>();
     }
 } // namespace saucer

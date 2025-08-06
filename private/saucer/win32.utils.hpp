@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdint>
 
+#include <span>
 #include <array>
 #include <vector>
 
@@ -58,4 +59,6 @@ namespace saucer::utils
 
     [[nodiscard]] std::optional<dispatch_controller> create_dispatch_controller();
     [[nodiscard]] std::optional<window_target> create_window_target(const compositor &, HWND);
+
+    [[nodiscard]] std::optional<std::wstring> hash(std::span<std::uint8_t>);
 } // namespace saucer::utils

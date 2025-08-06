@@ -2,8 +2,6 @@
 
 #include "win32.utils.hpp"
 
-#include <cassert>
-
 namespace saucer::permission
 {
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}

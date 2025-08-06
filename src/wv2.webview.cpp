@@ -1,9 +1,9 @@
 #include "wv2.webview.impl.hpp"
 
 #include "win32.app.impl.hpp"
-#include "win32.icon.impl.hpp"
 #include "win32.window.impl.hpp"
-#include "wv2.navigation.impl.hpp"
+
+#include "scripts.hpp"
 
 #include "instantiate.hpp"
 #include "win32.utils.hpp"
@@ -19,257 +19,169 @@
 
 namespace saucer
 {
-    webview::webview(const options &opts)
-        : window(opts.application.value()), extensible(this), m_attributes(opts.attributes), m_impl(std::make_unique<impl>())
+    using impl = webview::impl;
+
+    impl::impl() = default;
+
+    bool impl::init_platform(const options &opts)
     {
-        static std::once_flag flag;
-        std::call_once(flag, [] { register_scheme("saucer"); });
+        auto env_options = native::env_options();
 
-        m_impl->hook = {window::m_impl->hwnd.get(), impl::wnd_proc};
-        m_impl->create_webview(m_parent, window::m_impl->hwnd.get(), opts);
+        auto flags        = opts.browser_flags;
+        auto storage_path = opts.storage_path;
 
-        m_impl->web_view->get_Settings(&m_impl->settings);
-        m_impl->settings->put_IsStatusBarEnabled(false);
-
-        if (ComPtr<ICoreWebView2Settings2> settings; !opts.user_agent.empty() && SUCCEEDED(m_impl->settings.As(&settings)))
+        if (!opts.hardware_acceleration)
         {
-            settings->put_UserAgent(utils::widen(opts.user_agent).c_str());
+            flags.emplace("--disable-gpu");
         }
 
-        if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(m_impl->settings.As(&settings)))
+        if (!storage_path.has_value())
+        {
+            auto id      = parent->native<false>()->platform->id;
+            auto hash    = utils::hash({reinterpret_cast<std::uint8_t *>(id.data()), id.size()});
+            storage_path = hash.transform([](auto hash) { return fs::temp_directory_path() / std::format(L"saucer-{}", hash); });
+        }
+
+        if (!storage_path.has_value())
+        {
+            return false;
+        }
+
+        const auto arguments = flags                        //
+                               | std::views::join_with(' ') //
+                               | std::ranges::to<std::string>();
+
+        env_options->put_AdditionalBrowserArguments(utils::widen(arguments).c_str());
+
+        auto environment = native::create_environment(parent, {
+                                                                  .storage_path = storage_path.value(),
+                                                                  .opts         = env_options.Get(),
+                                                              });
+
+        if (!environment)
+        {
+            return false;
+        }
+
+        auto *const hwnd = window->native<false>()->platform->hwnd.get();
+        auto controller  = native::create_controller(parent, hwnd, environment.Get());
+
+        if (!controller)
+        {
+            return false;
+        }
+
+        ComPtr<ICoreWebView2> raw;
+
+        if (!SUCCEEDED(controller->get_CoreWebView2(&raw)))
+        {
+            return false;
+        }
+
+        ComPtr<ICoreWebView2_22> web_view;
+
+        if (!SUCCEEDED(raw.As(&web_view)))
+        {
+            return false;
+        }
+
+        platform = std::make_unique<native>();
+
+        platform->controller = std::move(controller);
+        platform->web_view   = std::move(web_view);
+        platform->hook       = {hwnd, native::wnd_proc};
+
+        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
+        SetPropW(hwnd, MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
+
+        platform->web_view->get_Settings(&platform->settings);
+        platform->settings->put_IsStatusBarEnabled(false);
+
+        if (ComPtr<ICoreWebView2Settings2> settings; opts.user_agent.has_value() && SUCCEEDED(platform->settings.As(&settings)))
+        {
+            settings->put_UserAgent(utils::widen(opts.user_agent.value()).c_str());
+        }
+
+        if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(platform->settings.As(&settings)))
         {
             settings->put_AreBrowserAcceleratorKeysEnabled(false);
         }
 
-        auto resource_requested = [this](auto, ICoreWebView2WebResourceRequestedEventArgs *args)
-        {
-            ComPtr<ICoreWebView2WebResourceRequest> request;
-
-            if (!SUCCEEDED(args->get_Request(&request)))
-            {
-                return S_OK;
-            }
-
-            utils::string_handle raw;
-            request->get_Uri(&raw.reset());
-
-            auto url = uri::parse(utils::narrow(raw.get()));
-
-            if (!url)
-            {
-                return S_OK;
-            }
-
-            return m_impl->scheme_handler(this, {.raw = args, .request = std::move(request), .url = std::move(url.value())});
-        };
-
-        m_impl->web_view->add_WebResourceRequested(Callback<ResourceRequested>(resource_requested).Get(), nullptr);
-
-        auto receive_message = [this](auto, auto *args)
-        {
-            utils::string_handle raw;
-            args->TryGetWebMessageAsString(&raw.reset());
-
-            auto message = utils::narrow(raw.get());
-            m_parent->post([this, message = std::move(message)] { on_message(message); });
-
-            return S_OK;
-        };
-
-        m_impl->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(receive_message).Get(), nullptr);
-
-        auto new_window = [this](auto, ICoreWebView2NewWindowRequestedEventArgs *args)
-        {
-            args->put_Handled(true);
-
-            ComPtr<ICoreWebView2Deferral> deferral;
-            args->GetDeferral(&deferral);
-
-            m_parent->post(
-                [this, args, deferral]
-                {
-                    auto nav = navigation{{
-                        .request = args,
-                    }};
-
-                    m_events.get<web_event::navigate>().fire(nav).find(policy::block);
-                    deferral->Complete();
-                });
-
-            return S_OK;
-        };
-
-        m_impl->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(new_window).Get(), nullptr);
-
-        auto navigation_starting = [this](auto, ICoreWebView2NavigationStartingEventArgs *args)
-        {
-            m_impl->dom_loaded = false;
-            m_parent->post([this] { m_events.get<web_event::load>().fire(state::started); });
-
-            auto nav = navigation{{
-                .request = args,
-            }};
-
-            if (m_events.get<web_event::navigate>().fire(nav).find(policy::block))
-            {
-                args->put_Cancel(true);
-            }
-
-            return S_OK;
-        };
-
-        m_impl->web_view->add_NavigationStarting(Callback<NavigationStarting>(navigation_starting).Get(), nullptr);
-
-        auto on_loaded = [this](auto...)
-        {
-            m_impl->dom_loaded = true;
-
-            for (const auto &[script, id] : m_impl->scripts)
-            {
-                if (script.time != load_time::ready)
-                {
-                    continue;
-                }
-
-                execute(script.code);
-            }
-
-            for (const auto &pending : m_impl->pending)
-            {
-                execute(pending);
-            }
-
-            m_impl->pending.clear();
-            m_parent->post([this] { m_events.get<web_event::dom_ready>().fire(); });
-
-            return S_OK;
-        };
-
-        m_impl->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(on_loaded).Get(), nullptr);
-
-        auto icon_received = [this](auto, auto *stream)
-        {
-            m_impl->favicon = icon{{std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream))}};
-            m_events.get<web_event::favicon>().fire(m_impl->favicon);
-
-            return S_OK;
-        };
-
-        auto icon_changed = [this, icon_received](auto...)
-        {
-            m_impl->web_view->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(icon_received).Get());
-            return S_OK;
-        };
-
-        m_impl->web_view->add_FaviconChanged(Callback<FaviconChanged>(icon_changed).Get(), nullptr);
-
         set_dev_tools(false);
 
-        inject({.code = impl::inject_script(), .time = load_time::creation, .permanent = true});
+        auto bind = [this]<typename T, typename... Ts>(T &&func)
+        {
+            return std::bind_front(std::forward<T>(func), this);
+        };
+
+        platform->web_view->add_WebResourceRequested(Callback<ResourceRequested>(bind(&native::on_resource)).Get(), nullptr);
+        platform->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(bind(&native::on_message)).Get(), nullptr);
+        platform->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(bind(&native::on_window)).Get(), nullptr);
+        platform->web_view->add_NavigationStarting(Callback<NavigationStarting>(bind(&native::on_navigation)).Get(), nullptr);
+        platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
+        platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
+
+        return true;
     }
 
-    webview::~webview()
+    impl::~impl()
     {
-        m_impl->controller->Close();
-
-        if (!m_impl->temp_path)
+        if (!platform)
         {
             return;
         }
 
-        // ICorWebView5s `add_BrowserProcessExited` fires rather unreliably and requries us to run the main-loop.
-        // Thus, we wait for the webview process to exit instead.
-
-        utils::handle<HANDLE, CloseHandle> handle = OpenProcess(SYNCHRONIZE, false, m_impl->browser_pid);
-        WaitForSingleObject(handle.get(), 3000);
-
-        std::error_code ec{};
-        fs::remove_all(m_impl->temp_path.value(), ec);
+        platform->controller->Close();
     }
 
-    template <web_event Event>
-    void webview::setup()
+    template <webview::event Event>
+    void impl::setup()
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return setup<Event>(); });
-        }
-
-        m_impl->setup<Event>(this);
+        platform->setup<Event>(this);
     }
 
-    icon webview::favicon() const
+    icon impl::favicon() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return favicon(); });
-        }
-
-        return m_impl->favicon;
+        return platform->favicon;
     }
 
-    std::string webview::page_title() const
+    std::string impl::page_title() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return page_title(); });
-        }
-
         utils::string_handle title;
-        m_impl->web_view->get_DocumentTitle(&title.reset());
+        platform->web_view->get_DocumentTitle(&title.reset());
 
         return utils::narrow(title.get());
     }
 
-    bool webview::dev_tools() const
+    bool impl::dev_tools() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return dev_tools(); });
-        }
-
         BOOL rtn{false};
-        m_impl->settings->get_AreDevToolsEnabled(&rtn);
+        platform->settings->get_AreDevToolsEnabled(&rtn);
 
         return static_cast<bool>(rtn);
     }
 
-    std::optional<uri> webview::url() const
+    bool impl::context_menu() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return url(); });
-        }
+        BOOL rtn{false};
+        platform->settings->get_AreDefaultContextMenusEnabled(&rtn);
 
+        return static_cast<bool>(rtn);
+    }
+
+    std::optional<uri> impl::url() const
+    {
         utils::string_handle url;
-        m_impl->web_view->get_Source(&url.reset());
+        platform->web_view->get_Source(&url.reset());
 
         return uri::parse(utils::narrow(url.get()));
     }
 
-    bool webview::context_menu() const
+    color impl::background() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return context_menu(); });
-        }
-
-        BOOL rtn{false};
-        m_impl->settings->get_AreDefaultContextMenusEnabled(&rtn);
-
-        return static_cast<bool>(rtn);
-    }
-
-    color webview::background() const
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return background(); });
-        }
-
         ComPtr<ICoreWebView2Controller2> controller;
 
-        if (!SUCCEEDED(m_impl->controller.As(&controller)))
+        if (!SUCCEEDED(platform->controller.As(&controller)))
         {
             return {};
         }
@@ -277,19 +189,14 @@ namespace saucer
         COREWEBVIEW2_COLOR color;
         controller->get_DefaultBackgroundColor(&color);
 
-        return {color.R, color.G, color.B, color.A};
+        return {.r = color.R, .g = color.G, .b = color.B, .a = color.A};
     }
 
-    bool webview::force_dark_mode() const
+    bool impl::force_dark_mode() const
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return force_dark_mode(); });
-        }
-
         ComPtr<ICoreWebView2Profile> profile;
 
-        if (!SUCCEEDED(m_impl->web_view->get_Profile(&profile)))
+        if (!SUCCEEDED(platform->web_view->get_Profile(&profile)))
         {
             return {};
         }
@@ -304,63 +211,28 @@ namespace saucer
         return scheme == COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK;
     }
 
-    void webview::set_dev_tools(bool enabled)
+    void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_dev_tools(enabled); });
-        }
-
-        m_impl->settings->put_AreDevToolsEnabled(enabled);
+        platform->settings->put_AreDevToolsEnabled(enabled);
 
         if (!enabled)
         {
             return;
         }
 
-        m_impl->web_view->OpenDevToolsWindow();
+        platform->web_view->OpenDevToolsWindow();
     }
 
-    void webview::set_context_menu(bool enabled)
+    void impl::set_context_menu(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_context_menu(enabled); });
-        }
-
-        m_impl->settings->put_AreDefaultContextMenusEnabled(enabled);
+        platform->settings->put_AreDefaultContextMenusEnabled(enabled);
     }
 
-    void webview::set_force_dark_mode(bool enabled)
+    void impl::set_background(color color) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_force_dark_mode(enabled); });
-        }
-
-        utils::set_immersive_dark(window::m_impl->hwnd.get(), enabled);
-
-        ComPtr<ICoreWebView2Profile> profile;
-
-        if (!SUCCEEDED(m_impl->web_view->get_Profile(&profile)))
-        {
-            return;
-        }
-
-        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK
-                                                  : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
-    }
-
-    void webview::set_background(const color &color)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, color] { return set_background(color); });
-        }
-
         ComPtr<ICoreWebView2Controller2> controller;
 
-        if (!SUCCEEDED(m_impl->controller.As(&controller)))
+        if (!SUCCEEDED(platform->controller.As(&controller)))
         {
             return;
         }
@@ -369,202 +241,163 @@ namespace saucer
         controller->put_DefaultBackgroundColor({.A = a, .R = r, .G = g, .B = b});
     }
 
-    void webview::set_url(const uri &url)
+    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
+        utils::set_immersive_dark(window->native<false>()->platform->hwnd.get(), enabled);
+
+        ComPtr<ICoreWebView2Profile> profile;
+
+        if (!SUCCEEDED(platform->web_view->get_Profile(&profile)))
         {
-            return m_parent->dispatch([this, url] { return set_url(url); });
-        }
-
-        m_impl->web_view->Navigate(utils::widen(url.string()).c_str());
-    }
-
-    void webview::back()
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return back(); });
-        }
-
-        m_impl->web_view->GoBack();
-    }
-
-    void webview::forward()
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return forward(); });
-        }
-
-        m_impl->web_view->GoForward();
-    }
-
-    void webview::reload()
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return reload(); });
-        }
-
-        m_impl->web_view->Reload();
-    }
-
-    void webview::clear_scripts()
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return clear_scripts(); });
-        }
-
-        for (auto it = m_impl->scripts.begin(); it != m_impl->scripts.end();)
-        {
-            const auto &[script, id] = *it;
-
-            if (script.permanent)
-            {
-                ++it;
-                continue;
-            }
-
-            if (!id.empty())
-            {
-                m_impl->web_view->RemoveScriptToExecuteOnDocumentCreated(id.c_str());
-            }
-
-            it = m_impl->scripts.erase(it);
-        }
-    }
-
-    void webview::inject(const script &script)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, script] { return inject(script); });
-        }
-
-        if (script.time == load_time::ready)
-        {
-            m_impl->scripts.emplace_back(script, L"");
             return;
         }
 
-        auto callback = [this, script](auto, LPCWSTR id)
-        {
-            m_impl->scripts.emplace_back(script, id);
-            return S_OK;
-        };
+        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK
+                                                  : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
+    }
 
-        auto source = script.code;
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    {
+        platform->web_view->Navigate(utils::widen(url.string()).c_str());
+    }
+
+    void impl::back() // NOLINT(*-function-const)
+    {
+        platform->web_view->GoBack();
+    }
+
+    void impl::forward() // NOLINT(*-function-const)
+    {
+        platform->web_view->GoForward();
+    }
+
+    void impl::reload() // NOLINT(*-function-const)
+    {
+        platform->web_view->Reload();
+    }
+
+    void impl::execute(const std::string &code) // NOLINT(*-function-const)
+    {
+        if (!platform->dom_loaded)
+        {
+            platform->pending.emplace_back(code);
+            return;
+        }
+
+        platform->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
+    }
+
+    std::uint64_t impl::inject(const script &raw)
+    {
+        auto script   = wv2_script{raw};
+        const auto id = platform->id_counter++;
 
         if (script.frame == web_frame::top)
         {
-            source = std::format(R"js(
+            script.code = std::format(R"js(
             if (self === top)
             {{
                 {}
             }}
             )js",
-                                 source);
+                                      script.code);
         }
 
-        m_impl->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(source).c_str(), Callback<ScriptInjected>(callback).Get());
+        if (script.time == load_time::ready)
+        {
+            platform->scripts.emplace(id, std::move(script));
+            return id;
+        }
+
+        auto callback = [this, id, script](auto, LPCWSTR ref) mutable
+        {
+            script.ref = ref;
+            platform->scripts.emplace(id, std::move(script));
+
+            return S_OK;
+        };
+
+        platform->web_view->AddScriptToExecuteOnDocumentCreated(utils::widen(script.code).c_str(),
+                                                                Callback<ScriptInjected>(callback).Get());
+
+        return id;
     }
 
-    void webview::execute(const std::string &code)
+    void impl::uninject() // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, code] { return execute(code); });
-        }
+        static constexpr auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
 
-        if (!m_impl->dom_loaded)
+        auto clearable = platform->scripts                                                   //
+                         | std::views::filter([](auto &&it) { return it.second.clearable; }) //
+                         | std::views::transform([](auto &&it) { return it.first; });
+
+        std::ranges::for_each(clearable, std::bind_front(uninject, this));
+    }
+
+    void impl::uninject(std::uint64_t id) // NOLINT(*-function-const)
+    {
+        if (!platform->scripts.contains(id))
         {
-            m_impl->pending.emplace_back(code);
             return;
         }
 
-        m_impl->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
-    }
-
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&resolver)
-    {
-        if (!m_parent->thread_safe())
+        if (auto ref = platform->scripts[id].ref; ref.has_value())
         {
-            return m_parent->dispatch([this, name, resolver = std::move(resolver)]() mutable
-                                      { return handle_scheme(name, std::move(resolver)); });
+            platform->web_view->RemoveScriptToExecuteOnDocumentCreated(ref->c_str());
         }
 
-        if (m_impl->schemes.contains(name))
+        platform->scripts.erase(id);
+    }
+
+    void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
+    {
+        if (platform->schemes.contains(name))
         {
             return;
         }
 
-        m_impl->schemes.emplace(name, std::move(resolver));
+        platform->schemes.emplace(name, std::move(resolver));
 
         const auto pattern = utils::widen(std::format("{}*", name));
 
-        m_impl->web_view->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
-                                                                              COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+        platform->web_view->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                                COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
     }
 
-    void webview::remove_scheme(const std::string &name)
+    void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, name] { return remove_scheme(name); });
-        }
+        auto it = platform->schemes.find(name);
 
-        auto it = m_impl->schemes.find(name);
-
-        if (it == m_impl->schemes.end())
+        if (it == platform->schemes.end())
         {
             return;
         }
 
         const auto pattern = utils::widen(std::format("{}*", name));
 
-        m_impl->web_view->RemoveWebResourceRequestedFilterWithRequestSourceKinds(
+        platform->web_view->RemoveWebResourceRequestedFilterWithRequestSourceKinds(
             pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL, COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
 
-        m_impl->schemes.erase(it);
+        platform->schemes.erase(it);
     }
 
-    void webview::clear(web_event event)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event] { return clear(event); });
-        }
-
-        m_events.clear(event);
-    }
-
-    void webview::remove(web_event event, std::uint64_t id)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event, id] { return remove(event, id); });
-        }
-
-        m_events.remove(event, id);
-    }
-
-    void webview::register_scheme(const std::string &name)
+    void impl::register_scheme(const std::string &name)
     {
         static std::unordered_map<std::string, ComPtr<ICoreWebView2CustomSchemeRegistration>> schemes;
 
         ComPtr<ICoreWebView2EnvironmentOptions4> options;
 
-        if (!SUCCEEDED(impl::env_options().As(&options)))
+        if (!SUCCEEDED(native::env_options().As(&options)))
         {
-            assert(false && "Failed to query ICoreWebView2EnvironmentOptions4");
+            assert(false);
+            return;
         }
 
         static LPCWSTR allowed_origins = L"*";
         auto scheme                    = Make<CoreWebView2CustomSchemeRegistration>(utils::widen(name).c_str());
 
         scheme->put_TreatAsSecure(true);
-        scheme->put_HasAuthorityComponent(true); // Required to make JS-Fetch work
+        scheme->put_HasAuthorityComponent(true);
         scheme->SetAllowedOrigins(1, &allowed_origins);
 
         schemes.emplace(name, std::move(scheme));
@@ -577,8 +410,25 @@ namespace saucer
             return;
         }
 
-        assert(false && "Failed to register scheme(s)");
+        assert(false);
     }
 
-    SAUCER_INSTANTIATE_WEBVIEW_EVENTS;
+    std::string impl::ready_script()
+    {
+        return "";
+    }
+
+    std::string impl::creation_script()
+    {
+        static const auto script = std::format(scripts::ipc_script, R"js(
+            message: async (message) =>
+            {
+                window.chrome.webview.postMessage(message);
+            }
+        )js");
+
+        return script;
+    }
+
+    SAUCER_INSTANTIATE_WEBVIEW_EVENTS(SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT);
 } // namespace saucer

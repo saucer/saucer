@@ -1,144 +1,341 @@
 #include "wv2.webview.impl.hpp"
 
-#include "win32.utils.hpp"
 #include "win32.app.impl.hpp"
+#include "win32.icon.impl.hpp"
 
 #include "wv2.scheme.impl.hpp"
 #include "wv2.permission.impl.hpp"
+#include "wv2.navigation.impl.hpp"
 
-#include "scripts.hpp"
-#include "request.hpp"
+#include <cassert>
 
 #include <format>
 #include <ranges>
-
-#include <cassert>
 
 #include <rebind/utils/enum.hpp>
 
 #include <windows.h>
 #include <gdiplus.h>
 #include <shlwapi.h>
-
-#include <WebView2EnvironmentOptions.h>
+#include <winerror.h>
 
 namespace saucer
 {
-    std::string webview::impl::inject_script()
+    using native = webview::impl::native;
+    using event  = webview::event;
+
+    template <>
+    void native::setup<event::permission>(impl *self)
     {
-        static constexpr auto internal = R"js(
-            message: async (message) =>
-            {
-                window.chrome.webview.postMessage(message);
-            }
-        )js";
+        auto &event = self->events->get<event::permission>();
 
-        static const auto script = std::format(scripts::webview_script, //
-                                               internal,                //
-                                               request::stubs());
+        if (!event.empty())
+        {
+            return;
+        }
 
-        return script;
+        auto handler = [self](auto, ICoreWebView2PermissionRequestedEventArgs *args)
+        {
+            using permission::request;
+
+            ComPtr<ICoreWebView2Deferral> deferral;
+            args->GetDeferral(&deferral);
+
+            auto req = std::make_shared<request>(request::impl{
+                .request  = args,
+                .deferral = std::move(deferral),
+            });
+
+            self->parent->post([self, req] { self->events->get<event::permission>().fire(req).find(status::handled); });
+
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_PermissionRequested(Callback<PermissionRequested>(handler).Get(), &token);
+
+        event.on_clear([this, token] { web_view->remove_PermissionRequested(token); });
     }
 
-    ComPtr<CoreWebView2EnvironmentOptions> webview::impl::env_options()
+    template <>
+    void native::setup<event::dom_ready>(impl *)
+    {
+    }
+
+    template <>
+    void native::setup<event::navigated>(impl *self)
+    {
+        auto &event = self->events->get<event::navigated>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            auto url = self->url();
+
+            if (!url.has_value())
+            {
+                assert(false);
+                return S_OK;
+            }
+
+            self->parent->post([self, url] { self->events->get<event::navigated>().fire(url.value()); });
+
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
+
+        event.on_clear([this, token] { web_view->remove_SourceChanged(token); });
+    }
+
+    template <>
+    void native::setup<event::navigate>(impl *)
+    {
+    }
+
+    template <>
+    void native::setup<event::message>(impl *)
+    {
+    }
+
+    template <>
+    void native::setup<event::request>(impl *)
+    {
+    }
+
+    template <>
+    void native::setup<event::favicon>(impl *)
+    {
+    }
+
+    template <>
+    void native::setup<event::title>(impl *self)
+    {
+        auto &event = self->events->get<event::title>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            auto title = self->page_title();
+            self->parent->post([self, title] { self->events->get<event::title>().fire(title); });
+
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &token);
+
+        event.on_clear([this, token] { web_view->remove_DocumentTitleChanged(token); });
+    }
+
+    template <>
+    void native::setup<event::load>(impl *self)
+    {
+        auto &event = self->events->get<event::load>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            self->parent->post([self] { self->events->get<event::load>().fire(state::finished); });
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
+
+        event.on_clear([this, token] { web_view->remove_NavigationCompleted(token); });
+    }
+
+    ComPtr<ICoreWebView2EnvironmentOptions> native::env_options()
     {
         static auto instance = Make<CoreWebView2EnvironmentOptions>();
         return instance;
     }
 
-    void webview::impl::create_webview(application *app, HWND hwnd, options opts)
+    ComPtr<ICoreWebView2Environment> native::create_environment(application *parent, const environment_options &options)
     {
-        if (!opts.hardware_acceleration)
+        ComPtr<ICoreWebView2Environment> rtn{};
+
+        auto completed = [&rtn](auto, auto *environment)
         {
-            opts.browser_flags.emplace("--disable-gpu");
-        }
-
-        const auto args        = opts.browser_flags | std::views::join_with(' ') | std::ranges::to<std::string>();
-        const auto env_options = impl::env_options();
-
-        env_options->put_AdditionalBrowserArguments(utils::widen(args).c_str());
-
-        if (opts.persistent_cookies && opts.storage_path.empty())
-        {
-            opts.storage_path = fs::current_path() / ".saucer";
-
-            std::error_code ec{};
-            fs::create_directories(opts.storage_path, ec);
-
-            SetFileAttributesW(opts.storage_path.wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
-        }
-        else if (opts.storage_path.empty())
-        {
-            static constexpr auto hash_size = 32;
-
-            auto id   = app->native<false>()->id;
-            auto hash = id;
-
-            if (BYTE data[hash_size]{}; HashData(reinterpret_cast<BYTE *>(id.data()), id.size(), data, hash_size) == S_OK)
-            {
-                hash = data                                                                    //
-                       | std::views::transform([](auto x) { return std::format(L"{:x}", x); }) //
-                       | std::views::join                                                      //
-                       | std::ranges::to<std::wstring>();
-            }
-            else
-            {
-                assert(false && "Failed to compute hash of id");
-            }
-
-            opts.storage_path = std::filesystem::temp_directory_path() / std::format(L"saucer-{}", hash);
-            temp_path         = opts.storage_path;
-        }
-
-        auto created = [this](auto, auto *result)
-        {
-            controller = result;
-
-            ComPtr<ICoreWebView2> webview;
-
-            if (!result || !SUCCEEDED(result->get_CoreWebView2(&webview)))
-            {
-                assert(false && "Failed to get CoreWebView2");
-            }
-
-            if (!SUCCEEDED(webview.As(&web_view)))
-            {
-                assert(false && "Failed to get CoreWebView2_22");
-            }
-
+            rtn = environment;
             return S_OK;
         };
 
-        auto completed = [hwnd, created](auto, auto *env)
+        const auto &[storage_path, opts] = options;
+        const auto callback              = Callback<EnvironmentCompleted>(completed);
+
+        if (!SUCCEEDED(CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get())))
         {
-            if (!SUCCEEDED(env->CreateCoreWebView2Controller(hwnd, Callback<ControllerCompleted>(created).Get())))
-            {
-                assert(false && "Failed to create WebView2 controller");
-            }
-
-            return S_OK;
-        };
-
-        const auto storage_path = opts.storage_path.wstring();
-        const auto status       = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), env_options.Get(),
-                                                                           Callback<EnvironmentCompleted>(completed).Get());
-
-        if (!SUCCEEDED(status))
-        {
-            assert(false && "Failed to create WebView2");
+            return nullptr;
         }
 
-        while (!controller)
+        while (!rtn)
         {
-            app->native<false>()->iteration();
+            parent->native<false>()->platform->iteration();
         }
 
-        web_view->get_BrowserProcessId(&browser_pid);
+        return rtn;
     }
 
-    HRESULT webview::impl::scheme_handler(webview *self, const scheme_options &opts)
+    ComPtr<ICoreWebView2Controller> native::create_controller(application *parent, HWND hwnd, ICoreWebView2Environment *environment)
     {
-        auto scheme = schemes.find(opts.url.scheme());
+        ComPtr<ICoreWebView2Controller> rtn{};
+
+        auto created = [&rtn](auto, auto *controller)
+        {
+            rtn = controller;
+            return S_OK;
+        };
+
+        const auto callback = Callback<ControllerCompleted>(created);
+
+        if (!SUCCEEDED(environment->CreateCoreWebView2Controller(hwnd, callback.Get())))
+        {
+            return nullptr;
+        }
+
+        while (!rtn)
+        {
+            parent->native<false>()->platform->iteration();
+        }
+
+        return rtn;
+    }
+
+    HRESULT native::on_message(impl *self, ICoreWebView2 *, ICoreWebView2WebMessageReceivedEventArgs *args)
+    {
+        utils::string_handle raw;
+        args->TryGetWebMessageAsString(&raw.reset());
+
+        auto message = utils::narrow(raw.get());
+        self->parent->post([self, message = std::move(message)] { self->events->get<event::message>().fire(message); });
+
+        return S_OK;
+    }
+
+    HRESULT native::on_resource(impl *self, ICoreWebView2 *, ICoreWebView2WebResourceRequestedEventArgs *args)
+    {
+        ComPtr<ICoreWebView2WebResourceRequest> request;
+
+        if (!SUCCEEDED(args->get_Request(&request)))
+        {
+            return S_OK;
+        }
+
+        utils::string_handle raw;
+        request->get_Uri(&raw.reset());
+
+        auto url = uri::parse(utils::narrow(raw.get()));
+
+        if (!url)
+        {
+            return S_OK;
+        }
+
+        return scheme_handler(self, {.raw = args, .request = std::move(request), .url = std::move(url.value())});
+    }
+
+    HRESULT native::on_dom(impl *self, ICoreWebView2 *, ICoreWebView2DOMContentLoadedEventArgs *)
+    {
+        self->platform->dom_loaded = true;
+
+        for (const auto &[id, script] : self->platform->scripts)
+        {
+            if (script.time != load_time::ready)
+            {
+                continue;
+            }
+
+            self->execute(script.code);
+        }
+
+        for (const auto &pending : self->platform->pending)
+        {
+            self->execute(pending);
+        }
+
+        self->platform->pending.clear();
+        self->parent->post([self] { self->events->get<event::dom_ready>().fire(); });
+
+        return S_OK;
+    }
+
+    HRESULT native::on_window(impl *self, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *args)
+    {
+        args->put_Handled(true);
+
+        ComPtr<ICoreWebView2Deferral> deferral;
+        args->GetDeferral(&deferral);
+
+        auto callback = [self, args, deferral]
+        {
+            auto nav = navigation{navigation::impl{
+                .request = args,
+            }};
+
+            self->events->get<event::navigate>().fire(nav).find(policy::block);
+
+            deferral->Complete();
+        };
+
+        self->parent->post(callback);
+
+        return S_OK;
+    }
+
+    HRESULT native::on_navigation(impl *self, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *args)
+    {
+        self->platform->dom_loaded = false;
+        self->parent->post([self] { self->events->get<event::load>().fire(state::started); });
+
+        auto nav = navigation{navigation::impl{
+            .request = args,
+        }};
+
+        if (self->events->get<event::navigate>().fire(nav).find(policy::block))
+        {
+            args->put_Cancel(true);
+        }
+
+        return S_OK;
+    }
+
+    HRESULT native::on_favicon(impl *self, ICoreWebView2 *, IUnknown *)
+    {
+        auto callback = [self](auto, auto *stream)
+        {
+            self->platform->favicon = icon{icon::impl{
+                std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream)),
+            }};
+
+            self->events->get<event::favicon>().fire(self->platform->favicon);
+
+            return S_OK;
+        };
+
+        self->platform->web_view->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(callback).Get());
+
+        return S_OK;
+    }
+
+    HRESULT native::scheme_handler(impl *self, const scheme_options &opts)
+    {
+        auto &schemes = self->platform->schemes;
+        auto scheme   = schemes.find(opts.url.scheme());
 
         if (scheme == schemes.end())
         {
@@ -147,7 +344,7 @@ namespace saucer
 
         ComPtr<ICoreWebView2Environment> environment;
 
-        if (!SUCCEEDED(web_view->get_Environment(&environment)))
+        if (!SUCCEEDED(self->platform->web_view->get_Environment(&environment)))
         {
             return S_OK;
         }
@@ -221,8 +418,8 @@ namespace saucer
         {
             return [self, callback = std::forward<T>(callback)]<typename... Ts>(Ts &&...args) mutable
             {
-                self->m_parent->post([callback = std::forward<T>(callback), ... args = std::forward<Ts>(args)]() mutable
-                                     { std::invoke(callback, std::forward<Ts>(args)...); });
+                self->parent->post([callback = std::forward<T>(callback), ... args = std::forward<Ts>(args)]() mutable
+                                   { std::invoke(callback, std::forward<Ts>(args)...); });
             };
         };
 
@@ -236,156 +433,24 @@ namespace saucer
         return S_OK;
     }
 
-    LRESULT CALLBACK webview::impl::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        auto userdata       = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-        auto *const webview = reinterpret_cast<saucer::webview *>(userdata);
+        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
+        auto *self      = reinterpret_cast<impl *>(GetPropW(hwnd, MAKEINTATOM(atom)));
 
-        if (!webview || !webview->m_impl->controller)
+        if (!self || !self->platform->controller)
         {
             return DefWindowProcW(hwnd, msg, w_param, l_param);
         }
 
-        const auto &impl = webview->m_impl;
-
         switch (msg)
         {
         case WM_SIZE:
-            impl->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
-            impl->controller->put_IsVisible(w_param != SIZE_MINIMIZED);
+            self->platform->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
+            self->platform->controller->put_IsVisible(w_param != SIZE_MINIMIZED);
             break;
         }
 
-        return CallWindowProcW(impl->hook.original(), hwnd, msg, w_param, l_param);
-    }
-
-    template <>
-    void webview::impl::setup<web_event::permission>(webview *self)
-    {
-        auto &event = self->m_events.get<web_event::permission>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto, ICoreWebView2PermissionRequestedEventArgs *args)
-        {
-            using permission::request;
-
-            ComPtr<ICoreWebView2Deferral> deferral;
-            args->GetDeferral(&deferral);
-
-            auto req = std::make_shared<request>(request::impl{
-                .request  = args,
-                .deferral = std::move(deferral),
-            });
-
-            self->m_parent->post([self, req] { self->m_events.get<web_event::permission>().fire(req).find(status::handled); });
-
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_PermissionRequested(Callback<PermissionRequested>(handler).Get(), &token);
-
-        event.on_clear([this, token] { web_view->remove_PermissionRequested(token); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::dom_ready>(webview *)
-    {
-    }
-
-    template <>
-    void webview::impl::setup<web_event::navigated>(webview *self)
-    {
-        auto &event = self->m_events.get<web_event::navigated>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            auto url = self->url();
-
-            if (!url.has_value())
-            {
-                assert(false);
-                return S_OK;
-            }
-
-            self->m_parent->post([self, url] { self->m_events.get<web_event::navigated>().fire(url.value()); });
-
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
-
-        event.on_clear([this, token] { web_view->remove_SourceChanged(token); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::navigate>(webview *)
-    {
-    }
-
-    template <>
-    void webview::impl::setup<web_event::request>(webview *)
-    {
-    }
-
-    template <>
-    void webview::impl::setup<web_event::favicon>(webview *)
-    {
-    }
-
-    template <>
-    void webview::impl::setup<web_event::title>(webview *self)
-    {
-        auto &event = self->m_events.get<web_event::title>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            auto title = self->page_title();
-            self->m_parent->post([self, title] { self->m_events.get<web_event::title>().fire(title); });
-
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_DocumentTitleChanged(Callback<TitleChanged>(handler).Get(), &token);
-
-        event.on_clear([this, token] { web_view->remove_DocumentTitleChanged(token); });
-    }
-
-    template <>
-    void webview::impl::setup<web_event::load>(webview *self)
-    {
-        auto &event = self->m_events.get<web_event::load>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            self->m_parent->post([self] { self->m_events.get<web_event::load>().fire(state::finished); });
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
-
-        event.on_clear([this, token] { web_view->remove_NavigationCompleted(token); });
+        return CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);
     }
 } // namespace saucer

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "webview.hpp"
+#include "webview.impl.hpp"
 #include "win32.utils.hpp"
 
 #include <wrl.h>
@@ -29,6 +29,12 @@ namespace saucer
     using GetFavicon           = ICoreWebView2GetFaviconCompletedHandler;
     using SourceChanged        = ICoreWebView2SourceChangedEventHandler;
 
+    struct environment_options
+    {
+        std::wstring storage_path;
+        ICoreWebView2EnvironmentOptions *opts;
+    };
+
     struct scheme_options
     {
         ICoreWebView2WebResourceRequestedEventArgs *raw;
@@ -38,7 +44,12 @@ namespace saucer
         uri url;
     };
 
-    struct webview::impl
+    struct wv2_script : script
+    {
+        std::optional<std::wstring> ref;
+    };
+
+    struct webview::impl::native
     {
         ComPtr<ICoreWebView2Controller> controller;
         ComPtr<ICoreWebView2Settings> settings;
@@ -52,29 +63,38 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
-        std::uint32_t browser_pid;
-        std::optional<fs::path> temp_path;
-
-      public:
-        std::vector<std::pair<script, std::wstring>> scripts;
+        std::uint64_t id_counter{0};
+        std::unordered_map<std::uint64_t, wv2_script> scripts;
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:
         utils::wnd_proc_hook hook;
 
       public:
-        void create_webview(application *, HWND, options);
-        HRESULT scheme_handler(webview *, const scheme_options &);
+        template <event>
+        void setup(impl *);
 
       public:
-        template <web_event>
-        void setup(webview *);
+        static ComPtr<ICoreWebView2EnvironmentOptions> env_options();
 
       public:
-        static std::string inject_script();
-        static ComPtr<CoreWebView2EnvironmentOptions> env_options();
+        static ComPtr<ICoreWebView2Environment> create_environment(application *, const environment_options &);
+        static ComPtr<ICoreWebView2Controller> create_controller(application *, HWND, ICoreWebView2Environment *);
 
       public:
+        static HRESULT on_message(impl *, ICoreWebView2 *, ICoreWebView2WebMessageReceivedEventArgs *);
+        static HRESULT on_resource(impl *, ICoreWebView2 *, ICoreWebView2WebResourceRequestedEventArgs *);
+
+      public:
+        static HRESULT on_dom(impl *, ICoreWebView2 *, ICoreWebView2DOMContentLoadedEventArgs *);
+        static HRESULT on_window(impl *, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *);
+        static HRESULT on_navigation(impl *, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *);
+
+      public:
+        static HRESULT on_favicon(impl *, ICoreWebView2 *, IUnknown *);
+
+      public:
+        static HRESULT scheme_handler(impl *, const scheme_options &);
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer

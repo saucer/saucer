@@ -13,19 +13,19 @@ namespace saucer
     template <>
     natives<application, true> application::native<true>() const
     {
-        return {.wnd_class = m_impl->wnd_class};
+        return {.wnd_class = m_impl->platform->wnd_class};
     }
 
     template <>
     natives<window, true> window::native<true>() const
     {
-        return {.hwnd = m_impl->hwnd.get()};
+        return {.hwnd = m_impl->platform->hwnd.get()};
     }
 
     template <>
     natives<webview, true> webview::native<true>() const
     {
-        return {.webview = m_impl->web_view.Get(), .controller = m_impl->controller.Get()};
+        return {.webview = m_impl->platform->web_view.Get(), .controller = m_impl->platform->controller.Get()};
     }
 
     template <>

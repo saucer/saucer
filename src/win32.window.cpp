@@ -6,8 +6,6 @@
 
 #include "instantiate.hpp"
 
-#include <cassert>
-
 #include <rebind/enum.hpp>
 
 #include <dwmapi.h>
@@ -60,15 +58,15 @@ namespace saucer
         platform->background    = compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
         platform->hook          = {platform->hwnd.get(), native::wnd_proc};
 
+        const auto atom = application::impl::native::ATOM_WINDOW.get();
+        SetPropW(platform->hwnd.get(), MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
+
         auto root = compositor.CreateSpriteVisual();
         {
             root.RelativeSizeAdjustment({1.0f, 1.0f});
             root.Brush(platform->background);
         }
         platform->window_target.Root(root);
-
-        const auto atom = application::impl::native::ATOM_WINDOW.get();
-        SetPropW(platform->hwnd.get(), MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
 
         set_resizable(true);
 

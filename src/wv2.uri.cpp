@@ -96,7 +96,7 @@ namespace saucer
 
         rtn.resize(len);
 
-        if (UrlCreateFromPathW(file.wstring().c_str(), rtn.data(), &len, NULL) != S_OK)
+        if (!SUCCEEDED(UrlCreateFromPathW(file.wstring().c_str(), rtn.data(), &len, NULL)))
         {
             return std::nullopt;
         }

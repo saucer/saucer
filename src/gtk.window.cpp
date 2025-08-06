@@ -3,8 +3,6 @@
 #include "instantiate.hpp"
 #include "gtk.app.impl.hpp"
 
-#include <cassert>
-
 namespace saucer
 {
     using impl = window::impl;
