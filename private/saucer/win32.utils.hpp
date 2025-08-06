@@ -25,6 +25,7 @@ namespace saucer::utils
     using string_handle = utils::handle<LPWSTR, CoTaskMemFree>;
     using module_handle = utils::handle<HMODULE, FreeLibrary>;
     using window_handle = utils::handle<HWND, DestroyWindow>;
+    using atom_handle   = utils::handle<ATOM, GlobalDeleteAtom>;
 
     class wnd_proc_hook
     {

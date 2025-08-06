@@ -67,7 +67,9 @@ namespace saucer
         }
         platform->window_target.Root(root);
 
-        SetWindowLongPtrW(platform->hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        const auto atom = application::impl::native::ATOM_WINDOW.get();
+        SetPropW(platform->hwnd.get(), MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
+
         set_resizable(true);
 
         return true;
@@ -75,8 +77,15 @@ namespace saucer
 
     impl::~impl()
     {
+        if (!platform)
+        {
+            return;
+        }
+
         close();
-        SetWindowLongPtrW(platform->hwnd.get(), GWLP_USERDATA, 0);
+
+        const auto atom = application::impl::native::ATOM_WINDOW.get();
+        RemovePropW(platform->hwnd.get(), MAKEINTATOM(atom));
     }
 
     template <window::event Event>

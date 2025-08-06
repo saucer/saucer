@@ -21,7 +21,8 @@ namespace saucer
 
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
-        auto *self = reinterpret_cast<window::impl *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        const auto atom = application::impl::native::ATOM_WINDOW.get();
+        auto *self      = reinterpret_cast<window::impl *>(GetPropW(hwnd, MAKEINTATOM(atom)));
 
         if (!self)
         {
