@@ -27,7 +27,7 @@ namespace saucer
         ~impl();
 
       public:
-        bool init_platform(const options &);
+        result<> init_platform(const options &);
 
       public:
         [[nodiscard]] std::vector<screen> screens() const;

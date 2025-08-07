@@ -1,16 +1,18 @@
 #include "app.impl.hpp"
 
+#include "error/creation.hpp"
+
 namespace saucer
 {
     application::application() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
 
     application::application(application &&) noexcept = default;
 
-    std::optional<application> application::create(const options &opts)
+    result<application> application::create(const options &opts)
     {
         if (static bool once{false}; once)
         {
-            return {};
+            return err(creation_error::exists_already);
         }
         else
         {
@@ -22,9 +24,9 @@ namespace saucer
         rtn.m_impl->thread = std::this_thread::get_id();
         rtn.m_impl->events = rtn.m_events.get();
 
-        if (!rtn.m_impl->init_platform(opts))
+        if (auto status = rtn.m_impl->init_platform(opts); !status.has_value())
         {
-            return {};
+            return std::unexpected{status.error()};
         }
 
         return rtn;

@@ -25,7 +25,7 @@ namespace saucer
         ~impl();
 
       public:
-        bool init_platform();
+        result<> init_platform();
 
       public:
         template <event Event>

@@ -16,7 +16,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform(const options &opts)
+    result<> impl::init_platform(const options &opts)
     {
         platform = std::make_unique<native>();
 
@@ -72,11 +72,16 @@ namespace saucer
 
         gtk_box_append(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
 
-        return true;
+        return {};
     }
 
     impl::~impl()
     {
+        if (!platform)
+        {
+            return;
+        }
+
         for (const auto &[name, _] : native::schemes)
         {
             remove_scheme(name);

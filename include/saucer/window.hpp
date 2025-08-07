@@ -1,14 +1,16 @@
 #pragma once
 
 #include "modules/module.hpp"
+#include "error/error.hpp"
 
 #include "app.hpp"
 #include "icon.hpp"
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include <cstdint>
+#include <optional>
 
 #include <ereignis/manager/manager.hpp>
 
@@ -86,7 +88,7 @@ namespace saucer
         window();
 
       public:
-        static std::shared_ptr<window> create(application *);
+        static result<std::shared_ptr<window>> create(application *);
 
       public:
         ~window();

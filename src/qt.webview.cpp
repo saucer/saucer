@@ -3,6 +3,7 @@
 #include "scripts.hpp"
 #include "instantiate.hpp"
 
+#include "error/qt.hpp"
 #include "qt.uri.impl.hpp"
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
@@ -22,13 +23,13 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform(const options &opts)
+    result<> impl::init_platform(const options &opts)
     {
         using enum QWebEngineProfile::PersistentCookiesPolicy;
 
         if (!native::init_web_channel())
         {
-            return false;
+            return err(qt_error::no_web_channel);
         }
 
         platform = std::make_unique<native>();
@@ -110,7 +111,7 @@ namespace saucer
         window->native<false>()->platform->window->setCentralWidget(platform->web_view.get());
         platform->web_view->show();
 
-        return true;
+        return {};
     }
 
     impl::~impl()

@@ -18,7 +18,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform()
+    result<> impl::init_platform()
     {
         platform = std::make_unique<native>();
 
@@ -26,7 +26,7 @@ namespace saucer
         platform->max_size = platform->window->maximumSize();
         platform->min_size = platform->window->minimumSize();
 
-        return true;
+        return {};
     }
 
     impl::~impl()

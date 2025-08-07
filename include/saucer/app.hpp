@@ -3,6 +3,8 @@
 #include "modules/module.hpp"
 #include "utils/required.hpp"
 
+#include "error/error.hpp"
+
 #include <vector>
 #include <optional>
 #include <functional>
@@ -65,7 +67,7 @@ namespace saucer
         application(application &&) noexcept;
 
       public:
-        [[nodiscard]] static std::optional<application> create(const options &);
+        [[nodiscard]] static result<application> create(const options &);
 
       public:
         ~application();

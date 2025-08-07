@@ -9,7 +9,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform()
+    result<> impl::init_platform()
     {
         platform = std::make_unique<native>();
 
@@ -37,7 +37,7 @@ namespace saucer
 
         set_size({800, 600});
 
-        return true;
+        return {};
     }
 
     impl::~impl()

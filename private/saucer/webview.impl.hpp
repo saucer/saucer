@@ -2,8 +2,6 @@
 
 #include "webview.hpp"
 
-#include <lockpp/lock.hpp>
-
 namespace saucer
 {
     struct webview::impl
@@ -31,7 +29,7 @@ namespace saucer
         ~impl();
 
       public:
-        bool init_platform(const options &);
+        result<> init_platform(const options &);
 
       public:
         template <event Event>

@@ -8,7 +8,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform(const options &opts)
+    result<> impl::init_platform(const options &opts)
     {
         platform = std::make_unique<native>();
 
@@ -31,7 +31,7 @@ namespace saucer
             g_application_hold(G_APPLICATION(platform->application.get()));
         }
 
-        return true;
+        return {};
     }
 
     impl::~impl() = default;

@@ -6,7 +6,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform(const options &opts)
+    result<> impl::init_platform(const options &opts)
     {
         platform = std::make_unique<native>();
 
@@ -26,7 +26,7 @@ namespace saucer
         platform->application = std::make_unique<QApplication>(native::argc, native::argv.data());
         platform->application->setQuitOnLastWindowClosed(opts.quit_on_last_window_closed);
 
-        return true;
+        return {};
     }
 
     impl::~impl() = default;

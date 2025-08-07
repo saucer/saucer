@@ -16,9 +16,9 @@
 #include "navigation.hpp"
 
 #include <memory>
+#include <optional>
 
 #include <set>
-#include <array>
 #include <cstdint>
 
 #include <filesystem>
@@ -99,7 +99,7 @@ namespace saucer
         webview(webview &&) noexcept;
 
       public:
-        static std::optional<webview> create(const options &);
+        static result<webview> create(const options &);
 
       public:
         ~webview();

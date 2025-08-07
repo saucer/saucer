@@ -1,6 +1,7 @@
 #include "window.impl.hpp"
-
 #include "instantiate.hpp"
+
+#include "error/creation.hpp"
 
 #include <rebind/enum.hpp>
 
@@ -8,11 +9,11 @@ namespace saucer
 {
     window::window() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
 
-    std::shared_ptr<window> window::create(application *parent)
+    result<std::shared_ptr<window>> window::create(application *parent)
     {
         if (!parent->thread_safe())
         {
-            return {};
+            return err(creation_error::not_thread_safe);
         }
 
         auto rtn = std::shared_ptr<window>(new window);
@@ -20,9 +21,9 @@ namespace saucer
         rtn->m_impl->parent = parent;
         rtn->m_impl->events = rtn->m_events.get();
 
-        if (!rtn->m_impl->init_platform())
+        if (auto status = rtn->m_impl->init_platform(); !status.has_value())
         {
-            return {};
+            return std::unexpected{status.error()};
         }
 
         return rtn;
