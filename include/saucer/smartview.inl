@@ -13,13 +13,13 @@ namespace saucer
     smartview<Serializer>::smartview(smartview &&other) noexcept = default;
 
     template <Serializer Serializer>
-    std::optional<smartview<Serializer>> smartview<Serializer>::create(const options &opts)
+    result<smartview<Serializer>> smartview<Serializer>::create(const options &opts)
     {
         auto base = webview::create(opts);
 
         if (!base.has_value())
         {
-            return {};
+            return std::unexpected{base.error()};
         }
 
         return smartview{std::move(base.value())};

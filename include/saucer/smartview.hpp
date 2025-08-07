@@ -47,7 +47,7 @@ namespace saucer
         smartview(smartview &&) noexcept;
 
       public:
-        static std::optional<smartview> create(const options &);
+        static result<smartview> create(const options &);
 
       public:
         template <typename T>
