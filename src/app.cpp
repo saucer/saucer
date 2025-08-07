@@ -1,7 +1,5 @@
 #include "app.impl.hpp"
 
-#include "error/creation.hpp"
-
 namespace saucer
 {
     application::application() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
@@ -12,7 +10,7 @@ namespace saucer
     {
         if (static bool once{false}; once)
         {
-            return err(creation_error::exists_already);
+            return err(contract_error::instance_exists);
         }
         else
         {
@@ -26,7 +24,7 @@ namespace saucer
 
         if (auto status = rtn.m_impl->init_platform(opts); !status.has_value())
         {
-            return std::unexpected{status.error()};
+            return err(status);
         }
 
         return rtn;

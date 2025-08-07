@@ -3,7 +3,6 @@
 #include "scripts.hpp"
 #include "instantiate.hpp"
 
-#include "error/qt.hpp"
 #include "qt.uri.impl.hpp"
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
@@ -29,7 +28,7 @@ namespace saucer
 
         if (!native::init_web_channel())
         {
-            return err(qt_error::no_web_channel);
+            return err(std::errc::no_such_file_or_directory);
         }
 
         platform = std::make_unique<native>();

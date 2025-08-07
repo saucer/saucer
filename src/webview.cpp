@@ -3,8 +3,6 @@
 #include "window.impl.hpp"
 #include "instantiate.hpp"
 
-#include "error/creation.hpp"
-
 #include <format>
 #include <algorithm>
 #include <functional>
@@ -25,14 +23,14 @@ namespace saucer
 
         if (!window)
         {
-            return err(creation_error::bad_argument);
+            return err(contract_error::required_invalid);
         }
 
         auto *const parent = window->native<false>()->parent;
 
         if (!parent->thread_safe())
         {
-            return err(creation_error::not_thread_safe);
+            return err(contract_error::not_main_thread);
         }
 
         auto rtn         = webview{};
@@ -45,7 +43,7 @@ namespace saucer
 
         if (auto status = impl->init_platform(opts); !status.has_value())
         {
-            return std::unexpected{status.error()};
+            return err(status);
         }
 
         rtn.on<event::message>({{.func = std::bind_front(&impl::on_message, impl), .clearable = false}});

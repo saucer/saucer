@@ -33,7 +33,7 @@ namespace saucer
 
       public:
         std::uint64_t id_counter{0};
-        std::map<std::uint64_t, wkg_script> scripts;
+        std::unordered_map<std::uint64_t, wkg_script> scripts;
 
       public:
         bool dom_loaded{false};

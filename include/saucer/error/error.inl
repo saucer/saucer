@@ -7,23 +7,33 @@
 
 namespace saucer
 {
-    constexpr error::error(std::error_code error_code, std::source_location location) : error_code(error_code), location(location) {}
+    namespace detail
+    {
+        inline auto error(std::error_code value)
+        {
+            return value;
+        }
+
+        template <typename T>
+        auto error(T &&value)
+        {
+            return make_error_code(std::forward<T>(value));
+        }
+    } // namespace detail
 
     template <typename T>
-    constexpr std::unexpected<error> err(T value)
+    auto err(std::expected<T, error> &expected)
     {
-        return std::unexpected<error>{make_error_code(value)};
-    }
-
-    constexpr std::unexpected<error> err(std::error_code value)
-    {
-        return std::unexpected<error>{value};
+        return std::unexpected{expected.error()};
     }
 
     template <typename T>
-    constexpr std::unexpected<error> err(std::expected<T, error> value)
+    auto err(T &&value, std::source_location location)
     {
-        return std::unexpected<error>{value.error()};
+        return std::unexpected{error{
+            .error_code = detail::error(std::forward<T>(value)),
+            .location   = location,
+        }};
     }
 } // namespace saucer
 

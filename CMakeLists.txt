@@ -203,8 +203,8 @@ endif()
 # Setup Sources
 # --------------------------------------------------------------------------------------------------------
 
-target_sources(${PROJECT_NAME} PRIVATE 
-    "src/creation.error.cpp"
+target_sources(${PROJECT_NAME} PRIVATE
+    "src/error.cpp"
 
     "src/request.cpp"
     "src/module/unstable.cpp"

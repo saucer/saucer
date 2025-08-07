@@ -19,7 +19,7 @@ namespace saucer
 
         if (!base.has_value())
         {
-            return std::unexpected{base.error()};
+            return err(base);
         }
 
         return smartview{std::move(base.value())};

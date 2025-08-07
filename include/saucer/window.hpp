@@ -1,7 +1,6 @@
 #pragma once
 
 #include "modules/module.hpp"
-#include "error/error.hpp"
 
 #include "app.hpp"
 #include "icon.hpp"
