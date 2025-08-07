@@ -42,6 +42,11 @@ namespace saucer
 
     impl::~impl()
     {
+        if (!platform)
+        {
+            return;
+        }
+
         // We hide-on-close. This is required to make the parent quit properly.
 
         events->clear(event::close);

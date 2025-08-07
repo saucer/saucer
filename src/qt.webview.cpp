@@ -115,6 +115,11 @@ namespace saucer
 
     impl::~impl()
     {
+        if (!platform)
+        {
+            return;
+        }
+
         if (auto *const impl = window->native<false>()->platform.get(); impl->on_closed)
         {
             std::invoke(std::exchange(impl->on_closed, {}));

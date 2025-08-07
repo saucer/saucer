@@ -34,6 +34,7 @@ namespace saucer
         return {};
     }
 
+    // We don't need to call `g_application_release` anymore as we're explicitly calling quit
     impl::~impl() = default;
 
     std::vector<screen> impl::screens() const // NOLINT(*-static)

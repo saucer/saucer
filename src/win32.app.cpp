@@ -62,6 +62,11 @@ namespace saucer
 
     impl::~impl()
     {
+        if (!platform)
+        {
+            return;
+        }
+
         UnregisterClassW(platform->id.c_str(), platform->handle);
         CoUninitialize();
     }

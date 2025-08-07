@@ -31,6 +31,11 @@ namespace saucer
 
     impl::~impl()
     {
+        if (!platform)
+        {
+            return;
+        }
+
         platform->window->disconnect();
         platform->window->close();
     }
