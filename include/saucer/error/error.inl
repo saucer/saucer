@@ -14,6 +14,17 @@ namespace saucer
     {
         return std::unexpected<error>{make_error_code(value)};
     }
+
+    constexpr std::unexpected<error> err(std::error_code value)
+    {
+        return std::unexpected<error>{value};
+    }
+
+    template <typename T>
+    constexpr std::unexpected<error> err(std::expected<T, error> value)
+    {
+        return std::unexpected<error>{value.error()};
+    }
 } // namespace saucer
 
 template <>

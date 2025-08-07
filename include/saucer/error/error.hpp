@@ -20,6 +20,11 @@ namespace saucer
 
     template <typename T>
     constexpr std::unexpected<error> err(T);
+
+    constexpr std::unexpected<error> err(std::error_code);
+
+    template <typename T>
+    constexpr std::unexpected<error> err(std::expected<T, error>);
 } // namespace saucer
 
 #include "error.inl"

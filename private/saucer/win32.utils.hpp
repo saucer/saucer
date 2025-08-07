@@ -1,6 +1,7 @@
 #pragma once
 
 #include "handle.hpp"
+#include "error/error.hpp"
 
 #include <string>
 #include <cstdint>
@@ -57,8 +58,8 @@ namespace saucer::utils
 
     [[nodiscard]] std::vector<std::uint8_t> read(IStream *);
 
-    [[nodiscard]] std::optional<dispatch_controller> create_dispatch_controller();
-    [[nodiscard]] std::optional<window_target> create_window_target(const compositor &, HWND);
+    [[nodiscard]] result<dispatch_controller> create_dispatch_controller();
+    [[nodiscard]] result<window_target> create_window_target(const compositor &, HWND);
 
-    [[nodiscard]] std::optional<std::wstring> hash(std::span<std::uint8_t>);
+    [[nodiscard]] result<std::wstring> hash(std::span<std::uint8_t>);
 } // namespace saucer::utils

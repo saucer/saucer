@@ -1,6 +1,8 @@
 #include "win32.window.impl.hpp"
 
+#include "win32.error.hpp"
 #include "win32.utils.hpp"
+
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 
@@ -19,7 +21,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform()
+    result<> impl::init_platform()
     {
         using namespace winrt::Windows::UI::ViewManagement;
 
@@ -40,7 +42,7 @@ namespace saucer
 
         if (!hwnd.get())
         {
-            return false;
+            return err(make_error_code(GetLastError()));
         }
 
         auto compositor    = utils::compositor{};
@@ -48,7 +50,7 @@ namespace saucer
 
         if (!window_target.has_value())
         {
-            return false;
+            return err(window_target);
         }
 
         platform = std::make_unique<native>();
@@ -70,7 +72,7 @@ namespace saucer
 
         set_resizable(true);
 
-        return true;
+        return {};
     }
 
     impl::~impl()

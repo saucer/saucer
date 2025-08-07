@@ -1,4 +1,5 @@
 #include "win32.utils.hpp"
+#include "win32.error.hpp"
 
 #include <shlwapi.h>
 #include <shellscalingapi.h>
@@ -165,12 +166,12 @@ namespace saucer
         return data;
     }
 
-    std::optional<utils::dispatch_controller> utils::create_dispatch_controller()
+    result<utils::dispatch_controller> utils::create_dispatch_controller()
     {
         using ABI::Windows::System::IDispatcherQueueController;
 
-        auto rtn         = std::optional<dispatch_controller>{nullptr};
-        auto *controller = reinterpret_cast<IDispatcherQueueController **>(winrt::put_abi(rtn.value()));
+        auto rtn         = dispatch_controller{nullptr};
+        auto *controller = reinterpret_cast<IDispatcherQueueController **>(winrt::put_abi(rtn));
 
         DispatcherQueueOptions options{
             .dwSize        = sizeof(DispatcherQueueOptions),
@@ -178,41 +179,41 @@ namespace saucer
             .apartmentType = DQTAT_COM_STA,
         };
 
-        if (!SUCCEEDED(CreateDispatcherQueueController(options, controller)))
+        if (auto status = CreateDispatcherQueueController(options, controller); !SUCCEEDED(status))
         {
-            return std::nullopt;
+            return err(make_error_code(status));
         }
 
         return rtn;
     }
 
-    std::optional<utils::window_target> utils::create_window_target(const compositor &comp, HWND hwnd)
+    result<utils::window_target> utils::create_window_target(const compositor &comp, HWND hwnd)
     {
         using ABI::Windows::UI::Composition::Desktop::ICompositorDesktopInterop;
         using ABI::Windows::UI::Composition::Desktop::IDesktopWindowTarget;
 
         auto interop = comp.as<ICompositorDesktopInterop>();
 
-        auto rtn     = std::optional<window_target>{nullptr};
-        auto *target = reinterpret_cast<IDesktopWindowTarget **>(winrt::put_abi(rtn.value()));
+        auto rtn     = window_target{nullptr};
+        auto *target = reinterpret_cast<IDesktopWindowTarget **>(winrt::put_abi(rtn));
 
-        if (!SUCCEEDED(interop->CreateDesktopWindowTarget(hwnd, false, target)))
+        if (auto status = interop->CreateDesktopWindowTarget(hwnd, false, target); !SUCCEEDED(status))
         {
-            return std::nullopt;
+            return err(make_error_code(status));
         }
 
         return rtn;
     }
 
-    std::optional<std::wstring> utils::hash(std::span<std::uint8_t> value)
+    result<std::wstring> utils::hash(std::span<std::uint8_t> value)
     {
         static constexpr auto size = 32;
 
         BYTE buffer[size]{};
 
-        if (!SUCCEEDED(HashData(value.data(), value.size(), buffer, size)))
+        if (auto status = HashData(value.data(), value.size(), buffer, size); !SUCCEEDED(status))
         {
-            return std::nullopt;
+            return err(make_error_code(status));
         }
 
         return buffer                                                                  //

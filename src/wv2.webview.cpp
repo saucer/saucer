@@ -1,5 +1,6 @@
 #include "wv2.webview.impl.hpp"
 
+#include "win32.error.hpp"
 #include "win32.app.impl.hpp"
 #include "win32.window.impl.hpp"
 
@@ -23,7 +24,7 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform(const options &opts)
+    result<> impl::init_platform(const options &opts)
     {
         auto env_options = native::env_options();
 
@@ -37,14 +38,15 @@ namespace saucer
 
         if (!storage_path.has_value())
         {
-            auto id      = parent->native<false>()->platform->id;
-            auto hash    = utils::hash({reinterpret_cast<std::uint8_t *>(id.data()), id.size()});
-            storage_path = hash.transform([](auto hash) { return fs::temp_directory_path() / std::format(L"saucer-{}", hash); });
-        }
+            auto id   = parent->native<false>()->platform->id;
+            auto hash = utils::hash({reinterpret_cast<std::uint8_t *>(id.data()), id.size()});
 
-        if (!storage_path.has_value())
-        {
-            return false;
+            if (!hash.has_value())
+            {
+                return err(hash);
+            }
+
+            storage_path = fs::temp_directory_path() / std::format(L"saucer-{}", hash.value());
         }
 
         const auto arguments = flags                        //
@@ -58,36 +60,36 @@ namespace saucer
                                                                   .opts         = env_options.Get(),
                                                               });
 
-        if (!environment)
+        if (!environment.has_value())
         {
-            return false;
+            return err(environment);
         }
 
         auto *const hwnd = window->native<false>()->platform->hwnd.get();
-        auto controller  = native::create_controller(parent, hwnd, environment.Get());
+        auto controller  = native::create_controller(parent, hwnd, environment->Get());
 
-        if (!controller)
+        if (!controller.has_value())
         {
-            return false;
+            return err(controller);
         }
 
         ComPtr<ICoreWebView2> raw;
 
-        if (!SUCCEEDED(controller->get_CoreWebView2(&raw)))
+        if (auto status = controller.value()->get_CoreWebView2(&raw); !SUCCEEDED(status))
         {
-            return false;
+            return err(make_error_code(status));
         }
 
         ComPtr<ICoreWebView2_22> web_view;
 
-        if (!SUCCEEDED(raw.As(&web_view)))
+        if (auto status = raw.As(&web_view); !SUCCEEDED(status))
         {
-            return false;
+            return err(make_error_code(status));
         }
 
         platform = std::make_unique<native>();
 
-        platform->controller = std::move(controller);
+        platform->controller = std::move(controller.value());
         platform->web_view   = std::move(web_view);
         platform->hook       = {hwnd, native::wnd_proc};
 
@@ -121,7 +123,7 @@ namespace saucer
         platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
         platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
 
-        return true;
+        return {};
     }
 
     impl::~impl()

@@ -204,6 +204,8 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 target_sources(${PROJECT_NAME} PRIVATE 
+    "src/creation.error.cpp"
+
     "src/request.cpp"
     "src/module/unstable.cpp"
     

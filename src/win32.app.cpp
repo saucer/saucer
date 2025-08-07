@@ -1,4 +1,5 @@
 #include "win32.app.impl.hpp"
+#include "win32.error.hpp"
 
 namespace saucer
 {
@@ -6,13 +7,13 @@ namespace saucer
 
     impl::impl() = default;
 
-    bool impl::init_platform(const options &opts)
+    result<> impl::init_platform(const options &opts)
     {
         auto controller = utils::create_dispatch_controller();
 
         if (!controller.has_value())
         {
-            return false;
+            return err(controller);
         }
 
         platform = std::make_unique<native>();
@@ -30,7 +31,7 @@ namespace saucer
 
         if (!RegisterClassW(&platform->wnd_class))
         {
-            return false;
+            return err(make_error_code(GetLastError()));
         }
 
         platform->msg_window = CreateWindowEx(0,                    //
@@ -48,7 +49,7 @@ namespace saucer
 
         if (!platform->msg_window.get())
         {
-            return false;
+            return err(make_error_code(GetLastError()));
         }
 
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -56,7 +57,7 @@ namespace saucer
         Gdiplus::GdiplusStartupInput input{};
         Gdiplus::GdiplusStartup(&platform->gdi_token.reset(), &input, nullptr);
 
-        return true;
+        return {};
     }
 
     impl::~impl()

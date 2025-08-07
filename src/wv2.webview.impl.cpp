@@ -1,5 +1,6 @@
 #include "wv2.webview.impl.hpp"
 
+#include "win32.error.hpp"
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 
@@ -165,7 +166,7 @@ namespace saucer
         return instance;
     }
 
-    ComPtr<ICoreWebView2Environment> native::create_environment(application *parent, const environment_options &options)
+    result<ComPtr<ICoreWebView2Environment>> native::create_environment(application *parent, const environment_options &options)
     {
         ComPtr<ICoreWebView2Environment> rtn{};
 
@@ -178,9 +179,11 @@ namespace saucer
         const auto &[storage_path, opts] = options;
         const auto callback              = Callback<EnvironmentCompleted>(completed);
 
-        if (!SUCCEEDED(CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get())))
+        auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get());
+
+        if (!SUCCEEDED(status))
         {
-            return nullptr;
+            return err(make_error_code(status));
         }
 
         while (!rtn)
@@ -191,7 +194,7 @@ namespace saucer
         return rtn;
     }
 
-    ComPtr<ICoreWebView2Controller> native::create_controller(application *parent, HWND hwnd, ICoreWebView2Environment *environment)
+    result<ComPtr<ICoreWebView2Controller>> native::create_controller(application *parent, HWND hwnd, ICoreWebView2Environment *env)
     {
         ComPtr<ICoreWebView2Controller> rtn{};
 
@@ -203,9 +206,9 @@ namespace saucer
 
         const auto callback = Callback<ControllerCompleted>(created);
 
-        if (!SUCCEEDED(environment->CreateCoreWebView2Controller(hwnd, callback.Get())))
+        if (auto status = env->CreateCoreWebView2Controller(hwnd, callback.Get()); !SUCCEEDED(status))
         {
-            return nullptr;
+            return err(make_error_code(status));
         }
 
         while (!rtn)

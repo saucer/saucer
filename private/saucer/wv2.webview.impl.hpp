@@ -78,8 +78,8 @@ namespace saucer
         static ComPtr<ICoreWebView2EnvironmentOptions> env_options();
 
       public:
-        static ComPtr<ICoreWebView2Environment> create_environment(application *, const environment_options &);
-        static ComPtr<ICoreWebView2Controller> create_controller(application *, HWND, ICoreWebView2Environment *);
+        static result<ComPtr<ICoreWebView2Environment>> create_environment(application *, const environment_options &);
+        static result<ComPtr<ICoreWebView2Controller>> create_controller(application *, HWND, ICoreWebView2Environment *);
 
       public:
         static HRESULT on_message(impl *, ICoreWebView2 *, ICoreWebView2WebMessageReceivedEventArgs *);
