@@ -96,14 +96,17 @@ namespace saucer
         constexpr callback(T value, std::string_view func = __builtin_FUNCTION()) : value(value)
         {
             auto pure = func.substr(0, func.find_first_of("(<"));
-            std::copy_n(pure.data(), std::min(N, pure.size()), name); // NOLINT(*-stringview-data-usage)
+            std::copy_n(pure.data(), std::min(pure.size(), N), name); // NOLINT(*-stringview-data-usage)
         }
     };
 
     template <callback Callback, typename... Ts>
     constexpr auto invoke(Ts &&...args)
     {
-        static_assert(rebind::member_name<Callback.value>.ends_with(Callback.name), "Name of implementation does not match interface");
+        static constexpr auto name = rebind::member_name<Callback.value>;
+        static constexpr auto pure = name.substr(0, name.find_first_of("(<"));
+        static_assert(pure == Callback.name, "Name of implementation does not match interface");
+
         return invoke_impl<Callback.value>(std::forward<Ts>(args)...);
     }
 } // namespace saucer
