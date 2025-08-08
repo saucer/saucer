@@ -239,7 +239,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           rebind
-  VERSION        5.3.0
+  VERSION        5.3.1
   GIT_REPOSITORY "https://github.com/Curve/rebind"
 )
 
@@ -440,5 +440,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.0;ereignis 6.0.0;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.1;ereignis 6.0.0;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
 )
