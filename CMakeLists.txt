@@ -192,11 +192,11 @@ if (saucer_backend STREQUAL "Qt6")
 endif()
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 5.5.3")
+  set(SERIALIZER_DEP "glaze 5.5.5")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
-  set(SERIALIZER_DEP "reflectcpp 0.19.0")
+  set(SERIALIZER_DEP "reflectcpp 0.20.0")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -345,7 +345,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        5.5.3
+    VERSION        5.5.5
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -360,7 +360,7 @@ endif()
 if (saucer_serializer STREQUAL "Rflpp")
   CPMFindPackage(
     NAME           reflectcpp
-    VERSION        0.19.0
+    VERSION        0.20.0
     GIT_REPOSITORY "https://github.com/getml/reflect-cpp"
     SYSTEM         ON
   )

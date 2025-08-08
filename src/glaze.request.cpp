@@ -16,7 +16,8 @@ consteval auto generate(State... state)
     }
     else
     {
-        return glz::object(tag<T>, glz::skip{}, state...);
+        static constexpr auto name = std::string_view{tag<T>.data(), tag<T>.size()};
+        return glz::object(name, glz::skip{}, state...);
     }
 }
 
