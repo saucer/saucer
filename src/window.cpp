@@ -1,4 +1,6 @@
 #include "window.impl.hpp"
+
+#include "invoke.hpp"
 #include "instantiate.hpp"
 
 #include <rebind/enum.hpp>
@@ -38,7 +40,7 @@ namespace saucer
     template <window::event Event>
     void window::setup()
     {
-        return invoke(m_impl.get(), &impl::setup<Event>);
+        return invoke<&impl::setup<Event>>(m_impl.get());
     }
 
     application &window::parent() const

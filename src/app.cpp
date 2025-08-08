@@ -1,5 +1,7 @@
 #include "app.impl.hpp"
 
+#include "invoke.hpp"
+
 namespace saucer
 {
     application::application() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
@@ -52,12 +54,7 @@ namespace saucer
 
     std::vector<screen> application::screens() const
     {
-        if (!m_impl)
-        {
-            return {};
-        }
-
-        return invoke(&impl::screens, m_impl.get()); // TODO: Use safe invoke overload
+        return saucer::invoke<&impl::screens>(this, m_impl.get());
     }
 
     int application::run(callback_t callback)
