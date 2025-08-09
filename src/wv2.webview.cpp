@@ -133,6 +133,9 @@ namespace saucer
             return;
         }
 
+        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
+        RemovePropW(window->native<false>()->platform->hwnd.get(), MAKEINTATOM(atom));
+
         platform->controller->Close();
     }
 
