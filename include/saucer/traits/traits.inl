@@ -24,7 +24,7 @@ namespace saucer::traits
         template <typename T, typename Args, typename Executor>
         static constexpr auto awaitable_v = awaitable<T, Args, Executor>::value;
 
-        template <typename T, typename D = std::decay_t<T>>
+        template <typename T, typename D = std::remove_cvref_t<T>>
         using fix_arg_t = std::conditional_t<std::same_as<D, std::string_view>, std::string, D>;
 
         template <typename T>
