@@ -9,6 +9,16 @@ namespace saucer
 {
     namespace detail
     {
+        template <typename T>
+        struct is_expected : std::false_type
+        {
+        };
+
+        template <typename T, typename E>
+        struct is_expected<std::expected<T, E>> : std::true_type
+        {
+        };
+
         inline auto error(std::error_code value)
         {
             return value;
@@ -28,12 +38,19 @@ namespace saucer
     }
 
     template <typename T>
-    auto err(T &&value, std::source_location location)
+    auto err(T &&value, [[maybe_unused]] std::source_location location)
     {
-        return std::unexpected{error{
-            .error_code = detail::error(std::forward<T>(value)),
-            .location   = location,
-        }};
+        if constexpr (detail::is_expected<std::remove_cvref_t<T>>::value)
+        {
+            return std::unexpected{std::forward<T>(value).error()};
+        }
+        else
+        {
+            return std::unexpected{error{
+                .error_code = detail::error(std::forward<T>(value)),
+                .location   = location,
+            }};
+        }
     }
 } // namespace saucer
 

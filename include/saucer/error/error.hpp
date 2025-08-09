@@ -29,9 +29,6 @@ namespace saucer
     using result = std::expected<T, error>;
 
     template <typename T>
-    auto err(std::expected<T, error> &);
-
-    template <typename T>
     auto err(T &&, std::source_location = std::source_location::current());
 } // namespace saucer
 
