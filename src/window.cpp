@@ -31,6 +31,11 @@ namespace saucer
 
     window::~window()
     {
+        if (!m_impl)
+        {
+            return;
+        }
+
         for (const auto &event : rebind::enum_values<event>)
         {
             m_events->clear(event);

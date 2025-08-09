@@ -166,6 +166,18 @@ namespace saucer
         return instance;
     }
 
+    result<fs::path> native::default_user_folder(std::wstring &id)
+    {
+        auto hash = utils::hash({reinterpret_cast<std::uint8_t *>(id.data()), id.size()});
+
+        if (!hash.has_value())
+        {
+            return err(hash);
+        }
+
+        return fs::temp_directory_path() / std::format(L"saucer-{}", hash.value());
+    }
+
     result<ComPtr<ICoreWebView2Environment>> native::create_environment(application *parent, const environment_options &options)
     {
         ComPtr<ICoreWebView2Environment> rtn{};
@@ -277,29 +289,6 @@ namespace saucer
         return S_OK;
     }
 
-    HRESULT native::on_window(impl *self, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *args)
-    {
-        args->put_Handled(true);
-
-        ComPtr<ICoreWebView2Deferral> deferral;
-        args->GetDeferral(&deferral);
-
-        auto callback = [self, args, deferral]
-        {
-            auto nav = navigation{navigation::impl{
-                .request = args,
-            }};
-
-            self->events->get<event::navigate>().fire(nav).find(policy::block);
-
-            deferral->Complete();
-        };
-
-        self->parent->post(callback);
-
-        return S_OK;
-    }
-
     HRESULT native::on_navigation(impl *self, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *args)
     {
         self->platform->dom_loaded = false;
@@ -331,6 +320,29 @@ namespace saucer
         };
 
         self->platform->web_view->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(callback).Get());
+
+        return S_OK;
+    }
+
+    HRESULT native::on_window(impl *self, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *args)
+    {
+        args->put_Handled(true);
+
+        ComPtr<ICoreWebView2Deferral> deferral;
+        args->GetDeferral(&deferral);
+
+        auto callback = [self, args, deferral]
+        {
+            auto nav = navigation{navigation::impl{
+                .request = args,
+            }};
+
+            self->events->get<event::navigate>().fire(nav).find(policy::block);
+
+            deferral->Complete();
+        };
+
+        self->parent->post(callback);
 
         return S_OK;
     }

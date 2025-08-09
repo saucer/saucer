@@ -24,10 +24,11 @@ namespace saucer::utils
     using compositor          = composition::Compositor;
     using window_target       = composition::Desktop::DesktopWindowTarget;
 
-    using string_handle = utils::handle<LPWSTR, CoTaskMemFree>;
-    using module_handle = utils::handle<HMODULE, FreeLibrary>;
-    using window_handle = utils::handle<HWND, DestroyWindow>;
-    using atom_handle   = utils::handle<ATOM, GlobalDeleteAtom>;
+    using string_handle  = utils::handle<LPWSTR, CoTaskMemFree>;
+    using module_handle  = utils::handle<HMODULE, FreeLibrary>;
+    using window_handle  = utils::handle<HWND, DestroyWindow>;
+    using atom_handle    = utils::handle<ATOM, GlobalDeleteAtom>;
+    using process_handle = utils::handle<HANDLE, CloseHandle>;
 
     class wnd_proc_hook
     {

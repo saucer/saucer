@@ -27,26 +27,11 @@ namespace saucer
     result<> impl::init_platform(const options &opts)
     {
         auto env_options = native::env_options();
-
-        auto flags        = opts.browser_flags;
-        auto storage_path = opts.storage_path;
+        auto flags       = opts.browser_flags;
 
         if (!opts.hardware_acceleration)
         {
             flags.emplace("--disable-gpu");
-        }
-
-        if (!storage_path.has_value())
-        {
-            auto id   = parent->native<false>()->platform->id;
-            auto hash = utils::hash({reinterpret_cast<std::uint8_t *>(id.data()), id.size()});
-
-            if (!hash.has_value())
-            {
-                return err(hash);
-            }
-
-            storage_path = fs::temp_directory_path() / std::format(L"saucer-{}", hash.value());
         }
 
         const auto arguments = flags                        //
@@ -54,6 +39,21 @@ namespace saucer
                                | std::ranges::to<std::string>();
 
         env_options->put_AdditionalBrowserArguments(utils::widen(arguments).c_str());
+
+        auto default_user_folder = [this](auto &&)
+        {
+            return native::default_user_folder(parent->native<false>()->platform->id);
+        };
+
+        const auto storage_path = opts.storage_path //
+                                      .transform([]<typename T>(T &&value) { return result<fs::path>{std::forward<T>(value)}; })
+                                      .value_or(err(std::errc::no_such_file_or_directory))
+                                      .or_else(default_user_folder);
+
+        if (!storage_path.has_value())
+        {
+            return err(storage_path);
+        }
 
         auto environment = native::create_environment(parent, {
                                                                   .storage_path = storage_path.value(),
@@ -92,6 +92,12 @@ namespace saucer
         platform->controller = std::move(controller.value());
         platform->web_view   = std::move(web_view);
         platform->hook       = {hwnd, native::wnd_proc};
+
+        if (!opts.storage_path.has_value() && !opts.persistent_cookies)
+        {
+            platform->cleanup = storage_path.value();
+            platform->web_view->get_BrowserProcessId(&platform->browser_pid);
+        }
 
         const auto atom = application::impl::native::ATOM_WEBVIEW.get();
         SetPropW(hwnd, MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
@@ -137,6 +143,21 @@ namespace saucer
         RemovePropW(window->native<false>()->platform->hwnd.get(), MAKEINTATOM(atom));
 
         platform->controller->Close();
+
+        if (!platform->cleanup.has_value())
+        {
+            return;
+        }
+
+        // Using `ICoreWebView2Environment5`s `add_BrowserProcessExited` sadly doesn't play that nice
+        // with this architecture, as we need to have the main-loop running to receive the event,
+        // but by that time, the application destructor has mostly been called already...
+
+        utils::process_handle handle = OpenProcess(SYNCHRONIZE, false, platform->browser_pid);
+        WaitForSingleObject(handle.get(), 1000);
+
+        std::error_code ec{};
+        fs::remove_all(platform->cleanup.value(), ec);
     }
 
     template <webview::event Event>

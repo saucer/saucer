@@ -71,6 +71,10 @@ namespace saucer
         utils::wnd_proc_hook hook;
 
       public:
+        std::uint32_t browser_pid;
+        std::optional<fs::path> cleanup;
+
+      public:
         template <event>
         void setup(impl *);
 
@@ -78,6 +82,7 @@ namespace saucer
         static ComPtr<ICoreWebView2EnvironmentOptions> env_options();
 
       public:
+        static result<fs::path> default_user_folder(std::wstring &);
         static result<ComPtr<ICoreWebView2Environment>> create_environment(application *, const environment_options &);
         static result<ComPtr<ICoreWebView2Controller>> create_controller(application *, HWND, ICoreWebView2Environment *);
 
@@ -87,11 +92,11 @@ namespace saucer
 
       public:
         static HRESULT on_dom(impl *, ICoreWebView2 *, ICoreWebView2DOMContentLoadedEventArgs *);
-        static HRESULT on_window(impl *, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *);
         static HRESULT on_navigation(impl *, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *);
 
       public:
         static HRESULT on_favicon(impl *, ICoreWebView2 *, IUnknown *);
+        static HRESULT on_window(impl *, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *);
 
       public:
         static HRESULT scheme_handler(impl *, const scheme_options &);
