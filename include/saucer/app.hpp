@@ -100,6 +100,21 @@ namespace saucer
       public:
         template <typename T, typename... Ts>
         [[sc::thread_safe]] auto make(Ts &&...) const;
+
+      public:
+        template <event Event>
+        [[sc::thread_safe]] auto on(events::event<Event>::listener);
+
+        template <event Event>
+        [[sc::thread_safe]] void once(events::event<Event>::listener::callback);
+
+      public:
+        template <event Event, typename... Ts>
+        [[sc::thread_safe]] auto await(Ts &&...result);
+
+      public:
+        [[sc::thread_safe]] void off(event);
+        [[sc::thread_safe]] void off(event, std::uint64_t id);
     };
 
     struct application::options

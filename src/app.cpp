@@ -2,6 +2,8 @@
 
 #include "invoke.hpp"
 
+#include <rebind/enum.hpp>
+
 namespace saucer
 {
     application::application() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
@@ -39,7 +41,10 @@ namespace saucer
             return;
         }
 
-        // TODO: Clear events (?)
+        for (const auto &event : rebind::enum_values<event>)
+        {
+            m_events->clear(event);
+        }
     }
 
     bool application::thread_safe() const
@@ -104,5 +109,25 @@ namespace saucer
         };
 
         return invoke(quit);
+    }
+
+    void application::off(event event)
+    {
+        if (!m_impl)
+        {
+            return;
+        }
+
+        return invoke([impl = m_impl.get(), event] { impl->events->clear(event); });
+    }
+
+    void application::off(event event, std::uint64_t id)
+    {
+        if (!m_impl)
+        {
+            return;
+        }
+
+        return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); });
     }
 } // namespace saucer

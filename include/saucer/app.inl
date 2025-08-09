@@ -52,4 +52,22 @@ namespace saucer
 
         return std::unique_ptr<T, safe_delete<T>>{new T{std::forward<Ts>(args)...}, safe_delete<T>{.app = this}};
     }
+
+    template <application::event Event>
+    auto application::on(events::event<Event>::listener listener)
+    {
+        return m_events->get<Event>().add(std::move(listener));
+    }
+
+    template <application::event Event>
+    void application::once(events::event<Event>::listener::callback cb)
+    {
+        return m_events->get<Event>().once(std::move(cb));
+    }
+
+    template <application::event Event, typename... Ts>
+    auto application::await(Ts &&...result)
+    {
+        return m_events->get<Event>().await(std::forward<Ts>(result)...);
+    }
 } // namespace saucer
