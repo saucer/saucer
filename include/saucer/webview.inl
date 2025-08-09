@@ -16,14 +16,14 @@ namespace saucer
     auto webview::on(events::event<Event>::listener listener)
     {
         setup<Event>();
-        m_events->get<Event>().add(std::move(listener));
+        return m_events->get<Event>().add(std::move(listener));
     }
 
     template <webview::event Event>
     void webview::once(events::event<Event>::listener::callback cb)
     {
         setup<Event>();
-        m_events->get<Event>().once(std::move(cb));
+        return m_events->get<Event>().once(std::move(cb));
     }
 
     template <webview::event Event, typename... Ts>

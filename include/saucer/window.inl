@@ -8,14 +8,14 @@ namespace saucer
     auto window::on(events::event<Event>::listener listener)
     {
         setup<Event>();
-        m_events->get<Event>().add(std::move(listener));
+        return m_events->get<Event>().add(std::move(listener));
     }
 
     template <window::event Event>
     void window::once(events::event<Event>::listener::callback cb)
     {
         setup<Event>();
-        m_events->get<Event>().once(std::move(cb));
+        return m_events->get<Event>().once(std::move(cb));
     }
 
     template <window::event Event, typename... Ts>
