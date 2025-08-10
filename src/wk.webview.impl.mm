@@ -1,37 +1,32 @@
 #include "wk.webview.impl.hpp"
 
-#include "scripts.hpp"
-#include "request.hpp"
-
+#include "cocoa.utils.hpp"
 #include "cocoa.window.impl.hpp"
 
 #include "wk.navigation.impl.hpp"
 #include "wk.permission.impl.hpp"
 
 #include <format>
-#include <cassert>
-
-#include <flagpp/flags.hpp>
-
-template <>
-constexpr bool flagpp::enabled<saucer::window_edge> = true;
 
 namespace saucer
 {
+    using native = webview::impl::native;
+    using event  = webview::event;
+
     template <>
-    void saucer::webview::impl::setup<web_event::permission>(webview *)
+    void native::setup<event::permission>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::dom_ready>(webview *)
+    void native::setup<event::dom_ready>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::navigated>(webview *self)
+    void native::setup<event::navigated>(impl *self)
     {
-        auto &event = self->m_events.get<web_event::navigated>();
+        auto &event = self->events->get<event::navigated>();
 
         if (!event.empty())
         {
@@ -48,7 +43,7 @@ namespace saucer
                                                                              return;
                                                                          }
 
-                                                                         self->m_events.get<web_event::navigated>().fire(url.value());
+                                                                         self->events->get<event::navigated>().fire(url.value());
                                                                      }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
@@ -56,64 +51,50 @@ namespace saucer
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::request>(webview *)
+    void native::setup<event::navigate>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::navigate>(webview *)
+    void native::setup<event::message>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::favicon>(webview *)
+    void native::setup<event::request>(impl *)
     {
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::title>(webview *self)
+    void native::setup<event::favicon>(impl *)
     {
-        auto &event = self->m_events.get<web_event::title>();
+    }
+
+    template <>
+    void native::setup<event::title>(impl *self)
+    {
+        auto &event = self->events->get<event::title>();
 
         if (!event.empty())
         {
             return;
         }
 
-        const utils::objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]
-                              {
-                                  self->m_events.get<web_event::title>().fire(self->page_title());
-                              }];
+        const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
+                                                                     {
+                                                                         self->events->get<event::title>().fire(self->page_title());
+                                                                     }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"title" options:0 context:nullptr];
         event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"title"]; });
     }
 
     template <>
-    void saucer::webview::impl::setup<web_event::load>(webview *)
+    void native::setup<event::load>(impl *)
     {
     }
 
-    std::string webview::impl::inject_script()
-    {
-        static constexpr auto internal = R"js(
-            message: async (message) =>
-            {
-                window.webkit.messageHandlers.saucer.postMessage(message);
-            }
-        )js";
-
-        static const auto script = std::format(scripts::webview_script, //
-                                               internal,                //
-                                               request::stubs());
-
-        return script;
-    }
-
-    constinit std::string_view webview::impl::ready_script = "window.saucer.internal.message('dom_loaded')";
-
-    WKWebViewConfiguration *webview::impl::make_config(const options &opts)
+    WKWebViewConfiguration *native::make_config(const options &opts)
     {
         const utils::autorelease_guard guard{};
 
@@ -194,17 +175,30 @@ namespace saucer
 
         return config;
     }
+
+    NSUUID *native::data_store_id(const options &opts, const std::string &id)
+    {
+        if (opts.storage_path)
+        {
+            return utils::uuid_from(opts.storage_path->string());
+        }
+
+        if (opts.persistent_cookies)
+        {
+            return utils::uuid_from(id);
+        }
+
+        return [[NSUUID alloc] init];
+    }
 } // namespace saucer
 
 using namespace saucer;
 
 @implementation MessageHandler
-- (instancetype)initWithParent:(webview *)parent events:(webview::events *)events onMessage:(on_message_t)on_message
+- (instancetype)initWithParent:(webview::impl *)parent
 {
-    self               = [super init];
-    self->m_parent     = parent;
-    self->m_events     = events;
-    self->m_on_message = on_message;
+    self     = [super init];
+    self->me = parent;
 
     return self;
 }
@@ -222,34 +216,30 @@ using namespace saucer;
 
     std::string message{static_cast<NSString *>(body).UTF8String};
 
-    auto *const thiz = m_parent;
-    auto *const impl = m_parent->native<false>();
-
     if (message == "dom_loaded")
     {
-        impl->dom_loaded = true;
+        me->platform->dom_loaded = true;
 
-        for (const auto &pending : impl->pending)
+        for (const auto &pending : me->platform->pending)
         {
-            thiz->execute(pending);
+            me->execute(pending);
         }
 
-        impl->pending.clear();
-        m_events->get<web_event::dom_ready>().fire();
+        me->platform->pending.clear();
+        me->events->get<event::dom_ready>().fire();
 
         return;
     }
 
-    (thiz->*m_on_message)(message);
+    me->events->get<event::message>().fire(message).find(status::handled);
 }
 @end
 
 @implementation UIDelegate
-- (instancetype)initWithParent:(webview *)parent events:(webview::events *)events
+- (instancetype)initWithParent:(webview::impl *)parent
 {
-    self           = [super init];
-    self->m_parent = parent;
-    self->m_events = events;
+    self     = [super init];
+    self->me = parent;
 
     return self;
 }
@@ -306,24 +296,23 @@ using namespace saucer;
         .type    = type,
     });
 
-    m_events->get<web_event::permission>().fire(req).find(status::handled);
+    me->events->get<event::permission>().fire(req).find(status::handled);
 }
 @end
 
 @implementation NavigationDelegate
-- (instancetype)initWithParent:(webview *)parent events:(webview::events *)events
+- (instancetype)initWithParent:(webview::impl *)parent
 {
-    self           = [super init];
-    self->m_parent = parent;
-    self->m_events = events;
+    self     = [super init];
+    self->me = parent;
 
     return self;
 }
 
 - (void)webView:(WKWebView *)webview didStartProvisionalNavigation:(WKNavigation *)navigation
 {
-    m_parent->native<false>()->dom_loaded = false;
-    m_events->get<web_event::load>().fire(state::started);
+    me->platform->dom_loaded = false;
+    me->events->get<event::load>().fire(state::started);
 }
 
 - (void)webView:(WKWebView *)webview
@@ -336,7 +325,7 @@ using namespace saucer;
         .action = utils::objc_ptr<WKNavigationAction>::ref(action),
     }};
 
-    if (m_events->get<web_event::navigate>().fire(nav).find(policy::block))
+    if (me->events->get<event::navigate>().fire(nav).find(policy::block))
     {
         return std::invoke(handler, WKNavigationActionPolicyCancel);
     }
@@ -346,15 +335,15 @@ using namespace saucer;
 
 - (void)webView:(WKWebView *)webview didFinishNavigation:(WKNavigation *)navigation
 {
-    m_events->get<web_event::load>().fire(state::finished);
+    me->events->get<event::load>().fire(state::finished);
 }
 @end
 
 @implementation SaucerView
-- (instancetype)initWithParent:(webview *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame
+- (instancetype)initWithParent:(webview::impl *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame
 {
-    self           = [super initWithFrame:frame configuration:configuration];
-    self->m_parent = parent;
+    self     = [super initWithFrame:frame configuration:configuration];
+    self->me = parent;
 
     return self;
 }
@@ -365,7 +354,7 @@ using namespace saucer;
 
     [super willOpenMenu:menu withEvent:event];
 
-    if (!m_parent || m_parent->context_menu())
+    if (!me || me->context_menu())
     {
         return;
     }
@@ -375,9 +364,8 @@ using namespace saucer;
 
 - (void)mouseDown:(NSEvent *)event
 {
-    const utils::autorelease_guard guard{};
-
-    auto *const impl = m_parent->window::native<false>();
+    const auto guard = utils::autorelease_guard{};
+    auto *const impl = me->window->native<false>()->platform.get();
 
     impl->prev_click.emplace(click_event{
         .frame    = impl->window.frame,
@@ -389,20 +377,18 @@ using namespace saucer;
 
 - (void)mouseUp:(NSEvent *)event
 {
-    const utils::autorelease_guard guard{};
-
-    m_parent->window::native<false>()->edge.reset();
+    const auto guard = utils::autorelease_guard{};
+    me->window->native<false>()->platform->edge.reset();
 
     [super mouseUp:event];
 }
 
 - (void)mouseDragged:(NSEvent *)event
 {
-    const utils::autorelease_guard guard{};
+    const auto guard = utils::autorelease_guard{};
+    auto *const impl = me->window->native<false>()->platform.get();
 
     [super mouseDragged:event];
-
-    auto *const impl = m_parent->window::native<false>();
 
     if (!impl->edge || !impl->prev_click)
     {
@@ -410,30 +396,29 @@ using namespace saucer;
     }
 
     auto [frame, prev] = impl->prev_click.value();
-    auto edge          = impl->edge.value();
+    auto edge          = std::to_underlying(impl->edge.value());
 
-    auto current = NSEvent.mouseLocation;
-    auto diff    = NSPoint{current.x - prev.x, current.y - prev.y};
-
-    using enum window_edge;
-
+    auto current   = NSEvent.mouseLocation;
+    auto diff      = NSPoint{current.x - prev.x, current.y - prev.y};
     auto new_frame = frame;
 
-    if (edge & right)
+    using enum window::edge;
+
+    if (edge & std::to_underlying(right))
     {
         new_frame.size.width += diff.x;
     }
-    else if (edge & left)
+    else if (edge & std::to_underlying(left))
     {
         new_frame.origin.x += diff.x;
         new_frame.size.width -= diff.x;
     }
 
-    if (edge & top)
+    if (edge & std::to_underlying(top))
     {
         new_frame.size.height += diff.y;
     }
-    else if (edge & bottom)
+    else if (edge & std::to_underlying(bottom))
     {
         new_frame.origin.y += diff.y;
         new_frame.size.height -= diff.y;

@@ -4,7 +4,9 @@
 
 namespace saucer
 {
-    void application::impl::iteration()
+    using native = application::impl::native;
+
+    void native::iteration()
     {
         const utils::autorelease_guard guard{};
 
@@ -21,7 +23,7 @@ namespace saucer
         [NSApp sendEvent:event];
     }
 
-    screen application::impl::convert(NSScreen *screen)
+    screen native::convert(NSScreen *screen)
     {
         const utils::autorelease_guard guard{};
 
@@ -35,7 +37,7 @@ namespace saucer
         };
     }
 
-    void application::impl::init_menu()
+    void native::init_menu()
     {
         const utils::autorelease_guard guard{};
 

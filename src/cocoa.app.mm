@@ -4,29 +4,31 @@
 
 namespace saucer
 {
-    application::application(impl data) : extensible(this), m_impl(std::make_unique<impl>(std::move(data))) {}
+    using impl = application::impl;
 
-    application::~application() = default;
+    impl::impl() = default;
 
-    bool application::thread_safe() const
+    result<> impl::init_platform(const options &opts)
     {
-        return m_impl->thread == std::this_thread::get_id();
-    }
+        platform = std::make_unique<native>();
 
-    coco::future<void> application::finish()
+        platform->application                = [NSApplication sharedApplication];
+        platform->id                         = opts.id.value();
+        platform->quit_on_last_window_closed = opts.quit_on_last_window_closed;
+
+        [NSApp activateIgnoringOtherApps:YES];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+
+        native::init_menu();
+
+        return {};
+    };
+
+    impl::~impl() = default;
+
+    std::vector<screen> impl::screens() const // NOLINT(*-static)
     {
-        return std::move(m_impl->future);
-    }
-
-    std::vector<screen> application::screens() const
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!thread_safe())
-        {
-            return dispatch([this] { return screens(); });
-        }
-
+        const auto guard    = utils::autorelease_guard{};
         auto *const screens = [NSScreen screens];
 
         std::vector<screen> rtn{};
@@ -34,7 +36,7 @@ namespace saucer
 
         for (NSScreen *entry : screens)
         {
-            rtn.emplace_back(impl::convert(entry));
+            rtn.emplace_back(native::convert(entry));
         }
 
         return rtn;
@@ -54,29 +56,14 @@ namespace saucer
                        });
     }
 
-    int application::run(callback_t callback)
+    int impl::run(application *self, callback_t callback)
     {
-        static bool once{false};
+        const utils::autorelease_guard guard{};
 
-        if (!thread_safe())
-        {
-            assert(false && "saucer::application::run() may only be called from the thread it was created in");
-            return -1;
-        }
+        auto promise = coco::promise<void>{};
+        finish       = promise.get_future();
 
-        if (once)
-        {
-            assert(false && "saucer::application::run() may only be called once");
-            return -1;
-        }
-
-        const auto guard = utils::autorelease_guard{};
-        auto promise     = coco::promise<void>{};
-
-        once           = true;
-        m_impl->future = promise.get_future();
-
-        post([this, &callback] { std::invoke(callback, this); });
+        self->post([self, &callback] { std::invoke(callback, self); });
         [NSApp run];
 
         promise.set_value();
@@ -84,41 +71,8 @@ namespace saucer
         return 0;
     }
 
-    void application::quit() // NOLINT(*-static)
+    void impl::quit() // NOLINT(*-static)
     {
-        using traits = modules::traits<application>;
-
-        if (std::ranges::any_of(modules(), [](auto &module) { return module.template invoke<traits::on_quit>(); }))
-        {
-            return;
-        }
-
         [NSApp stop:nil];
-    }
-
-    std::optional<application> application::create(const options &opts)
-    {
-        if (static bool once{false}; once)
-        {
-            assert(false && "saucer::application may only be created once");
-            return std::nullopt;
-        }
-        else
-        {
-            once = true;
-        }
-
-        auto *const application = [NSApplication sharedApplication];
-
-        [NSApp activateIgnoringOtherApps:YES];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-
-        impl::init_menu();
-
-        return impl{
-            .application                = application,
-            .thread                     = std::this_thread::get_id(),
-            .quit_on_last_window_closed = opts.quit_on_last_window_closed,
-        };
     }
 } // namespace saucer

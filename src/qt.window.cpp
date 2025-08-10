@@ -275,8 +275,8 @@ namespace saucer
 
     void impl::set_background(color color) // NOLINT(*-function-const)
     {
-        auto palette      = platform->window->palette();
-        auto [r, g, b, a] = color;
+        auto palette            = platform->window->palette();
+        const auto [r, g, b, a] = color;
 
         palette.setColor(QPalette::ColorRole::Window, {r, g, b, a});
 

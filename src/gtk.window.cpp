@@ -284,8 +284,8 @@ namespace saucer
 
     void impl::set_background(color color) // NOLINT(*-function-const)
     {
-        auto [r, g, b, a] = color;
-        auto format       = std::format(".{} {{ background-color: rgba({}, {}, {}, {}); }}", platform->class_name, r, g, b, a);
+        const auto [r, g, b, a] = color;
+        const auto format       = std::format(".{} {{ background-color: rgba({}, {}, {}, {}); }}", platform->class_name, r, g, b, a);
 
         gtk_css_provider_load_from_string(platform->style.get(), format.c_str());
     }

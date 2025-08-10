@@ -5,387 +5,258 @@
 #include "cocoa.app.impl.hpp"
 #include "cocoa.icon.impl.hpp"
 
-#include <cassert>
-
 #include <rebind/enum.hpp>
 
 namespace saucer
 {
-    window::window(application *parent) : m_parent(parent), m_impl(std::make_unique<impl>())
-    {
-        assert(m_parent->thread_safe() && "Construction outside of the main-thread is not permitted");
+    using impl = window::impl;
 
+    impl::impl() = default;
+
+    result<> impl::init_platform()
+    {
         const utils::autorelease_guard guard{};
 
-        m_impl->window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                     styleMask:mask
-                                                       backing:NSBackingStoreBuffered
-                                                         defer:NO];
+        platform = std::make_unique<native>();
+
+        platform->window   = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                       styleMask:mask
+                                                         backing:NSBackingStoreBuffered
+                                                           defer:NO];
+        platform->delegate = [[WindowDelegate alloc] initWithParent:this];
+
+        [platform->window setDelegate:platform->delegate.get()];
+        [platform->window center];
 
         set_resizable(true);
 
-        m_impl->delegate = [[WindowDelegate alloc] initWithParent:this events:&m_events];
-
-        [m_impl->window setDelegate:m_impl->delegate.get()];
-        [m_impl->window center];
+        return {};
     }
 
-    window::~window()
+    impl::~impl()
     {
         const utils::autorelease_guard guard{};
 
-        for (const auto &event : rebind::enum_values<window_event>)
+        if (!platform)
         {
-            m_events.clear(event);
+            return;
         }
 
         // We hide-on-close, so we call trigger two different close calls to properly quit.
 
+        events->clear(event::close);
         close();
-        [m_impl->window close];
+
+        [platform->window close];
     }
 
-    template <window_event Event>
-    void window::setup()
+    template <window::event Event>
+    void impl::setup()
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return setup<Event>(); });
-        }
-
-        m_impl->setup<Event>(this);
+        platform->setup<Event>(this);
     }
 
-    bool window::visible() const
+    bool impl::visible() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return visible(); });
-        }
-
-        return m_impl->window.isVisible;
+        return platform->window.isVisible;
     }
 
-    bool window::focused() const
+    bool impl::focused() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return focused(); });
-        }
-
-        return m_impl->window.isKeyWindow;
+        return platform->window.isKeyWindow;
     }
 
-    bool window::minimized() const
+    bool impl::minimized() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return minimized(); });
-        }
-
-        return m_impl->window.isMiniaturized;
+        return platform->window.isMiniaturized;
     }
 
-    bool window::maximized() const
+    bool impl::maximized() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return maximized(); });
-        }
-
-        return m_impl->window.isZoomed;
+        return platform->window.isZoomed;
     }
 
-    bool window::resizable() const
+    bool impl::resizable() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return resizable(); });
-        }
-
-        return m_impl->window.styleMask & NSWindowStyleMaskResizable;
+        return platform->window.styleMask & NSWindowStyleMaskResizable;
     }
 
-    bool window::always_on_top() const
+    bool impl::always_on_top() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return always_on_top(); });
-        }
-
-        return m_impl->window.level == kCGMaximumWindowLevelKey;
+        return platform->window.level == kCGMaximumWindowLevelKey;
     }
 
-    bool window::click_through() const
+    bool impl::click_through() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return click_through(); });
-        }
-
-        return m_impl->window.ignoresMouseEvents;
+        return platform->window.ignoresMouseEvents;
     }
 
-    std::string window::title() const
+    std::string impl::title() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return title(); });
-        }
-
-        return m_impl->window.title.UTF8String;
+        return platform->window.title.UTF8String;
     }
 
-    window_decoration window::decoration() const
+    color impl::background() const
     {
-        const utils::autorelease_guard guard{};
+        const auto color = platform->window.backgroundColor;
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return decoration(); });
-        }
-
-        if (m_impl->window.styleMask == NSWindowStyleMaskBorderless)
-        {
-            return window_decoration::none;
-        }
-
-        if (m_impl->window.styleMask & NSWindowStyleMaskFullSizeContentView)
-        {
-            return window_decoration::partial;
-        }
-
-        return window_decoration::full;
+        return {
+            .r = static_cast<std::uint8_t>(color.redComponent),
+            .g = static_cast<std::uint8_t>(color.greenComponent),
+            .b = static_cast<std::uint8_t>(color.blueComponent),
+            .a = static_cast<std::uint8_t>(color.alphaComponent),
+        };
     }
 
-    std::pair<int, int> window::size() const
+    window::decoration impl::decorations() const
     {
+        using enum decoration;
         const utils::autorelease_guard guard{};
 
-        if (!m_parent->thread_safe())
+        if (platform->window.styleMask == NSWindowStyleMaskBorderless)
         {
-            return m_parent->dispatch([this] { return size(); });
+            return none;
         }
 
-        const auto [width, height] = m_impl->window.frame.size;
-        return {width, height};
+        if (platform->window.styleMask & NSWindowStyleMaskFullSizeContentView)
+        {
+            return partial;
+        }
+
+        return full;
     }
 
-    std::pair<int, int> window::max_size() const
+    size impl::size() const
     {
-        const utils::autorelease_guard guard{};
+        const auto guard           = utils::autorelease_guard{};
+        const auto [width, height] = platform->window.frame.size;
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return max_size(); });
-        }
-
-        const auto [width, height] = m_impl->window.maxSize;
-        return {width, height};
+        return {.x = static_cast<int>(width), .y = static_cast<int>(height)};
     }
 
-    std::pair<int, int> window::min_size() const
+    size impl::max_size() const
     {
-        const utils::autorelease_guard guard{};
+        const auto guard           = utils::autorelease_guard{};
+        const auto [width, height] = platform->window.maxSize;
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return min_size(); });
-        }
-
-        const auto [width, height] = m_impl->window.minSize;
-        return {width, height};
+        return {.x = static_cast<int>(width), .y = static_cast<int>(height)};
     }
 
-    std::pair<int, int> window::position() const
+    size impl::min_size() const
     {
-        const utils::autorelease_guard guard{};
+        const auto guard           = utils::autorelease_guard{};
+        const auto [width, height] = platform->window.minSize;
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return position(); });
-        }
-
-        const auto [x, y] = m_impl->window.frame.origin;
-        return {x, y};
+        return {.x = static_cast<int>(width), .y = static_cast<int>(height)};
     }
 
-    std::optional<saucer::screen> window::screen() const
+    position impl::position() const
     {
-        const utils::autorelease_guard guard{};
+        const auto guard  = utils::autorelease_guard{};
+        const auto [x, y] = platform->window.frame.origin;
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return screen(); });
-        }
+        return {.x = static_cast<int>(x), .y = static_cast<int>(y)};
+    }
 
-        auto *const screen = m_impl->window.screen;
+    std::optional<saucer::screen> impl::screen() const
+    {
+        const auto guard   = utils::autorelease_guard{};
+        auto *const screen = platform->window.screen;
 
         if (!screen)
         {
             return std::nullopt;
         }
 
-        return application::impl::convert(screen);
+        return application::impl::native::convert(screen);
     }
 
-    void window::hide()
+    void impl::hide() const
+    {
+        const utils::autorelease_guard guard{};
+        [platform->window orderOut:nil];
+    }
+
+    void impl::show() const
     {
         const utils::autorelease_guard guard{};
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return hide(); });
-        }
-
-        [m_impl->window orderOut:nil];
+        parent->native<false>()->platform->instances[platform->window] = true;
+        [platform->window makeKeyAndOrderFront:nil];
     }
 
-    void window::show()
+    void impl::close() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return show(); });
-        }
-
-        m_parent->native<false>()->instances[m_impl->window] = true;
-        [m_impl->window makeKeyAndOrderFront:nil];
+        [platform->delegate.get() windowShouldClose:platform->window];
     }
 
-    void window::close()
+    void impl::focus() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return close(); });
-        }
-
-        [m_impl->delegate.get() windowShouldClose:m_impl->window];
+        [platform->window makeKeyWindow];
     }
 
-    void window::focus()
+    void impl::start_drag() const
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return focus(); });
-        }
-
-        [m_impl->window makeKeyWindow];
+        [platform->window performWindowDragWithEvent:NSApp.currentEvent];
     }
 
-    void window::start_drag()
+    void impl::start_resize(edge edge) // NOLINT(*-function-const)
+    {
+        platform->edge.emplace(edge);
+    }
+
+    void impl::set_minimized(bool enabled) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return start_drag(); });
-        }
-
-        [m_impl->window performWindowDragWithEvent:NSApp.currentEvent];
+        [platform->window setIsMiniaturized:static_cast<BOOL>(enabled)];
     }
 
-    void window::start_resize(window_edge edge)
+    void impl::set_maximized(bool enabled) // NOLINT(*-function-const)
     {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this] { return start_drag(); });
-        }
-
-        m_impl->edge.emplace(edge);
+        [platform->window setIsZoomed:static_cast<BOOL>(enabled)];
     }
 
-    void window::set_minimized(bool enabled)
+    void impl::set_resizable(bool enabled) // NOLINT(*-function-const)
     {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_minimized(enabled); });
-        }
-
-        [m_impl->window setIsMiniaturized:static_cast<BOOL>(enabled)];
-    }
-
-    void window::set_maximized(bool enabled)
-    {
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_maximized(enabled); });
-        }
-
-        [m_impl->window setIsZoomed:static_cast<BOOL>(enabled)];
-    }
-
-    void window::set_resizable(bool enabled)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_resizable(enabled); });
-        }
-
+        const auto guard           = utils::autorelease_guard{};
         static constexpr auto flag = NSWindowStyleMaskResizable;
 
         if (!enabled)
         {
-            m_impl->masks &= ~flag;
+            platform->masks &= ~flag;
         }
         else
         {
-            m_impl->masks |= flag;
+            platform->masks |= flag;
         }
 
-        [m_impl->window setStyleMask:mask | m_impl->masks];
+        [platform->window setStyleMask:mask | platform->masks];
     }
 
-    void window::set_always_on_top(bool enabled)
+    void impl::set_always_on_top(bool enabled) // NOLINT(*-function-const)
     {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_always_on_top(enabled); });
-        }
-
-        m_impl->window.level = enabled ? kCGMaximumWindowLevelKey : kCGNormalWindowLevelKey;
+        const auto guard       = utils::autorelease_guard{};
+        platform->window.level = enabled ? kCGMaximumWindowLevelKey : kCGNormalWindowLevelKey;
     }
 
-    void window::set_click_through(bool enabled)
+    void impl::set_click_through(bool enabled) // NOLINT(*-function-const)
     {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, enabled] { return set_click_through(enabled); });
-        }
-
-        m_impl->window.ignoresMouseEvents = static_cast<BOOL>(enabled);
+        const auto guard                    = utils::autorelease_guard{};
+        platform->window.ignoresMouseEvents = static_cast<BOOL>(enabled);
     }
 
-    void window::set_icon(const icon &icon)
+    void impl::set_icon(const icon &icon) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
 
@@ -394,141 +265,87 @@ namespace saucer
             return;
         }
 
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, icon] { return set_icon(icon); });
-        }
-
         auto *const view = [NSImageView imageViewWithImage:icon.native<false>()->icon.get()];
-        auto *const tile = m_parent->native<false>()->application.dockTile;
+        auto *const tile = parent->native<false>()->platform->application.dockTile;
 
         [tile setContentView:view];
         [tile display];
     }
 
-    void window::set_title(const std::string &title)
+    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, title] { return set_title(title); });
-        }
-
-        [m_impl->window setTitle:[NSString stringWithUTF8String:title.c_str()]];
+        [platform->window setTitle:[NSString stringWithUTF8String:title.c_str()]];
     }
 
-    void window::set_decoration(window_decoration decoration)
+    void impl::set_background(color color) // NOLINT(*-function-const)
+    {
+        const auto [r, g, b, a] = color;
+
+        [platform->window setBackgroundColor:[NSColor colorWithCalibratedRed:static_cast<CGFloat>(r)
+                                                                       green:static_cast<CGFloat>(g)
+                                                                        blue:static_cast<CGFloat>(b)
+                                                                       alpha:static_cast<CGFloat>(a)]];
+    }
+
+    void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
 
-        if (!m_parent->thread_safe())
+        if (decoration == decoration::none)
         {
-            return m_parent->dispatch([this, decoration] { return set_decoration(decoration); });
-        }
-
-        if (decoration == window_decoration::none)
-        {
-            [m_impl->window setStyleMask:NSWindowStyleMaskBorderless];
+            [platform->window setStyleMask:NSWindowStyleMaskBorderless];
             return;
         }
 
         static constexpr auto flag = NSWindowStyleMaskFullSizeContentView;
-        const auto hidden          = static_cast<BOOL>(decoration == window_decoration::partial);
+        const auto hidden          = static_cast<BOOL>(decoration == decoration::partial);
 
         if (hidden)
         {
-            m_impl->masks |= flag;
+            platform->masks |= flag;
         }
         else
         {
-            m_impl->masks &= ~flag;
+            platform->masks &= ~flag;
         }
 
-        [m_impl->window setStyleMask:mask | m_impl->masks];
+        [platform->window setStyleMask:mask | platform->masks];
 
-        [m_impl->window standardWindowButton:NSWindowZoomButton].hidden        = hidden;
-        [m_impl->window standardWindowButton:NSWindowCloseButton].hidden       = hidden;
-        [m_impl->window standardWindowButton:NSWindowMiniaturizeButton].hidden = hidden;
+        [platform->window standardWindowButton:NSWindowZoomButton].hidden        = hidden;
+        [platform->window standardWindowButton:NSWindowCloseButton].hidden       = hidden;
+        [platform->window standardWindowButton:NSWindowMiniaturizeButton].hidden = hidden;
 
-        m_impl->window.titlebarAppearsTransparent = hidden;
-        m_impl->window.titleVisibility            = hidden ? NSWindowTitleHidden : NSWindowTitleVisible;
+        platform->window.titlebarAppearsTransparent = hidden;
+        platform->window.titleVisibility            = hidden ? NSWindowTitleHidden : NSWindowTitleVisible;
     }
 
-    void window::set_size(int width, int height)
+    void impl::set_size(saucer::size size) // NOLINT(*-function-const)
+    {
+        const auto guard = utils::autorelease_guard{};
+        auto frame       = platform->window.frame;
+        frame.size       = {.width = static_cast<float>(size.x), .height = static_cast<float>(size.y)};
+
+        [platform->window setFrame:frame display:YES animate:YES];
+    }
+
+    void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_size(width, height); });
-        }
-
-        auto frame = m_impl->window.frame;
-        frame.size = {static_cast<float>(width), static_cast<float>(height)};
-
-        [m_impl->window setFrame:frame display:YES animate:YES];
+        [platform->window setMaxSize:{static_cast<float>(size.x), static_cast<float>(size.y)}];
     }
 
-    void window::set_max_size(int width, int height)
+    void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_max_size(width, height); });
-        }
-
-        [m_impl->window setMaxSize:{static_cast<float>(width), static_cast<float>(height)}];
+        [platform->window setMinSize:{static_cast<float>(size.x), static_cast<float>(size.y)}];
     }
 
-    void window::set_min_size(int width, int height)
+    void impl::set_position(saucer::position position) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, width, height] { return set_min_size(width, height); });
-        }
-
-        [m_impl->window setMinSize:{static_cast<float>(width), static_cast<float>(height)}];
+        [platform->window setFrameOrigin:{static_cast<double>(position.x), static_cast<double>(position.y)}];
     }
 
-    void window::set_position(int x, int y)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, x, y] { return set_position(x, y); });
-        }
-
-        [m_impl->window setFrameOrigin:{static_cast<double>(x), static_cast<double>(y)}];
-    }
-
-    void window::clear(window_event event)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event] { return clear(event); });
-        }
-
-        m_events.clear(event);
-    }
-
-    void window::remove(window_event event, std::uint64_t id)
-    {
-        const utils::autorelease_guard guard{};
-
-        if (!m_parent->thread_safe())
-        {
-            return m_parent->dispatch([this, event, id] { return remove(event, id); });
-        }
-
-        m_events.remove(event, id);
-    }
-
-    SAUCER_INSTANTIATE_WINDOW_EVENTS;
+    SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_IMPL_EVENT);
 } // namespace saucer

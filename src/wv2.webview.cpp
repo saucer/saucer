@@ -353,9 +353,9 @@ namespace saucer
     {
         static constexpr auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
 
-        auto clearable = platform->scripts                                                   //
-                         | std::views::filter([](auto &&it) { return it.second.clearable; }) //
-                         | std::views::transform([](auto &&it) { return it.first; });
+        auto clearable = platform->scripts                                                  //
+                         | std::views::filter([](auto &it) { return it.second.clearable; }) //
+                         | std::views::keys;
 
         std::ranges::for_each(clearable, std::bind_front(uninject, this));
     }
