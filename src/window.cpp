@@ -225,12 +225,12 @@ namespace saucer
 
     void window::off(event event)
     {
-        return invoke(m_impl.get(), [impl = m_impl.get(), event] { impl->events->clear(event); });
+        return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
     }
 
     void window::off(event event, std::uint64_t id)
     {
-        return invoke(m_impl.get(), [impl = m_impl.get(), event, id] { impl->events->remove(event, id); });
+        return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_EVENT);

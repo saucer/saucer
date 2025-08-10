@@ -1,7 +1,5 @@
 #include "app.impl.hpp"
 
-#include "invoke.hpp"
-
 #include <rebind/enum.hpp>
 
 namespace saucer
@@ -59,7 +57,12 @@ namespace saucer
 
     std::vector<screen> application::screens() const
     {
-        return saucer::invoke<&impl::screens>(this, m_impl.get());
+        if (!m_impl)
+        {
+            return {};
+        }
+
+        return invoke(&impl::screens, m_impl.get());
     }
 
     int application::run(callback_t callback)
@@ -98,17 +101,17 @@ namespace saucer
             return;
         }
 
-        auto quit = [events = m_events.get(), impl = m_impl.get()]()
+        if (!thread_safe())
         {
-            if (events->get<event::quit>().fire().find(policy::block))
-            {
-                return;
-            }
+            return invoke(&application::quit, this);
+        }
 
-            impl->quit();
-        };
+        if (m_events->get<event::quit>().fire().find(policy::block))
+        {
+            return;
+        }
 
-        return invoke(quit);
+        m_impl->quit();
     }
 
     void application::off(event event)

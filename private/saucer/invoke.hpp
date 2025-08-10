@@ -11,25 +11,7 @@
 namespace saucer
 {
     template <typename T>
-    concept HasParent = requires(T *value) {
-        { value->parent };
-    };
-
-    template <typename T>
     struct invoker
-    {
-        T *self;
-
-      public:
-        template <typename U, typename... Us>
-        constexpr auto operator()(U &&callback, Us &&...args)
-        {
-            return self->invoke(std::forward<U>(callback), std::forward<Us>(args)...);
-        }
-    };
-
-    template <HasParent T>
-    struct invoker<T>
     {
         T *self;
 
@@ -41,46 +23,36 @@ namespace saucer
         }
     };
 
-    template <typename Invoker, typename Callback, typename... Ts>
+    template <typename T>
+    constexpr auto noop()
+    {
+        return T{};
+    }
+
+    template <>
+    constexpr auto noop<void>()
+    {
+    }
+
+    template <typename Callback, typename T, typename... Ts>
         requires std::invocable<Callback, Ts...>
-    constexpr auto invoke(bool cond, Invoker invoker, Callback &&callback, Ts &&...args)
+    constexpr auto invoke_impl(bool cond, invoker<T> invoker, Callback &&callback, Ts &&...args)
     {
         using result = std::invoke_result_t<Callback, Ts...>;
 
-        if (cond)
+        if (!cond)
         {
-            return invoker(std::forward<Callback>(callback), std::forward<Ts>(args)...);
+            return noop<result>();
         }
 
-        if constexpr (std::is_void_v<result>)
-        {
-            return;
-        }
-        else
-        {
-            return result{};
-        }
+        return invoker(std::forward<Callback>(callback), std::forward<Ts>(args)...);
     }
 
-    template <typename T, typename Callback, typename... Ts>
+    template <typename Callback, typename T, typename... Ts>
         requires std::invocable<Callback, Ts...>
-    constexpr auto invoke(T *self, Callback &&callback, Ts &&...args)
+    constexpr auto invoke(Callback &&callback, T *self, Ts &&...args)
     {
-        return invoke(static_cast<bool>(self), invoker<T>{self}, std::forward<Callback>(callback), std::forward<Ts>(args)...);
-    }
-
-    template <auto Callback, typename T, typename... Ts>
-        requires std::invocable<decltype(Callback), T *, Ts...>
-    constexpr auto invoke_impl(T *self, Ts &&...args)
-    {
-        return invoke(static_cast<bool>(self), invoker<T>{self}, Callback, self, std::forward<Ts>(args)...);
-    }
-
-    template <auto Callback, typename T, typename U, typename... Ts>
-        requires std::invocable<decltype(Callback), U *, Ts...>
-    constexpr auto invoke_impl(T *self, U *impl, Ts &&...args)
-    {
-        return invoke(static_cast<bool>(impl), invoker<T>{self}, Callback, impl, std::forward<Ts>(args)...);
+        return invoke_impl(static_cast<bool>(self), invoker<T>{self}, std::forward<Callback>(callback), std::forward<Ts>(args)...);
     }
 
     template <typename T>
@@ -100,13 +72,13 @@ namespace saucer
         }
     };
 
-    template <callback Callback, typename... Ts>
-    constexpr auto invoke(Ts &&...args)
+    template <callback Callback, typename T, typename... Ts>
+    constexpr auto invoke(T *self, Ts &&...args)
     {
         static constexpr auto name = rebind::member_name<Callback.value>;
         static constexpr auto pure = name.substr(0, name.find_first_of("(<"));
         static_assert(pure == Callback.name, "Name of implementation does not match interface");
 
-        return invoke_impl<Callback.value>(std::forward<Ts>(args)...);
+        return invoke(Callback.value, self, self, std::forward<Ts>(args)...);
     }
 } // namespace saucer

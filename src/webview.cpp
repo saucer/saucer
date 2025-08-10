@@ -236,7 +236,7 @@ namespace saucer
             impl->handle_scheme("saucer", std::move(handler));
         };
 
-        return invoke(m_impl.get(), embed, std::move(files), std::move(handler));
+        return invoke(embed, m_impl.get(), std::move(files), std::move(handler));
     }
 
     void webview::unembed()
@@ -247,12 +247,12 @@ namespace saucer
             impl->remove_scheme("saucer");
         };
 
-        return invoke(m_impl.get(), std::move(unembed));
+        return invoke(unembed, m_impl.get());
     }
 
     void webview::unembed(const fs::path &file)
     {
-        return invoke(m_impl.get(), [impl = m_impl.get(), file] { impl->embedded.erase(file); });
+        return invoke([impl = m_impl.get(), file] { impl->embedded.erase(file); }, m_impl.get());
     }
 
     void webview::execute(const std::string &code)
@@ -284,12 +284,12 @@ namespace saucer
 
     void webview::off(event event)
     {
-        return invoke(m_impl.get(), [impl = m_impl.get(), event] { impl->events->clear(event); });
+        return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
     }
 
     void webview::off(event event, std::uint64_t id)
     {
-        return invoke(m_impl.get(), [impl = m_impl.get(), event, id] { impl->events->remove(event, id); });
+        return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
     }
 
     void webview::register_scheme(const std::string &name)
