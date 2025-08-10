@@ -17,12 +17,10 @@
 
 namespace saucer::utils
 {
-    namespace system      = winrt::Windows::System;
-    namespace composition = winrt::Windows::UI::Composition;
-
-    using dispatch_controller = system::DispatcherQueueController;
-    using compositor          = composition::Compositor;
-    using window_target       = composition::Desktop::DesktopWindowTarget;
+    using dispatch_controller = winrt::Windows::System::DispatcherQueueController;
+    using compositor          = winrt::Windows::UI::Composition::Compositor;
+    using brush               = winrt::Windows::UI::Composition::CompositionColorBrush;
+    using window_target       = winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget;
 
     using string_handle  = utils::handle<LPWSTR, CoTaskMemFree>;
     using module_handle  = utils::handle<HMODULE, FreeLibrary>;
@@ -54,8 +52,8 @@ namespace saucer::utils
     void set_immersive_dark(HWND, bool);
     void extend_frame(HWND, std::array<int, 4>);
 
-    [[nodiscard]] std::wstring widen(const std::string &);
-    [[nodiscard]] std::string narrow(const std::wstring &);
+    [[nodiscard]] std::wstring widen(std::string_view);
+    [[nodiscard]] std::string narrow(std::wstring_view);
 
     [[nodiscard]] std::vector<std::uint8_t> read(IStream *);
 

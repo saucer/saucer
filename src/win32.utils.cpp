@@ -120,10 +120,9 @@ namespace saucer
         call_as<DwmExtendFrameIntoClientArea>(func, hwnd, &margins);
     }
 
-    std::string utils::narrow(const std::wstring &wide)
+    std::string utils::narrow(std::wstring_view wide)
     {
-        auto wide_size = static_cast<int>(wide.size());
-        auto size      = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide_size, nullptr, 0, nullptr, nullptr);
+        auto size = WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
 
         if (!size)
         {
@@ -131,15 +130,14 @@ namespace saucer
         }
 
         std::string out(size, '\0');
-        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), wide_size, out.data(), size, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), out.data(), size, nullptr, nullptr);
 
         return out;
     }
 
-    std::wstring utils::widen(const std::string &narrow)
+    std::wstring utils::widen(std::string_view narrow)
     {
-        auto narrow_size = static_cast<int>(narrow.size());
-        auto size        = MultiByteToWideChar(CP_UTF8, 0, narrow.c_str(), narrow_size, nullptr, 0);
+        auto size = MultiByteToWideChar(CP_UTF8, 0, narrow.data(), static_cast<int>(narrow.size()), nullptr, 0);
 
         if (!size)
         {
@@ -147,7 +145,7 @@ namespace saucer
         }
 
         std::wstring out(size, '\0');
-        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, narrow.c_str(), narrow_size, out.data(), size);
+        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, narrow.data(), static_cast<int>(narrow.size()), out.data(), size);
 
         return out;
     }
