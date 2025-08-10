@@ -57,20 +57,20 @@ namespace saucer
         platform->manager = content_manager_ptr::ref(webkit_web_view_get_user_content_manager(platform->web_view));
         webkit_user_content_manager_register_script_message_handler(platform->manager.get(), "saucer", nullptr);
 
-        platform->msg_received = utils::connect(platform->manager.get(), "script-message-received", native::on_message, this);
+        utils::connect(platform->manager.get(), "script-message-received", native::on_message, this);
 
-        auto *const controller = gtk_gesture_click_new();
+        platform->gesture = gtk_gesture_click_new();
 
-        utils::connect(controller, "pressed", native::on_click, this);
-        utils::connect(controller, "unpaired-release", native::on_release, this);
+        utils::connect(platform->gesture, "pressed", native::on_click, this);
+        utils::connect(platform->gesture, "unpaired-release", native::on_release, this);
 
-        gtk_widget_add_controller(GTK_WIDGET(platform->web_view), GTK_EVENT_CONTROLLER(controller));
+        gtk_widget_add_controller(GTK_WIDGET(platform->web_view), GTK_EVENT_CONTROLLER(platform->gesture));
 
         gtk_widget_set_size_request(GTK_WIDGET(platform->web_view), 1, 1);
         gtk_widget_set_vexpand(GTK_WIDGET(platform->web_view), true);
         gtk_widget_set_hexpand(GTK_WIDGET(platform->web_view), true);
 
-        gtk_box_append(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
+        gtk_overlay_add_overlay(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
 
         return {};
     }
@@ -87,8 +87,11 @@ namespace saucer
             remove_scheme(name);
         }
 
-        gtk_box_remove(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
-        g_signal_handler_disconnect(platform->manager.get(), platform->msg_received);
+        g_signal_handlers_disconnect_by_data(platform->gesture, this);
+        g_signal_handlers_disconnect_by_data(platform->web_view, this);
+        g_signal_handlers_disconnect_by_data(platform->manager.get(), this);
+
+        gtk_overlay_remove_overlay(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
     }
 
     template <webview::event Event>
@@ -158,6 +161,22 @@ namespace saucer
         return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
     }
 
+    bounds impl::bounds() const
+    {
+        auto [width, height] = window->size();
+        auto *const widget   = GTK_WIDGET(platform->web_view);
+
+        const auto x = gtk_widget_get_margin_start(widget);
+        const auto y = gtk_widget_get_margin_top(widget);
+
+        return {
+            .x = x,
+            .y = y,
+            .w = width - x - gtk_widget_get_margin_end(widget),
+            .h = height - y - gtk_widget_get_margin_bottom(widget),
+        };
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         auto *const settings  = webkit_web_view_get_settings(platform->web_view);
@@ -197,6 +216,28 @@ namespace saucer
     {
         const auto scheme = enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT;
         g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
+    }
+
+    void impl::unset_bounds() // NOLINT(*-function-const)
+    {
+        auto *const widget = GTK_WIDGET(platform->web_view);
+
+        gtk_widget_set_margin_start(widget, 0);
+        gtk_widget_set_margin_end(widget, 0);
+        gtk_widget_set_margin_top(widget, 0);
+        gtk_widget_set_margin_bottom(widget, 0);
+    }
+
+    void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
+    {
+        auto [width, height] = window->size();
+        auto *const widget   = GTK_WIDGET(platform->web_view);
+
+        gtk_widget_set_margin_start(widget, bounds.x);
+        gtk_widget_set_margin_end(widget, width - bounds.x - bounds.w);
+
+        gtk_widget_set_margin_top(widget, bounds.y);
+        gtk_widget_set_margin_bottom(widget, height - bounds.y - bounds.h);
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)

@@ -18,11 +18,20 @@ namespace saucer
 
         platform->style   = gtk_css_provider_new();
         platform->header  = ADW_HEADER_BAR(adw_header_bar_new());
-        platform->content = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+        platform->content = GTK_OVERLAY(gtk_overlay_new());
 
-        gtk_box_append(platform->content, GTK_WIDGET(platform->header));
+        auto *const box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+        auto *const bin = ADW_BIN(adw_bin_new());
+
+        gtk_box_append(box, GTK_WIDGET(platform->header));
+        gtk_box_append(box, GTK_WIDGET(platform->content));
+
+        gtk_widget_set_vexpand(GTK_WIDGET(bin), true);
+        gtk_widget_set_hexpand(GTK_WIDGET(bin), true);
+
+        gtk_overlay_set_child(platform->content, GTK_WIDGET(bin));
         gtk_window_set_hide_on_close(GTK_WINDOW(platform->window.get()), true);
-        adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(platform->content));
+        adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(box));
 
         platform->class_name = std::format("background-{:d}", reinterpret_cast<std::uintptr_t>(platform->window.get()));
 
@@ -301,7 +310,7 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        gtk_window_set_default_size(GTK_WINDOW(platform->window.get()), size.x, size.y);
+        gtk_window_set_default_size(GTK_WINDOW(platform->window.get()), size.w, size.h);
     }
 
     void impl::set_max_size(saucer::size) // NOLINT(*-static, *-function-const)
@@ -310,7 +319,7 @@ namespace saucer
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        gtk_widget_set_size_request(GTK_WIDGET(platform->window.get()), size.x, size.y);
+        gtk_widget_set_size_request(GTK_WIDGET(platform->window.get()), size.w, size.h);
     }
 
     void impl::set_position(saucer::position) // NOLINT(*-static, *-function-const)

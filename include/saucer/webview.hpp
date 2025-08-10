@@ -51,6 +51,12 @@ namespace saucer
         std::string mime;
     };
 
+    struct bounds
+    {
+        int x, y;
+        int w, h;
+    };
+
     struct webview
     {
         struct impl;
@@ -130,6 +136,7 @@ namespace saucer
       public:
         [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
+        [[sc::thread_safe]] [[nodiscard]] saucer::bounds bounds() const;
 
       public:
         [[sc::thread_safe]] void set_dev_tools(bool);
@@ -138,6 +145,10 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_background(color);
         [[sc::thread_safe]] void set_force_dark_mode(bool);
+
+      public:
+        [[sc::thread_safe]] void unset_bounds();
+        [[sc::thread_safe]] void set_bounds(saucer::bounds);
 
       public:
         [[sc::thread_safe]] void set_url(const uri &);

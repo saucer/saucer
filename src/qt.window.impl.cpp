@@ -68,11 +68,6 @@ namespace saucer
             return;
         }
 
-        if (impl->platform->on_closed)
-        {
-            std::invoke(impl->platform->on_closed);
-        }
-
         QMainWindow::closeEvent(event);
         impl->events->get<event::closed>().fire();
     }
@@ -81,5 +76,78 @@ namespace saucer
     {
         QMainWindow::resizeEvent(event);
         impl->events->get<event::resize>().fire(width(), height());
+    }
+
+    overlay_layout::~overlay_layout()
+    {
+        for (auto *const item : m_items)
+        {
+            delete item;
+        }
+
+        m_items.clear();
+    }
+
+    int overlay_layout::count() const
+    {
+        return static_cast<int>(m_items.size());
+    }
+
+    QLayoutItem *overlay_layout::takeAt(int index)
+    {
+        if (static_cast<std::size_t>(index) >= m_items.size())
+        {
+            return nullptr;
+        }
+
+        auto *const item = m_items[index];
+        m_items.erase(m_items.begin() + index);
+
+        return item;
+    }
+
+    QLayoutItem *overlay_layout::itemAt(int index) const
+    {
+        if (static_cast<std::size_t>(index) >= m_items.size())
+        {
+            return nullptr;
+        }
+
+        return m_items[index];
+    }
+
+    QSize overlay_layout::sizeHint() const
+    {
+        return geometry().size();
+    }
+
+    QSize overlay_layout::minimumSize() const
+    {
+        return {};
+    }
+
+    void overlay_layout::addItem(QLayoutItem *item)
+    {
+        m_items.emplace_back(item);
+    }
+
+    void overlay_layout::setGeometry(const QRect &rect)
+    {
+        const auto previous = geometry();
+
+        for (auto *const item : m_items)
+        {
+            const auto resize = !m_initialized || item->geometry() == previous || item->geometry().isNull();
+
+            if (!resize)
+            {
+                continue;
+            }
+
+            item->setGeometry(rect);
+        }
+
+        m_initialized = true;
+        QLayout::setGeometry(rect);
     }
 } // namespace saucer

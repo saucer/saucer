@@ -48,6 +48,7 @@ namespace saucer
 
       public:
         bool dom_loaded{false};
+        std::uint64_t on_closed;
         std::vector<std::string> pending;
 
       public:

@@ -54,6 +54,7 @@ namespace saucer
       public:
         [[nodiscard]] color background() const;
         [[nodiscard]] bool force_dark_mode() const;
+        [[nodiscard]] saucer::bounds bounds() const;
 
       public:
         void set_dev_tools(bool);
@@ -62,6 +63,10 @@ namespace saucer
       public:
         void set_background(color);
         void set_force_dark_mode(bool);
+
+      public:
+        void unset_bounds();
+        void set_bounds(saucer::bounds);
 
       public:
         void set_url(const uri &);

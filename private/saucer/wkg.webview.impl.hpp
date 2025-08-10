@@ -25,11 +25,12 @@ namespace saucer
         WebKitWebView *web_view;
 
       public:
-        gulong msg_received;
-        content_manager_ptr manager;
+        GtkGesture *gesture;
+        bool context_menu{true};
 
       public:
-        bool context_menu{true};
+        content_manager_ptr manager;
+        utils::g_object_ptr<WebKitSettings> settings;
 
       public:
         std::uint64_t id_counter{0};
@@ -38,9 +39,6 @@ namespace saucer
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
-
-      public:
-        utils::g_object_ptr<WebKitSettings> settings;
 
       public:
         template <event>

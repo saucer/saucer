@@ -21,7 +21,11 @@ namespace saucer
         int y;
     };
 
-    using size = position;
+    struct size
+    {
+        int w;
+        int h;
+    };
 
     struct color
     {

@@ -2,6 +2,7 @@
 
 #include "window.impl.hpp"
 
+#include <QLayout>
 #include <QMainWindow>
 
 namespace saucer
@@ -12,7 +13,6 @@ namespace saucer
 
       public:
         QSize max_size, min_size;
-        std::move_only_function<void()> on_closed;
 
       public:
         void set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const;
@@ -29,5 +29,30 @@ namespace saucer
         void changeEvent(QEvent *) override;
         void closeEvent(QCloseEvent *) override;
         void resizeEvent(QResizeEvent *) override;
+    };
+
+    class overlay_layout : public QLayout
+    {
+        bool m_initialized{false};
+        std::vector<QLayoutItem *> m_items;
+
+      public:
+        using QLayout::QLayout;
+
+      public:
+        ~overlay_layout() override;
+
+      public:
+        [[nodiscard]] int count() const override;
+        [[nodiscard]] QLayoutItem *takeAt(int) override;
+        [[nodiscard]] QLayoutItem *itemAt(int) const override;
+
+      public:
+        [[nodiscard]] QSize sizeHint() const override;
+        [[nodiscard]] QSize minimumSize() const override;
+
+      public:
+        void addItem(QLayoutItem *) override;
+        void setGeometry(const QRect &) override;
     };
 } // namespace saucer

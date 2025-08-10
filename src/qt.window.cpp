@@ -26,6 +26,11 @@ namespace saucer
         platform->max_size = platform->window->maximumSize();
         platform->min_size = platform->window->minimumSize();
 
+        auto *const content = new QWidget{platform->window.get()};
+        content->setLayout(new overlay_layout);
+
+        platform->window->setCentralWidget(content);
+
         return {};
     }
 
@@ -117,22 +122,22 @@ namespace saucer
 
     size impl::size() const
     {
-        return {platform->window->width(), platform->window->height()};
+        return {.w = platform->window->width(), .h = platform->window->height()};
     }
 
     size impl::max_size() const
     {
-        return {platform->window->maximumWidth(), platform->window->maximumHeight()};
+        return {.w = platform->window->maximumWidth(), .h = platform->window->maximumHeight()};
     }
 
     size impl::min_size() const
     {
-        return {platform->window->minimumWidth(), platform->window->minimumHeight()};
+        return {.w = platform->window->minimumWidth(), .h = platform->window->minimumHeight()};
     }
 
-    size impl::position() const
+    position impl::position() const
     {
-        return {platform->window->x(), platform->window->y()};
+        return {.x = platform->window->x(), .y = platform->window->y()};
     }
 
     std::optional<saucer::screen> impl::screen() const
@@ -292,18 +297,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->window->resize(size.x, size.y);
+        platform->window->resize(size.w, size.h);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->window->setMaximumSize(size.x, size.y);
+        platform->window->setMaximumSize(size.w, size.h);
         platform->max_size = platform->window->maximumSize();
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->window->setMinimumSize(size.x, size.y);
+        platform->window->setMinimumSize(size.w, size.h);
         platform->min_size = platform->window->minimumSize();
     }
 

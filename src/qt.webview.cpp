@@ -70,7 +70,7 @@ namespace saucer
         platform->profile->setPersistentCookiesPolicy(opts.persistent_cookies ? ForcePersistentCookies : NoPersistentCookies);
         platform->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
 
-        platform->web_view    = std::make_unique<QWebEngineView>();
+        platform->web_view    = std::make_unique<QWebEngineView>(window->native<false>()->platform->window->centralWidget());
         platform->web_page    = std::make_unique<QWebEnginePage>(platform->profile.get());
         platform->channel     = std::make_unique<QWebChannel>();
         platform->channel_obj = std::make_unique<web_class>(this);
@@ -102,12 +102,9 @@ namespace saucer
                                         events->get<event::load>().fire(state::started);
                                     });
 
-        window->native<false>()->platform->on_closed = [this]
-        {
-            set_dev_tools(false);
-        };
+        platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
+        window->native<false>()->platform->window->centralWidget()->layout()->addWidget(platform->web_view.get());
 
-        window->native<false>()->platform->window->setCentralWidget(platform->web_view.get());
         platform->web_view->show();
 
         return {};
@@ -120,12 +117,12 @@ namespace saucer
             return;
         }
 
-        if (auto *const impl = window->native<false>()->platform.get(); impl->on_closed)
-        {
-            std::invoke(std::exchange(impl->on_closed, {}));
-        }
+        window->off(window::event::closed, platform->on_closed);
 
+        set_dev_tools(false);
         platform->web_view->disconnect();
+
+        window->native<false>()->platform->window->centralWidget()->layout()->removeWidget(platform->web_view.get());
     }
 
     template <webview::event Event>
@@ -188,6 +185,12 @@ namespace saucer
 #endif
     }
 
+    bounds impl::bounds() const
+    {
+        const auto geometry = platform->web_view->geometry();
+        return {.x = geometry.x(), .y = geometry.y(), .w = geometry.width(), .h = geometry.height()};
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         if (!platform->dev_page && !enabled)
@@ -232,6 +235,17 @@ namespace saucer
         auto *settings = platform->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
 #endif
+    }
+
+    void impl::unset_bounds() // NOLINT(*-function-const)
+    {
+        platform->web_view->setGeometry(QRect{});
+        platform->web_view->layout()->invalidate();
+    }
+
+    void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
+    {
+        platform->web_view->setGeometry({bounds.x, bounds.y, bounds.w, bounds.h});
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)

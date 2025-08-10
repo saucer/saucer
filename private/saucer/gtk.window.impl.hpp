@@ -44,7 +44,7 @@ namespace saucer
         std::optional<decoration> prev_decoration;
 
       public:
-        GtkBox *content;
+        GtkOverlay *content;
         AdwHeaderBar *header;
 
       public:

@@ -145,6 +145,11 @@ namespace saucer
         return invoke<&impl::force_dark_mode>(m_impl.get());
     }
 
+    bounds webview::bounds() const
+    {
+        return invoke<&impl::bounds>(m_impl.get());
+    }
+
     void webview::set_dev_tools(bool value)
     {
         return invoke<&impl::set_dev_tools>(m_impl.get(), value);
@@ -163,6 +168,16 @@ namespace saucer
     void webview::set_force_dark_mode(bool value)
     {
         return invoke<&impl::set_force_dark_mode>(m_impl.get(), value);
+    }
+
+    void webview::unset_bounds()
+    {
+        return invoke<&impl::unset_bounds>(m_impl.get());
+    }
+
+    void webview::set_bounds(saucer::bounds bounds)
+    {
+        return invoke<&impl::set_bounds>(m_impl.get(), bounds);
     }
 
     void webview::set_url(const uri &url)
