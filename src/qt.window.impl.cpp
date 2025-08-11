@@ -24,6 +24,16 @@ namespace saucer
         window->show();
     }
 
+    void native::add_widget(QWidget *widget) const
+    {
+        window->centralWidget()->layout()->addWidget(widget);
+    }
+
+    void native::remove_widget(QWidget *widget) const
+    {
+        window->centralWidget()->layout()->removeWidget(widget);
+    }
+
     main_window::main_window(window::impl *impl) : impl(impl) {}
 
     void main_window::changeEvent(QEvent *event)

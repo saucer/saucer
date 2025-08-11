@@ -67,7 +67,7 @@ namespace saucer
         gtk_widget_set_vexpand(GTK_WIDGET(platform->web_view), true);
         gtk_widget_set_hexpand(GTK_WIDGET(platform->web_view), true);
 
-        gtk_overlay_add_overlay(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
+        window->native<false>()->platform->add_widget(GTK_WIDGET(platform->web_view));
 
         return {};
     }
@@ -88,7 +88,7 @@ namespace saucer
         g_signal_handlers_disconnect_by_data(platform->web_view, this);
         g_signal_handlers_disconnect_by_data(platform->manager.get(), this);
 
-        gtk_overlay_remove_overlay(window->native<false>()->platform->content, GTK_WIDGET(platform->web_view));
+        window->native<false>()->platform->remove_widget(GTK_WIDGET(platform->web_view));
     }
 
     template <webview::event Event>

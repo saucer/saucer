@@ -30,8 +30,9 @@ namespace saucer
         gtk_widget_set_hexpand(GTK_WIDGET(bin), true);
 
         gtk_overlay_set_child(platform->content, GTK_WIDGET(bin));
-        gtk_window_set_hide_on_close(GTK_WINDOW(platform->window.get()), true);
         adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(box));
+
+        gtk_window_set_hide_on_close(GTK_WINDOW(platform->window.get()), true);
 
         platform->class_name = std::format("background-{:d}", reinterpret_cast<std::uintptr_t>(platform->window.get()));
 

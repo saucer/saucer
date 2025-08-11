@@ -123,6 +123,50 @@ namespace saucer
     {
     }
 
+    void native::add_widget(GtkWidget *widget) const
+    {
+        gtk_overlay_add_overlay(content, widget);
+    }
+
+    void native::remove_widget(GtkWidget *widget) const
+    {
+        gtk_overlay_remove_overlay(content, widget);
+    }
+
+    void native::track(impl *self) const
+    {
+        auto callback = [](void *, impl *self) -> gboolean
+        {
+            if (self->events->get<event::close>().fire().find(policy::block))
+            {
+                return true;
+            }
+
+            auto *parent     = self->parent;
+            auto *identifier = self->platform->window.get();
+
+            auto *const impl = parent->native<false>()->platform.get();
+            auto &instances  = impl->instances;
+
+            instances.erase(identifier);
+            self->events->get<event::closed>().fire();
+
+            if (!impl->quit_on_last_window_closed)
+            {
+                return false;
+            }
+
+            if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
+            {
+                parent->quit();
+            }
+
+            return false;
+        };
+
+        utils::connect(window.get(), "close-request", +callback, self);
+    }
+
     void native::start_resize(edge edge) const
     {
         GdkSurfaceEdge translated{};
@@ -166,40 +210,6 @@ namespace saucer
 
         const auto [device, surface, button, time, x, y] = data.value();
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
-    }
-
-    void native::track(impl *self) const
-    {
-        auto callback = [](void *, impl *self) -> gboolean
-        {
-            if (self->events->get<event::close>().fire().find(policy::block))
-            {
-                return true;
-            }
-
-            auto *parent     = self->parent;
-            auto *identifier = self->platform->window.get();
-
-            auto *const impl = parent->native<false>()->platform.get();
-            auto &instances  = impl->instances;
-
-            instances.erase(identifier);
-            self->events->get<event::closed>().fire();
-
-            if (!impl->quit_on_last_window_closed)
-            {
-                return false;
-            }
-
-            if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
-            {
-                parent->quit();
-            }
-
-            return false;
-        };
-
-        utils::connect(window.get(), "close-request", +callback, self);
     }
 
     void native::update_region(impl *self) const

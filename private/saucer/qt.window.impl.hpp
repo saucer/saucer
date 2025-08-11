@@ -16,6 +16,10 @@ namespace saucer
 
       public:
         void set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const;
+
+      public:
+        void add_widget(QWidget *) const;
+        void remove_widget(QWidget *) const;
     };
 
     struct main_window : QMainWindow
