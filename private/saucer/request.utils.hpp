@@ -41,9 +41,16 @@ namespace saucer::request::utils
     } // namespace detail
 
     template <typename T, bool Terminated = false>
-    static constexpr auto tag = []
+    static constexpr auto raw_tag = []
     {
         return detail::tag<T, Terminated>;
+    }();
+
+    template <typename T, bool Terminated = false>
+    static constexpr auto tag = []
+    {
+        static constexpr auto raw = raw_tag<T, Terminated>;
+        return std::string_view{raw.data(), raw.size()};
     }();
 
     template <typename T>

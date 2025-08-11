@@ -34,7 +34,7 @@ consteval auto generate()
     }
     else
     {
-        return std::type_identity<rfl::NamedTuple<rfl::Field<tag<T, true>, bool>, State...>>{};
+        return std::type_identity<rfl::NamedTuple<rfl::Field<raw_tag<T, true>, bool>, State...>>{};
     }
 }
 
