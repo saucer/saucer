@@ -218,7 +218,7 @@ namespace saucer
         g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
     }
 
-    void impl::unset_bounds() // NOLINT(*-function-const)
+    void impl::reset_bounds() // NOLINT(*-function-const)
     {
         auto *const widget = GTK_WIDGET(platform->web_view);
 

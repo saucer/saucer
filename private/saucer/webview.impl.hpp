@@ -65,7 +65,7 @@ namespace saucer
         void set_force_dark_mode(bool);
 
       public:
-        void unset_bounds();
+        void reset_bounds();
         void set_bounds(saucer::bounds);
 
       public:

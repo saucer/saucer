@@ -237,7 +237,7 @@ namespace saucer
 #endif
     }
 
-    void impl::unset_bounds() // NOLINT(*-function-const)
+    void impl::reset_bounds() // NOLINT(*-function-const)
     {
         platform->web_view->setGeometry(QRect{});
         platform->web_view->layout()->invalidate();

@@ -57,8 +57,6 @@ namespace saucer
         }
 
         // We hide-on-close. This is required to make the parent quit properly.
-
-        events->clear(event::close);
         gtk_window_close(GTK_WINDOW(platform->window.get()));
 
         auto *const display  = gdk_display_get_default();

@@ -147,7 +147,7 @@ namespace saucer
         [[sc::thread_safe]] void set_force_dark_mode(bool);
 
       public:
-        [[sc::thread_safe]] void unset_bounds();
+        [[sc::thread_safe]] void reset_bounds();
         [[sc::thread_safe]] void set_bounds(saucer::bounds);
 
       public:
