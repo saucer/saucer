@@ -35,6 +35,12 @@ namespace saucer
             return err(contract_error::not_main_thread);
         }
 
+        if (static auto once{true}; once)
+        {
+            register_scheme("saucer");
+            once = false;
+        }
+
         auto rtn         = webview{};
         auto *const impl = rtn.m_impl.get();
 
@@ -170,9 +176,9 @@ namespace saucer
         return invoke<&impl::set_force_dark_mode>(m_impl.get(), value);
     }
 
-    void webview::unset_bounds()
+    void webview::reset_bounds()
     {
-        return invoke<&impl::unset_bounds>(m_impl.get());
+        return invoke<&impl::reset_bounds>(m_impl.get());
     }
 
     void webview::set_bounds(saucer::bounds bounds)

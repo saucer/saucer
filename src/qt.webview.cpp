@@ -31,11 +31,6 @@ namespace saucer
             return err(std::errc::no_such_file_or_directory);
         }
 
-        platform = std::make_unique<native>();
-
-        static std::once_flag flag;
-        std::call_once(flag, [] { register_scheme("saucer"); });
-
         auto flags = opts.browser_flags;
 
         if (opts.hardware_acceleration)
@@ -47,6 +42,7 @@ namespace saucer
         const auto args = flags | std::views::join_with(' ') | std::ranges::to<std::string>();
         qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
 
+        platform          = std::make_unique<native>();
         platform->profile = std::make_unique<QWebEngineProfile>("saucer");
 
         if (opts.user_agent.has_value())

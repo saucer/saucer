@@ -20,9 +20,6 @@ namespace saucer
     {
         platform = std::make_unique<native>();
 
-        static std::once_flag flag;
-        std::call_once(flag, [] { register_scheme("saucer"); });
-
         platform->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
         platform->settings = native::make_settings(opts);
 
