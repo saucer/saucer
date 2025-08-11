@@ -4,6 +4,7 @@
 #include "ref_obj.hpp"
 
 #import <MacTypes.h>
+#import <Foundation/Foundation.h>
 
 namespace saucer::utils
 {
@@ -35,6 +36,8 @@ namespace saucer::utils
       public:
         ~autorelease_guard();
     };
+
+    [[nodiscard]] NSUUID *uuid_from(const std::string &);
 } // namespace saucer::utils
 
 #include "cocoa.utils.inl"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window.hpp"
+#include "window.impl.hpp"
 
 #include "cocoa.utils.hpp"
 
@@ -25,25 +25,21 @@ namespace saucer
         NSPoint position;
     };
 
-    struct window::impl
+    struct window::impl::native
     {
         NSWindow *window;
         utils::objc_ptr<WindowDelegate> delegate;
 
       public:
         NSWindowStyleMask masks{};
-        std::function<void()> on_closed;
 
       public:
-        std::optional<window_edge> edge;
+        std::optional<window::edge> edge;
         std::optional<click_event> prev_click;
 
       public:
-        template <window_event>
-        void setup(saucer::window *);
-
-      public:
-        void set_alpha(std::uint8_t alpha) const;
+        template <event>
+        void setup(impl *);
 
       public:
         static void init_menu();
@@ -61,8 +57,7 @@ namespace saucer
 @interface WindowDelegate : NSObject <NSWindowDelegate>
 {
   @public
-    saucer::window *m_parent;
-    saucer::window::events *m_events;
+    saucer::window::impl *me;
 }
-- (instancetype)initWithParent:(saucer::window *)parent events:(saucer::window::events *)events;
+- (instancetype)initWithParent:(saucer::window::impl *)parent;
 @end

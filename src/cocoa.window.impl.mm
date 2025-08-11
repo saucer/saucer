@@ -6,10 +6,13 @@
 
 namespace saucer
 {
+    using native = window::impl::native;
+    using event  = window::event;
+
     template <>
-    void saucer::window::impl::setup<window_event::decorated>(saucer::window *self)
+    void native::setup<event::decorated>(impl *self)
     {
-        auto &event = self->m_events.get<window_event::decorated>();
+        auto &event = self->events->get<event::decorated>();
 
         if (!event.empty())
         {
@@ -19,7 +22,7 @@ namespace saucer
         const utils::objc_ptr<Observer> observer =
             [[Observer alloc] initWithCallback:[self]
                               {
-                                  self->m_events.get<window_event::decorated>().fire(self->decoration());
+                                  self->events->get<event::decorated>().fire(self->decorations());
                               }];
 
         [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];
@@ -27,58 +30,47 @@ namespace saucer
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::maximize>(saucer::window *self)
+    void native::setup<event::maximize>(impl *self)
     {
-        auto &event = self->m_events.get<window_event::maximize>();
+        auto &event = self->events->get<event::maximize>();
 
         if (!event.empty())
         {
             return;
         }
 
-        const utils::objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]
-                              {
-                                  self->m_events.get<window_event::maximize>().fire(self->maximized());
-                              }];
+        const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
+                                                                     {
+                                                                         self->events->get<event::maximize>().fire(self->maximized());
+                                                                     }];
 
         [window addObserver:observer.get() forKeyPath:@"isZoomed" options:0 context:nullptr];
         event.on_clear([this, observer] { [window removeObserver:observer.get() forKeyPath:@"isZoomed"]; });
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::minimize>(saucer::window *)
+    void native::setup<event::minimize>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::closed>(saucer::window *)
+    void native::setup<event::closed>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::resize>(saucer::window *)
+    void native::setup<event::resize>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::focus>(saucer::window *)
+    void native::setup<event::focus>(impl *)
     {
     }
 
     template <>
-    void saucer::window::impl::setup<window_event::close>(saucer::window *)
+    void native::setup<event::close>(impl *)
     {
-    }
-
-    void saucer::window::impl::set_alpha(std::uint8_t alpha) const
-    {
-        const utils::autorelease_guard guard{};
-
-        auto *const background = window.backgroundColor;
-        auto *const color      = [background colorWithAlphaComponent:static_cast<float>(alpha) / 255.f];
-
-        [window setBackgroundColor:color];
     }
 } // namespace saucer
 
@@ -103,74 +95,66 @@ using namespace saucer;
 @end
 
 @implementation WindowDelegate
-- (instancetype)initWithParent:(window *)parent events:(window::events *)events
+- (instancetype)initWithParent:(window::impl *)parent
 {
-    self           = [super init];
-    self->m_parent = parent;
-    self->m_events = events;
+    self     = [super init];
+    self->me = parent;
 
     return self;
 }
 
 - (void)windowDidMiniaturize:(NSNotification *)notification
 {
-    m_events->get<window_event::minimize>().fire(true);
+    me->events->get<event::minimize>().fire(true);
 }
 
 - (void)windowDidDeminiaturize:(NSNotification *)notification
 {
-    m_events->get<window_event::minimize>().fire(false);
+    me->events->get<event::minimize>().fire(false);
 }
 
 - (void)windowDidResize:(NSNotification *)notification
 {
-    const auto [width, height] = m_parent->size();
-    m_events->get<window_event::resize>().fire(width, height);
+    const auto [width, height] = me->size();
+    me->events->get<event::resize>().fire(width, height);
 }
 
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
-    m_events->get<window_event::focus>().fire(true);
+    me->events->get<event::focus>().fire(true);
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification
 {
-    m_events->get<window_event::focus>().fire(false);
+    me->events->get<event::focus>().fire(false);
 }
 
 - (BOOL)windowShouldClose:(NSWindow *)sender
 {
-    auto *const thiz = m_parent;
-    auto *const impl = thiz->native<false>();
-
-    if (m_events->get<window_event::close>().fire().find(policy::block))
+    if (me->events->get<event::close>().fire().find(policy::block))
     {
         return false;
     }
 
-    if (impl->on_closed)
-    {
-        std::invoke(impl->on_closed);
-    }
+    auto *parent     = me->parent;
+    auto *identifier = me->platform->window;
 
-    auto &parent           = thiz->parent();
-    auto *const identifier = impl->window;
+    auto *const impl = parent->native<false>()->platform.get();
+    auto &instances  = impl->instances;
 
-    auto *const native = parent.native<false>();
-    auto &instances    = native->instances;
+    me->hide();
 
-    thiz->hide();
     instances.erase(identifier);
-    m_events->get<window_event::closed>().fire();
+    me->events->get<event::closed>().fire();
 
-    if (!native->quit_on_last_window_closed)
+    if (!impl->quit_on_last_window_closed)
     {
         return false;
     }
 
     if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
     {
-        parent.quit();
+        parent->quit();
     }
 
     return false;

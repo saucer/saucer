@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app.hpp"
+#include "app.impl.hpp"
 #include "cocoa.utils.hpp"
 
 #include <unordered_map>
@@ -9,16 +9,15 @@
 
 namespace saucer
 {
-    struct application::impl
+    struct application::impl::native
     {
         NSApplication *application;
 
       public:
-        coco::future<void> future;
+        std::string id;
+        bool quit_on_last_window_closed;
 
       public:
-        std::thread::id thread;
-        bool quit_on_last_window_closed;
         std::unordered_map<NSWindow *, bool> instances;
 
       public:
