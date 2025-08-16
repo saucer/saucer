@@ -78,6 +78,11 @@ namespace saucer
         return invoke<&impl::resizable>(m_impl.get());
     }
 
+    bool window::fullscreen() const
+    {
+        return invoke<&impl::fullscreen>(m_impl.get());
+    }
+
     bool window::always_on_top() const
     {
         return invoke<&impl::always_on_top>(m_impl.get());
@@ -171,6 +176,11 @@ namespace saucer
     void window::set_resizable(bool enabled)
     {
         return invoke<&impl::set_resizable>(m_impl.get(), enabled);
+    }
+
+    void window::set_fullscreen(bool enabled)
+    {
+        return invoke<&impl::set_fullscreen>(m_impl.get(), enabled);
     }
 
     void window::set_always_on_top(bool enabled)

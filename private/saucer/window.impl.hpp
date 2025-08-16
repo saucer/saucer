@@ -41,6 +41,9 @@ namespace saucer
         [[nodiscard]] bool resizable() const;
 
       public:
+        [[nodiscard]] bool fullscreen() const;
+
+      public:
         [[nodiscard]] bool always_on_top() const;
         [[nodiscard]] bool click_through() const;
 
@@ -76,6 +79,9 @@ namespace saucer
         void set_minimized(bool);
         void set_maximized(bool);
         void set_resizable(bool);
+
+      public:
+        void set_fullscreen(bool);
 
       public:
         void set_always_on_top(bool);

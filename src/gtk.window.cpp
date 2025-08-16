@@ -32,7 +32,7 @@ namespace saucer
         gtk_overlay_set_child(platform->content, GTK_WIDGET(bin));
         adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(box));
 
-        gtk_window_set_hide_on_close(GTK_WINDOW(platform->window.get()), true);
+        gtk_window_set_hide_on_close(platform->window.get(), true);
 
         platform->class_name = std::format("background-{:d}", reinterpret_cast<std::uintptr_t>(platform->window.get()));
 
@@ -45,7 +45,7 @@ namespace saucer
         platform->track(this);
         platform->update_decorations(this);
 
-        set_size({800, 600});
+        set_size({.w = 800, .h = 600});
 
         return {};
     }
@@ -58,7 +58,7 @@ namespace saucer
         }
 
         // We hide-on-close. This is required to make the parent quit properly.
-        gtk_window_close(GTK_WINDOW(platform->window.get()));
+        gtk_window_close(platform->window.get());
 
         auto *const display  = gdk_display_get_default();
         auto *const provider = GTK_STYLE_PROVIDER(platform->style.get());
@@ -79,7 +79,7 @@ namespace saucer
 
     bool impl::focused() const
     {
-        return gtk_window_is_active(GTK_WINDOW(platform->window.get()));
+        return gtk_window_is_active(platform->window.get());
     }
 
     bool impl::minimized() const // NOLINT(*-static)
@@ -89,12 +89,17 @@ namespace saucer
 
     bool impl::maximized() const
     {
-        return gtk_window_is_maximized(GTK_WINDOW(platform->window.get()));
+        return gtk_window_is_maximized(platform->window.get());
     }
 
     bool impl::resizable() const
     {
-        return gtk_window_get_resizable(GTK_WINDOW(platform->window.get()));
+        return gtk_window_get_resizable(platform->window.get());
+    }
+
+    bool impl::fullscreen() const
+    {
+        return gtk_window_is_fullscreen(platform->window.get());
     }
 
     bool impl::always_on_top() const // NOLINT(*-static)
@@ -109,7 +114,7 @@ namespace saucer
 
     std::string impl::title() const
     {
-        return gtk_window_get_title(GTK_WINDOW(platform->window.get()));
+        return gtk_window_get_title(platform->window.get());
     }
 
     color impl::background() const // NOLINT(*-static)
@@ -137,9 +142,9 @@ namespace saucer
     size impl::size() const
     {
         int width{}, height{};
-        gtk_window_get_default_size(GTK_WINDOW(platform->window.get()), &width, &height);
+        gtk_window_get_default_size(platform->window.get(), &width, &height);
 
-        return {width, height};
+        return {.w = width, .h = height};
     }
 
     size impl::max_size() const // NOLINT(*-static)
@@ -152,7 +157,7 @@ namespace saucer
         int width{}, height{};
         gtk_widget_get_size_request(GTK_WIDGET(platform->window.get()), &width, &height);
 
-        return {width, height};
+        return {.w = width, .h = height};
     }
 
     position impl::position() const // NOLINT(*-static)
@@ -189,12 +194,12 @@ namespace saucer
     void impl::show() const
     {
         parent->native<false>()->platform->instances[platform->window.get()] = true;
-        gtk_window_present(GTK_WINDOW(platform->window.get()));
+        gtk_window_present(platform->window.get());
     }
 
     void impl::close() const
     {
-        gtk_window_close(GTK_WINDOW(platform->window.get()));
+        gtk_window_close(platform->window.get());
     }
 
     void impl::focus() const // NOLINT(*-static)
@@ -229,27 +234,32 @@ namespace saucer
     {
         if (!enabled)
         {
-            gtk_window_unminimize(GTK_WINDOW(platform->window.get()));
+            gtk_window_unminimize(platform->window.get());
             return;
         }
 
-        gtk_window_minimize(GTK_WINDOW(platform->window.get()));
+        gtk_window_minimize(platform->window.get());
     }
 
     void impl::set_maximized(bool enabled) // NOLINT(*-function-const)
     {
         if (!enabled)
         {
-            gtk_window_unmaximize(GTK_WINDOW(platform->window.get()));
+            gtk_window_unmaximize(platform->window.get());
             return;
         }
 
-        gtk_window_maximize(GTK_WINDOW(platform->window.get()));
+        gtk_window_maximize(platform->window.get());
     }
 
     void impl::set_resizable(bool enabled) // NOLINT(*-function-const)
     {
-        gtk_window_set_resizable(GTK_WINDOW(platform->window.get()), enabled);
+        gtk_window_set_resizable(platform->window.get(), enabled);
+    }
+
+    void impl::set_fullscreen(bool enabled) // NOLINT(*-function-const)
+    {
+        (enabled ? gtk_window_fullscreen : gtk_window_unfullscreen)(platform->window.get());
     }
 
     void impl::set_always_on_top(bool) // NOLINT(*-static, *-function-const)
@@ -287,7 +297,7 @@ namespace saucer
 
     void impl::set_title(const std::string &title) // NOLINT(*-function-const)
     {
-        gtk_window_set_title(GTK_WINDOW(platform->window.get()), title.c_str());
+        gtk_window_set_title(platform->window.get(), title.c_str());
     }
 
     void impl::set_background(color color) // NOLINT(*-function-const)
@@ -309,7 +319,7 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        gtk_window_set_default_size(GTK_WINDOW(platform->window.get()), size.w, size.h);
+        gtk_window_set_default_size(platform->window.get(), size.w, size.h);
     }
 
     void impl::set_max_size(saucer::size) // NOLINT(*-static, *-function-const)
