@@ -237,7 +237,8 @@ namespace saucer
         args->TryGetWebMessageAsString(&raw.reset());
 
         auto message = utils::narrow(raw.get());
-        self->parent->post([self, message = std::move(message)] { self->events->get<event::message>().fire(message); });
+        self->parent->post([self, message = std::move(message)]
+                           { self->events->get<event::message>().fire(message).find(status::handled); });
 
         return S_OK;
     }
