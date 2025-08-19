@@ -117,6 +117,9 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool resizable() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] bool fullscreen() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
         [[sc::thread_safe]] [[nodiscard]] bool click_through() const;
 
@@ -152,6 +155,9 @@ namespace saucer
         [[sc::thread_safe]] void set_minimized(bool);
         [[sc::thread_safe]] void set_maximized(bool);
         [[sc::thread_safe]] void set_resizable(bool);
+
+      public:
+        [[sc::thread_safe]] void set_fullscreen(bool);
 
       public:
         [[sc::thread_safe]] void set_always_on_top(bool);
