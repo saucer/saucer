@@ -91,16 +91,12 @@ namespace saucer
 
         platform->controller = std::move(controller.value());
         platform->web_view   = std::move(web_view);
-        platform->hook       = {hwnd, native::wnd_proc};
 
         if (!opts.storage_path.has_value() && !opts.persistent_cookies)
         {
             platform->cleanup = storage_path.value();
             platform->web_view->get_BrowserProcessId(&platform->browser_pid);
         }
-
-        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
-        SetPropW(hwnd, MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
 
         platform->web_view->get_Settings(&platform->settings);
         platform->settings->put_IsStatusBarEnabled(false);
@@ -129,6 +125,37 @@ namespace saucer
         platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
         platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
 
+        auto on_resize = [this](int width, int height)
+        {
+            auto rect = platform->bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
+            platform->controller->put_Bounds({rect.x, rect.y, rect.x + rect.w, rect.y + rect.h});
+        };
+
+        auto on_minimize = [this](bool minimized)
+        {
+            platform->controller->put_IsVisible(!minimized);
+        };
+
+        platform->on_resize   = native::bound_events--;
+        platform->on_minimize = native::bound_events--;
+
+        auto *const events = window->native<false>()->events;
+
+        events->get<window::event::resize>().update(platform->on_resize, {{
+                                                                             .func      = on_resize,
+                                                                             .clearable = false,
+                                                                         }});
+
+        events->get<window::event::minimize>().update(platform->on_minimize, {{
+                                                                                 .func      = on_minimize,
+                                                                                 .clearable = false,
+                                                                             }});
+
+        auto [width, height] = window->size();
+
+        on_resize(width, height);
+        on_minimize(window->minimized());
+
         return {};
     }
 
@@ -139,8 +166,8 @@ namespace saucer
             return;
         }
 
-        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
-        RemovePropW(window->native<false>()->platform->hwnd.get(), MAKEINTATOM(atom));
+        window->off(window::event::resize, platform->on_resize);
+        window->off(window::event::minimize, platform->on_minimize);
 
         platform->controller->Close();
 
@@ -237,6 +264,11 @@ namespace saucer
         return scheme == COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK;
     }
 
+    bounds impl::bounds() const
+    {
+        return platform->bounds.value_or({});
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         platform->settings->put_AreDevToolsEnabled(enabled);
@@ -280,6 +312,16 @@ namespace saucer
 
         profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK
                                                   : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
+    }
+
+    void impl::reset_bounds() // NOLINT(*-function-const)
+    {
+        platform->bounds.reset();
+    }
+
+    void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
+    {
+        platform->bounds.emplace(bounds);
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)

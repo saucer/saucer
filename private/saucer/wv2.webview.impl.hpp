@@ -1,7 +1,8 @@
 #pragma once
 
 #include "webview.impl.hpp"
-#include "win32.utils.hpp"
+
+#include <limits>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -68,7 +69,8 @@ namespace saucer
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:
-        utils::wnd_proc_hook hook;
+        std::size_t on_resize, on_minimize;
+        std::optional<saucer::bounds> bounds;
 
       public:
         std::uint32_t browser_pid;
@@ -100,6 +102,8 @@ namespace saucer
 
       public:
         static HRESULT scheme_handler(impl *, const scheme_options &);
-        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+
+      public:
+        static inline auto bound_events = std::numeric_limits<std::size_t>::max();
     };
 } // namespace saucer

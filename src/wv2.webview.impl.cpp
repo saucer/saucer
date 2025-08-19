@@ -447,25 +447,4 @@ namespace saucer
 
         return S_OK;
     }
-
-    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
-    {
-        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
-        auto *self      = reinterpret_cast<impl *>(GetPropW(hwnd, MAKEINTATOM(atom)));
-
-        if (!self || !self->platform->controller)
-        {
-            return DefWindowProcW(hwnd, msg, w_param, l_param);
-        }
-
-        switch (msg)
-        {
-        case WM_SIZE:
-            self->platform->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
-            self->platform->controller->put_IsVisible(w_param != SIZE_MINIMIZED);
-            break;
-        }
-
-        return CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);
-    }
 } // namespace saucer
