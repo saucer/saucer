@@ -164,9 +164,8 @@ namespace saucer
     size impl::size() const
     {
         RECT rect;
-        GetWindowRect(platform->hwnd.get(), &rect);
-
-        return {rect.right - rect.left, rect.bottom - rect.top};
+        GetClientRect(platform->hwnd.get(), &rect);
+        return {.w = rect.right - rect.left, .h = rect.bottom - rect.top};
     }
 
     size impl::max_size() const
@@ -384,7 +383,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, size.w, size.h, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
+        RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
+
+        const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
+        const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
+        const auto dpi      = GetDpiForWindow(platform->hwnd.get());
+
+        AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+
+        const auto width  = desired.right - desired.left;
+        const auto height = desired.bottom - desired.top;
+
+        SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)

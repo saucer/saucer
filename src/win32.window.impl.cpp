@@ -111,9 +111,7 @@ namespace saucer
             }
 
             self->platform->prev_state = w_param;
-
-            auto [width, height] = self->size();
-            self->events->get<event::resize>().fire(width, height);
+            self->events->get<event::resize>().fire(LOWORD(l_param), HIWORD(l_param));
 
             break;
         }
