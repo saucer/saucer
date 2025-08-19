@@ -33,8 +33,8 @@ namespace saucer
         utils::g_object_ptr<WebKitSettings> settings;
 
       public:
-        std::uint64_t id_counter{0};
-        std::unordered_map<std::uint64_t, wkg_script> scripts;
+        std::size_t id_counter{0};
+        std::unordered_map<std::size_t, wkg_script> scripts;
 
       public:
         bool dom_loaded{false};

@@ -228,7 +228,7 @@ namespace saucer
         return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
     }
 
-    void window::off(event event, std::uint64_t id)
+    void window::off(event event, std::size_t id)
     {
         return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
     }

@@ -280,7 +280,7 @@ namespace saucer
         platform->web_view->page()->runJavaScript(QString::fromStdString(code));
     }
 
-    std::uint64_t impl::inject(const script &script) // NOLINT(*-function-const)
+    std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
         using enum load_time;
         using enum web_frame;
@@ -333,7 +333,7 @@ namespace saucer
         }
     }
 
-    void impl::uninject(std::uint64_t id) // NOLINT(*-function-const)
+    void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
         using enum load_time;
 

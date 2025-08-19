@@ -39,8 +39,8 @@ namespace saucer
         void handle_scheme(const std::string &, scheme::resolver &&);
 
       public:
-        void reject(std::uint64_t, std::string_view);
-        void resolve(std::uint64_t, std::string_view);
+        void reject(std::size_t, std::string_view);
+        void resolve(std::size_t, std::string_view);
 
       public:
         [[nodiscard]] icon favicon() const;
@@ -80,11 +80,11 @@ namespace saucer
 
       public:
         void execute(const std::string &);
-        std::uint64_t inject(const script &);
+        std::size_t inject(const script &);
 
       public:
         void uninject();
-        void uninject(std::uint64_t);
+        void uninject(std::size_t);
 
       public:
         void remove_scheme(const std::string &);

@@ -313,7 +313,7 @@ namespace saucer
         platform->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
     }
 
-    std::uint64_t impl::inject(const script &raw)
+    std::size_t impl::inject(const script &raw)
     {
         auto script   = wv2_script{raw};
         const auto id = platform->id_counter++;
@@ -351,7 +351,7 @@ namespace saucer
 
     void impl::uninject() // NOLINT(*-function-const)
     {
-        static constexpr auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
+        static constexpr auto uninject = static_cast<void (impl::*)(std::size_t)>(&impl::uninject);
 
         auto clearable = platform->scripts                                                  //
                          | std::views::filter([](auto &it) { return it.second.clearable; }) //
@@ -360,7 +360,7 @@ namespace saucer
         std::ranges::for_each(clearable, std::bind_front(uninject, this));
     }
 
-    void impl::uninject(std::uint64_t id) // NOLINT(*-function-const)
+    void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
         if (!platform->scripts.contains(id))
         {

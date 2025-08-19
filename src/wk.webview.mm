@@ -276,7 +276,7 @@ namespace saucer
         [platform->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
     }
 
-    std::uint64_t impl::inject(const script &script) // NOLINT(*-function-const)
+    std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
         using enum load_time;
 
@@ -310,7 +310,7 @@ namespace saucer
         std::ranges::for_each(remaining, std::bind_front(&impl::inject, this));
     }
 
-    void impl::uninject(std::uint64_t id)
+    void impl::uninject(std::size_t id)
     {
         const utils::autorelease_guard guard{};
 

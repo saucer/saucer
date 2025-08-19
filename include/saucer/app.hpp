@@ -114,7 +114,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void off(event);
-        [[sc::thread_safe]] void off(event, std::uint64_t id);
+        [[sc::thread_safe]] void off(event, std::size_t id);
     };
 
     struct application::options

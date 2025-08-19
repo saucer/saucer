@@ -12,7 +12,7 @@ namespace rfl
         struct ReflType
         {
             rfl::Rename<"saucer:call", bool> tag;
-            std::uint64_t id;
+            std::size_t id;
             std::string name;
             rfl::Generic params;
         };
@@ -35,7 +35,7 @@ namespace rfl
         struct ReflType
         {
             rfl::Rename<"saucer:resolve", bool> tag;
-            std::uint64_t id;
+            std::size_t id;
             rfl::Generic result;
         };
 

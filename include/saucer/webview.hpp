@@ -171,11 +171,11 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void execute(const std::string &);
-        [[sc::thread_safe]] std::uint64_t inject(const script &);
+        [[sc::thread_safe]] std::size_t inject(const script &);
 
       public:
         [[sc::thread_safe]] void uninject();
-        [[sc::thread_safe]] void uninject(std::uint64_t);
+        [[sc::thread_safe]] void uninject(std::size_t);
 
       public:
         template <typename T>
@@ -195,7 +195,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void off(event);
-        [[sc::thread_safe]] void off(event, std::uint64_t id);
+        [[sc::thread_safe]] void off(event, std::size_t id);
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);

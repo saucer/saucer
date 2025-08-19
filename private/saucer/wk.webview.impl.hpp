@@ -36,13 +36,15 @@ namespace saucer
         bool context_menu{true};
 
       public:
-        std::uint64_t id_counter{0};
-        std::unordered_map<std::uint64_t, script> scripts;
+        std::size_t id_counter{0};
+        std::unordered_map<std::size_t, script> scripts;
 
       public:
         bool dom_loaded{false};
-        std::uint64_t on_closed;
         std::vector<std::string> pending;
+
+      public:
+        std::size_t on_closed;
 
       public:
         template <event>

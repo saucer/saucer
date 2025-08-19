@@ -63,8 +63,8 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
-        std::uint64_t id_counter{0};
-        std::unordered_map<std::uint64_t, wv2_script> scripts;
+        std::size_t id_counter{0};
+        std::unordered_map<std::size_t, wv2_script> scripts;
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:

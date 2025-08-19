@@ -91,7 +91,7 @@ namespace saucer
         return invoke<&impl::handle_scheme>(m_impl.get(), name, std::move(handler));
     }
 
-    void impl::reject(std::uint64_t id, std::string_view reason)
+    void impl::reject(std::size_t id, std::string_view reason)
     {
         execute(std::format(
             R"(
@@ -101,7 +101,7 @@ namespace saucer
             id, reason));
     }
 
-    void impl::resolve(std::uint64_t id, std::string_view result)
+    void impl::resolve(std::size_t id, std::string_view result)
     {
         execute(std::format(
             R"(
@@ -281,7 +281,7 @@ namespace saucer
         return invoke<&impl::execute>(m_impl.get(), code);
     }
 
-    std::uint64_t webview::inject(const script &script)
+    std::size_t webview::inject(const script &script)
     {
         return invoke<&impl::inject>(m_impl.get(), script);
     }
@@ -292,9 +292,9 @@ namespace saucer
         return invoke<uninject>(m_impl.get());
     }
 
-    void webview::uninject(std::uint64_t id)
+    void webview::uninject(std::size_t id)
     {
-        static constexpr auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
+        static constexpr auto uninject = static_cast<void (impl::*)(std::size_t)>(&impl::uninject);
         return invoke<uninject>(m_impl.get(), id);
     }
 
@@ -308,7 +308,7 @@ namespace saucer
         return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
     }
 
-    void webview::off(event event, std::uint64_t id)
+    void webview::off(event event, std::size_t id)
     {
         return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
     }
