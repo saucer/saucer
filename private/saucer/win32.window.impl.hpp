@@ -33,7 +33,7 @@ namespace saucer
       public:
         UINT prev_state;
         std::optional<decoration> prev_decoration;
-        WINDOWPLACEMENT prev_placement{.length = sizeof(WINDOWPLACEMENT)};
+        std::optional<WINDOWPLACEMENT> prev_placement;
 
       public:
         utils::brush background{nullptr};

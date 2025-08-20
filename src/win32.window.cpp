@@ -310,15 +310,19 @@ namespace saucer
         platform->flags.fullscreen = enabled;
         platform->flags.apply(hwnd);
 
+        if (!enabled && platform->prev_placement.has_value())
+        {
+            SetWindowPlacement(hwnd, &platform->prev_placement.value());
+        }
+
         if (!enabled)
         {
-            SetWindowPlacement(hwnd, &platform->prev_placement);
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-
             return;
         }
 
-        GetWindowPlacement(hwnd, &platform->prev_placement);
+        platform->prev_placement.emplace(WINDOWPLACEMENT{.length = sizeof(WINDOWPLACEMENT)});
+        GetWindowPlacement(hwnd, &platform->prev_placement.value());
 
         const auto monitor = screen();
 
