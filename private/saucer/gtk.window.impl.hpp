@@ -44,7 +44,7 @@ namespace saucer
         std::optional<decoration> prev_decoration;
 
       public:
-        GtkBox *content;
+        GtkOverlay *content;
         AdwHeaderBar *header;
 
       public:
@@ -60,10 +60,14 @@ namespace saucer
         void setup(impl *);
 
       public:
-        void start_resize(edge) const;
+        void add_widget(GtkWidget *) const;
+        void remove_widget(GtkWidget *) const;
 
       public:
         void track(impl *) const;
+        void start_resize(edge) const;
+
+      public:
         void update_region(impl *) const;
         void update_decorations(impl *) const;
     };

@@ -111,6 +111,37 @@ namespace saucer
     }
 
     template <>
+    void native::setup<event::fullscreen>(impl *self)
+    {
+        auto &event = self->events->get<event::fullscreen>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto enter_callback = [](WebKitWebView *, impl *self) -> gboolean
+        {
+            return self->events->get<event::fullscreen>().fire(true).find(policy::block).has_value();
+        };
+
+        auto leave_callback = [](WebKitWebView *, impl *self) -> gboolean
+        {
+            return self->events->get<event::fullscreen>().fire(false).find(policy::block).has_value();
+        };
+
+        const auto enter = utils::connect(web_view, "enter-fullscreen", +enter_callback, self);
+        const auto leave = utils::connect(web_view, "leave-fullscreen", +leave_callback, self);
+
+        event.on_clear(
+            [this, enter, leave]
+            {
+                g_signal_handler_disconnect(web_view, enter);
+                g_signal_handler_disconnect(web_view, leave);
+            });
+    }
+
+    template <>
     void native::setup<event::dom_ready>(impl *)
     {
     }

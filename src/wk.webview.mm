@@ -28,7 +28,6 @@ namespace saucer
         platform->config              = native::make_config(opts);
         platform->controller          = platform->config.get().userContentController;
         platform->web_view            = [[SaucerView alloc] initWithParent:this configuration:platform->config.get() frame:NSZeroRect];
-        platform->view                = [[NSView alloc] init];
         platform->ui_delegate         = [[UIDelegate alloc] initWithParent:this];
         platform->navigation_delegate = [[NavigationDelegate alloc] initWithParent:this];
 
@@ -46,10 +45,10 @@ namespace saucer
         [uuid autorelease];
 
         [platform->config.get() setWebsiteDataStore:store];
+        [platform->config.get().preferences setElementFullscreenEnabled:YES];
 
 #ifdef SAUCER_WEBKIT_PRIVATE
         auto *const settings = platform->config.get().preferences;
-        [settings setValue:@YES forKey:@"fullScreenEnabled"];
         [settings setValue:@YES forKey:@"mediaDevicesEnabled"];
 #endif
 
@@ -58,13 +57,11 @@ namespace saucer
 
         static constexpr auto resize_mask = NSViewWidthSizable | NSViewMaxXMargin | NSViewHeightSizable | NSViewMaxYMargin;
         [platform->web_view.get() setAutoresizingMask:resize_mask];
-        [platform->view.get() setAutoresizesSubviews:YES];
 
-        [platform->web_view.get() setFrame:platform->view.get().bounds];
-        [platform->view.get() addSubview:platform->web_view.get()];
+        auto *const impl = window->native<false>()->platform.get();
 
-        auto *const impl         = window->native<false>()->platform.get();
-        impl->window.contentView = platform->view.get();
+        [platform->web_view.get() setFrame:impl->window.contentView.frame];
+        [impl->window.contentView addSubview:platform->web_view.get()];
 
         platform->appearance = impl->window.appearance;
         platform->on_closed  = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
@@ -84,12 +81,10 @@ namespace saucer
         [platform->controller removeAllScriptMessageHandlers];
         [platform->controller removeAllUserScripts];
 
+        set_dev_tools(false);
         window->off(window::event::closed, platform->on_closed);
 
-        set_dev_tools(false);
-
-        [platform->view.get() setSubviews:[NSArray array]];
-        [window->native<false>()->platform->window setContentView:nil];
+        [platform->web_view.get() removeFromSuperview];
     }
 
     template <webview::event Event>
@@ -161,6 +156,19 @@ namespace saucer
         return platform->force_dark;
     }
 
+    bounds impl::bounds() const
+    {
+        const auto guard       = utils::autorelease_guard{};
+        const auto [pos, size] = platform->web_view.get().frame;
+
+        return {
+            .x = static_cast<int>(pos.x),
+            .y = static_cast<int>(pos.y),
+            .w = static_cast<int>(size.width),
+            .h = static_cast<int>(size.height),
+        };
+    }
+
     void impl::set_dev_tools([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
@@ -199,10 +207,10 @@ namespace saucer
         const auto guard        = utils::autorelease_guard{};
         const auto [r, g, b, a] = color;
 
-        auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<float>(r) / 255.f
-                                                     green:static_cast<float>(g) / 255.f
-                                                      blue:static_cast<float>(b) / 255.f
-                                                     alpha:static_cast<float>(a) / 255.f];
+        auto *const rgba = [NSColor colorWithCalibratedRed:static_cast<CGFloat>(r) / 255.f
+                                                     green:static_cast<CGFloat>(g) / 255.f
+                                                      blue:static_cast<CGFloat>(b) / 255.f
+                                                     alpha:static_cast<CGFloat>(a) / 255.f];
 
         [platform->web_view.get() setUnderPageBackgroundColor:rgba];
 
@@ -228,6 +236,17 @@ namespace saucer
                                          : platform->appearance;
 
         [window->native<false>()->platform->window setAppearance:appearance];
+    }
+
+    void impl::reset_bounds() // NOLINT(*-function-const)
+    {
+        [platform->web_view.get() setFrame:window->native<false>()->platform->window.contentView.frame];
+    }
+
+    void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
+    {
+        [platform->web_view.get() setFrame:{{.x = static_cast<CGFloat>(bounds.x), .y = static_cast<CGFloat>(bounds.y)},
+                                            {.width = static_cast<CGFloat>(bounds.w), .height = static_cast<CGFloat>(bounds.h)}}];
     }
 
     void impl::set_url(const uri &url) // NOLINT(*-function-const)
@@ -276,7 +295,7 @@ namespace saucer
         [platform->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
     }
 
-    std::uint64_t impl::inject(const script &script) // NOLINT(*-function-const)
+    std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
         using enum load_time;
 
@@ -310,7 +329,7 @@ namespace saucer
         std::ranges::for_each(remaining, std::bind_front(&impl::inject, this));
     }
 
-    void impl::uninject(std::uint64_t id)
+    void impl::uninject(std::size_t id)
     {
         const utils::autorelease_guard guard{};
 

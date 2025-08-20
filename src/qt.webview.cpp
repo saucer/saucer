@@ -15,6 +15,7 @@
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
 #include <QWebEngineUrlScheme>
+#include <QWebEngineFullScreenRequest>
 
 namespace saucer
 {
@@ -31,11 +32,6 @@ namespace saucer
             return err(std::errc::no_such_file_or_directory);
         }
 
-        platform = std::make_unique<native>();
-
-        static std::once_flag flag;
-        std::call_once(flag, [] { register_scheme("saucer"); });
-
         auto flags = opts.browser_flags;
 
         if (opts.hardware_acceleration)
@@ -44,33 +40,40 @@ namespace saucer
             flags.emplace("--ignore-gpu-blocklist");
         }
 
-        const auto args = flags | std::views::join_with(' ') | std::ranges::to<std::string>();
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", args.c_str());
+        const auto arguments = flags                        //
+                               | std::views::join_with(' ') //
+                               | std::ranges::to<std::string>();
 
-        platform->profile = std::make_unique<QWebEngineProfile>("saucer");
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", arguments.c_str());
+
+        auto profile = std::make_unique<QWebEngineProfile>("saucer");
 
         if (opts.user_agent.has_value())
         {
-            platform->profile->setHttpUserAgent(QString::fromStdString(opts.user_agent.value()));
+            profile->setHttpUserAgent(QString::fromStdString(opts.user_agent.value()));
         }
 
         if (opts.storage_path.has_value())
         {
             const auto path = QString::fromStdString(opts.storage_path->string());
 
-            platform->profile->setCachePath(path);
-            platform->profile->setPersistentStoragePath(path);
+            profile->setCachePath(path);
+            profile->setPersistentStoragePath(path);
         }
 
 #ifdef SAUCER_QT6
         using enum QWebEngineProfile::PersistentPermissionsPolicy;
-        platform->profile->setPersistentPermissionsPolicy(AskEveryTime);
+        profile->setPersistentPermissionsPolicy(AskEveryTime);
 #endif
 
-        platform->profile->setPersistentCookiesPolicy(opts.persistent_cookies ? ForcePersistentCookies : NoPersistentCookies);
-        platform->profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        profile->setPersistentCookiesPolicy(opts.persistent_cookies ? ForcePersistentCookies : NoPersistentCookies);
+        profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        profile->settings()->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
 
-        platform->web_view    = std::make_unique<QWebEngineView>();
+        platform = std::make_unique<native>();
+
+        platform->profile     = std::move(profile);
+        platform->web_view    = std::make_unique<QWebEngineView>(window->native<false>()->platform->window->centralWidget());
         platform->web_page    = std::make_unique<QWebEnginePage>(platform->profile.get());
         platform->channel     = std::make_unique<QWebChannel>();
         platform->channel_obj = std::make_unique<web_class>(this);
@@ -102,12 +105,21 @@ namespace saucer
                                         events->get<event::load>().fire(state::started);
                                     });
 
-        window->native<false>()->platform->on_closed = [this]
-        {
-            set_dev_tools(false);
-        };
+        platform->web_page->connect(platform->web_page.get(), &QWebEnginePage::fullScreenRequested,
+                                    [this](QWebEngineFullScreenRequest request)
+                                    {
+                                        if (events->get<event::fullscreen>().fire(request.toggleOn()).find(policy::block))
+                                        {
+                                            return request.reject();
+                                        }
 
-        window->native<false>()->platform->window->setCentralWidget(platform->web_view.get());
+                                        window->set_fullscreen(request.toggleOn());
+                                        return request.accept();
+                                    });
+
+        platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
+
+        window->native<false>()->platform->add_widget(platform->web_view.get());
         platform->web_view->show();
 
         return {};
@@ -120,12 +132,13 @@ namespace saucer
             return;
         }
 
-        if (auto *const impl = window->native<false>()->platform.get(); impl->on_closed)
-        {
-            std::invoke(std::exchange(impl->on_closed, {}));
-        }
+        set_dev_tools(false);
+        window->off(window::event::closed, platform->on_closed);
 
         platform->web_view->disconnect();
+        platform->web_page->disconnect();
+
+        window->native<false>()->platform->remove_widget(platform->web_view.get());
     }
 
     template <webview::event Event>
@@ -188,6 +201,12 @@ namespace saucer
 #endif
     }
 
+    bounds impl::bounds() const
+    {
+        const auto geometry = platform->web_view->geometry();
+        return {.x = geometry.x(), .y = geometry.y(), .w = geometry.width(), .h = geometry.height()};
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         if (!platform->dev_page && !enabled)
@@ -234,6 +253,17 @@ namespace saucer
 #endif
     }
 
+    void impl::reset_bounds() // NOLINT(*-function-const)
+    {
+        platform->web_view->setGeometry(QRect{});
+        platform->web_view->layout()->invalidate();
+    }
+
+    void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
+    {
+        platform->web_view->setGeometry({bounds.x, bounds.y, bounds.w, bounds.h});
+    }
+
     void impl::set_url(const uri &url) // NOLINT(*-function-const)
     {
         platform->web_view->setUrl(url.native<false>()->uri);
@@ -265,7 +295,7 @@ namespace saucer
         platform->web_view->page()->runJavaScript(QString::fromStdString(code));
     }
 
-    std::uint64_t impl::inject(const script &script) // NOLINT(*-function-const)
+    std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
         using enum load_time;
         using enum web_frame;
@@ -318,7 +348,7 @@ namespace saucer
         }
     }
 
-    void impl::uninject(std::uint64_t id) // NOLINT(*-function-const)
+    void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
         using enum load_time;
 

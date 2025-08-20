@@ -192,7 +192,7 @@ if (saucer_backend STREQUAL "Qt6")
 endif()
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 5.5.5")
+  set(SERIALIZER_DEP "glaze 5.6.0")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
@@ -245,7 +245,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        6.0.0
+  VERSION        6.1.1
   GIT_REPOSITORY "https://github.com/Curve/ereignis"
 )
 
@@ -335,7 +335,7 @@ if (saucer_backend STREQUAL "WebView2")
   target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
 
   include("cmake/webview2.cmake")
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Wininet CoreMessaging Shlwapi gdiplus webview2::webview2)
+  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2::webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -345,7 +345,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        5.5.5
+    VERSION        5.6.0
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -440,5 +440,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.1;ereignis 6.0.0;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.1;ereignis 6.1.1;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
 )

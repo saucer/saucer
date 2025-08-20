@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
 
 #include <variant>
 #include <optional>
@@ -39,12 +39,12 @@ namespace saucer::request
 
     struct maximized
     {
-        std::uint64_t id;
+        std::size_t id;
     };
 
     struct minimized
     {
-        std::uint64_t id;
+        std::size_t id;
     };
 
     using request = std::variant<start_resize, start_drag, maximize, minimize, close, maximized, minimized>;

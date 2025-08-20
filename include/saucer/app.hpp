@@ -25,13 +25,25 @@ namespace saucer
         block,
     };
 
+    struct position
+    {
+        int x;
+        int y;
+    };
+
+    struct size
+    {
+        int w;
+        int h;
+    };
+
     struct screen
     {
         std::string name;
 
       public:
-        std::pair<int, int> size;
-        std::pair<int, int> position;
+        saucer::size size;
+        saucer::position position;
     };
 
     struct application
@@ -114,7 +126,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void off(event);
-        [[sc::thread_safe]] void off(event, std::uint64_t id);
+        [[sc::thread_safe]] void off(event, std::size_t id);
     };
 
     struct application::options

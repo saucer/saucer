@@ -25,12 +25,12 @@ namespace saucer
         std::shared_ptr<lockpp::lock<saucer::webview::impl *>> webview;
 
       public:
-        std::atomic_uint64_t id_counter{0};
+        std::atomic_size_t id_counter{0};
         std::unique_ptr<serializer_core> serializer;
 
       public:
         lock<std::unordered_map<std::string, exposed>> functions;
-        lock<std::unordered_map<std::uint64_t, resolver>> evaluations;
+        lock<std::unordered_map<std::size_t, resolver>> evaluations;
 
       public:
         status on_message(std::string_view);

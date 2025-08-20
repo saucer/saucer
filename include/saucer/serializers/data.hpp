@@ -1,13 +1,13 @@
 #pragma once
 
 #include <string>
-#include <cstdint>
+#include <cstddef>
 
 namespace saucer
 {
     struct function_data
     {
-        std::uint64_t id;
+        std::size_t id;
         std::string name;
 
       public:
@@ -16,7 +16,7 @@ namespace saucer
 
     struct result_data
     {
-        std::uint64_t id;
+        std::size_t id;
 
       public:
         virtual ~result_data() = default;

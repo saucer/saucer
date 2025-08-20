@@ -39,8 +39,8 @@ namespace saucer
         void handle_scheme(const std::string &, scheme::resolver &&);
 
       public:
-        void reject(std::uint64_t, std::string_view);
-        void resolve(std::uint64_t, std::string_view);
+        void reject(std::size_t, std::string_view);
+        void resolve(std::size_t, std::string_view);
 
       public:
         [[nodiscard]] icon favicon() const;
@@ -54,6 +54,7 @@ namespace saucer
       public:
         [[nodiscard]] color background() const;
         [[nodiscard]] bool force_dark_mode() const;
+        [[nodiscard]] saucer::bounds bounds() const;
 
       public:
         void set_dev_tools(bool);
@@ -62,6 +63,10 @@ namespace saucer
       public:
         void set_background(color);
         void set_force_dark_mode(bool);
+
+      public:
+        void reset_bounds();
+        void set_bounds(saucer::bounds);
 
       public:
         void set_url(const uri &);
@@ -75,11 +80,11 @@ namespace saucer
 
       public:
         void execute(const std::string &);
-        std::uint64_t inject(const script &);
+        std::size_t inject(const script &);
 
       public:
         void uninject();
-        void uninject(std::uint64_t);
+        void uninject(std::size_t);
 
       public:
         void remove_scheme(const std::string &);

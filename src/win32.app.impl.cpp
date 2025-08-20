@@ -19,13 +19,10 @@ namespace saucer
 
     screen native::convert(MONITORINFOEXW info)
     {
-        const auto width  = info.rcMonitor.right - info.rcMonitor.left;
-        const auto height = info.rcMonitor.bottom - info.rcMonitor.top;
-
         return {
             .name     = utils::narrow(info.szDevice),
-            .size     = {width, height},
-            .position = {info.rcMonitor.top, info.rcMonitor.left},
+            .size     = {.w = info.rcMonitor.right - info.rcMonitor.left, .h = info.rcMonitor.bottom - info.rcMonitor.top},
+            .position = {.x = info.rcMonitor.top, .y = info.rcMonitor.left},
         };
     }
 

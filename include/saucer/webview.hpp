@@ -51,6 +51,12 @@ namespace saucer
         std::string mime;
     };
 
+    struct bounds
+    {
+        int x, y;
+        int w, h;
+    };
+
     struct webview
     {
         struct impl;
@@ -65,6 +71,7 @@ namespace saucer
         enum class event : std::uint8_t
         {
             permission,
+            fullscreen,
             dom_ready,
             navigated,
             navigate,
@@ -78,6 +85,7 @@ namespace saucer
       public:
         using events = ereignis::manager<                                                             //
             ereignis::event<event::permission, status(const std::shared_ptr<permission::request> &)>, //
+            ereignis::event<event::fullscreen, policy(bool)>,                                         //
             ereignis::event<event::dom_ready, void()>,                                                //
             ereignis::event<event::navigated, void(const uri &)>,                                     //
             ereignis::event<event::navigate, policy(const navigation &)>,                             //
@@ -130,6 +138,7 @@ namespace saucer
       public:
         [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
+        [[sc::thread_safe]] [[nodiscard]] saucer::bounds bounds() const;
 
       public:
         [[sc::thread_safe]] void set_dev_tools(bool);
@@ -138,6 +147,10 @@ namespace saucer
       public:
         [[sc::thread_safe]] void set_background(color);
         [[sc::thread_safe]] void set_force_dark_mode(bool);
+
+      public:
+        [[sc::thread_safe]] void reset_bounds();
+        [[sc::thread_safe]] void set_bounds(saucer::bounds);
 
       public:
         [[sc::thread_safe]] void set_url(const uri &);
@@ -160,11 +173,11 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void execute(const std::string &);
-        [[sc::thread_safe]] std::uint64_t inject(const script &);
+        [[sc::thread_safe]] std::size_t inject(const script &);
 
       public:
         [[sc::thread_safe]] void uninject();
-        [[sc::thread_safe]] void uninject(std::uint64_t);
+        [[sc::thread_safe]] void uninject(std::size_t);
 
       public:
         template <typename T>
@@ -184,7 +197,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void off(event);
-        [[sc::thread_safe]] void off(event, std::uint64_t id);
+        [[sc::thread_safe]] void off(event, std::size_t id);
 
       public:
         [[sc::before_init]] static void register_scheme(const std::string &name);

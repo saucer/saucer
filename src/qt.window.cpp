@@ -26,6 +26,11 @@ namespace saucer
         platform->max_size = platform->window->maximumSize();
         platform->min_size = platform->window->minimumSize();
 
+        auto *const content = new QWidget{platform->window.get()};
+        content->setLayout(new overlay_layout);
+
+        platform->window->setCentralWidget(content);
+
         return {};
     }
 
@@ -68,6 +73,11 @@ namespace saucer
     bool impl::resizable() const
     {
         return platform->window->maximumSize() != platform->window->minimumSize();
+    }
+
+    bool impl::fullscreen() const
+    {
+        return platform->window->isFullScreen();
     }
 
     bool impl::always_on_top() const
@@ -117,22 +127,22 @@ namespace saucer
 
     size impl::size() const
     {
-        return {platform->window->width(), platform->window->height()};
+        return {.w = platform->window->width(), .h = platform->window->height()};
     }
 
     size impl::max_size() const
     {
-        return {platform->window->maximumWidth(), platform->window->maximumHeight()};
+        return {.w = platform->window->maximumWidth(), .h = platform->window->maximumHeight()};
     }
 
     size impl::min_size() const
     {
-        return {platform->window->minimumWidth(), platform->window->minimumHeight()};
+        return {.w = platform->window->minimumWidth(), .h = platform->window->minimumHeight()};
     }
 
-    size impl::position() const
+    position impl::position() const
     {
-        return {platform->window->x(), platform->window->y()};
+        return {.x = platform->window->x(), .y = platform->window->y()};
     }
 
     std::optional<saucer::screen> impl::screen() const
@@ -248,6 +258,24 @@ namespace saucer
         platform->window->setMinimumSize(platform->min_size);
     }
 
+    void impl::set_fullscreen(bool enabled) // NOLINT(*-function-const)
+    {
+        using enum Qt::WindowState;
+
+        auto state = platform->window->windowState();
+
+        if (enabled)
+        {
+            state |= WindowFullScreen;
+        }
+        else
+        {
+            state &= ~WindowFullScreen;
+        }
+
+        platform->window->setWindowState(state);
+    }
+
     void impl::set_always_on_top(bool enabled) // NOLINT(*-function-const)
     {
         platform->set_flags({{Qt::WindowStaysOnTopHint, enabled}});
@@ -292,18 +320,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->window->resize(size.x, size.y);
+        platform->window->resize(size.w, size.h);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->window->setMaximumSize(size.x, size.y);
+        platform->window->setMaximumSize(size.w, size.h);
         platform->max_size = platform->window->maximumSize();
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->window->setMinimumSize(size.x, size.y);
+        platform->window->setMinimumSize(size.w, size.h);
         platform->min_size = platform->window->minimumSize();
     }
 

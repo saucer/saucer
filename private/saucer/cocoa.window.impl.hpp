@@ -42,9 +42,28 @@ namespace saucer
         void setup(impl *);
 
       public:
+        void mouse_up();
+        void mouse_down();
+
+      public:
+        void mouse_dragged() const;
+
+      public:
         static void init_menu();
     };
 } // namespace saucer
+
+@interface SaucerWindow : NSWindow
+{
+  @public
+    saucer::window::impl *me;
+}
+- (instancetype)initWithParent:(saucer::window::impl *)parent
+                   contentRect:(NSRect)rect
+                     styleMask:(NSWindowStyleMask)mask
+                       backing:(NSBackingStoreType)backing
+                         defer:(BOOL)defer;
+@end
 
 @interface Observer : NSObject
 {

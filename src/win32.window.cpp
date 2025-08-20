@@ -8,6 +8,8 @@
 
 #include "instantiate.hpp"
 
+#include <cassert>
+
 #include <rebind/enum.hpp>
 
 #include <dwmapi.h>
@@ -15,8 +17,6 @@
 
 namespace saucer
 {
-    static constexpr auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
-
     using impl = window::impl;
 
     impl::impl() = default;
@@ -30,7 +30,7 @@ namespace saucer
         utils::window_handle hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,                     //
                                                     parent->native<false>()->platform->id.c_str(), //
                                                     L"",                                           //
-                                                    style,                                         //
+                                                    window_flags::standard,                        //
                                                     CW_USEDEFAULT,                                 //
                                                     CW_USEDEFAULT,                                 //
                                                     CW_USEDEFAULT,                                 //
@@ -118,6 +118,25 @@ namespace saucer
         return GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
     }
 
+    bool impl::fullscreen() const
+    {
+        const auto monitor = screen();
+
+        if (!monitor.has_value())
+        {
+            assert(false);
+            return false;
+        }
+
+        RECT rect{};
+        GetWindowRect(platform->hwnd.get(), &rect);
+
+        const auto pos  = monitor->position;
+        const auto size = monitor->size;
+
+        return pos.x == rect.left && pos.y == rect.top && size.w == rect.right - rect.left && size.h == rect.bottom - rect.top;
+    }
+
     bool impl::always_on_top() const
     {
         return GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE) & WS_EX_TOPMOST;
@@ -146,27 +165,14 @@ namespace saucer
 
     window::decoration impl::decorations() const
     {
-        using enum decoration;
-
-        if (!(platform->styles & WS_CAPTION))
-        {
-            return none;
-        }
-
-        if (!platform->titlebar)
-        {
-            return partial;
-        }
-
-        return full;
+        return platform->flags.decorations;
     }
 
     size impl::size() const
     {
         RECT rect;
-        GetWindowRect(platform->hwnd.get(), &rect);
-
-        return {rect.right - rect.left, rect.bottom - rect.top};
+        GetClientRect(platform->hwnd.get(), &rect);
+        return {.w = rect.right - rect.left, .h = rect.bottom - rect.top};
     }
 
     size impl::max_size() const
@@ -174,7 +180,7 @@ namespace saucer
         const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
         const auto height = GetSystemMetrics(SM_CYMAXTRACK);
 
-        return platform->max_size.value_or({.x = width, .y = height});
+        return platform->max_size.value_or({.w = width, .h = height});
     }
 
     size impl::min_size() const
@@ -182,7 +188,7 @@ namespace saucer
         const auto width  = GetSystemMetrics(SM_CXMINTRACK);
         const auto height = GetSystemMetrics(SM_CYMINTRACK);
 
-        return platform->min_size.value_or({.x = width, .y = height});
+        return platform->min_size.value_or({.w = width, .h = height});
     }
 
     position impl::position() const
@@ -293,18 +299,42 @@ namespace saucer
 
     void impl::set_resizable(bool enabled) // NOLINT(*-function-const)
     {
-        static constexpr auto flags = WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+        platform->flags.resizable = enabled;
+        platform->flags.apply(platform->hwnd.get());
+    }
 
-        if (enabled)
+    void impl::set_fullscreen(bool enabled) // NOLINT(*-function-const)
+    {
+        auto *const hwnd = platform->hwnd.get();
+
+        platform->flags.fullscreen = enabled;
+        platform->flags.apply(hwnd);
+
+        if (!enabled && platform->prev_placement.has_value())
         {
-            platform->styles |= flags;
-        }
-        else
-        {
-            platform->styles &= ~flags;
+            SetWindowPlacement(hwnd, &platform->prev_placement.value());
         }
 
-        native::set_style(platform->hwnd.get(), style | platform->styles);
+        if (!enabled)
+        {
+            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+            return;
+        }
+
+        platform->prev_placement.emplace(WINDOWPLACEMENT{.length = sizeof(WINDOWPLACEMENT)});
+        GetWindowPlacement(hwnd, &platform->prev_placement.value());
+
+        const auto monitor = screen();
+
+        if (!monitor.has_value())
+        {
+            return;
+        }
+
+        const auto pos  = monitor->position;
+        const auto size = monitor->size;
+
+        SetWindowPos(hwnd, HWND_TOP, pos.x, pos.y, size.w, size.h, SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
 
     void impl::set_always_on_top(bool enabled) // NOLINT(*-function-const)
@@ -315,19 +345,8 @@ namespace saucer
 
     void impl::set_click_through(bool enabled) // NOLINT(*-function-const)
     {
-        static constexpr auto flags = WS_EX_TRANSPARENT | WS_EX_LAYERED;
-        auto current                = GetWindowLongPtr(platform->hwnd.get(), GWL_EXSTYLE);
-
-        if (enabled)
-        {
-            current |= flags;
-        }
-        else
-        {
-            current &= ~flags;
-        }
-
-        SetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE, current);
+        platform->flags.click_through = enabled;
+        platform->flags.apply(platform->hwnd.get());
 
         if (!enabled)
         {
@@ -365,26 +384,32 @@ namespace saucer
 
     void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
     {
-        const auto decorated = decoration != decoration::none;
-        const auto titlebar  = decoration != decoration::partial;
+        platform->flags.decorations = decoration;
+        platform->flags.apply(platform->hwnd.get());
 
-        platform->titlebar = titlebar;
-
-        if (!decorated)
+        if (decoration == decoration::none)
         {
-            native::set_style(platform->hwnd.get(), 0);
             return;
         }
 
-        native::set_style(platform->hwnd.get(), style | platform->styles);
-        utils::extend_frame(platform->hwnd.get(), {0, 0, titlebar ? 0 : 2, 0});
-
+        utils::extend_frame(platform->hwnd.get(), {0, 0, decoration == decoration::partial ? 2 : 0, 0});
         SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     }
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, size.x, size.y, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
+        RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
+
+        const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
+        const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
+        const auto dpi      = GetDpiForWindow(platform->hwnd.get());
+
+        AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+
+        const auto width  = desired.right - desired.left;
+        const auto height = desired.bottom - desired.top;
+
+        SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)

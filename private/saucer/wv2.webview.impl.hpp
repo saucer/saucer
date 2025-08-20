@@ -1,7 +1,8 @@
 #pragma once
 
 #include "webview.impl.hpp"
-#include "win32.utils.hpp"
+
+#include <limits>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -17,6 +18,7 @@ namespace saucer
     using ScriptInjected       = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
     using EnvironmentCompleted = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
     using ControllerCompleted  = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
+    using Fullscreen           = ICoreWebView2ContainsFullScreenElementChangedEventHandler;
     using ResourceRequested    = ICoreWebView2WebResourceRequestedEventHandler;
     using TitleChanged         = ICoreWebView2DocumentTitleChangedEventHandler;
     using NavigationComplete   = ICoreWebView2NavigationCompletedEventHandler;
@@ -63,12 +65,13 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
-        std::uint64_t id_counter{0};
-        std::unordered_map<std::uint64_t, wv2_script> scripts;
+        std::size_t id_counter{0};
+        std::unordered_map<std::size_t, wv2_script> scripts;
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:
-        utils::wnd_proc_hook hook;
+        std::size_t on_resize, on_minimize;
+        std::optional<saucer::bounds> bounds;
 
       public:
         std::uint32_t browser_pid;
@@ -96,10 +99,13 @@ namespace saucer
 
       public:
         static HRESULT on_favicon(impl *, ICoreWebView2 *, IUnknown *);
+        static HRESULT on_fullscreen(impl *, ICoreWebView2 *, IUnknown *);
         static HRESULT on_window(impl *, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *);
 
       public:
         static HRESULT scheme_handler(impl *, const scheme_options &);
-        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+
+      public:
+        static inline auto bound_events = std::numeric_limits<std::size_t>::max();
     };
 } // namespace saucer

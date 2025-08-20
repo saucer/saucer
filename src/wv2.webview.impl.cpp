@@ -40,7 +40,11 @@ namespace saucer
             using permission::request;
 
             ComPtr<ICoreWebView2Deferral> deferral;
-            args->GetDeferral(&deferral);
+
+            if (auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
+            {
+                return status;
+            }
 
             auto req = std::make_shared<request>(request::impl{
                 .request  = args,
@@ -56,6 +60,11 @@ namespace saucer
         web_view->add_PermissionRequested(Callback<PermissionRequested>(handler).Get(), &token);
 
         event.on_clear([this, token] { web_view->remove_PermissionRequested(token); });
+    }
+
+    template <>
+    void native::setup<event::fullscreen>(impl *)
+    {
     }
 
     template <>
@@ -234,10 +243,15 @@ namespace saucer
     HRESULT native::on_message(impl *self, ICoreWebView2 *, ICoreWebView2WebMessageReceivedEventArgs *args)
     {
         utils::string_handle raw;
-        args->TryGetWebMessageAsString(&raw.reset());
+
+        if (auto status = args->TryGetWebMessageAsString(&raw.reset()); !SUCCEEDED(status))
+        {
+            return status;
+        }
 
         auto message = utils::narrow(raw.get());
-        self->parent->post([self, message = std::move(message)] { self->events->get<event::message>().fire(message); });
+        self->parent->post([self, message = std::move(message)]
+                           { self->events->get<event::message>().fire(message).find(status::handled); });
 
         return S_OK;
     }
@@ -246,13 +260,17 @@ namespace saucer
     {
         ComPtr<ICoreWebView2WebResourceRequest> request;
 
-        if (!SUCCEEDED(args->get_Request(&request)))
+        if (auto status = args->get_Request(&request); !SUCCEEDED(status))
         {
-            return S_OK;
+            return status;
         }
 
         utils::string_handle raw;
-        request->get_Uri(&raw.reset());
+
+        if (auto status = request->get_Uri(&raw.reset()); !SUCCEEDED(status))
+        {
+            return status;
+        }
 
         auto url = uri::parse(utils::narrow(raw.get()));
 
@@ -319,17 +337,34 @@ namespace saucer
             return S_OK;
         };
 
-        self->platform->web_view->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(callback).Get());
+        return self->platform->web_view->GetFavicon(COREWEBVIEW2_FAVICON_IMAGE_FORMAT_PNG, Callback<GetFavicon>(callback).Get());
+    }
+
+    HRESULT native::on_fullscreen(impl *self, ICoreWebView2 *, IUnknown *)
+    {
+        BOOL fullscreen{false};
+
+        if (auto status = self->platform->web_view->get_ContainsFullScreenElement(&fullscreen); !SUCCEEDED(status))
+        {
+            return status;
+        }
+
+        if (!self->events->get<event::fullscreen>().fire(fullscreen).find(policy::block))
+        {
+            self->window->set_fullscreen(fullscreen);
+        }
 
         return S_OK;
     }
 
     HRESULT native::on_window(impl *self, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *args)
     {
-        args->put_Handled(true);
-
         ComPtr<ICoreWebView2Deferral> deferral;
-        args->GetDeferral(&deferral);
+
+        if (auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
+        {
+            return status;
+        }
 
         auto callback = [self, args, deferral]
         {
@@ -342,6 +377,7 @@ namespace saucer
             deferral->Complete();
         };
 
+        args->put_Handled(true);
         self->parent->post(callback);
 
         return S_OK;
@@ -359,23 +395,23 @@ namespace saucer
 
         ComPtr<ICoreWebView2Environment> environment;
 
-        if (!SUCCEEDED(self->platform->web_view->get_Environment(&environment)))
+        if (auto status = self->platform->web_view->get_Environment(&environment); !SUCCEEDED(status))
         {
-            return S_OK;
+            return status;
         }
 
         ComPtr<ICoreWebView2Deferral> deferral;
 
-        if (!SUCCEEDED(opts.raw->GetDeferral(&deferral)))
+        if (auto status = opts.raw->GetDeferral(&deferral); !SUCCEEDED(status))
         {
-            return S_OK;
+            return status;
         }
 
         ComPtr<IStream> content;
 
-        if (!SUCCEEDED(opts.request->get_Content(&content)))
+        if (auto status = opts.request->get_Content(&content); !SUCCEEDED(status))
         {
-            return S_OK;
+            return status;
         }
 
         auto resolve = [environment, deferral, request = opts.raw](const scheme::response &response)
@@ -446,26 +482,5 @@ namespace saucer
         std::invoke(resolver, std::move(req), std::move(executor));
 
         return S_OK;
-    }
-
-    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
-    {
-        const auto atom = application::impl::native::ATOM_WEBVIEW.get();
-        auto *self      = reinterpret_cast<impl *>(GetPropW(hwnd, MAKEINTATOM(atom)));
-
-        if (!self || !self->platform->controller)
-        {
-            return DefWindowProcW(hwnd, msg, w_param, l_param);
-        }
-
-        switch (msg)
-        {
-        case WM_SIZE:
-            self->platform->controller->put_Bounds(RECT{0, 0, LOWORD(l_param), HIWORD(l_param)});
-            self->platform->controller->put_IsVisible(w_param != SIZE_MINIMIZED);
-            break;
-        }
-
-        return CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);
     }
 } // namespace saucer

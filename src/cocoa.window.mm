@@ -5,6 +5,8 @@
 #include "cocoa.app.impl.hpp"
 #include "cocoa.icon.impl.hpp"
 
+#include <AppKit/AppKit.h>
+#include <Foundation/Foundation.h>
 #include <rebind/enum.hpp>
 
 namespace saucer
@@ -19,15 +21,20 @@ namespace saucer
 
         platform = std::make_unique<native>();
 
-        platform->window   = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                       styleMask:mask
-                                                         backing:NSBackingStoreBuffered
-                                                           defer:NO];
+        platform->window   = [[SaucerWindow alloc] initWithParent:this
+                                                    contentRect:NSMakeRect(0, 0, 800, 600)
+                                                      styleMask:mask
+                                                        backing:NSBackingStoreBuffered
+                                                          defer:NO];
         platform->delegate = [[WindowDelegate alloc] initWithParent:this];
+
+        platform->window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
+        [platform->window.contentView setAutoresizesSubviews:YES];
 
         [platform->window setDelegate:platform->delegate.get()];
         [platform->window center];
 
+        parent->post([this] { [platform->delegate.get() windowDidResize:reinterpret_cast<NSNotification *>(0xDEADBEEF)]; });
         set_resizable(true);
 
         return {};
@@ -43,8 +50,6 @@ namespace saucer
         }
 
         // We hide-on-close, so we call trigger two different close calls to properly quit.
-
-        events->clear(event::close);
         close();
 
         [platform->window close];
@@ -84,6 +89,12 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
         return platform->window.styleMask & NSWindowStyleMaskResizable;
+    }
+
+    bool impl::fullscreen() const
+    {
+        const utils::autorelease_guard guard{};
+        return platform->window.styleMask & NSWindowStyleMaskFullScreen;
     }
 
     bool impl::always_on_top() const
@@ -139,7 +150,7 @@ namespace saucer
         const auto guard           = utils::autorelease_guard{};
         const auto [width, height] = platform->window.frame.size;
 
-        return {.x = static_cast<int>(width), .y = static_cast<int>(height)};
+        return {.w = static_cast<int>(width), .h = static_cast<int>(height)};
     }
 
     size impl::max_size() const
@@ -147,7 +158,7 @@ namespace saucer
         const auto guard           = utils::autorelease_guard{};
         const auto [width, height] = platform->window.maxSize;
 
-        return {.x = static_cast<int>(width), .y = static_cast<int>(height)};
+        return {.w = static_cast<int>(width), .h = static_cast<int>(height)};
     }
 
     size impl::min_size() const
@@ -155,7 +166,7 @@ namespace saucer
         const auto guard           = utils::autorelease_guard{};
         const auto [width, height] = platform->window.minSize;
 
-        return {.x = static_cast<int>(width), .y = static_cast<int>(height)};
+        return {.w = static_cast<int>(width), .h = static_cast<int>(height)};
     }
 
     position impl::position() const
@@ -244,6 +255,18 @@ namespace saucer
         [platform->window setStyleMask:mask | platform->masks];
     }
 
+    void impl::set_fullscreen(bool enabled) // NOLINT(*-function-const)
+    {
+        const auto guard = utils::autorelease_guard{};
+
+        if (fullscreen() == enabled)
+        {
+            return;
+        }
+
+        [platform->window toggleFullScreen:nil];
+    }
+
     void impl::set_always_on_top(bool enabled) // NOLINT(*-function-const)
     {
         const auto guard       = utils::autorelease_guard{};
@@ -324,7 +347,7 @@ namespace saucer
     {
         const auto guard = utils::autorelease_guard{};
         auto frame       = platform->window.frame;
-        frame.size       = {.width = static_cast<float>(size.x), .height = static_cast<float>(size.y)};
+        frame.size       = {.width = static_cast<float>(size.w), .height = static_cast<float>(size.h)};
 
         [platform->window setFrame:frame display:YES animate:YES];
     }
@@ -332,13 +355,13 @@ namespace saucer
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-        [platform->window setMaxSize:{static_cast<float>(size.x), static_cast<float>(size.y)}];
+        [platform->window setMaxSize:{static_cast<float>(size.w), static_cast<float>(size.h)}];
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-        [platform->window setMinSize:{static_cast<float>(size.x), static_cast<float>(size.y)}];
+        [platform->window setMinSize:{static_cast<float>(size.w), static_cast<float>(size.h)}];
     }
 
     void impl::set_position(saucer::position position) // NOLINT(*-function-const)

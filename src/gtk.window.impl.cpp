@@ -123,6 +123,50 @@ namespace saucer
     {
     }
 
+    void native::add_widget(GtkWidget *widget) const
+    {
+        gtk_overlay_add_overlay(content, widget);
+    }
+
+    void native::remove_widget(GtkWidget *widget) const
+    {
+        gtk_overlay_remove_overlay(content, widget);
+    }
+
+    void native::track(impl *self) const
+    {
+        auto callback = [](void *, impl *self) -> gboolean
+        {
+            if (self->events->get<event::close>().fire().find(policy::block))
+            {
+                return true;
+            }
+
+            auto *parent     = self->parent;
+            auto *identifier = self->platform->window.get();
+
+            auto *const impl = parent->native<false>()->platform.get();
+            auto &instances  = impl->instances;
+
+            instances.erase(identifier);
+            self->events->get<event::closed>().fire();
+
+            if (!impl->quit_on_last_window_closed)
+            {
+                return false;
+            }
+
+            if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
+            {
+                parent->quit();
+            }
+
+            return false;
+        };
+
+        utils::connect(window.get(), "close-request", +callback, self);
+    }
+
     void native::start_resize(edge edge) const
     {
         GdkSurfaceEdge translated{};
@@ -168,40 +212,6 @@ namespace saucer
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 
-    void native::track(impl *self) const
-    {
-        auto callback = [](void *, impl *self) -> gboolean
-        {
-            if (self->events->get<event::close>().fire().find(policy::block))
-            {
-                return true;
-            }
-
-            auto *parent     = self->parent;
-            auto *identifier = self->platform->window.get();
-
-            auto *const impl = parent->native<false>()->platform.get();
-            auto &instances  = impl->instances;
-
-            instances.erase(identifier);
-            self->events->get<event::closed>().fire();
-
-            if (!impl->quit_on_last_window_closed)
-            {
-                return false;
-            }
-
-            if (!std::ranges::any_of(instances | std::views::values, std::identity{}))
-            {
-                parent->quit();
-            }
-
-            return false;
-        };
-
-        utils::connect(window.get(), "close-request", +callback, self);
-    }
-
     void native::update_region(impl *self) const
     {
         auto callback = [](void *, double, double, impl *self)
@@ -224,7 +234,7 @@ namespace saucer
 
     void native::update_decorations(impl *self) const
     {
-        auto callback = [](void *, GParamSpec *, impl *self)
+        auto decorated = [](void *, GParamSpec *, impl *self)
         {
             auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
@@ -238,7 +248,13 @@ namespace saucer
             self->events->get<event::decorated>().fire(current);
         };
 
-        utils::connect(header, "notify::visible", +callback, self);
-        utils::connect(window.get(), "notify::decorated", +callback, self);
+        auto fullscreen = [](void *, GParamSpec *, impl *self)
+        {
+            gtk_widget_set_visible(GTK_WIDGET(self->platform->header), !self->fullscreen());
+        };
+
+        utils::connect(header, "notify::visible", +decorated, self);
+        utils::connect(window.get(), "notify::decorated", +decorated, self);
+        utils::connect(window.get(), "notify::fullscreened", +fullscreen, self);
     }
 } // namespace saucer

@@ -25,6 +25,6 @@
 #define SAUCER_INSTANTIATE_WEBVIEW_IMPL_EVENT(EVENT) SAUCER_INSTANTIATE_EVENT(webview::impl, EVENT)
 
 #define SAUCER_INSTANTIATE_WEBVIEW_EVENTS(MACRO)                                                                                      \
-    SAUCER_RECURSE(MACRO, webview::event::permission, webview::event::dom_ready, webview::event::navigated, webview::event::navigate, \
-                   webview::event::message, webview::event::request, webview::event::favicon, webview::event::title,                  \
-                   webview::event::load)
+    SAUCER_RECURSE(MACRO, webview::event::permission, webview::event::fullscreen, webview::event::dom_ready,                          \
+                   webview::event::navigated, webview::event::navigate, webview::event::message, webview::event::request,             \
+                   webview::event::favicon, webview::event::title, webview::event::load)

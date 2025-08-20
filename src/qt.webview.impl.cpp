@@ -81,6 +81,11 @@ namespace saucer
     }
 
     template <>
+    void native::setup<event::fullscreen>(impl *)
+    {
+    }
+
+    template <>
     void native::setup<event::dom_ready>(impl *)
     {
     }

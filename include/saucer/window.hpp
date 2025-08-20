@@ -15,14 +15,6 @@
 
 namespace saucer
 {
-    struct position
-    {
-        int x;
-        int y;
-    };
-
-    using size = position;
-
     struct color
     {
         std::uint8_t r;
@@ -113,6 +105,9 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool resizable() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] bool fullscreen() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] bool always_on_top() const;
         [[sc::thread_safe]] [[nodiscard]] bool click_through() const;
 
@@ -150,6 +145,9 @@ namespace saucer
         [[sc::thread_safe]] void set_resizable(bool);
 
       public:
+        [[sc::thread_safe]] void set_fullscreen(bool);
+
+      public:
         [[sc::thread_safe]] void set_always_on_top(bool);
         [[sc::thread_safe]] void set_click_through(bool);
 
@@ -182,7 +180,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void off(event);
-        [[sc::thread_safe]] void off(event, std::uint64_t id);
+        [[sc::thread_safe]] void off(event, std::size_t id);
     };
 } // namespace saucer
 

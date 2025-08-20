@@ -35,6 +35,12 @@ namespace saucer
             return err(contract_error::not_main_thread);
         }
 
+        if (static auto once{true}; once)
+        {
+            register_scheme("saucer");
+            once = false;
+        }
+
         auto rtn         = webview{};
         auto *const impl = rtn.m_impl.get();
 
@@ -85,7 +91,7 @@ namespace saucer
         return invoke<&impl::handle_scheme>(m_impl.get(), name, std::move(handler));
     }
 
-    void impl::reject(std::uint64_t id, std::string_view reason)
+    void impl::reject(std::size_t id, std::string_view reason)
     {
         execute(std::format(
             R"(
@@ -95,7 +101,7 @@ namespace saucer
             id, reason));
     }
 
-    void impl::resolve(std::uint64_t id, std::string_view result)
+    void impl::resolve(std::size_t id, std::string_view result)
     {
         execute(std::format(
             R"(
@@ -145,6 +151,11 @@ namespace saucer
         return invoke<&impl::force_dark_mode>(m_impl.get());
     }
 
+    bounds webview::bounds() const
+    {
+        return invoke<&impl::bounds>(m_impl.get());
+    }
+
     void webview::set_dev_tools(bool value)
     {
         return invoke<&impl::set_dev_tools>(m_impl.get(), value);
@@ -163,6 +174,16 @@ namespace saucer
     void webview::set_force_dark_mode(bool value)
     {
         return invoke<&impl::set_force_dark_mode>(m_impl.get(), value);
+    }
+
+    void webview::reset_bounds()
+    {
+        return invoke<&impl::reset_bounds>(m_impl.get());
+    }
+
+    void webview::set_bounds(saucer::bounds bounds)
+    {
+        return invoke<&impl::set_bounds>(m_impl.get(), bounds);
     }
 
     void webview::set_url(const uri &url)
@@ -260,7 +281,7 @@ namespace saucer
         return invoke<&impl::execute>(m_impl.get(), code);
     }
 
-    std::uint64_t webview::inject(const script &script)
+    std::size_t webview::inject(const script &script)
     {
         return invoke<&impl::inject>(m_impl.get(), script);
     }
@@ -271,9 +292,9 @@ namespace saucer
         return invoke<uninject>(m_impl.get());
     }
 
-    void webview::uninject(std::uint64_t id)
+    void webview::uninject(std::size_t id)
     {
-        static constexpr auto uninject = static_cast<void (impl::*)(std::uint64_t)>(&impl::uninject);
+        static constexpr auto uninject = static_cast<void (impl::*)(std::size_t)>(&impl::uninject);
         return invoke<uninject>(m_impl.get(), id);
     }
 
@@ -287,7 +308,7 @@ namespace saucer
         return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
     }
 
-    void webview::off(event event, std::uint64_t id)
+    void webview::off(event event, std::size_t id)
     {
         return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
     }
