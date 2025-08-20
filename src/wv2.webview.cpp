@@ -118,6 +118,7 @@ namespace saucer
             return std::bind_front(std::forward<T>(func), this);
         };
 
+        platform->web_view->add_ContainsFullScreenElementChanged(Callback<Fullscreen>(bind(&native::on_fullscreen)).Get(), nullptr);
         platform->web_view->add_WebResourceRequested(Callback<ResourceRequested>(bind(&native::on_resource)).Get(), nullptr);
         platform->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(bind(&native::on_message)).Get(), nullptr);
         platform->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(bind(&native::on_window)).Get(), nullptr);

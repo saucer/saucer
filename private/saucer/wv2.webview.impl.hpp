@@ -18,6 +18,7 @@ namespace saucer
     using ScriptInjected       = ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler;
     using EnvironmentCompleted = ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler;
     using ControllerCompleted  = ICoreWebView2CreateCoreWebView2ControllerCompletedHandler;
+    using Fullscreen           = ICoreWebView2ContainsFullScreenElementChangedEventHandler;
     using ResourceRequested    = ICoreWebView2WebResourceRequestedEventHandler;
     using TitleChanged         = ICoreWebView2DocumentTitleChangedEventHandler;
     using NavigationComplete   = ICoreWebView2NavigationCompletedEventHandler;
@@ -98,6 +99,7 @@ namespace saucer
 
       public:
         static HRESULT on_favicon(impl *, ICoreWebView2 *, IUnknown *);
+        static HRESULT on_fullscreen(impl *, ICoreWebView2 *, IUnknown *);
         static HRESULT on_window(impl *, ICoreWebView2 *, ICoreWebView2NewWindowRequestedEventArgs *);
 
       public:
