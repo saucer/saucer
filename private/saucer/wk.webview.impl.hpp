@@ -23,7 +23,6 @@ namespace saucer
         utils::objc_ptr<WKWebView> web_view;
 
       public:
-        utils::objc_ptr<NSView> view;
         utils::objc_ptr<UIDelegate> ui_delegate;
         utils::objc_ptr<NavigationDelegate> navigation_delegate;
 

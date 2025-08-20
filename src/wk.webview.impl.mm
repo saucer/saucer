@@ -19,6 +19,34 @@ namespace saucer
     }
 
     template <>
+    void native::setup<event::fullscreen>(impl *self)
+    {
+        auto &event = self->events->get<event::fullscreen>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        const utils::objc_ptr<Observer> observer = [[Observer alloc]
+            initWithCallback:[self]
+            {
+                const auto guard = utils::autorelease_guard{};
+                const auto state = self->platform->web_view.get().fullscreenState;
+
+                if (state == WKFullscreenStateEnteringFullscreen || state == WKFullscreenStateExitingFullscreen)
+                {
+                    return;
+                }
+
+                self->events->get<event::fullscreen>().fire(state == WKFullscreenStateInFullscreen).find(saucer::policy::block);
+            }];
+
+        [web_view.get() addObserver:observer.get() forKeyPath:@"fullscreenState" options:0 context:nullptr];
+        event.on_clear([this, observer] { [web_view.get() removeObserver:observer.get() forKeyPath:@"fullscreenState"]; });
+    }
+
+    template <>
     void native::setup<event::dom_ready>(impl *)
     {
     }
