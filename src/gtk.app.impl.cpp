@@ -21,8 +21,8 @@ namespace saucer
 
         return {
             .name     = model ? model : "",
-            .size     = {rect.width, rect.height},
-            .position = {rect.x, rect.y},
+            .size     = {.w = rect.width, .h = rect.height},
+            .position = {.x = rect.x, .y = rect.y},
         };
     }
 

@@ -33,7 +33,7 @@ namespace saucer
         return {
             .name     = screen.localizedName.UTF8String,
             .size     = {.w = static_cast<int>(size.width), .h = static_cast<int>(size.height)},
-            .position = {.x = static_cast<int>(pos.x), .y= static_cast<int>(pos.y)},
+            .position = {.x = static_cast<int>(pos.x), .y = static_cast<int>(pos.y)},
         };
     }
 

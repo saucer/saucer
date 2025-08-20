@@ -15,8 +15,8 @@ namespace saucer
 
         return {
             .name     = screen->name().toStdString(),
-            .size     = {geometry.width(), geometry.height()},
-            .position = {geometry.x(), geometry.y()},
+            .size     = {.w = geometry.width(), .h = geometry.height()},
+            .position = {.x = geometry.x(), .y = geometry.y()},
         };
     }
 
