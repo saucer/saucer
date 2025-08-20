@@ -71,6 +71,7 @@ namespace saucer
         enum class event : std::uint8_t
         {
             permission,
+            fullscreen,
             dom_ready,
             navigated,
             navigate,
@@ -84,6 +85,7 @@ namespace saucer
       public:
         using events = ereignis::manager<                                                             //
             ereignis::event<event::permission, status(const std::shared_ptr<permission::request> &)>, //
+            ereignis::event<event::fullscreen, policy(bool)>,                                         //
             ereignis::event<event::dom_ready, void()>,                                                //
             ereignis::event<event::navigated, void(const uri &)>,                                     //
             ereignis::event<event::navigate, policy(const navigation &)>,                             //

@@ -234,7 +234,7 @@ namespace saucer
 
     void native::update_decorations(impl *self) const
     {
-        auto callback = [](void *, GParamSpec *, impl *self)
+        auto decorated = [](void *, GParamSpec *, impl *self)
         {
             auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
@@ -248,7 +248,13 @@ namespace saucer
             self->events->get<event::decorated>().fire(current);
         };
 
-        utils::connect(header, "notify::visible", +callback, self);
-        utils::connect(window.get(), "notify::decorated", +callback, self);
+        auto fullscreen = [](void *, GParamSpec *, impl *self)
+        {
+            gtk_widget_set_visible(GTK_WIDGET(self->platform->header), !self->fullscreen());
+        };
+
+        utils::connect(header, "notify::visible", +decorated, self);
+        utils::connect(window.get(), "notify::decorated", +decorated, self);
+        utils::connect(window.get(), "notify::fullscreened", +fullscreen, self);
     }
 } // namespace saucer

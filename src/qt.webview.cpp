@@ -15,6 +15,7 @@
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
 #include <QWebEngineUrlScheme>
+#include <QWebEngineFullScreenRequest>
 
 namespace saucer
 {
@@ -67,6 +68,7 @@ namespace saucer
 
         profile->setPersistentCookiesPolicy(opts.persistent_cookies ? ForcePersistentCookies : NoPersistentCookies);
         profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        profile->settings()->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
 
         platform = std::make_unique<native>();
 
@@ -103,6 +105,18 @@ namespace saucer
                                         events->get<event::load>().fire(state::started);
                                     });
 
+        platform->web_page->connect(platform->web_page.get(), &QWebEnginePage::fullScreenRequested,
+                                    [this](QWebEngineFullScreenRequest request)
+                                    {
+                                        if (events->get<event::fullscreen>().fire(request.toggleOn()).find(policy::block))
+                                        {
+                                            return request.reject();
+                                        }
+
+                                        window->set_fullscreen(request.toggleOn());
+                                        return request.accept();
+                                    });
+
         platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
 
         window->native<false>()->platform->add_widget(platform->web_view.get());
@@ -118,10 +132,11 @@ namespace saucer
             return;
         }
 
+        set_dev_tools(false);
         window->off(window::event::closed, platform->on_closed);
 
-        set_dev_tools(false);
         platform->web_view->disconnect();
+        platform->web_page->disconnect();
 
         window->native<false>()->platform->remove_widget(platform->web_view.get());
     }
