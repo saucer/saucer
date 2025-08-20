@@ -8,6 +8,8 @@
 
 #include "instantiate.hpp"
 
+#include <cassert>
+
 #include <rebind/enum.hpp>
 
 #include <dwmapi.h>
@@ -113,12 +115,26 @@ namespace saucer
 
     bool impl::resizable() const
     {
-        return platform->flags.resizable;
+        return GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE) & WS_THICKFRAME;
     }
 
     bool impl::fullscreen() const
     {
-        return platform->flags.fullscreen;
+        const auto monitor = screen();
+
+        if (!monitor.has_value())
+        {
+            assert(false);
+            return false;
+        }
+
+        RECT rect{};
+        GetWindowRect(platform->hwnd.get(), &rect);
+
+        const auto pos  = monitor->position;
+        const auto size = monitor->size;
+
+        return pos.x == rect.left && pos.y == rect.top && size.w == rect.right - rect.left && size.h == rect.bottom - rect.top;
     }
 
     bool impl::always_on_top() const
@@ -128,7 +144,7 @@ namespace saucer
 
     bool impl::click_through() const
     {
-        return platform->flags.click_through;
+        return GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE) & WS_EX_TRANSPARENT;
     }
 
     std::string impl::title() const
@@ -304,15 +320,15 @@ namespace saucer
 
         GetWindowPlacement(hwnd, &platform->prev_placement);
 
-        auto monitor = screen();
+        const auto monitor = screen();
 
         if (!monitor.has_value())
         {
             return;
         }
 
-        auto pos  = monitor->position;
-        auto size = monitor->size;
+        const auto pos  = monitor->position;
+        const auto size = monitor->size;
 
         SetWindowPos(hwnd, HWND_TOP, pos.x, pos.y, size.w, size.h, SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
