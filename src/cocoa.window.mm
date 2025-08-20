@@ -5,6 +5,8 @@
 #include "cocoa.app.impl.hpp"
 #include "cocoa.icon.impl.hpp"
 
+#include <AppKit/AppKit.h>
+#include <Foundation/Foundation.h>
 #include <rebind/enum.hpp>
 
 namespace saucer
@@ -19,10 +21,11 @@ namespace saucer
 
         platform = std::make_unique<native>();
 
-        platform->window   = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                       styleMask:mask
-                                                         backing:NSBackingStoreBuffered
-                                                           defer:NO];
+        platform->window   = [[SaucerWindow alloc] initWithParent:this
+                                                    contentRect:NSMakeRect(0, 0, 800, 600)
+                                                      styleMask:mask
+                                                        backing:NSBackingStoreBuffered
+                                                          defer:NO];
         platform->delegate = [[WindowDelegate alloc] initWithParent:this];
 
         platform->window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;

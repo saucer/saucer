@@ -72,9 +72,103 @@ namespace saucer
     void native::setup<event::close>(impl *)
     {
     }
+
+    void native::mouse_up()
+    {
+        const utils::autorelease_guard guard{};
+
+        prev_click.emplace(click_event{
+            .frame    = window.frame,
+            .position = NSEvent.mouseLocation,
+        });
+    }
+
+    void native::mouse_down()
+    {
+        edge.reset();
+    }
+
+    void native::mouse_dragged() const
+    {
+        const utils::autorelease_guard guard{};
+
+        if (!edge.has_value() || !prev_click.has_value())
+        {
+            return;
+        }
+
+        auto [frame, prev] = prev_click.value();
+        auto underlying    = std::to_underlying(edge.value());
+
+        auto current   = NSEvent.mouseLocation;
+        auto diff      = NSPoint{current.x - prev.x, current.y - prev.y};
+        auto new_frame = frame;
+
+        using enum window::edge;
+
+        if (underlying & std::to_underlying(right))
+        {
+            new_frame.size.width += diff.x;
+        }
+        else if (underlying & std::to_underlying(left))
+        {
+            new_frame.origin.x += diff.x;
+            new_frame.size.width -= diff.x;
+        }
+
+        if (underlying & std::to_underlying(top))
+        {
+            new_frame.size.height += diff.y;
+        }
+        else if (underlying & std::to_underlying(bottom))
+        {
+            new_frame.origin.y += diff.y;
+            new_frame.size.height -= diff.y;
+        }
+
+        [window setFrame:new_frame display:YES animate:NO];
+    }
 } // namespace saucer
 
 using namespace saucer;
+
+@implementation SaucerWindow
+- (instancetype)initWithParent:(saucer::window::impl *)parent
+                   contentRect:(NSRect)rect
+                     styleMask:(NSWindowStyleMask)mask
+                       backing:(NSBackingStoreType)backing
+                         defer:(BOOL)defer
+{
+    self     = [super initWithContentRect:rect styleMask:mask backing:backing defer:defer];
+    self->me = parent;
+
+    return self;
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+    const auto guard = utils::autorelease_guard{};
+
+    me->platform->mouse_down();
+    [super mouseDown:event];
+}
+
+- (void)mouseUp:(NSEvent *)event
+{
+    const auto guard = utils::autorelease_guard{};
+
+    me->platform->mouse_up();
+    [super mouseUp:event];
+}
+
+- (void)mouseDragged:(NSEvent *)event
+{
+    const auto guard = utils::autorelease_guard{};
+
+    [super mouseDragged:event];
+    me->platform->mouse_dragged();
+}
+@end
 
 @implementation Observer
 - (instancetype)initWithCallback:(observer_callback_t)callback

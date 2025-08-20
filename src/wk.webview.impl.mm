@@ -393,65 +393,24 @@ using namespace saucer;
 - (void)mouseDown:(NSEvent *)event
 {
     const auto guard = utils::autorelease_guard{};
-    auto *const impl = me->window->native<false>()->platform.get();
 
-    impl->prev_click.emplace(click_event{
-        .frame    = impl->window.frame,
-        .position = NSEvent.mouseLocation,
-    });
-
+    me->window->native<false>()->platform->mouse_down();
     [super mouseDown:event];
 }
 
 - (void)mouseUp:(NSEvent *)event
 {
     const auto guard = utils::autorelease_guard{};
-    me->window->native<false>()->platform->edge.reset();
 
+    me->window->native<false>()->platform->mouse_up();
     [super mouseUp:event];
 }
 
 - (void)mouseDragged:(NSEvent *)event
 {
     const auto guard = utils::autorelease_guard{};
-    auto *const impl = me->window->native<false>()->platform.get();
 
     [super mouseDragged:event];
-
-    if (!impl->edge || !impl->prev_click)
-    {
-        return;
-    }
-
-    auto [frame, prev] = impl->prev_click.value();
-    auto edge          = std::to_underlying(impl->edge.value());
-
-    auto current   = NSEvent.mouseLocation;
-    auto diff      = NSPoint{current.x - prev.x, current.y - prev.y};
-    auto new_frame = frame;
-
-    using enum window::edge;
-
-    if (edge & std::to_underlying(right))
-    {
-        new_frame.size.width += diff.x;
-    }
-    else if (edge & std::to_underlying(left))
-    {
-        new_frame.origin.x += diff.x;
-        new_frame.size.width -= diff.x;
-    }
-
-    if (edge & std::to_underlying(top))
-    {
-        new_frame.size.height += diff.y;
-    }
-    else if (edge & std::to_underlying(bottom))
-    {
-        new_frame.origin.y += diff.y;
-        new_frame.size.height -= diff.y;
-    }
-
-    [impl->window setFrame:new_frame display:YES animate:NO];
+    me->window->native<false>()->platform->mouse_dragged();
 }
 @end
