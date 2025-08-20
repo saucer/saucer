@@ -15,18 +15,6 @@
 
 namespace saucer
 {
-    struct position
-    {
-        int x;
-        int y;
-    };
-
-    struct size
-    {
-        int w;
-        int h;
-    };
-
     struct color
     {
         std::uint8_t r;

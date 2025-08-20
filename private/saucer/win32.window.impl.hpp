@@ -10,6 +10,22 @@
 
 namespace saucer
 {
+    struct window_flags
+    {
+        bool resizable{true};
+        bool click_through{false};
+
+      public:
+        bool fullscreen{false};
+        window::decoration decorations{window::decoration::full};
+
+      public:
+        void apply(HWND) const;
+
+      public:
+        static constexpr auto standard = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+    };
+
     struct window::impl::native
     {
         utils::window_handle hwnd;
@@ -17,14 +33,14 @@ namespace saucer
       public:
         UINT prev_state;
         std::optional<decoration> prev_decoration;
+        WINDOWPLACEMENT prev_placement{.length = sizeof(WINDOWPLACEMENT)};
 
       public:
         utils::brush background{nullptr};
         utils::window_target window_target{nullptr};
 
       public:
-        long styles{};
-        bool titlebar{true};
+        window_flags flags;
 
       public:
         utils::wnd_proc_hook hook;
@@ -32,7 +48,6 @@ namespace saucer
         std::optional<saucer::size> max_size, min_size;
 
       public:
-        static void set_style(HWND, long);
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer

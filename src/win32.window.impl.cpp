@@ -7,16 +7,39 @@ namespace saucer
     using native = window::impl::native;
     using event  = window::event;
 
-    void native::set_style(HWND hwnd, long style)
+    void window_flags::apply(HWND hwnd) const
     {
-        auto current = GetWindowLongPtr(hwnd, GWL_STYLE);
+        const auto current = GetWindowLongPtrW(hwnd, GWL_STYLE);
+        const auto visible = current & WS_VISIBLE;
 
-        if (current & WS_VISIBLE)
+        static auto set_flag = [](auto &flags, auto flag, bool enabled)
         {
-            style |= WS_VISIBLE;
+            flags = enabled ? flags | flag : flags & ~flag;
+        };
+
+        auto normal   = standard;
+        auto extended = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+
+        set_flag(normal, WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX, resizable);
+        set_flag(extended, WS_EX_TRANSPARENT | WS_EX_LAYERED, click_through);
+
+        if (decorations == window::decoration::none)
+        {
+            normal = 0;
         }
 
-        SetWindowLongPtr(hwnd, GWL_STYLE, style);
+        if (fullscreen)
+        {
+            set_flag(normal, WS_OVERLAPPEDWINDOW, false);
+        }
+
+        if (visible)
+        {
+            set_flag(normal, WS_VISIBLE, true);
+        }
+
+        SetWindowLongPtrW(hwnd, GWL_STYLE, normal);
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, extended);
     }
 
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
@@ -46,7 +69,7 @@ namespace saucer
             break;
         }
         case WM_NCCALCSIZE: {
-            if (self->platform->titlebar)
+            if (self->platform->flags.decorations != decoration::partial)
             {
                 break;
             }
