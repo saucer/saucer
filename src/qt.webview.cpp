@@ -82,21 +82,25 @@ namespace saucer
         platform->web_page->setWebChannel(platform->channel.get());
         platform->channel->registerObject("saucer", platform->channel_obj.get());
 
-        QWebEngineScript script;
+        QWebEngineScript creation_script;
         {
-            script.setRunsOnSubFrames(true);
-            script.setWorldId(QWebEngineScript::MainWorld);
+            creation_script.setRunsOnSubFrames(true);
+            creation_script.setWorldId(QWebEngineScript::MainWorld);
+
+            creation_script.setName(native::creation_script);
+            creation_script.setInjectionPoint(QWebEngineScript::DocumentCreation);
         }
+        platform->web_page->scripts().insert(creation_script);
 
-        script.setName(native::creation_script);
-        script.setInjectionPoint(QWebEngineScript::DocumentCreation);
+        QWebEngineScript ready_script;
+        {
+            ready_script.setRunsOnSubFrames(true);
+            ready_script.setWorldId(QWebEngineScript::MainWorld);
 
-        platform->web_page->scripts().insert(script);
-
-        script.setName(native::ready_script);
-        script.setInjectionPoint(QWebEngineScript::DocumentReady);
-
-        platform->web_page->scripts().insert(script);
+            ready_script.setName(native::ready_script);
+            ready_script.setInjectionPoint(QWebEngineScript::DocumentReady);
+        }
+        platform->web_page->scripts().insert(ready_script);
 
         platform->web_view->connect(platform->web_view, &QWebEngineView::loadStarted,
                                     [this]
