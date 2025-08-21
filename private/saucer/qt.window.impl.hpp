@@ -9,7 +9,7 @@ namespace saucer
 {
     struct window::impl::native
     {
-        std::unique_ptr<QMainWindow> window;
+        QMainWindow *window;
 
       public:
         QSize max_size, min_size;

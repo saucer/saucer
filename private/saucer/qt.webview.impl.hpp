@@ -34,7 +34,9 @@ namespace saucer
         std::unique_ptr<QWebEngineProfile> profile;
 
       public:
-        std::unique_ptr<QWebEngineView> web_view;
+        QWebEngineView *web_view;
+
+      public:
         std::unique_ptr<QWebEnginePage> web_page;
         std::unique_ptr<QWebEngineView> dev_page;
 

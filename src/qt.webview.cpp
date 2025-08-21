@@ -73,8 +73,8 @@ namespace saucer
         platform = std::make_unique<native>();
 
         platform->profile     = std::move(profile);
-        platform->web_view    = std::make_unique<QWebEngineView>(window->native<false>()->platform->window->centralWidget());
-        platform->web_page    = std::make_unique<QWebEnginePage>(platform->profile.get());
+        platform->web_view    = new QWebEngineView;
+        platform->web_page    = std::make_unique<QWebEnginePage>();
         platform->channel     = std::make_unique<QWebChannel>();
         platform->channel_obj = std::make_unique<web_class>(this);
 
@@ -98,7 +98,7 @@ namespace saucer
 
         platform->web_page->scripts().insert(script);
 
-        platform->web_view->connect(platform->web_view.get(), &QWebEngineView::loadStarted,
+        platform->web_view->connect(platform->web_view, &QWebEngineView::loadStarted,
                                     [this]
                                     {
                                         platform->dom_loaded = false;
@@ -119,7 +119,7 @@ namespace saucer
 
         platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
 
-        window->native<false>()->platform->add_widget(platform->web_view.get());
+        window->native<false>()->platform->add_widget(platform->web_view);
         platform->web_view->show();
 
         return {};
@@ -138,7 +138,9 @@ namespace saucer
         platform->web_view->disconnect();
         platform->web_page->disconnect();
 
-        window->native<false>()->platform->remove_widget(platform->web_view.get());
+        window->native<false>()->platform->remove_widget(platform->web_view);
+
+        platform->web_view->deleteLater();
     }
 
     template <webview::event Event>

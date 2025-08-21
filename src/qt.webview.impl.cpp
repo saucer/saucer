@@ -110,7 +110,7 @@ namespace saucer
             self->events->get<event::navigated>().fire(uri::impl{url});
         };
 
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);
+        const auto id = web_view->connect(web_view, &QWebEngineView::urlChanged, handler);
         event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
@@ -188,7 +188,7 @@ namespace saucer
             self->events->get<event::favicon>().fire(icon{icon::impl{favicon}});
         };
 
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::iconChanged, handler);
+        const auto id = web_view->connect(web_view, &QWebEngineView::iconChanged, handler);
         event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
@@ -207,7 +207,7 @@ namespace saucer
             self->events->get<event::title>().fire(title.toStdString());
         };
 
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::titleChanged, handler);
+        const auto id = web_view->connect(web_view, &QWebEngineView::titleChanged, handler);
         event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
@@ -226,7 +226,7 @@ namespace saucer
             self->events->get<event::load>().fire(state::finished);
         };
 
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
+        const auto id = web_view->connect(web_view, &QWebEngineView::loadFinished, handler);
         event.on_clear([this, id] { web_view->disconnect(id); });
     }
 
