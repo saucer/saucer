@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(json_bridge_example LANGUAGES CXX VERSION 1.0)
+project(expose_example LANGUAGES CXX VERSION 1.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Create executable
