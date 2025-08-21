@@ -1,6 +1,6 @@
 #pragma once
 
-#include "navigation.hpp"
+#include <saucer/navigation.hpp>
 
 #ifdef SAUCER_QT6
 #include <variant>

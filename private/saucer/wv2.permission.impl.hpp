@@ -1,6 +1,6 @@
 #pragma once
 
-#include "permission.hpp"
+#include <saucer/permission.hpp>
 
 #include <wrl.h>
 #include <WebView2.h>

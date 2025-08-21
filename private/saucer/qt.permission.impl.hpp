@@ -1,6 +1,6 @@
 #pragma once
 
-#include "permission.hpp"
+#include <saucer/permission.hpp>
 
 #ifdef SAUCER_QT6
 #include <QWebEnginePermission>

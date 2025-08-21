@@ -1,6 +1,7 @@
 #pragma once
 
-#include "permission.hpp"
+#include <saucer/permission.hpp>
+
 #include "gtk.utils.hpp"
 
 #include <webkit/webkit.h>

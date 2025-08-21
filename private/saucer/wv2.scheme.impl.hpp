@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scheme.hpp"
+#include <saucer/scheme.hpp>
 
 #include <wrl.h>
 #include <WebView2.h>

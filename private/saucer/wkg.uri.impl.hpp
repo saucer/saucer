@@ -1,6 +1,7 @@
 #pragma once
 
-#include "uri.hpp"
+#include <saucer/uri.hpp>
+
 #include "ref_obj.hpp"
 
 #include <glib.h>

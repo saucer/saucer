@@ -170,8 +170,6 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 target_include_directories(${PROJECT_NAME} PRIVATE "private/saucer")
 
-target_include_directories(${PROJECT_NAME} PRIVATE "private")
-
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>

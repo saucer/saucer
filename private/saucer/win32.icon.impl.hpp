@@ -1,6 +1,6 @@
 #pragma once
 
-#include "icon.hpp"
+#include <saucer/icon.hpp>
 
 #include <windows.h>
 #include <gdiplus.h>

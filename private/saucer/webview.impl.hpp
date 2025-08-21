@@ -1,6 +1,6 @@
 #pragma once
 
-#include "webview.hpp"
+#include <saucer/webview.hpp>
 
 namespace saucer
 {

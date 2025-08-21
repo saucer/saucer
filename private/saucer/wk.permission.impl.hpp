@@ -1,6 +1,7 @@
 #pragma once
 
-#include "permission.hpp"
+#include <saucer/permission.hpp>
+
 #include "cocoa.utils.hpp"
 
 #import <WebKit/WebKit.h>
