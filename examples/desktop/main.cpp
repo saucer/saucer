@@ -10,8 +10,8 @@ static constexpr std::string_view demo = R"html(
         <hr>
         <p>The C++ code currently exposes the following functions:<p>
         <ul>
-            <li>pick_folder(initial_dir?: string)</li>
-            <li>pick_file(filters?: string[])</li>
+            <li>pick_folder(opts?)</li>
+            <li>pick_file(opts?)</li>
             <li>open(uri: string)</li>
             <li>mouse_position()</li>
         </ul>
@@ -30,11 +30,8 @@ coco::stray start(saucer::application *app)
     auto window  = saucer::window::create(app).value();
     auto webview = saucer::smartview<>::create({.window = window});
 
-    webview->expose("pick_folder",
-                    [&](std::optional<std::string> initial) { return desktop.pick<type::folder>({.initial = std::move(initial)}); });
-
-    webview->expose("pick_file",
-                    [&](std::set<std::string> filters) { return desktop.pick<type::file>({.filters = std::move(filters)}); });
+    webview->expose("pick_folder", [&](saucer::modules::picker::options opts) { return desktop.pick<type::folder>(std::move(opts)); });
+    webview->expose("pick_file", [&](saucer::modules::picker::options opts) { return desktop.pick<type::file>(std::move(opts)); });
 
     webview->expose("open", [&](const std::string &uri) { desktop.open(uri); });
     webview->expose("mouse_position", [&] { return desktop.mouse_position(); });
