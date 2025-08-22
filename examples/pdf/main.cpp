@@ -1,44 +1,60 @@
-#include <print>
-
-#include <saucer/webview.hpp>
+#include <saucer/smartview.hpp>
 #include <saucer/modules/pdf.hpp>
 
-int main(int argc, char **argv)
+#include <filesystem>
+
+static constexpr std::string_view demo = R"html(
+<!DOCTYPE html>
+<html>
+    <body>
+        <h1>Welcome to saucer!</h1>
+        <p>This example demonstrates how to use the pdf module!</p>
+        <hr>
+        <p>The C++ code currently exposes the following functions:<p>
+        <ul>
+            <li>print(path: string)</li>
+            <li>print_with(opts?)</li>
+        </ul>
+        <p>You can use the Dev-Tools to call them!</p>
+        <p>See the "expose" example on how to interact with exposed functions</p>
+    </body>
+</html>
+)html";
+
+namespace fs = std::filesystem;
+
+coco::stray start(saucer::application *app)
 {
-    if (argc < 3)
-    {
-        std::println(stderr, "Usage: {} <url> <file>", argv[0]);
-        return 1;
-    }
+    auto window  = saucer::window::create(app).value();
+    auto webview = saucer::smartview<>::create({.window = window});
 
-    auto start = [argc, argv](saucer::application *app) -> coco::stray
-    {
-        auto webview = saucer::webview{{
-            .application = app,
-        }};
+    using enum saucer::modules::pdf::layout;
+    auto pdf = saucer::modules::pdf{webview.value()};
 
-        auto &print = webview.add_module<saucer::modules::pdf>();
+    webview->expose("print",
+                    [&](const fs::path &path)
+                    {
+                        pdf.save({
+                            .file = path,
+                            // A4 Page
+                            // This has to be inches, as not all backends support the metric system (this is insane)
+                            .size        = {.w = 8.27, .h = 11.69},
+                            .orientation = portrait,
+                        });
+                    });
 
-        auto *url  = argv[1];
-        auto *file = argv[2];
+    webview->expose("print_with", [&](const saucer::modules::pdf::settings &settings) { pdf.save(settings); });
 
-        webview.on<saucer::web_event::load>(
-            [&](saucer::state state)
-            {
-                if (state != saucer::state::finished)
-                {
-                    return;
-                }
+    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view(demo), .mime = "text/html"}}});
+    webview->serve("/index.html");
 
-                print.save({.file = file, .size = {27.2, 15.3}});
-                webview.close();
-            });
+    webview->set_dev_tools(true);
+    window->show();
 
-        webview.set_url(url);
-        webview.show();
+    co_await app->finish();
+}
 
-        co_await app->finish();
-    };
-
-    return saucer::application::create({.id = "pdf"})->run(start);
+int main()
+{
+    return saucer::application::create({.id = "example"})->run(start);
 }
