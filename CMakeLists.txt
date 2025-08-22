@@ -48,8 +48,12 @@ if (WIN32 AND MINGW)
   message(WARNING "[saucer] Expect to run into issues...")
 endif()
 
-if (NOT saucer_no_version_check AND saucer_cxx_outdated)
-  message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_version_check=ON'")
+if (NOT saucer_no_sdk_version_check AND WIN32 AND CMAKE_SYSTEM_VERSION LESS 10.0.2263)
+    message(FATAL_ERROR "[saucer] The used Windows SDK seems to be outdated! You can disable this check with '-Dsaucer_no_sdk_version_check=ON'")
+endif()
+
+if (NOT saucer_no_compiler_version_check AND saucer_cxx_outdated)
+    message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_compiler_version_check=ON'")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
