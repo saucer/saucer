@@ -83,8 +83,8 @@ namespace saucer
     stash<T> stash<T>::view(std::string_view data)
         requires std::same_as<T, std::uint8_t>
     {
-        auto *const begin = reinterpret_cast<const T *>(data.begin());
-        auto *const end   = reinterpret_cast<const T *>(data.end());
+        auto *const begin = reinterpret_cast<const T *>(data.data());
+        auto *const end   = reinterpret_cast<const T *>(data.data() + data.size());
 
         return {viewing_t{begin, end}};
     }
