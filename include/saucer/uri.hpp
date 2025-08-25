@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error/error.hpp"
 #include "modules/module.hpp"
 
 #include <string>
@@ -55,8 +56,8 @@ namespace saucer
         [[nodiscard]] std::optional<std::string> password() const;
 
       public:
-        static std::optional<uri> from(const fs::path &file);
-        static std::optional<uri> parse(const std::string &input);
+        static result<uri> from(const fs::path &file);
+        static result<uri> parse(const std::string &input);
 
       public:
         static uri make(const options &);

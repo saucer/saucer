@@ -1,28 +1,59 @@
 #pragma once
 
 #include <cstdint>
-#include <system_error>
 
 #include <expected>
 #include <source_location>
 
+#include <polo/polo.hpp>
+
 namespace saucer
 {
+    struct error
+    {
+        struct impl;
+        enum class category : std::uint8_t;
+
+      public:
+        template <typename T>
+        struct of;
+
+      private:
+        cr::polo<impl> m_impl;
+
+      public:
+        error();
+        error(cr::polo<impl>, std::source_location);
+
+      public:
+        error(const error &);
+        error(error &&) noexcept;
+
+      public:
+        ~error();
+
+      public:
+        [[nodiscard]] int code() const;
+        [[nodiscard]] category type() const;
+
+      public:
+        [[nodiscard]] std::string message() const;
+        [[nodiscard]] std::source_location location() const;
+    };
+
+    enum class error::category : std::uint8_t
+    {
+        invalid  = 0,
+        platform = 1,
+        contract = 2,
+    };
+
     enum class contract_error : std::uint8_t
     {
         success          = 0,
         instance_exists  = 1,
         not_main_thread  = 2,
         required_invalid = 3,
-    };
-
-    [[nodiscard]] const std::error_category &contract_category();
-    [[nodiscard]] std::error_code make_error_code(contract_error);
-
-    struct error
-    {
-        std::error_code error_code;
-        std::source_location location;
     };
 
     template <typename T = void>

@@ -80,17 +80,23 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 * 📦 Supports Embedding Frontend into binary
 
 * 🪶 Lightweight
-  > By using the operating systems native web renderer _(or a commonly used one)_, it is possible to create binaries as small as ~250KB
+  > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
 
 * 🧰 Customizability
-  > Modules allow access to platform specific implementations, making it possible to tweak the library to your hearts content
+  > Supports a convenient API to access platform specific implementations, making it possible to tweak the library to your hearts content!
   
   * Official Modules
-    * 🖥️ [saucer/desktop](https://github.com/saucer/desktop) 
+    * 🖥️ [saucer/desktop](https://github.com/saucer/desktop)
       > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support
+      >  ⮱ [Example](./examples/desktop)
 
     * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
       > 📄 Export current page as PDF
+      >  ⮱ [Example](./examples/pdf)
+
+    * ➰ [saucer/loop](https://github.com/saucer/loop)
+      > 🛞 "Legacy"[^2] loop implementation
+      >  ⮱ [Example](./examples/loop)
 
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!  
@@ -118,7 +124,10 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 * 🪟 Built-in support for frame-less windows and transparency
 
-* [... and more!](https://saucer.github.io/)
+* 🦥 [... and more!](https://saucer.github.io/)
+
+[^1]: ... or a commonly used one
+[^2]: For lack of a better word
 
 ## ✍️ Code Example
 
@@ -127,12 +136,11 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 coco::stray start(saucer::application *app)
 {
-    auto webview = saucer::smartview{{
-        .application = app,
-    }};
+    auto window  = saucer::window::create(app).value();
+    auto webview = saucer::smartview<>::create({.window = window});
 
-    webview.set_size(900, 700);
-    webview.set_title("Hello World!");
+    window->set_title("Hello World!");
+    window->set_size(800, 600);
 
     webview.expose("add_random", [&](float number) -> coco::task<float>
     {

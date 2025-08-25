@@ -1,43 +1,39 @@
-#include "error/error.hpp"
+#include "error.impl.hpp"
 
 #include <utility>
 
-struct category_t : std::error_category
+namespace saucer
 {
-    [[nodiscard]] const char *name() const noexcept override
+    error::error() : m_impl(impl{}) {}
+
+    error::error(cr::polo<impl> data, std::source_location location) : m_impl(std::move(data))
     {
-        return "contract";
+        m_impl->location = location;
     }
 
-    [[nodiscard]] std::string message(int value) const override
+    error::error(const error &) = default;
+
+    error::error(error &&) noexcept = default;
+
+    error::~error() = default;
+
+    int error::code() const
     {
-        switch (static_cast<saucer::contract_error>(value))
-        {
-            using enum saucer::contract_error;
-
-        case success:
-            return "success";
-
-        case instance_exists:
-            return "instance already exists";
-
-        case not_main_thread:
-            return "not called from main thread";
-
-        case required_invalid:
-            return "required argument was invalid";
-        }
-
-        std::unreachable();
+        return m_impl->code();
     }
-} const category;
 
-const std::error_category &saucer::contract_category()
-{
-    return category;
-}
+    error::category error::type() const
+    {
+        return m_impl->type();
+    }
 
-std::error_code saucer::make_error_code(contract_error error)
-{
-    return {static_cast<int>(error), contract_category()};
-}
+    std::string error::message() const
+    {
+        return m_impl->message();
+    }
+
+    std::source_location error::location() const
+    {
+        return m_impl->location;
+    }
+} // namespace saucer

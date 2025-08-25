@@ -9,46 +9,29 @@ namespace saucer
 {
     namespace detail
     {
-        template <typename T>
+        template <typename T, typename E>
         struct is_expected : std::false_type
         {
         };
 
         template <typename T, typename E>
-        struct is_expected<std::expected<T, E>> : std::true_type
+        struct is_expected<std::expected<T, E>, E> : std::true_type
         {
         };
-
-        inline auto error(std::error_code value)
-        {
-            return value;
-        }
-
-        template <typename T>
-        auto error(T &&value)
-        {
-            return make_error_code(std::forward<T>(value));
-        }
     } // namespace detail
 
     template <typename T>
-    auto err(std::expected<T, error> &expected)
+    auto err(T &&value, std::source_location location)
     {
-        return std::unexpected{expected.error()};
-    }
-
-    template <typename T>
-    auto err(T &&value, [[maybe_unused]] std::source_location location)
-    {
-        if constexpr (detail::is_expected<std::remove_cvref_t<T>>::value)
+        if constexpr (detail::is_expected<std::decay_t<T>, error>::value)
         {
-            return std::unexpected{std::forward<T>(value).error()};
+            return std::unexpected{value.error()};
         }
         else
         {
             return std::unexpected{error{
-                .error_code = detail::error(std::forward<T>(value)),
-                .location   = location,
+                cr::polo<error::impl>{std::in_place_type_t<error::of<std::decay_t<T>>>{}, std::forward<T>(value)},
+                location,
             }};
         }
     }
@@ -59,9 +42,7 @@ struct std::formatter<saucer::error> : std::formatter<std::string_view>
 {
     std::format_context::iterator format(const saucer::error &error, std::format_context &ctx) const
     {
-        auto [code, loc] = error;
-        auto temp        = std::format("Error at {}:{}: {} ({})", loc.file_name(), loc.line(), code.message(), code.category().name());
-
-        return std::formatter<string_view>::format(temp, ctx);
+        const auto format = std::format("Error at {}:{}: {}", error.location().file_name(), error.location().line(), error.message());
+        return std::formatter<string_view>::format(format, ctx);
     }
 };
