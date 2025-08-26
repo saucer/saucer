@@ -284,11 +284,13 @@ namespace saucer
 
     HRESULT native::on_dom(impl *self, ICoreWebView2 *, ICoreWebView2DOMContentLoadedEventArgs *)
     {
+        using enum script::time;
+
         self->platform->dom_loaded = true;
 
         for (const auto &[id, script] : self->platform->scripts)
         {
-            if (script.time != load_time::ready)
+            if (script.run_at != ready)
             {
                 continue;
             }

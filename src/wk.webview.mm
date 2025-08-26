@@ -299,15 +299,14 @@ namespace saucer
 
     std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        using enum load_time;
+        using enum script::time;
 
         const auto guard = utils::autorelease_guard{};
-        const auto time  = script.time == creation ? WKUserScriptInjectionTimeAtDocumentStart : WKUserScriptInjectionTimeAtDocumentEnd;
-        const auto main_only = static_cast<BOOL>(script.frame == web_frame::top);
+        const auto time  = script.run_at == creation ? WKUserScriptInjectionTimeAtDocumentStart : WKUserScriptInjectionTimeAtDocumentEnd;
 
         auto *const user_script = [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
                                                           injectionTime:time
-                                                       forMainFrameOnly:main_only] autorelease];
+                                                       forMainFrameOnly:static_cast<BOOL>(script.no_frames)] autorelease];
         [platform->controller addUserScript:user_script];
 
         const auto id = platform->id_counter++;

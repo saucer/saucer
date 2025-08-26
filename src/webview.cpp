@@ -55,12 +55,12 @@ namespace saucer
 
         rtn.on<event::message>({{.func = std::bind_front(&impl::on_message, impl), .clearable = false}});
 
-        rtn.inject({.code = impl::creation_script(), .time = load_time::creation, .clearable = false});
-        rtn.inject({.code = impl::ready_script(), .time = load_time::ready, .clearable = false});
+        rtn.inject({.code = impl::creation_script(), .run_at = script::time::creation, .clearable = false});
+        rtn.inject({.code = impl::ready_script(), .run_at = script::time::ready, .clearable = false});
 
         if (opts.attributes)
         {
-            rtn.inject({.code = impl::attribute_script(), .time = load_time::creation, .clearable = false});
+            rtn.inject({.code = impl::attribute_script(), .run_at = script::time::creation, .clearable = false});
         }
 
         return rtn;

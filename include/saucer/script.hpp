@@ -5,25 +5,20 @@
 
 namespace saucer
 {
-    enum class load_time : std::uint8_t
-    {
-        creation,
-        ready,
-    };
-
-    enum class web_frame : std::uint8_t
-    {
-        top,
-        all,
-    };
-
     struct script
     {
+        enum class time : std::uint8_t
+        {
+            creation,
+            ready,
+        };
+
+      public:
         std::string code;
 
       public:
-        load_time time;
-        web_frame frame{web_frame::top};
+        time run_at;
+        bool no_frames{true};
 
       public:
         bool clearable{true};

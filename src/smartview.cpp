@@ -50,13 +50,13 @@ namespace saucer
 
         inject({
             .code      = m_impl->serializer->script(),
-            .time      = load_time::creation,
+            .run_at    = script::time::creation,
             .clearable = false,
         });
 
         inject({
             .code      = std::format(bridge_script, m_impl->serializer->js_serializer()),
-            .time      = load_time::creation,
+            .run_at    = script::time::creation,
             .clearable = false,
         });
 

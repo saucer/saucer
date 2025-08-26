@@ -25,7 +25,9 @@ namespace saucer
     struct qt_script
     {
         std::string id;
-        load_time time;
+        script::time run_at;
+
+      public:
         bool clearable;
     };
 

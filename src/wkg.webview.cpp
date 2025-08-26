@@ -275,14 +275,13 @@ namespace saucer
 
     std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        using enum load_time;
-        using enum web_frame;
+        using enum script::time;
 
-        const auto time = (script.time == creation) ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START //
-                                                    : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
+        const auto time = (script.run_at == creation) ? WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START //
+                                                      : WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END;
 
-        const auto frame = (script.frame == all) ? WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES //
-                                                 : WEBKIT_USER_CONTENT_INJECT_TOP_FRAME;
+        const auto frame = (script.no_frames) ? WEBKIT_USER_CONTENT_INJECT_TOP_FRAME //
+                                              : WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES;
 
         auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
         const auto id           = platform->id_counter++;

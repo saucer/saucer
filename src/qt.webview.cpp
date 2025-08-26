@@ -306,10 +306,9 @@ namespace saucer
 
     std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        using enum load_time;
-        using enum web_frame;
+        using enum script::time;
 
-        auto original = platform->find(script.time == creation ? native::creation_script : native::ready_script);
+        auto original = platform->find(script.run_at == creation ? native::creation_script : native::ready_script);
         auto source   = original.sourceCode().toStdString();
 
         auto uuid       = QUuid::createUuid();
@@ -317,7 +316,7 @@ namespace saucer
 
         auto code = script.code;
 
-        if (script.frame == top)
+        if (script.no_frames)
         {
             code = std::format(R"js(
                 if (self === top)
@@ -337,7 +336,7 @@ namespace saucer
         platform->web_page->scripts().insert(replacement);
 
         const auto id = platform->id_counter++;
-        platform->scripts.emplace(id, qt_script{.id = identifier, .time = script.time, .clearable = script.clearable});
+        platform->scripts.emplace(id, qt_script{.id = identifier, .run_at = script.run_at, .clearable = script.clearable});
 
         return id;
     }
@@ -359,7 +358,7 @@ namespace saucer
 
     void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
-        using enum load_time;
+        using enum script::time;
 
         if (!platform->scripts.contains(id))
         {
@@ -368,7 +367,7 @@ namespace saucer
 
         const auto &script = platform->scripts[id];
 
-        auto original = platform->find(script.time == creation ? native::creation_script : native::ready_script);
+        auto original = platform->find(script.run_at == creation ? native::creation_script : native::ready_script);
         auto source   = original.sourceCode().toStdString();
 
         auto replacement       = original;
