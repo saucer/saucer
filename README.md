@@ -132,6 +132,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 ## ✍️ Code Example
 
 ```cpp
+#include <print>
 #include <saucer/smartview.hpp>
 
 coco::stray start(saucer::application *app)
@@ -140,16 +141,22 @@ coco::stray start(saucer::application *app)
     auto webview = saucer::smartview<>::create({.window = window});
 
     window->set_title("Hello World!");
-    window->set_size(800, 600);
+    window->set_size({.w = 800, .h = 600});
 
-    webview.expose("add_random", [&](float number) -> coco::task<float>
-    {
-        auto random = co_await webview.evaluate<float>("Math.random()");
-        co_return number + random;
+    webview->expose("add_demo", [&](double a, double b) -> coco::task<double>
+    { 
+        co_return a + b + co_await webview->evaluate<double>("Math.random()"); 
     });
 
-    webview.set_file("index.html");
-    webview.show();
+    auto index = saucer::uri::from("index.html");
+
+    if (!index.has_value())
+    {
+        co_return std::println("{}", index.error());
+    }
+
+    webview->set_url(index.value());
+    window->show();
 
     co_await app->finish();
 }
@@ -159,6 +166,8 @@ int main()
     return saucer::application::create({.id = "example"})->run(start);
 }
 ```
+
+> 🔍 See more [examples](./examples)!
 
 ## 🌐 Who's using saucer?
 
