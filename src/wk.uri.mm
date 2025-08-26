@@ -1,5 +1,6 @@
 #include "wk.uri.impl.hpp"
 
+#include "error.impl.hpp"
 #include "cocoa.utils.hpp"
 
 namespace saucer
@@ -113,27 +114,27 @@ namespace saucer
         return rtn.UTF8String;
     }
 
-    std::optional<uri> uri::from(const fs::path &file)
+    result<uri> uri::from(const fs::path &file)
     {
         const utils::autorelease_guard guard{};
         auto *const rtn = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
 
         if (!rtn)
         {
-            return std::nullopt;
+            return err(std::error_code{});
         }
 
         return impl{utils::objc_ptr<NSURL>::ref(rtn)};
     }
 
-    std::optional<uri> uri::parse(const std::string &input)
+    result<uri> uri::parse(const std::string &input)
     {
         const utils::autorelease_guard guard{};
         auto *const rtn = [NSURL URLWithString:[NSString stringWithUTF8String:input.c_str()]];
 
         if (!rtn)
         {
-            return std::nullopt;
+            return err(std::error_code{});
         }
 
         return impl{utils::objc_ptr<NSURL>::ref(rtn)};

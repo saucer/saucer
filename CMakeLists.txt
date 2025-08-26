@@ -260,7 +260,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           polo 
-  VERSION        1.0.0
+  VERSION        1.0.1
   GIT_REPOSITORY "https://github.com/Curve/polo"
 )
 

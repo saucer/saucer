@@ -1,5 +1,7 @@
 #include "wk.webview.impl.hpp"
 
+#include "error.impl.hpp"
+
 #include "scripts.hpp"
 #include "instantiate.hpp"
 
@@ -93,6 +95,19 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
+    result<uri> impl::url() const
+    {
+        const auto guard = utils::autorelease_guard{};
+        auto *const url  = platform->web_view.get().URL;
+
+        if (!url)
+        {
+            return err(std::errc::not_connected);
+        }
+
+        return uri::impl{[url copy]};
+    }
+
     icon impl::favicon() const // NOLINT(*-static)
     {
         return {};
@@ -122,19 +137,6 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
         return platform->context_menu;
-    }
-
-    std::optional<uri> impl::url() const
-    {
-        const auto guard = utils::autorelease_guard{};
-        auto *const url  = platform->web_view.get().URL;
-
-        if (!url)
-        {
-            return std::nullopt;
-        }
-
-        return uri::impl{[url copy]};
     }
 
     color impl::background() const
@@ -167,6 +169,21 @@ namespace saucer
             .w = static_cast<int>(size.width),
             .h = static_cast<int>(size.height),
         };
+    }
+
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    {
+        const auto guard = utils::autorelease_guard{};
+        auto *const raw  = url.native<false>()->url.get();
+
+        if (url.scheme() == "file")
+        {
+            [platform->web_view.get() loadFileURL:raw allowingReadAccessToURL:raw.URLByDeletingLastPathComponent];
+            return;
+        }
+
+        auto *const request = [NSURLRequest requestWithURL:raw];
+        [platform->web_view.get() loadRequest:request];
     }
 
     void impl::set_dev_tools([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
@@ -247,21 +264,6 @@ namespace saucer
     {
         [platform->web_view.get() setFrame:{{.x = static_cast<CGFloat>(bounds.x), .y = static_cast<CGFloat>(bounds.y)},
                                             {.width = static_cast<CGFloat>(bounds.w), .height = static_cast<CGFloat>(bounds.h)}}];
-    }
-
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
-    {
-        const auto guard = utils::autorelease_guard{};
-        auto *const raw  = url.native<false>()->url.get();
-
-        if (url.scheme() == "file")
-        {
-            [platform->web_view.get() loadFileURL:raw allowingReadAccessToURL:raw.URLByDeletingLastPathComponent];
-            return;
-        }
-
-        auto *const request = [NSURLRequest requestWithURL:raw];
-        [platform->web_view.get() loadRequest:request];
     }
 
     void impl::back() // NOLINT(*-function-const)

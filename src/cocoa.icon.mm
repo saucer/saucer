@@ -1,5 +1,8 @@
 #include "cocoa.icon.impl.hpp"
 
+#include "cocoa.utils.hpp"
+#include "error.impl.hpp"
+
 #include <cassert>
 
 namespace saucer
@@ -60,7 +63,7 @@ namespace saucer
         [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:0 error:&error];
     }
 
-    std::optional<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash<> &ico)
     {
         const utils::autorelease_guard guard{};
 
@@ -69,13 +72,13 @@ namespace saucer
 
         if (!image)
         {
-            return std::nullopt;
+            return err(std::error_code{});
         }
 
         return icon{{image}};
     }
 
-    std::optional<icon> icon::from(const fs::path &file)
+    result<icon> icon::from(const fs::path &file)
     {
         const utils::autorelease_guard guard{};
 
@@ -83,7 +86,7 @@ namespace saucer
 
         if (!image)
         {
-            return std::nullopt;
+            return err(std::error_code{});
         }
 
         return icon{{image}};
