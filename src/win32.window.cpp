@@ -42,7 +42,7 @@ namespace saucer
 
         if (!hwnd.get())
         {
-            return err(make_error_code(GetLastError()));
+            return err(GetLastError());
         }
 
         auto compositor    = utils::compositor{};

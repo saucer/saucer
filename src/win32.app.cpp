@@ -31,7 +31,7 @@ namespace saucer
 
         if (!RegisterClassW(&platform->wnd_class))
         {
-            return err(make_error_code(GetLastError()));
+            return err(GetLastError());
         }
 
         platform->msg_window = CreateWindowEx(0,                    //
@@ -49,7 +49,7 @@ namespace saucer
 
         if (!platform->msg_window.get())
         {
-            return err(make_error_code(GetLastError()));
+            return err(GetLastError());
         }
 
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);

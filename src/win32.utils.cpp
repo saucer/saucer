@@ -179,7 +179,7 @@ namespace saucer
 
         if (auto status = CreateDispatcherQueueController(options, controller); !SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         return rtn;
@@ -197,7 +197,7 @@ namespace saucer
 
         if (auto status = interop->CreateDesktopWindowTarget(hwnd, false, target); !SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         return rtn;
@@ -211,7 +211,7 @@ namespace saucer
 
         if (auto status = HashData(value.data(), value.size(), buffer, size); !SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         return buffer                                                                  //

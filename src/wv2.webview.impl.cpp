@@ -204,7 +204,7 @@ namespace saucer
 
         if (!SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         while (!rtn)
@@ -229,7 +229,7 @@ namespace saucer
 
         if (auto status = env->CreateCoreWebView2Controller(hwnd, callback.Get()); !SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         while (!rtn)

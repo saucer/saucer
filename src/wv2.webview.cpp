@@ -77,14 +77,14 @@ namespace saucer
 
         if (auto status = controller.value()->get_CoreWebView2(&raw); !SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         ComPtr<ICoreWebView2_22> web_view;
 
         if (auto status = raw.As(&web_view); !SUCCEEDED(status))
         {
-            return err(make_error_code(status));
+            return err(status);
         }
 
         platform = std::make_unique<native>();
@@ -194,6 +194,14 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
+    result<uri> impl::url() const
+    {
+        utils::string_handle url;
+        platform->web_view->get_Source(&url.reset());
+
+        return uri::parse(utils::narrow(url.get()));
+    }
+
     icon impl::favicon() const
     {
         return platform->favicon;
@@ -221,14 +229,6 @@ namespace saucer
         platform->settings->get_AreDefaultContextMenusEnabled(&rtn);
 
         return static_cast<bool>(rtn);
-    }
-
-    std::optional<uri> impl::url() const
-    {
-        utils::string_handle url;
-        platform->web_view->get_Source(&url.reset());
-
-        return uri::parse(utils::narrow(url.get()));
     }
 
     color impl::background() const
@@ -268,6 +268,11 @@ namespace saucer
     bounds impl::bounds() const
     {
         return platform->bounds.value_or({});
+    }
+
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    {
+        platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
@@ -323,11 +328,6 @@ namespace saucer
     void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
     {
         platform->bounds.emplace(bounds);
-    }
-
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
-    {
-        platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
     void impl::back() // NOLINT(*-function-const)

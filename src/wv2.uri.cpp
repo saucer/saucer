@@ -1,6 +1,7 @@
 #include "wv2.uri.impl.hpp"
 
 #include "win32.utils.hpp"
+#include "win32.error.hpp"
 
 #include <cassert>
 
@@ -89,22 +90,22 @@ namespace saucer
         return utils::narrow({rtn, m_impl->components.dwPasswordLength});
     }
 
-    std::optional<uri> uri::from(const fs::path &file)
+    result<uri> uri::from(const fs::path &file)
     {
         std::wstring rtn{};
         DWORD len{INTERNET_MAX_URL_LENGTH};
 
         rtn.resize(len);
 
-        if (!SUCCEEDED(UrlCreateFromPathW(file.wstring().c_str(), rtn.data(), &len, NULL)))
+        if (auto status = UrlCreateFromPathW(file.wstring().c_str(), rtn.data(), &len, 0); !SUCCEEDED(status))
         {
-            return std::nullopt;
+            return err(status);
         }
 
         return parse(utils::narrow(rtn));
     }
 
-    std::optional<uri> uri::parse(const std::string &input)
+    result<uri> uri::parse(const std::string &input)
     {
         auto wide = utils::widen(input);
 
@@ -117,9 +118,9 @@ namespace saucer
             .dwUrlPathLength  = 1,
         };
 
-        if (InternetCrackUrlW(wide.c_str(), wide.length(), NULL, &components) != TRUE)
+        if (InternetCrackUrlW(wide.c_str(), wide.length(), 0, &components) != TRUE)
         {
-            return std::nullopt;
+            return err(GetLastError());
         }
 
         return impl{.url = std::move(wide), .components = components};
@@ -154,19 +155,19 @@ namespace saucer
         std::wstring url{};
         DWORD len{0};
 
-        InternetCreateUrlW(&components, NULL, url.data(), &len);
+        InternetCreateUrlW(&components, 0, url.data(), &len);
         url.resize(len + 1);
 
-        if (InternetCreateUrlW(&components, NULL, url.data(), &len) != TRUE)
+        if (InternetCreateUrlW(&components, 0, url.data(), &len) != TRUE)
         {
-            assert(false && "Failed to create URI");
+            assert(false);
         }
 
         auto parsed = parse(utils::narrow(url));
 
         if (!parsed.has_value())
         {
-            assert(false && "Failed to re-parse URL");
+            assert(false);
             return impl{.url = std::move(url)};
         }
 

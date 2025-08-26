@@ -1,6 +1,7 @@
 #include "win32.icon.impl.hpp"
 
 #include "win32.utils.hpp"
+#include "win32.error.hpp"
 
 #include <wrl.h>
 #include <shlwapi.h>
@@ -76,26 +77,26 @@ namespace saucer
         m_impl->bitmap->Save(path.wstring().c_str(), &png_encoder);
     }
 
-    std::optional<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash<> &ico)
     {
         ComPtr<IStream> data = SHCreateMemStream(ico.data(), static_cast<DWORD>(ico.size()));
         auto bitmap          = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromStream(data.Get())};
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {
-            return std::nullopt;
+            return err(bitmap->GetLastStatus());
         }
 
         return icon{{std::move(bitmap)}};
     }
 
-    std::optional<icon> icon::from(const fs::path &file)
+    result<icon> icon::from(const fs::path &file)
     {
         auto bitmap = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromFile(file.wstring().c_str())};
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {
-            return std::nullopt;
+            return err(bitmap->GetLastStatus());
         }
 
         return icon{{std::move(bitmap)}};

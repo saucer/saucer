@@ -1,9 +1,10 @@
 #pragma once
 
-#include <cstdint>
-
 #include <expected>
 #include <source_location>
+
+#include <string>
+#include <cstdint>
 
 #include <polo/polo.hpp>
 
@@ -31,6 +32,10 @@ namespace saucer
 
       public:
         ~error();
+
+      public:
+        error &operator=(const error &);
+        error &operator=(error &&) noexcept;
 
       public:
         [[nodiscard]] int code() const;

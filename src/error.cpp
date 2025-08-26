@@ -17,6 +17,10 @@ namespace saucer
 
     error::~error() = default;
 
+    error &error::operator=(const error &) = default;
+
+    error &error::operator=(error &&) noexcept = default;
+
     int error::code() const
     {
         return m_impl->code();
