@@ -54,6 +54,8 @@ namespace saucer
 
       public:
         std::size_t on_closed;
+        QMetaObject::Connection on_load;
+        QMetaObject::Connection on_fullscreen;
 
       public:
         std::unique_ptr<request_interceptor> interceptor;

@@ -1,5 +1,7 @@
 #include "qt.webview.impl.hpp"
 
+#include "error.impl.hpp"
+
 #include "scripts.hpp"
 #include "instantiate.hpp"
 
@@ -102,24 +104,25 @@ namespace saucer
         }
         platform->web_page->scripts().insert(ready_script);
 
-        platform->web_view->connect(platform->web_view, &QWebEngineView::loadStarted,
-                                    [this]
-                                    {
-                                        platform->dom_loaded = false;
-                                        events->get<event::load>().fire(state::started);
-                                    });
+        platform->on_load = platform->web_view->connect(platform->web_view, &QWebEngineView::loadStarted,
+                                                        [this]
+                                                        {
+                                                            platform->dom_loaded = false;
+                                                            events->get<event::load>().fire(state::started);
+                                                        });
 
-        platform->web_page->connect(platform->web_page.get(), &QWebEnginePage::fullScreenRequested,
-                                    [this](QWebEngineFullScreenRequest request)
-                                    {
-                                        if (events->get<event::fullscreen>().fire(request.toggleOn()).find(policy::block))
+        platform->on_fullscreen =
+            platform->web_page->connect(platform->web_page.get(), &QWebEnginePage::fullScreenRequested,
+                                        [this](QWebEngineFullScreenRequest request)
                                         {
-                                            return request.reject();
-                                        }
+                                            if (events->get<event::fullscreen>().fire(request.toggleOn()).find(policy::block))
+                                            {
+                                                return request.reject();
+                                            }
 
-                                        window->set_fullscreen(request.toggleOn());
-                                        return request.accept();
-                                    });
+                                            window->set_fullscreen(request.toggleOn());
+                                            return request.accept();
+                                        });
 
         platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
 
@@ -139,8 +142,8 @@ namespace saucer
         set_dev_tools(false);
         window->off(window::event::closed, platform->on_closed);
 
-        platform->web_view->disconnect();
-        platform->web_page->disconnect();
+        platform->web_view->disconnect(platform->on_load);
+        platform->web_page->disconnect(platform->on_fullscreen);
 
         window->native<false>()->platform->remove_widget(platform->web_view);
 
@@ -151,6 +154,18 @@ namespace saucer
     void impl::setup()
     {
         platform->setup<Event>(this);
+    }
+
+    result<uri> impl::url() const
+    {
+        auto url = platform->web_view->url();
+
+        if (!url.isValid())
+        {
+            return err(std::errc::not_connected);
+        }
+
+        return uri::impl{url};
     }
 
     icon impl::favicon() const
@@ -171,18 +186,6 @@ namespace saucer
     bool impl::context_menu() const
     {
         return platform->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
-    }
-
-    std::optional<uri> impl::url() const
-    {
-        auto url = platform->web_view->url();
-
-        if (!url.isValid())
-        {
-            return std::nullopt;
-        }
-
-        return uri::impl{url};
     }
 
     color impl::background() const
@@ -211,6 +214,11 @@ namespace saucer
     {
         const auto geometry = platform->web_view->geometry();
         return {.x = geometry.x(), .y = geometry.y(), .w = geometry.width(), .h = geometry.height()};
+    }
+
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    {
+        platform->web_view->setUrl(url.native<false>()->uri);
     }
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
@@ -268,11 +276,6 @@ namespace saucer
     void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
     {
         platform->web_view->setGeometry({bounds.x, bounds.y, bounds.w, bounds.h});
-    }
-
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
-    {
-        platform->web_view->setUrl(url.native<false>()->uri);
     }
 
     void impl::back() // NOLINT(*-function-const)

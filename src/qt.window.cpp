@@ -41,9 +41,7 @@ namespace saucer
             return;
         }
 
-        platform->window->disconnect();
         platform->window->close();
-
         platform->window->deleteLater();
     }
 
