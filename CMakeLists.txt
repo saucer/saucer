@@ -207,6 +207,7 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
     "src/error.cpp"
+    "src/error.impl.cpp"
 
     "src/request.cpp"
     "src/module/unstable.cpp"
@@ -255,6 +256,12 @@ CPMFindPackage(
   NAME           flagpp
   VERSION        3.1.0
   GIT_REPOSITORY "https://github.com/Curve/flagpp"
+)
+
+CPMFindPackage(
+  NAME           polo 
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/Curve/polo"
 )
 
 CPMFindPackage(
@@ -442,5 +449,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.1;ereignis 6.1.1;flagpp 3.1.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 3.2.1;rebind 5.3.1;ereignis 6.2.0;flagpp 3.1.0;polo 1.0.0;saucer-fill 1.2.0;${SERIALIZER_DEP}"
 )
