@@ -3,13 +3,12 @@
 #include "invoke.hpp"
 #include "instantiate.hpp"
 
+#include "error.impl.hpp"
 #include "window.impl.hpp"
 
 #include <format>
 #include <algorithm>
 #include <functional>
-
-#include <rebind/enum.hpp>
 
 namespace saucer
 {
@@ -74,10 +73,7 @@ namespace saucer
             return;
         }
 
-        for (const auto &event : rebind::enum_values<event>)
-        {
-            m_events->clear(event);
-        }
+        m_events->clear(true);
     }
 
     template <webview::event Event>
@@ -116,6 +112,11 @@ namespace saucer
         return *m_impl->window;
     }
 
+    result<uri> webview::url() const
+    {
+        return invoke<&impl::url>(m_impl.get());
+    }
+
     icon webview::favicon() const
     {
         return invoke<&impl::favicon>(m_impl.get());
@@ -136,11 +137,6 @@ namespace saucer
         return invoke<&impl::context_menu>(m_impl.get());
     }
 
-    std::optional<uri> webview::url() const
-    {
-        return invoke<&impl::url>(m_impl.get());
-    }
-
     color webview::background() const
     {
         return invoke<&impl::background>(m_impl.get());
@@ -154,6 +150,23 @@ namespace saucer
     bounds webview::bounds() const
     {
         return invoke<&impl::bounds>(m_impl.get());
+    }
+
+    void webview::set_url(const uri &url)
+    {
+        return invoke<&impl::set_url>(m_impl.get(), url);
+    }
+
+    void webview::set_url(const std::string &url)
+    {
+        auto uri = saucer::uri::parse(url);
+
+        if (!uri.has_value())
+        {
+            return;
+        }
+
+        set_url(uri.value());
     }
 
     void webview::set_dev_tools(bool value)
@@ -184,23 +197,6 @@ namespace saucer
     void webview::set_bounds(saucer::bounds bounds)
     {
         return invoke<&impl::set_bounds>(m_impl.get(), bounds);
-    }
-
-    void webview::set_url(const uri &url)
-    {
-        return invoke<&impl::set_url>(m_impl.get(), url);
-    }
-
-    void webview::set_url(const std::string &url)
-    {
-        auto uri = saucer::uri::parse(url);
-
-        if (!uri.has_value())
-        {
-            return;
-        }
-
-        set_url(uri.value());
     }
 
     void webview::back()

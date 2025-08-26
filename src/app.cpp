@@ -1,6 +1,6 @@
 #include "app.impl.hpp"
 
-#include <rebind/enum.hpp>
+#include "error.impl.hpp"
 
 namespace saucer
 {
@@ -39,10 +39,7 @@ namespace saucer
             return;
         }
 
-        for (const auto &event : rebind::enum_values<event>)
-        {
-            m_events->clear(event);
-        }
+        m_events->clear(true);
     }
 
     bool application::thread_safe() const

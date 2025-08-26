@@ -1,9 +1,9 @@
 #include "window.impl.hpp"
 
+#include "error.impl.hpp"
+
 #include "invoke.hpp"
 #include "instantiate.hpp"
-
-#include <rebind/enum.hpp>
 
 namespace saucer
 {
@@ -36,10 +36,7 @@ namespace saucer
             return;
         }
 
-        for (const auto &event : rebind::enum_values<event>)
-        {
-            m_events->clear(event);
-        }
+        m_events->clear(true);
     }
 
     template <window::event Event>
