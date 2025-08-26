@@ -197,7 +197,11 @@ namespace saucer
     result<uri> impl::url() const
     {
         utils::string_handle url;
-        platform->web_view->get_Source(&url.reset());
+
+        if (auto status = platform->web_view->get_Source(&url.reset()); !SUCCEEDED(status))
+        {
+            return err(status);
+        }
 
         return uri::parse(utils::narrow(url.get()));
     }
