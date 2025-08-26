@@ -272,7 +272,7 @@ CPMFindPackage(
 )
 
 target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::ereignis saucer::fill)
+target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::ereignis cr::polo saucer::fill)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
