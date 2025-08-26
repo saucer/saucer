@@ -1,5 +1,7 @@
 #include "qt.uri.impl.hpp"
 
+#include "qt.error.hpp"
+
 namespace saucer
 {
     uri::uri() : m_impl(std::make_unique<impl>()) {}
@@ -90,25 +92,25 @@ namespace saucer
         return rtn.toStdString();
     }
 
-    std::optional<uri> uri::from(const fs::path &file)
+    result<uri> uri::from(const fs::path &file)
     {
         auto rtn = QUrl::fromLocalFile(QString::fromStdString(file.string()));
 
         if (!rtn.isValid())
         {
-            return std::nullopt;
+            return err(rtn.errorString().toStdString());
         }
 
         return impl{rtn};
     }
 
-    std::optional<uri> uri::parse(const std::string &input)
+    result<uri> uri::parse(const std::string &input)
     {
         auto rtn = QUrl::fromUserInput(QString::fromStdString(input));
 
         if (!rtn.isValid())
         {
-            return std::nullopt;
+            return err(rtn.errorString().toStdString());
         }
 
         return impl{rtn};

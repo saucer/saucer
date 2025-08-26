@@ -1,4 +1,4 @@
-#include "gtk.error.impl.hpp"
+#include "gtk.error.hpp"
 
 namespace saucer
 {

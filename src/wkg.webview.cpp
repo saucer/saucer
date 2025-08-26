@@ -1,12 +1,13 @@
 #include "wkg.webview.impl.hpp"
 
+#include "error.impl.hpp" // IWYU pragma: keep
+
 #include "scripts.hpp"
+#include "instantiate.hpp"
 
 #include "gtk.icon.impl.hpp"
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
-
-#include "instantiate.hpp"
 
 #include <cassert>
 
@@ -97,6 +98,18 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
+    result<uri> impl::url() const
+    {
+        const auto *url = webkit_web_view_get_uri(platform->web_view);
+
+        if (!url)
+        {
+            return err(std::errc::not_connected);
+        }
+
+        return uri::parse(url);
+    }
+
     icon impl::favicon() const
     {
         return icon::impl{utils::g_object_ptr<GdkTexture>::ref(webkit_web_view_get_favicon(platform->web_view))};
@@ -123,18 +136,6 @@ namespace saucer
     bool impl::context_menu() const
     {
         return platform->context_menu;
-    }
-
-    std::optional<uri> impl::url() const
-    {
-        const auto *url = webkit_web_view_get_uri(platform->web_view);
-
-        if (!url)
-        {
-            return std::nullopt;
-        }
-
-        return uri::parse(url).value_or({});
     }
 
     color impl::background() const
@@ -172,6 +173,11 @@ namespace saucer
             .w = width - x - gtk_widget_get_margin_end(widget),
             .h = height - y - gtk_widget_get_margin_bottom(widget),
         };
+    }
+
+    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    {
+        webkit_web_view_load_uri(platform->web_view, url.string().c_str());
     }
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
@@ -235,11 +241,6 @@ namespace saucer
 
         gtk_widget_set_margin_top(widget, bounds.y);
         gtk_widget_set_margin_bottom(widget, height - bounds.y - bounds.h);
-    }
-
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
-    {
-        webkit_web_view_load_uri(platform->web_view, url.string().c_str());
     }
 
     void impl::back() // NOLINT(*-function-const)

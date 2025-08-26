@@ -44,8 +44,9 @@ namespace saucer
     enum class error::category : std::uint8_t
     {
         invalid  = 0,
-        platform = 1,
-        contract = 2,
+        unknown  = 1,
+        platform = 2,
+        contract = 3,
     };
 
     enum class contract_error : std::uint8_t

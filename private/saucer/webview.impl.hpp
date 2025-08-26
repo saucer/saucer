@@ -43,18 +43,23 @@ namespace saucer
         void resolve(std::size_t, std::string_view);
 
       public:
+        [[nodiscard]] result<uri> url() const;
+
+      public:
         [[nodiscard]] icon favicon() const;
         [[nodiscard]] std::string page_title() const;
 
       public:
         [[nodiscard]] bool dev_tools() const;
         [[nodiscard]] bool context_menu() const;
-        [[nodiscard]] std::optional<uri> url() const;
 
       public:
         [[nodiscard]] color background() const;
         [[nodiscard]] bool force_dark_mode() const;
         [[nodiscard]] saucer::bounds bounds() const;
+
+      public:
+        void set_url(const uri &);
 
       public:
         void set_dev_tools(bool);
@@ -67,9 +72,6 @@ namespace saucer
       public:
         void reset_bounds();
         void set_bounds(saucer::bounds);
-
-      public:
-        void set_url(const uri &);
 
       public:
         void back();

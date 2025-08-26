@@ -9,13 +9,13 @@ namespace saucer
 {
     namespace detail
     {
-        template <typename T, typename E>
+        template <typename T>
         struct is_expected : std::false_type
         {
         };
 
         template <typename T, typename E>
-        struct is_expected<std::expected<T, E>, E> : std::true_type
+        struct is_expected<std::expected<T, E>> : std::true_type
         {
         };
     } // namespace detail
@@ -23,7 +23,7 @@ namespace saucer
     template <typename T>
     auto err(T &&value, std::source_location location)
     {
-        if constexpr (detail::is_expected<std::decay_t<T>, error>::value)
+        if constexpr (detail::is_expected<std::decay_t<T>>::value)
         {
             return std::unexpected{value.error()};
         }

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "modules/module.hpp"
+
+#include "error/error.hpp"
 #include "stash/stash.hpp"
 
 #include <memory>
-#include <optional>
 #include <filesystem>
 
 namespace saucer
@@ -45,7 +46,7 @@ namespace saucer
         void save(const fs::path &path) const;
 
       public:
-        [[nodiscard]] static std::optional<icon> from(const stash<> &ico);
-        [[nodiscard]] static std::optional<icon> from(const fs::path &file);
+        [[nodiscard]] static result<icon> from(const stash<> &ico);
+        [[nodiscard]] static result<icon> from(const fs::path &file);
     };
 } // namespace saucer

@@ -1,6 +1,7 @@
 #include "wkg.uri.impl.hpp"
 
 #include "gtk.utils.hpp"
+#include "gtk.error.hpp"
 
 namespace saucer
 {
@@ -92,25 +93,35 @@ namespace saucer
         return rtn;
     }
 
-    std::optional<uri> uri::from(const fs::path &file)
+    result<uri> uri::from(const fs::path &file)
     {
-        const auto *rtn = g_filename_to_uri(file.c_str(), nullptr, nullptr);
+        auto ec   = std::error_code{};
+        auto path = fs::canonical(file, ec);
+
+        if (ec)
+        {
+            return err(ec);
+        }
+
+        auto error      = utils::g_error_ptr{};
+        const auto *rtn = g_filename_to_uri(path.c_str(), nullptr, &error.reset());
 
         if (!rtn)
         {
-            return std::nullopt;
+            return err(std::move(error));
         }
 
         return parse(rtn);
     }
 
-    std::optional<uri> uri::parse(const std::string &input)
+    result<uri> uri::parse(const std::string &input)
     {
-        auto *const rtn = g_uri_parse(input.c_str(), G_URI_FLAGS_NONE, nullptr);
+        auto error      = utils::g_error_ptr{};
+        auto *const rtn = g_uri_parse(input.c_str(), G_URI_FLAGS_NONE, &error.reset());
 
         if (!rtn)
         {
-            return std::nullopt;
+            return err(std::move(error));
         }
 
         return impl{rtn};

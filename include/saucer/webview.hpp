@@ -127,18 +127,24 @@ namespace saucer
         [[nodiscard]] window &parent() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] result<uri> url() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;
         [[sc::thread_safe]] [[nodiscard]] std::string page_title() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] bool dev_tools() const;
         [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
-        [[sc::thread_safe]] [[nodiscard]] std::optional<uri> url() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] color background() const;
         [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
         [[sc::thread_safe]] [[nodiscard]] saucer::bounds bounds() const;
+
+      public:
+        [[sc::thread_safe]] void set_url(const uri &);
+        [[sc::thread_safe]] void set_url(const std::string &);
 
       public:
         [[sc::thread_safe]] void set_dev_tools(bool);
@@ -151,10 +157,6 @@ namespace saucer
       public:
         [[sc::thread_safe]] void reset_bounds();
         [[sc::thread_safe]] void set_bounds(saucer::bounds);
-
-      public:
-        [[sc::thread_safe]] void set_url(const uri &);
-        [[sc::thread_safe]] void set_url(const std::string &);
 
       public:
         [[sc::thread_safe]] void back();

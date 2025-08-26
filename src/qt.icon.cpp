@@ -1,5 +1,7 @@
 #include "qt.icon.impl.hpp"
 
+#include "error.impl.hpp"
+
 #include <cassert>
 
 #include <QPixmap>
@@ -68,25 +70,25 @@ namespace saucer
         pixmap->save(path.c_str());
     }
 
-    std::optional<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash<> &ico)
     {
         QPixmap rtn{};
 
         if (!rtn.loadFromData(ico.data(), ico.size()))
         {
-            return std::nullopt;
+            return err(std::error_code{});
         }
 
         return icon{{rtn}};
     }
 
-    std::optional<icon> icon::from(const fs::path &file)
+    result<icon> icon::from(const fs::path &file)
     {
         auto rtn = QIcon{QString::fromStdString(file.string())};
 
         if (rtn.isNull())
         {
-            return std::nullopt;
+            return err(std::error_code{});
         }
 
         return icon{{rtn}};

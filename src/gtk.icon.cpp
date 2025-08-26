@@ -1,5 +1,7 @@
 #include "gtk.icon.impl.hpp"
 
+#include "gtk.error.hpp"
+
 #include <cassert>
 
 namespace saucer
@@ -61,26 +63,28 @@ namespace saucer
         gdk_texture_save_to_png(m_impl->texture.get(), path.c_str());
     }
 
-    std::optional<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash<> &ico)
     {
+        auto error          = utils::g_error_ptr{};
         const auto bytes    = utils::g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};
-        auto *const texture = gdk_texture_new_from_bytes(bytes.get(), nullptr);
+        auto *const texture = gdk_texture_new_from_bytes(bytes.get(), &error.reset());
 
         if (!texture)
         {
-            return std::nullopt;
+            return err(std::move(error));
         }
 
         return icon{{texture}};
     }
 
-    std::optional<icon> icon::from(const fs::path &file)
+    result<icon> icon::from(const fs::path &file)
     {
-        auto *const texture = gdk_texture_new_from_filename(file.string().c_str(), nullptr);
+        auto error          = utils::g_error_ptr{};
+        auto *const texture = gdk_texture_new_from_filename(file.string().c_str(), &error.reset());
 
         if (!texture)
         {
-            return std::nullopt;
+            return err(std::move(error));
         }
 
         return icon{{texture}};
