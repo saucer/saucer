@@ -362,10 +362,12 @@ namespace saucer
 
     std::size_t impl::inject(const script &raw)
     {
+        using enum script::time;
+
         auto script   = wv2_script{raw};
         const auto id = platform->id_counter++;
 
-        if (script.frame == web_frame::top)
+        if (script.no_frames)
         {
             script.code = std::format(R"js(
             if (self === top)
@@ -376,7 +378,7 @@ namespace saucer
                                       script.code);
         }
 
-        if (script.time == load_time::ready)
+        if (script.run_at == ready)
         {
             platform->scripts.emplace(id, std::move(script));
             return id;
