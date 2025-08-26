@@ -41,6 +41,17 @@ namespace saucer
         std::vector<std::string> pending;
 
       public:
+        std::size_t id_context;
+        std::size_t id_load;
+
+      public:
+        std::size_t id_message;
+
+      public:
+        std::size_t id_click;
+        std::size_t id_release;
+
+      public:
         template <event>
         void setup(impl *);
 
