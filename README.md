@@ -87,15 +87,15 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   
   * Official Modules
     * 🖥️ [saucer/desktop](https://github.com/saucer/desktop)
-      > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support
+      > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support  
       >  ⮱ [Example](./examples/desktop)
 
     * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
-      > 📄 Export current page as PDF
+      > 📄 Export current page as PDF  
       >  ⮱ [Example](./examples/pdf)
 
     * ➰ [saucer/loop](https://github.com/saucer/loop)
-      > 🛞 "Legacy"[^2] loop implementation
+      > 🛞 "Legacy"[^2] loop implementation  
       >  ⮱ [Example](./examples/loop)
 
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
