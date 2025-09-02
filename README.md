@@ -88,15 +88,15 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   * Official Modules
     * 🖥️ [saucer/desktop](https://github.com/saucer/desktop)
       > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support  
-      >  ⮱ [Example](./examples/desktop)
+      > \> [Example](./examples/desktop)
 
     * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
       > 📄 Export current page as PDF  
-      >  ⮱ [Example](./examples/pdf)
+      > \> [Example](./examples/pdf)
 
     * ➰ [saucer/loop](https://github.com/saucer/loop)
       > 🛞 "Legacy"[^2] loop implementation  
-      >  ⮱ [Example](./examples/loop)
+      > \> [Example](./examples/loop)
 
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!  
