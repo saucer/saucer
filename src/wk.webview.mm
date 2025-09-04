@@ -345,7 +345,7 @@ namespace saucer
         [platform->controller removeAllUserScripts];
 
         platform->scripts.clear();
-        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&impl::inject, this));
+        std::ranges::for_each(remaining | std::views::values, std::bind_front(&impl::inject, this));
     }
 
     void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
