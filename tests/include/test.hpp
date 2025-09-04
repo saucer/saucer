@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string_view>
 
 namespace saucer::tests
 {
@@ -53,7 +54,22 @@ namespace saucer::tests
     template <std::uint8_t Policy>
     struct test
     {
-        std::string name;
+        std::string_view name;
+
+      private:
+        static std::string_view store(std::string str)
+        {
+            // boost-ut stores the name as a string_view internally.
+            // Unfortunately, this conflicts with our dynamic test names...
+
+            static std::array<std::string, 150> storage;
+            static std::size_t i = 0;
+
+            const auto index  = i++;
+            storage.at(index) = std::move(str);
+
+            return storage.at(index);
+        }
 
       private:
         template <typename T, typename Callback>
@@ -75,12 +91,12 @@ namespace saucer::tests
 
             if constexpr (Policy & sync)
             {
-                boost::ut::test(std::format("{}:seq", name)) = cb;
+                boost::ut::test(store(std::format("{}:seq", name))) = cb;
             }
 
             if constexpr (Policy & async)
             {
-                boost::ut::test(std::format("{}:par", name)) = cb;
+                boost::ut::test(store(std::format("{}:par", name))) = cb;
             }
         }
 
