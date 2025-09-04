@@ -6,6 +6,7 @@
 #include "error/error.hpp"
 
 #include <vector>
+#include <compare>
 #include <optional>
 #include <functional>
 
@@ -31,7 +32,7 @@ namespace saucer
         int y;
 
       public:
-        bool operator<=>(const position &) const = default;
+        std::strong_ordering operator<=>(const position &) const = default;
     };
 
     struct size
@@ -40,7 +41,7 @@ namespace saucer
         int h;
 
       public:
-        bool operator<=>(const size &) const = default;
+        std::strong_ordering operator<=>(const size &) const = default;
     };
 
     struct screen
@@ -52,7 +53,7 @@ namespace saucer
         saucer::position position;
 
       public:
-        bool operator<=>(const screen &) const = default;
+        std::strong_ordering operator<=>(const screen &) const = default;
     };
 
     struct application

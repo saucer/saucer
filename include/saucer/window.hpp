@@ -9,6 +9,8 @@
 #include <string>
 
 #include <cstdint>
+#include <compare>
+
 #include <optional>
 
 #include <ereignis/manager/manager.hpp>
@@ -23,7 +25,7 @@ namespace saucer
         std::uint8_t a;
 
       public:
-        bool operator<=>(const color &) const = default;
+        std::strong_ordering operator<=>(const color &) const = default;
     };
 
     struct window

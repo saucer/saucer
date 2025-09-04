@@ -18,9 +18,10 @@
 #include <memory>
 #include <optional>
 
-#include <set>
+#include <compare>
 #include <cstdint>
 
+#include <set>
 #include <filesystem>
 #include <unordered_map>
 
@@ -57,7 +58,7 @@ namespace saucer
         int w, h;
 
       public:
-        bool operator<=>(const bounds &) const = default;
+        std::strong_ordering operator<=>(const bounds &) const = default;
     };
 
     struct webview
