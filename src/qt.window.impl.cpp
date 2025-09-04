@@ -42,13 +42,13 @@ namespace saucer
 
         if (event->type() == QEvent::ParentChange)
         {
-            impl->events->get<event::decorated>().fire(impl->decorations());
+            impl->events.get<event::decorated>().fire(impl->decorations());
             return;
         }
 
         if (event->type() == QEvent::ActivationChange)
         {
-            impl->events->get<event::focus>().fire(isActiveWindow());
+            impl->events.get<event::focus>().fire(isActiveWindow());
             return;
         }
 
@@ -61,31 +61,31 @@ namespace saucer
 
         if (old->oldState().testFlag(Qt::WindowState::WindowMaximized) != isMaximized())
         {
-            impl->events->get<event::maximize>().fire(isMaximized());
+            impl->events.get<event::maximize>().fire(isMaximized());
         }
 
         if (old->oldState().testFlag(Qt::WindowState::WindowMinimized) != isMinimized())
         {
-            impl->events->get<event::minimize>().fire(isMinimized());
+            impl->events.get<event::minimize>().fire(isMinimized());
         }
     }
 
     void main_window::closeEvent(QCloseEvent *event)
     {
-        if (impl->events->get<event::close>().fire().find(policy::block))
+        if (impl->events.get<event::close>().fire().find(policy::block))
         {
             event->ignore();
             return;
         }
 
         QMainWindow::closeEvent(event);
-        impl->events->get<event::closed>().fire();
+        impl->events.get<event::closed>().fire();
     }
 
     void main_window::resizeEvent(QResizeEvent *event)
     {
         QMainWindow::resizeEvent(event);
-        impl->events->get<event::resize>().fire(width(), height());
+        impl->events.get<event::resize>().fire(width(), height());
     }
 
     overlay_layout::~overlay_layout()

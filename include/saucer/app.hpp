@@ -78,7 +78,7 @@ namespace saucer
             >;
 
       private:
-        std::unique_ptr<events> m_events;
+        events *m_events;
         std::unique_ptr<impl> m_impl;
 
       private:

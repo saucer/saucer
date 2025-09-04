@@ -64,7 +64,7 @@ namespace saucer
             }
 
             prev.emplace(current);
-            self->events->get<event::decorated>().fire(current);
+            self->events.get<event::decorated>().fire(current);
 
             break;
         }
@@ -109,37 +109,37 @@ namespace saucer
             break;
         }
         case WM_NCACTIVATE:
-            self->events->get<event::focus>().fire(w_param);
+            self->events.get<event::focus>().fire(w_param);
             break;
         case WM_SIZE: {
             switch (w_param)
             {
             case SIZE_MAXIMIZED:
-                self->events->get<event::maximize>().fire(true);
+                self->events.get<event::maximize>().fire(true);
                 break;
             case SIZE_MINIMIZED:
-                self->events->get<event::minimize>().fire(true);
+                self->events.get<event::minimize>().fire(true);
                 break;
             case SIZE_RESTORED:
                 switch (self->platform->prev_state)
                 {
                 case SIZE_MAXIMIZED:
-                    self->events->get<event::maximize>().fire(false);
+                    self->events.get<event::maximize>().fire(false);
                     break;
                 case SIZE_MINIMIZED:
-                    self->events->get<event::minimize>().fire(false);
+                    self->events.get<event::minimize>().fire(false);
                     break;
                 }
                 break;
             }
 
             self->platform->prev_state = w_param;
-            self->events->get<event::resize>().fire(LOWORD(l_param), HIWORD(l_param));
+            self->events.get<event::resize>().fire(LOWORD(l_param), HIWORD(l_param));
 
             break;
         }
         case WM_CLOSE: {
-            if (self->events->get<event::close>().fire().find(policy::block))
+            if (self->events.get<event::close>().fire().find(policy::block))
             {
                 return 0;
             }
@@ -153,7 +153,7 @@ namespace saucer
             self->hide();
 
             instances.erase(identifier);
-            self->events->get<event::closed>().fire();
+            self->events.get<event::closed>().fire();
 
             if (!impl->quit_on_last_window_closed)
             {

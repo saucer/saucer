@@ -12,27 +12,7 @@ namespace saucer
     template <>
     void native::setup<event::decorated>(impl *self)
     {
-        auto &event = self->events->get<event::decorated>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        const utils::objc_ptr<Observer> observer =
-            [[Observer alloc] initWithCallback:[self]
-                              {
-                                  self->events->get<event::decorated>().fire(self->decorations());
-                              }];
-
-        [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];
-        event.on_clear([this, observer] { [window removeObserver:observer.get() forKeyPath:@"styleMask"]; });
-    }
-
-    template <>
-    void native::setup<event::maximize>(impl *self)
-    {
-        auto &event = self->events->get<event::maximize>();
+        auto &event = self->events.get<event::decorated>();
 
         if (!event.empty())
         {
@@ -41,7 +21,26 @@ namespace saucer
 
         const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
                                                                      {
-                                                                         self->events->get<event::maximize>().fire(self->maximized());
+                                                                         self->events.get<event::decorated>().fire(self->decorations());
+                                                                     }];
+
+        [window addObserver:observer.get() forKeyPath:@"styleMask" options:0 context:nullptr];
+        event.on_clear([this, observer] { [window removeObserver:observer.get() forKeyPath:@"styleMask"]; });
+    }
+
+    template <>
+    void native::setup<event::maximize>(impl *self)
+    {
+        auto &event = self->events.get<event::maximize>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
+                                                                     {
+                                                                         self->events.get<event::maximize>().fire(self->maximized());
                                                                      }];
 
         [window addObserver:observer.get() forKeyPath:@"isZoomed" options:0 context:nullptr];
@@ -199,33 +198,33 @@ using namespace saucer;
 
 - (void)windowDidMiniaturize:(NSNotification *)notification
 {
-    me->events->get<event::minimize>().fire(true);
+    me->events.get<event::minimize>().fire(true);
 }
 
 - (void)windowDidDeminiaturize:(NSNotification *)notification
 {
-    me->events->get<event::minimize>().fire(false);
+    me->events.get<event::minimize>().fire(false);
 }
 
 - (void)windowDidResize:(NSNotification *)notification
 {
     const auto [width, height] = me->size();
-    me->events->get<event::resize>().fire(width, height);
+    me->events.get<event::resize>().fire(width, height);
 }
 
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
-    me->events->get<event::focus>().fire(true);
+    me->events.get<event::focus>().fire(true);
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification
 {
-    me->events->get<event::focus>().fire(false);
+    me->events.get<event::focus>().fire(false);
 }
 
 - (BOOL)windowShouldClose:(NSWindow *)sender
 {
-    if (me->events->get<event::close>().fire().find(policy::block))
+    if (me->events.get<event::close>().fire().find(policy::block))
     {
         return false;
     }
@@ -239,7 +238,7 @@ using namespace saucer;
     me->hide();
 
     instances.erase(identifier);
-    me->events->get<event::closed>().fire();
+    me->events.get<event::closed>().fire();
 
     if (!impl->quit_on_last_window_closed)
     {

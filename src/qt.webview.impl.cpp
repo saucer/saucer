@@ -31,19 +31,19 @@ namespace saucer
             }
 
             impl->platform->pending.clear();
-            impl->events->get<event::dom_ready>().fire();
+            impl->events.get<event::dom_ready>().fire();
 
             return;
         }
 
-        impl->events->get<event::message>().fire(message).find(status::handled);
+        impl->events.get<event::message>().fire(message).find(status::handled);
     }
 
     request_interceptor::request_interceptor(webview::impl *impl) : impl(impl) {}
 
     void request_interceptor::interceptRequest(QWebEngineUrlRequestInfo &request)
     {
-        impl->events->get<event::request>().fire(uri::impl{request.requestUrl()});
+        impl->events.get<event::request>().fire(uri::impl{request.requestUrl()});
     }
 
     template <>
@@ -52,7 +52,7 @@ namespace saucer
         using permission::request;
 
 #ifdef SAUCER_QT6
-        auto &event = self->events->get<event::permission>();
+        auto &event = self->events.get<event::permission>();
 
         if (!event.empty())
         {
@@ -72,7 +72,7 @@ namespace saucer
                 .origin  = raw.origin(),
             });
 
-            self->events->get<event::permission>().fire(req).find(status::handled);
+            self->events.get<event::permission>().fire(req).find(status::handled);
         };
 
         const auto id = web_page->connect(web_page.get(), &QWebEnginePage::permissionRequested, handler);
@@ -93,7 +93,7 @@ namespace saucer
     template <>
     void native::setup<event::navigated>([[maybe_unused]] impl *self)
     {
-        auto &event = self->events->get<event::navigated>();
+        auto &event = self->events.get<event::navigated>();
 
         if (!event.empty())
         {
@@ -107,7 +107,7 @@ namespace saucer
                 return;
             }
 
-            self->events->get<event::navigated>().fire(uri::impl{url});
+            self->events.get<event::navigated>().fire(uri::impl{url});
         };
 
         const auto id = web_view->connect(web_view, &QWebEngineView::urlChanged, handler);
@@ -118,7 +118,7 @@ namespace saucer
     void native::setup<event::navigate>([[maybe_unused]] impl *self)
     {
 #ifdef SAUCER_QT6
-        auto &event = self->events->get<event::navigate>();
+        auto &event = self->events.get<event::navigate>();
 
         if (!event.empty())
         {
@@ -129,7 +129,7 @@ namespace saucer
         {
             auto request = navigation{navigation::impl{&req}};
 
-            if (!self->events->get<event::navigate>().fire(request).find(policy::block))
+            if (!self->events.get<event::navigate>().fire(request).find(policy::block))
             {
                 return;
             }
@@ -160,7 +160,7 @@ namespace saucer
     template <>
     void native::setup<event::request>(impl *self)
     {
-        auto &event = self->events->get<event::request>();
+        auto &event = self->events.get<event::request>();
 
         if (!event.empty())
         {
@@ -176,7 +176,7 @@ namespace saucer
     template <>
     void native::setup<event::favicon>(impl *self)
     {
-        auto &event = self->events->get<event::favicon>();
+        auto &event = self->events.get<event::favicon>();
 
         if (!event.empty())
         {
@@ -185,7 +185,7 @@ namespace saucer
 
         auto handler = [self](const auto &favicon)
         {
-            self->events->get<event::favicon>().fire(icon{icon::impl{favicon}});
+            self->events.get<event::favicon>().fire(icon{icon::impl{favicon}});
         };
 
         const auto id = web_view->connect(web_view, &QWebEngineView::iconChanged, handler);
@@ -195,7 +195,7 @@ namespace saucer
     template <>
     void native::setup<event::title>(impl *self)
     {
-        auto &event = self->events->get<event::title>();
+        auto &event = self->events.get<event::title>();
 
         if (!event.empty())
         {
@@ -204,7 +204,7 @@ namespace saucer
 
         auto handler = [self](const auto &title)
         {
-            self->events->get<event::title>().fire(title.toStdString());
+            self->events.get<event::title>().fire(title.toStdString());
         };
 
         const auto id = web_view->connect(web_view, &QWebEngineView::titleChanged, handler);
@@ -214,7 +214,7 @@ namespace saucer
     template <>
     void native::setup<event::load>(impl *self)
     {
-        auto &event = self->events->get<event::load>();
+        auto &event = self->events.get<event::load>();
 
         if (!event.empty())
         {
@@ -223,7 +223,7 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->events->get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(state::finished);
         };
 
         const auto id = web_view->connect(web_view, &QWebEngineView::loadFinished, handler);

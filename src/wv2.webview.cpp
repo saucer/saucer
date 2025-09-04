@@ -140,17 +140,17 @@ namespace saucer
         platform->on_resize   = native::bound_events--;
         platform->on_minimize = native::bound_events--;
 
-        auto *const events = window->native<false>()->events;
+        auto &events = window->native<false>()->events;
 
-        events->get<window::event::resize>().update(platform->on_resize, {{
-                                                                             .func      = on_resize,
-                                                                             .clearable = false,
-                                                                         }});
+        events.get<window::event::resize>().update(platform->on_resize, {{
+                                                                            .func      = on_resize,
+                                                                            .clearable = false,
+                                                                        }});
 
-        events->get<window::event::minimize>().update(platform->on_minimize, {{
-                                                                                 .func      = on_minimize,
-                                                                                 .clearable = false,
-                                                                             }});
+        events.get<window::event::minimize>().update(platform->on_minimize, {{
+                                                                                .func      = on_minimize,
+                                                                                .clearable = false,
+                                                                            }});
 
         auto [width, height] = window->size();
 

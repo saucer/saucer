@@ -4,7 +4,10 @@
 
 namespace saucer
 {
-    application::application() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
+    application::application() : m_impl(std::make_unique<impl>())
+    {
+        m_events = &m_impl->events;
+    }
 
     application::application(application &&) noexcept = default;
 
@@ -19,10 +22,8 @@ namespace saucer
             once = true;
         }
 
-        auto rtn = application{};
-
+        auto rtn           = application{};
         rtn.m_impl->thread = std::this_thread::get_id();
-        rtn.m_impl->events = rtn.m_events.get();
 
         if (auto status = rtn.m_impl->init_platform(opts); !status.has_value())
         {
@@ -118,7 +119,7 @@ namespace saucer
             return;
         }
 
-        return invoke([impl = m_impl.get(), event] { impl->events->clear(event); });
+        return invoke([impl = m_impl.get(), event] { impl->events.clear(event); });
     }
 
     void application::off(event event, std::size_t id)
@@ -128,6 +129,6 @@ namespace saucer
             return;
         }
 
-        return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); });
+        return invoke([impl = m_impl.get(), event, id] { impl->events.remove(event, id); });
     }
 } // namespace saucer

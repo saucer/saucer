@@ -108,14 +108,14 @@ namespace saucer
                                                         [this]
                                                         {
                                                             platform->dom_loaded = false;
-                                                            events->get<event::load>().fire(state::started);
+                                                            events.get<event::load>().fire(state::started);
                                                         });
 
         platform->on_fullscreen =
             platform->web_page->connect(platform->web_page.get(), &QWebEnginePage::fullScreenRequested,
                                         [this](QWebEngineFullScreenRequest request)
                                         {
-                                            if (events->get<event::fullscreen>().fire(request.toggleOn()).find(policy::block))
+                                            if (events.get<event::fullscreen>().fire(request.toggleOn()).find(policy::block))
                                             {
                                                 return request.reject();
                                             }

@@ -21,7 +21,7 @@ namespace saucer
     template <>
     void native::setup<event::fullscreen>(impl *self)
     {
-        auto &event = self->events->get<event::fullscreen>();
+        auto &event = self->events.get<event::fullscreen>();
 
         if (!event.empty())
         {
@@ -39,7 +39,7 @@ namespace saucer
                     return;
                 }
 
-                self->events->get<event::fullscreen>().fire(state == WKFullscreenStateInFullscreen).find(saucer::policy::block);
+                self->events.get<event::fullscreen>().fire(state == WKFullscreenStateInFullscreen).find(saucer::policy::block);
             }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"fullscreenState" options:0 context:nullptr];
@@ -54,7 +54,7 @@ namespace saucer
     template <>
     void native::setup<event::navigated>(impl *self)
     {
-        auto &event = self->events->get<event::navigated>();
+        auto &event = self->events.get<event::navigated>();
 
         if (!event.empty())
         {
@@ -71,7 +71,7 @@ namespace saucer
                                                                              return;
                                                                          }
 
-                                                                         self->events->get<event::navigated>().fire(url.value());
+                                                                         self->events.get<event::navigated>().fire(url.value());
                                                                      }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];
@@ -101,7 +101,7 @@ namespace saucer
     template <>
     void native::setup<event::title>(impl *self)
     {
-        auto &event = self->events->get<event::title>();
+        auto &event = self->events.get<event::title>();
 
         if (!event.empty())
         {
@@ -110,7 +110,7 @@ namespace saucer
 
         const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
                                                                      {
-                                                                         self->events->get<event::title>().fire(self->page_title());
+                                                                         self->events.get<event::title>().fire(self->page_title());
                                                                      }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"title" options:0 context:nullptr];
@@ -254,12 +254,12 @@ using namespace saucer;
         }
 
         me->platform->pending.clear();
-        me->events->get<event::dom_ready>().fire();
+        me->events.get<event::dom_ready>().fire();
 
         return;
     }
 
-    me->events->get<event::message>().fire(message).find(status::handled);
+    me->events.get<event::message>().fire(message).find(status::handled);
 }
 @end
 
@@ -324,7 +324,7 @@ using namespace saucer;
         .type    = type,
     });
 
-    me->events->get<event::permission>().fire(req).find(status::handled);
+    me->events.get<event::permission>().fire(req).find(status::handled);
 }
 @end
 
@@ -340,7 +340,7 @@ using namespace saucer;
 - (void)webView:(WKWebView *)webview didStartProvisionalNavigation:(WKNavigation *)navigation
 {
     me->platform->dom_loaded = false;
-    me->events->get<event::load>().fire(state::started);
+    me->events.get<event::load>().fire(state::started);
 }
 
 - (void)webView:(WKWebView *)webview
@@ -353,7 +353,7 @@ using namespace saucer;
         .action = utils::objc_ptr<WKNavigationAction>::ref(action),
     }};
 
-    if (me->events->get<event::navigate>().fire(nav).find(policy::block))
+    if (me->events.get<event::navigate>().fire(nav).find(policy::block))
     {
         return std::invoke(handler, WKNavigationActionPolicyCancel);
     }
@@ -363,7 +363,7 @@ using namespace saucer;
 
 - (void)webView:(WKWebView *)webview didFinishNavigation:(WKNavigation *)navigation
 {
-    me->events->get<event::load>().fire(state::finished);
+    me->events.get<event::load>().fire(state::finished);
 }
 @end
 

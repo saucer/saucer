@@ -28,7 +28,7 @@ namespace saucer
     template <>
     void native::setup<event::permission>(impl *self)
     {
-        auto &event = self->events->get<event::permission>();
+        auto &event = self->events.get<event::permission>();
 
         if (!event.empty())
         {
@@ -51,7 +51,7 @@ namespace saucer
                 .deferral = std::move(deferral),
             });
 
-            self->parent->post([self, req] { self->events->get<event::permission>().fire(req).find(status::handled); });
+            self->parent->post([self, req] { self->events.get<event::permission>().fire(req).find(status::handled); });
 
             return S_OK;
         };
@@ -75,7 +75,7 @@ namespace saucer
     template <>
     void native::setup<event::navigated>(impl *self)
     {
-        auto &event = self->events->get<event::navigated>();
+        auto &event = self->events.get<event::navigated>();
 
         if (!event.empty())
         {
@@ -92,7 +92,7 @@ namespace saucer
                 return S_OK;
             }
 
-            self->parent->post([self, url] { self->events->get<event::navigated>().fire(url.value()); });
+            self->parent->post([self, url] { self->events.get<event::navigated>().fire(url.value()); });
 
             return S_OK;
         };
@@ -126,7 +126,7 @@ namespace saucer
     template <>
     void native::setup<event::title>(impl *self)
     {
-        auto &event = self->events->get<event::title>();
+        auto &event = self->events.get<event::title>();
 
         if (!event.empty())
         {
@@ -136,7 +136,7 @@ namespace saucer
         auto handler = [self](auto...)
         {
             auto title = self->page_title();
-            self->parent->post([self, title] { self->events->get<event::title>().fire(title); });
+            self->parent->post([self, title] { self->events.get<event::title>().fire(title); });
 
             return S_OK;
         };
@@ -150,7 +150,7 @@ namespace saucer
     template <>
     void native::setup<event::load>(impl *self)
     {
-        auto &event = self->events->get<event::load>();
+        auto &event = self->events.get<event::load>();
 
         if (!event.empty())
         {
@@ -159,7 +159,7 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            self->parent->post([self] { self->events->get<event::load>().fire(state::finished); });
+            self->parent->post([self] { self->events.get<event::load>().fire(state::finished); });
             return S_OK;
         };
 
@@ -251,7 +251,7 @@ namespace saucer
 
         auto message = utils::narrow(raw.get());
         self->parent->post([self, message = std::move(message)]
-                           { self->events->get<event::message>().fire(message).find(status::handled); });
+                           { self->events.get<event::message>().fire(message).find(status::handled); });
 
         return S_OK;
     }
@@ -304,7 +304,7 @@ namespace saucer
         }
 
         self->platform->pending.clear();
-        self->parent->post([self] { self->events->get<event::dom_ready>().fire(); });
+        self->parent->post([self] { self->events.get<event::dom_ready>().fire(); });
 
         return S_OK;
     }
@@ -312,13 +312,13 @@ namespace saucer
     HRESULT native::on_navigation(impl *self, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *args)
     {
         self->platform->dom_loaded = false;
-        self->parent->post([self] { self->events->get<event::load>().fire(state::started); });
+        self->parent->post([self] { self->events.get<event::load>().fire(state::started); });
 
         auto nav = navigation{navigation::impl{
             .request = args,
         }};
 
-        if (self->events->get<event::navigate>().fire(nav).find(policy::block))
+        if (self->events.get<event::navigate>().fire(nav).find(policy::block))
         {
             args->put_Cancel(true);
         }
@@ -334,7 +334,7 @@ namespace saucer
                 std::shared_ptr<Gdiplus::Bitmap>(Gdiplus::Bitmap::FromStream(stream)),
             }};
 
-            self->events->get<event::favicon>().fire(self->platform->favicon);
+            self->events.get<event::favicon>().fire(self->platform->favicon);
 
             return S_OK;
         };
@@ -351,7 +351,7 @@ namespace saucer
             return status;
         }
 
-        if (!self->events->get<event::fullscreen>().fire(fullscreen).find(policy::block))
+        if (!self->events.get<event::fullscreen>().fire(fullscreen).find(policy::block))
         {
             self->window->set_fullscreen(fullscreen);
         }
@@ -374,7 +374,7 @@ namespace saucer
                 .request = args,
             }};
 
-            self->events->get<event::navigate>().fire(nav).find(policy::block);
+            self->events.get<event::navigate>().fire(nav).find(policy::block);
 
             deferral->Complete();
         };

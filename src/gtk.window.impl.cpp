@@ -46,7 +46,7 @@ namespace saucer
     template <>
     void native::setup<event::resize>(impl *self)
     {
-        auto &event = self->events->get<event::resize>();
+        auto &event = self->events.get<event::resize>();
 
         if (!event.empty())
         {
@@ -56,7 +56,7 @@ namespace saucer
         auto callback = [](void *, GParamSpec *, impl *self)
         {
             auto [width, height] = self->size();
-            self->events->get<event::resize>().fire(width, height);
+            self->events.get<event::resize>().fire(width, height);
         };
 
         const auto width  = utils::connect(window.get(), "notify::default-width", +callback, self);
@@ -73,7 +73,7 @@ namespace saucer
     template <>
     void native::setup<event::maximize>(impl *self)
     {
-        auto &event = self->events->get<event::maximize>();
+        auto &event = self->events.get<event::maximize>();
 
         if (!event.empty())
         {
@@ -82,7 +82,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->events->get<event::maximize>().fire(self->maximized());
+            self->events.get<event::maximize>().fire(self->maximized());
         };
 
         const auto id = utils::connect(window.get(), "notify::maximized", +callback, self);
@@ -97,7 +97,7 @@ namespace saucer
     template <>
     void native::setup<event::focus>(impl *self)
     {
-        auto &event = self->events->get<event::focus>();
+        auto &event = self->events.get<event::focus>();
 
         if (!event.empty())
         {
@@ -106,7 +106,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->events->get<event::focus>().fire(self->focused());
+            self->events.get<event::focus>().fire(self->focused());
         };
 
         const auto id = utils::connect(window.get(), "notify::is-active", +callback, self);
@@ -137,7 +137,7 @@ namespace saucer
     {
         auto callback = [](void *, impl *self) -> gboolean
         {
-            if (self->events->get<event::close>().fire().find(policy::block))
+            if (self->events.get<event::close>().fire().find(policy::block))
             {
                 return true;
             }
@@ -149,7 +149,7 @@ namespace saucer
             auto &instances  = impl->instances;
 
             instances.erase(identifier);
-            self->events->get<event::closed>().fire();
+            self->events.get<event::closed>().fire();
 
             if (!impl->quit_on_last_window_closed)
             {
@@ -245,7 +245,7 @@ namespace saucer
             }
 
             prev.emplace(current);
-            self->events->get<event::decorated>().fire(current);
+            self->events.get<event::decorated>().fire(current);
         };
 
         auto fullscreen = [](void *, GParamSpec *, impl *self)

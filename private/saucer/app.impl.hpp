@@ -11,7 +11,7 @@ namespace saucer
         struct native;
 
       public:
-        application::events *events;
+        application::events events;
 
       public:
         std::thread::id thread;

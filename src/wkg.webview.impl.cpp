@@ -64,7 +64,7 @@ namespace saucer
     template <>
     void native::setup<event::permission>(impl *self)
     {
-        auto &event = self->events->get<event::permission>();
+        auto &event = self->events.get<event::permission>();
 
         if (!event.empty())
         {
@@ -103,7 +103,7 @@ namespace saucer
                 .type    = type,
             });
 
-            self->events->get<event::permission>().fire(req).find(status::handled);
+            self->events.get<event::permission>().fire(req).find(status::handled);
         };
 
         const auto id = utils::connect(web_view, "permission-request", +callback, self);
@@ -113,7 +113,7 @@ namespace saucer
     template <>
     void native::setup<event::fullscreen>(impl *self)
     {
-        auto &event = self->events->get<event::fullscreen>();
+        auto &event = self->events.get<event::fullscreen>();
 
         if (!event.empty())
         {
@@ -122,12 +122,12 @@ namespace saucer
 
         auto enter_callback = [](WebKitWebView *, impl *self) -> gboolean
         {
-            return self->events->get<event::fullscreen>().fire(true).find(policy::block).has_value();
+            return self->events.get<event::fullscreen>().fire(true).find(policy::block).has_value();
         };
 
         auto leave_callback = [](WebKitWebView *, impl *self) -> gboolean
         {
-            return self->events->get<event::fullscreen>().fire(false).find(policy::block).has_value();
+            return self->events.get<event::fullscreen>().fire(false).find(policy::block).has_value();
         };
 
         const auto enter = utils::connect(web_view, "enter-fullscreen", +enter_callback, self);
@@ -154,7 +154,7 @@ namespace saucer
     template <>
     void native::setup<event::navigate>(impl *self)
     {
-        auto &event = self->events->get<event::navigate>();
+        auto &event = self->events.get<event::navigate>();
 
         if (!event.empty())
         {
@@ -175,7 +175,7 @@ namespace saucer
                 .type     = type,
             }};
 
-            if (self->events->get<event::navigate>().fire(nav).find(policy::block))
+            if (self->events.get<event::navigate>().fire(nav).find(policy::block))
             {
                 webkit_policy_decision_ignore(raw);
                 return true;
@@ -196,7 +196,7 @@ namespace saucer
     template <>
     void native::setup<event::request>(impl *self)
     {
-        auto &event = self->events->get<event::request>();
+        auto &event = self->events.get<event::request>();
 
         if (!event.empty())
         {
@@ -220,7 +220,7 @@ namespace saucer
                 return;
             }
 
-            self->events->get<event::request>().fire(url.value());
+            self->events.get<event::request>().fire(url.value());
         };
 
         const auto id = utils::connect(web_view, "resource-load-started", +callback, self);
@@ -230,7 +230,7 @@ namespace saucer
     template <>
     void native::setup<event::favicon>(impl *self)
     {
-        auto &event = self->events->get<event::favicon>();
+        auto &event = self->events.get<event::favicon>();
 
         if (!event.empty())
         {
@@ -239,7 +239,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->events->get<event::favicon>().fire(self->favicon());
+            self->events.get<event::favicon>().fire(self->favicon());
         };
 
         const auto id = utils::connect(web_view, "notify::favicon", +callback, self);
@@ -249,7 +249,7 @@ namespace saucer
     template <>
     void native::setup<event::title>(impl *self)
     {
-        auto &event = self->events->get<event::title>();
+        auto &event = self->events.get<event::title>();
 
         if (!event.empty())
         {
@@ -258,7 +258,7 @@ namespace saucer
 
         auto callback = [](void *, GParamSpec *, impl *self)
         {
-            self->events->get<event::title>().fire(self->page_title());
+            self->events.get<event::title>().fire(self->page_title());
         };
 
         const auto id = utils::connect(web_view, "notify::title", +callback, self);
@@ -289,12 +289,12 @@ namespace saucer
             }
 
             self->platform->pending.clear();
-            self->events->get<event::dom_ready>().fire();
+            self->events.get<event::dom_ready>().fire();
 
             return;
         }
 
-        self->events->get<event::message>().fire(message).find(status::handled);
+        self->events.get<event::message>().fire(message).find(status::handled);
     }
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
@@ -309,13 +309,13 @@ namespace saucer
 
         if (event == WEBKIT_LOAD_COMMITTED)
         {
-            self->events->get<event::navigated>().fire(url.value());
+            self->events.get<event::navigated>().fire(url.value());
             return;
         }
 
         if (event == WEBKIT_LOAD_FINISHED)
         {
-            self->events->get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(state::finished);
             return;
         }
 
@@ -325,7 +325,7 @@ namespace saucer
         }
 
         self->platform->dom_loaded = false;
-        self->events->get<event::load>().fire(state::started);
+        self->events.get<event::load>().fire(state::started);
     }
 
     void native::on_click(GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)
