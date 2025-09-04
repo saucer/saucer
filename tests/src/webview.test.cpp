@@ -268,6 +268,8 @@ suite<"webview"> webview_suite = []
                               {
                                   expect(req.method() == "GET");
                                   expect(req.url().scheme() == "test");
+
+                                  expect(req.url().host() == "host");
                                   expect(req.url().path() == "/test.html");
 
                                   return saucer::scheme::response{
@@ -277,7 +279,7 @@ suite<"webview"> webview_suite = []
                                   };
                               });
 
-        webview.set_url(saucer::uri::make({.scheme = "test", .path = "/test.html"}));
+        webview.set_url(saucer::uri::make({.scheme = "test", .host = "host", .path = "/test.html"}));
         saucer::tests::wait_for([&] { return scheme; }, duration);
 
         expect(scheme);
