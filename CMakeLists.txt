@@ -194,7 +194,7 @@ if (saucer_backend STREQUAL "Qt6")
 endif()
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 5.6.0")
+  set(SERIALIZER_DEP "glaze 5.6.1")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
@@ -354,7 +354,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        5.6.0
+    VERSION        5.6.1
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
