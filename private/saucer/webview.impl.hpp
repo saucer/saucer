@@ -54,8 +54,10 @@ namespace saucer
         [[nodiscard]] bool context_menu() const;
 
       public:
+        [[nodiscard]] bool force_dark() const;
         [[nodiscard]] color background() const;
-        [[nodiscard]] bool force_dark_mode() const;
+
+      public:
         [[nodiscard]] saucer::bounds bounds() const;
 
       public:
@@ -66,8 +68,8 @@ namespace saucer
         void set_context_menu(bool);
 
       public:
+        void set_force_dark(bool);
         void set_background(color);
-        void set_force_dark_mode(bool);
 
       public:
         void reset_bounds();

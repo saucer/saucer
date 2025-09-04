@@ -235,22 +235,7 @@ namespace saucer
         return static_cast<bool>(rtn);
     }
 
-    color impl::background() const
-    {
-        ComPtr<ICoreWebView2Controller2> controller;
-
-        if (!SUCCEEDED(platform->controller.As(&controller)))
-        {
-            return {};
-        }
-
-        COREWEBVIEW2_COLOR color;
-        controller->get_DefaultBackgroundColor(&color);
-
-        return {.r = color.R, .g = color.G, .b = color.B, .a = color.A};
-    }
-
-    bool impl::force_dark_mode() const
+    bool impl::force_dark() const
     {
         ComPtr<ICoreWebView2Profile> profile;
 
@@ -267,6 +252,21 @@ namespace saucer
         }
 
         return scheme == COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK;
+    }
+
+    color impl::background() const
+    {
+        ComPtr<ICoreWebView2Controller2> controller;
+
+        if (!SUCCEEDED(platform->controller.As(&controller)))
+        {
+            return {};
+        }
+
+        COREWEBVIEW2_COLOR color;
+        controller->get_DefaultBackgroundColor(&color);
+
+        return {.r = color.R, .g = color.G, .b = color.B, .a = color.A};
     }
 
     bounds impl::bounds() const
@@ -296,6 +296,20 @@ namespace saucer
         platform->settings->put_AreDefaultContextMenusEnabled(enabled);
     }
 
+    void impl::set_force_dark(bool enabled) // NOLINT(*-function-const)
+    {
+        utils::set_immersive_dark(window->native<false>()->platform->hwnd.get(), enabled);
+
+        ComPtr<ICoreWebView2Profile> profile;
+
+        if (!SUCCEEDED(platform->web_view->get_Profile(&profile)))
+        {
+            return;
+        }
+
+        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
+    }
+
     void impl::set_background(color color) // NOLINT(*-function-const)
     {
         ComPtr<ICoreWebView2Controller2> controller;
@@ -307,21 +321,6 @@ namespace saucer
 
         const auto [r, g, b, a] = color;
         controller->put_DefaultBackgroundColor({.A = a, .R = r, .G = g, .B = b});
-    }
-
-    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-function-const)
-    {
-        utils::set_immersive_dark(window->native<false>()->platform->hwnd.get(), enabled);
-
-        ComPtr<ICoreWebView2Profile> profile;
-
-        if (!SUCCEEDED(platform->web_view->get_Profile(&profile)))
-        {
-            return;
-        }
-
-        profile->put_PreferredColorScheme(enabled ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK
-                                                  : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_AUTO);
     }
 
     void impl::reset_bounds() // NOLINT(*-function-const)
@@ -450,8 +449,8 @@ namespace saucer
 
         const auto pattern = utils::widen(std::format("{}*", name));
 
-        platform->web_view->RemoveWebResourceRequestedFilterWithRequestSourceKinds(
-            pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL, COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+        platform->web_view->RemoveWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                                   COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
 
         platform->schemes.erase(it);
     }

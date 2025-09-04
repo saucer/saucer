@@ -141,8 +141,10 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] bool context_menu() const;
 
       public:
+        [[sc::thread_safe]] [[nodiscard]] bool force_dark() const;
         [[sc::thread_safe]] [[nodiscard]] color background() const;
-        [[sc::thread_safe]] [[nodiscard]] bool force_dark_mode() const;
+
+      public:
         [[sc::thread_safe]] [[nodiscard]] saucer::bounds bounds() const;
 
       public:
@@ -154,8 +156,8 @@ namespace saucer
         [[sc::thread_safe]] void set_context_menu(bool);
 
       public:
+        [[sc::thread_safe]] void set_force_dark(bool);
         [[sc::thread_safe]] void set_background(color);
-        [[sc::thread_safe]] void set_force_dark_mode(bool);
 
       public:
         [[sc::thread_safe]] void reset_bounds();

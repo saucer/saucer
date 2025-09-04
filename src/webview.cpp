@@ -134,14 +134,14 @@ namespace saucer
         return invoke<&impl::context_menu>(m_impl.get());
     }
 
+    bool webview::force_dark() const
+    {
+        return invoke<&impl::force_dark>(m_impl.get());
+    }
+
     color webview::background() const
     {
         return invoke<&impl::background>(m_impl.get());
-    }
-
-    bool webview::force_dark_mode() const
-    {
-        return invoke<&impl::force_dark_mode>(m_impl.get());
     }
 
     bounds webview::bounds() const
@@ -176,14 +176,14 @@ namespace saucer
         return invoke<&impl::set_context_menu>(m_impl.get(), value);
     }
 
+    void webview::set_force_dark(bool value)
+    {
+        return invoke<&impl::set_force_dark>(m_impl.get(), value);
+    }
+
     void webview::set_background(color background)
     {
         return invoke<&impl::set_background>(m_impl.get(), background);
-    }
-
-    void webview::set_force_dark_mode(bool value)
-    {
-        return invoke<&impl::set_force_dark_mode>(m_impl.get(), value);
     }
 
     void webview::reset_bounds()

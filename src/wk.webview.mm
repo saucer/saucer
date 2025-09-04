@@ -139,6 +139,11 @@ namespace saucer
         return platform->context_menu;
     }
 
+    bool impl::force_dark() const
+    {
+        return platform->force_dark;
+    }
+
     color impl::background() const
     {
         const auto guard       = utils::autorelease_guard{};
@@ -151,11 +156,6 @@ namespace saucer
             .b = static_cast<std::uint8_t>(color.blue * 255.f),
             .a = static_cast<std::uint8_t>(color.alpha * 255.f),
         };
-    }
-
-    bool impl::force_dark_mode() const
-    {
-        return platform->force_dark;
     }
 
     bounds impl::bounds() const
@@ -219,6 +219,17 @@ namespace saucer
         platform->context_menu = enabled;
     }
 
+    void impl::set_force_dark(bool enabled) // NOLINT(*-function-const)
+    {
+        const auto guard     = utils::autorelease_guard{};
+        platform->force_dark = enabled;
+
+        auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
+                                         : platform->appearance;
+
+        [window->native<false>()->platform->window setAppearance:appearance];
+    }
+
     void impl::set_background(color color) // NOLINT(*-function-const)
     {
         const auto guard        = utils::autorelease_guard{};
@@ -242,17 +253,6 @@ namespace saucer
         }
 
         draw_bg(platform->web_view.get(), selector, static_cast<BOOL>(a >= 255));
-    }
-
-    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-function-const)
-    {
-        const auto guard     = utils::autorelease_guard{};
-        platform->force_dark = enabled;
-
-        auto *const appearance = enabled ? [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark] //
-                                         : platform->appearance;
-
-        [window->native<false>()->platform->window setAppearance:appearance];
     }
 
     void impl::reset_bounds() // NOLINT(*-function-const)

@@ -188,6 +188,16 @@ namespace saucer
         return platform->web_view->contextMenuPolicy() == Qt::ContextMenuPolicy::DefaultContextMenu;
     }
 
+    bool impl::force_dark() const
+    {
+#ifdef SAUCER_QT6
+        const auto *settings = platform->profile->settings();
+        return settings->testAttribute(QWebEngineSettings::ForceDarkMode);
+#else
+        return false;
+#endif
+    }
+
     color impl::background() const
     {
         const auto color = platform->web_page->backgroundColor();
@@ -198,16 +208,6 @@ namespace saucer
             .b = static_cast<std::uint8_t>(color.blue()),
             .a = static_cast<std::uint8_t>(color.alpha()),
         };
-    }
-
-    bool impl::force_dark_mode() const
-    {
-#ifdef SAUCER_QT6
-        const auto *settings = platform->profile->settings();
-        return settings->testAttribute(QWebEngineSettings::ForceDarkMode);
-#else
-        return false;
-#endif
     }
 
     bounds impl::bounds() const
@@ -251,20 +251,20 @@ namespace saucer
                                                          : Qt::ContextMenuPolicy::NoContextMenu);
     }
 
+    void impl::set_force_dark([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
+    {
+#ifdef SAUCER_QT6
+        auto *settings = platform->profile->settings();
+        settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
+#endif
+    }
+
     void impl::set_background(color color) // NOLINT(*-function-const)
     {
         const auto [r, g, b, a] = color;
 
         platform->web_page->setBackgroundColor({r, g, b, a});
         platform->web_view->setAttribute(Qt::WA_TranslucentBackground, a < 255);
-    }
-
-    void impl::set_force_dark_mode([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
-    {
-#ifdef SAUCER_QT6
-        auto *settings = platform->profile->settings();
-        settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
-#endif
     }
 
     void impl::reset_bounds() // NOLINT(*-function-const)

@@ -142,6 +142,14 @@ namespace saucer
         return platform->context_menu;
     }
 
+    bool impl::force_dark() const // NOLINT(*-static)
+    {
+        AdwColorScheme scheme{};
+        g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
+
+        return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
+    }
+
     color impl::background() const
     {
         GdkRGBA color{};
@@ -153,14 +161,6 @@ namespace saucer
             .b = static_cast<std::uint8_t>(color.blue * 255.f),
             .a = static_cast<std::uint8_t>(color.alpha * 255.f),
         };
-    }
-
-    bool impl::force_dark_mode() const // NOLINT(*-static)
-    {
-        AdwColorScheme scheme{};
-        g_object_get(adw_style_manager_get_default(), "color-scheme", &scheme, nullptr);
-
-        return scheme == ADW_COLOR_SCHEME_FORCE_DARK;
     }
 
     bounds impl::bounds() const
@@ -205,6 +205,12 @@ namespace saucer
         platform->context_menu = enabled;
     }
 
+    void impl::set_force_dark(bool enabled) // NOLINT(*-static, *-function-const)
+    {
+        const auto scheme = enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT;
+        g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
+    }
+
     void impl::set_background(color color) // NOLINT(*-function-const)
     {
         const auto [r, g, b, a] = color;
@@ -217,12 +223,6 @@ namespace saucer
         };
 
         webkit_web_view_set_background_color(platform->web_view, &rgba);
-    }
-
-    void impl::set_force_dark_mode(bool enabled) // NOLINT(*-static, *-function-const)
-    {
-        const auto scheme = enabled ? ADW_COLOR_SCHEME_FORCE_DARK : ADW_COLOR_SCHEME_DEFAULT;
-        g_object_set(adw_style_manager_get_default(), "color-scheme", scheme, nullptr);
     }
 
     void impl::reset_bounds() // NOLINT(*-function-const)
