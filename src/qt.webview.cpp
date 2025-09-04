@@ -127,6 +127,8 @@ namespace saucer
         platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
 
         window->native<false>()->platform->add_widget(platform->web_view);
+        reset_bounds();
+
         platform->web_view->show();
 
         return {};
