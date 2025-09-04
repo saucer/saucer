@@ -21,6 +21,9 @@ namespace saucer
         std::uint8_t g;
         std::uint8_t b;
         std::uint8_t a;
+
+      public:
+        bool operator<=>(const color &) const = default;
     };
 
     struct window
@@ -72,11 +75,11 @@ namespace saucer
             >;
 
       protected:
-        std::unique_ptr<events> m_events;
-        std::unique_ptr<impl> m_impl;
+        events *m_events;
+        detail::safe_ptr<impl> m_impl;
 
       private:
-        window();
+        window(application *);
 
       public:
         static result<std::shared_ptr<window>> create(application *);

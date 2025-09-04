@@ -14,7 +14,10 @@ namespace saucer
 {
     using impl = webview::impl;
 
-    webview::webview() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
+    webview::webview(application *app) : m_impl(detail::make_safe<impl>(app))
+    {
+        m_events = &m_impl->events;
+    }
 
     webview::webview(webview &&other) noexcept = default;
 
@@ -31,7 +34,7 @@ namespace saucer
 
         if (!parent->thread_safe())
         {
-            return err(contract_error::not_main_thread);
+            return parent->invoke(&webview::create, opts);
         }
 
         if (static auto once{true}; once)
@@ -40,12 +43,11 @@ namespace saucer
             once = false;
         }
 
-        auto rtn         = webview{};
+        auto rtn         = webview{parent};
         auto *const impl = rtn.m_impl.get();
 
         impl->window     = opts.window.value();
         impl->parent     = parent;
-        impl->events     = rtn.m_events.get();
         impl->attributes = opts.attributes;
 
         if (auto status = impl->init_platform(opts); !status.has_value())
@@ -68,12 +70,7 @@ namespace saucer
 
     webview::~webview()
     {
-        if (!m_impl)
-        {
-            return;
-        }
-
-        m_events->clear(true);
+        invoke([impl = m_impl.get()] { impl->events.clear(true); }, m_impl.get());
     }
 
     template <webview::event Event>
@@ -301,12 +298,12 @@ namespace saucer
 
     void webview::off(event event)
     {
-        return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
+        return invoke([impl = m_impl.get(), event] { impl->events.clear(event); }, m_impl.get());
     }
 
     void webview::off(event event, std::size_t id)
     {
-        return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
+        return invoke([impl = m_impl.get(), event, id] { impl->events.remove(event, id); }, m_impl.get());
     }
 
     void webview::register_scheme(const std::string &name)

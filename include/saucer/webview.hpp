@@ -55,6 +55,9 @@ namespace saucer
     {
         int x, y;
         int w, h;
+
+      public:
+        bool operator<=>(const bounds &) const = default;
     };
 
     struct webview
@@ -97,11 +100,11 @@ namespace saucer
             >;
 
       protected:
-        std::unique_ptr<events> m_events;
-        std::unique_ptr<impl> m_impl;
+        events *m_events;
+        detail::safe_ptr<impl> m_impl;
 
       private:
-        webview();
+        webview(application *);
 
       public:
         webview(webview &&) noexcept;

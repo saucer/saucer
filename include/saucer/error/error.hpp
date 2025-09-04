@@ -58,7 +58,6 @@ namespace saucer
     {
         success          = 0,
         instance_exists  = 1,
-        not_main_thread  = 2,
         required_invalid = 3,
     };
 

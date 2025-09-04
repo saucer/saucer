@@ -29,12 +29,18 @@ namespace saucer
     {
         int x;
         int y;
+
+      public:
+        bool operator<=>(const position &) const = default;
     };
 
     struct size
     {
         int w;
         int h;
+
+      public:
+        bool operator<=>(const size &) const = default;
     };
 
     struct screen
@@ -44,6 +50,9 @@ namespace saucer
       public:
         saucer::size size;
         saucer::position position;
+
+      public:
+        bool operator<=>(const screen &) const = default;
     };
 
     struct application
@@ -108,10 +117,6 @@ namespace saucer
       public:
         template <typename Callback, typename... Ts>
         [[sc::thread_safe]] auto invoke(Callback &&, Ts &&...) const;
-
-      public:
-        template <typename T, typename... Ts>
-        [[sc::thread_safe]] auto make(Ts &&...) const;
 
       public:
         template <event Event>

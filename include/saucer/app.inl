@@ -4,22 +4,43 @@
 
 namespace saucer
 {
+    namespace detail
+    {
+        template <typename T>
+        struct safe_delete;
+
+        template <typename T>
+        using safe_ptr = std::unique_ptr<T, safe_delete<T>>;
+
+        template <typename T, typename... Ts>
+        auto make_safe(application *app, Ts &&...);
+    } // namespace detail
+
     template <typename T>
-    struct safe_delete
+    struct detail::safe_delete
     {
         const application *app;
 
       public:
-        void operator()(T *ptr) const
-        {
-            if (!app->thread_safe())
-            {
-                return app->invoke(&safe_delete::operator(), this, ptr);
-            }
-
-            delete ptr;
-        }
+        void operator()(T *ptr) const;
     };
+
+    template <typename T>
+    void detail::safe_delete<T>::operator()(T *ptr) const
+    {
+        if (!app->thread_safe())
+        {
+            return app->invoke(&safe_delete::operator(), this, ptr);
+        }
+
+        delete ptr;
+    }
+
+    template <typename T, typename... Ts>
+    auto detail::make_safe(application *app, Ts &&...args)
+    {
+        return safe_ptr<T>(new T{std::forward<Ts>(args)...}, safe_delete<T>(app));
+    }
 
     template <typename Callback, typename... Ts>
     auto application::invoke(Callback &&callback, Ts &&...args) const
@@ -40,17 +61,6 @@ namespace saucer
         post([task = std::move(task)]() mutable { std::invoke(task); });
 
         return future.get();
-    }
-
-    template <typename T, typename... Ts>
-    auto application::make(Ts &&...args) const
-    {
-        if (!thread_safe())
-        {
-            return invoke(&application::make, this, std::forward<Ts>(args)...);
-        }
-
-        return std::unique_ptr<T, safe_delete<T>>{new T{std::forward<Ts>(args)...}, safe_delete<T>{.app = this}};
     }
 
     template <application::event Event>

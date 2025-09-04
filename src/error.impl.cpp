@@ -62,9 +62,6 @@ namespace saucer
         case instance_exists:
             return "instance already exists";
 
-        case not_main_thread:
-            return "not called from main thread";
-
         case required_invalid:
             return "required argument was invalid";
         }

@@ -13,7 +13,7 @@ namespace saucer
 
       public:
         application *parent;
-        webview::events *events;
+        webview::events events;
 
       public:
         bool attributes;

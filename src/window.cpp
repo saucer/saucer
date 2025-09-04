@@ -7,19 +7,20 @@
 
 namespace saucer
 {
-    window::window() : m_events(std::make_unique<events>()), m_impl(std::make_unique<impl>()) {}
+    window::window(application *app) : m_impl(detail::make_safe<impl>(app))
+    {
+        m_events = &m_impl->events;
+    }
 
     result<std::shared_ptr<window>> window::create(application *parent)
     {
         if (!parent->thread_safe())
         {
-            return err(contract_error::not_main_thread);
+            return parent->invoke(&window::create, parent);
         }
 
-        auto rtn = std::shared_ptr<window>(new window);
-
+        auto rtn            = std::shared_ptr<window>{new window{parent}};
         rtn->m_impl->parent = parent;
-        rtn->m_impl->events = rtn->m_events.get();
 
         if (auto status = rtn->m_impl->init_platform(); !status.has_value())
         {
@@ -31,12 +32,7 @@ namespace saucer
 
     window::~window()
     {
-        if (!m_impl)
-        {
-            return;
-        }
-
-        m_events->clear(true);
+        invoke([impl = m_impl.get()] { impl->events.clear(true); }, m_impl.get());
     }
 
     template <window::event Event>
@@ -232,12 +228,12 @@ namespace saucer
 
     void window::off(event event)
     {
-        return invoke([impl = m_impl.get(), event] { impl->events->clear(event); }, m_impl.get());
+        return invoke([impl = m_impl.get(), event] { impl->events.clear(event); }, m_impl.get());
     }
 
     void window::off(event event, std::size_t id)
     {
-        return invoke([impl = m_impl.get(), event, id] { impl->events->remove(event, id); }, m_impl.get());
+        return invoke([impl = m_impl.get(), event, id] { impl->events.remove(event, id); }, m_impl.get());
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_EVENT);

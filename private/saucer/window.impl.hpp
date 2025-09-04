@@ -13,7 +13,7 @@ namespace saucer
 
       public:
         application *parent;
-        window::events *events;
+        window::events events;
 
       public:
         std::unique_ptr<native> platform;
