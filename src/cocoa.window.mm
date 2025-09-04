@@ -34,7 +34,7 @@ namespace saucer
         [platform->window setDelegate:platform->delegate.get()];
         [platform->window center];
 
-        parent->post([this] { [platform->delegate.get() windowDidResize:reinterpret_cast<NSNotification *>(0xDEADBEEF)]; });
+        parent->invoke([this] { [platform->delegate.get() windowDidResize:reinterpret_cast<NSNotification *>(0xDEADBEEF)]; });
         set_resizable(true);
 
         return {};
