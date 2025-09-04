@@ -403,7 +403,8 @@ namespace saucer
 
         auto clearable = platform->scripts                                                  //
                          | std::views::filter([](auto &it) { return it.second.clearable; }) //
-                         | std::views::keys;
+                         | std::views::keys                                                 //
+                         | std::ranges::to<std::vector>();
 
         std::ranges::for_each(clearable, std::bind_front(uninject, this));
     }

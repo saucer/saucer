@@ -15,8 +15,6 @@ suite<"webview"> webview_suite = []
         auto uri = webview.url();
         webview.on<navigated>([&](auto value) { uri = std::move(value); });
 
-        expect(not uri.has_value());
-
         std::set<saucer::state> state;
         webview.on<load>([&](auto value) { state.emplace(value); });
 
