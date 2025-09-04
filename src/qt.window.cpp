@@ -316,6 +316,9 @@ namespace saucer
     {
         using enum window::decoration;
         platform->set_flags({{Qt::CustomizeWindowHint, decoration == partial}, {Qt::FramelessWindowHint, decoration == none}});
+
+        // Qt does not offer a reliable way to detect window flag changes
+        events.get<event::decorated>().fire(decoration);
     }
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)

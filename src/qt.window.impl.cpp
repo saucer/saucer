@@ -40,12 +40,6 @@ namespace saucer
     {
         QMainWindow::changeEvent(event);
 
-        if (event->type() == QEvent::ParentChange)
-        {
-            impl->events.get<event::decorated>().fire(impl->decorations());
-            return;
-        }
-
         if (event->type() == QEvent::ActivationChange)
         {
             impl->events.get<event::focus>().fire(isActiveWindow());
