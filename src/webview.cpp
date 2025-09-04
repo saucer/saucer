@@ -86,22 +86,36 @@ namespace saucer
 
     void impl::reject(std::size_t id, std::string_view reason)
     {
-        execute(std::format(
+        auto execute = [impl = this]<typename T>(T &&code)
+        {
+            return impl->execute(std::forward<T>(code));
+        };
+
+        auto code = std::format(
             R"(
                 window.saucer.internal.rpc[{0}].reject({1});
                 delete window.saucer.internal.rpc[{0}];
             )",
-            id, reason));
+            id, reason);
+
+        return invoke(execute, this, std::move(code));
     }
 
     void impl::resolve(std::size_t id, std::string_view result)
     {
-        execute(std::format(
+        auto execute = [impl = this]<typename T>(T &&code)
+        {
+            return impl->execute(std::forward<T>(code));
+        };
+
+        auto code = std::format(
             R"(
                 window.saucer.internal.rpc[{0}].resolve({1});
                 delete window.saucer.internal.rpc[{0}];
             )",
-            id, result));
+            id, result);
+
+        return invoke(execute, this, std::move(code));
     }
 
     window &webview::parent() const
