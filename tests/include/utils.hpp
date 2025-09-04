@@ -42,12 +42,12 @@ namespace saucer::tests
 
     template <typename Callable>
         requires std::invocable<Callable>
-    auto wait_for(Callable callable)
+    auto wait_for(Callable callable, std::chrono::seconds duration = std::chrono::seconds(1))
     {
         using clock = std::chrono::system_clock;
 
         auto status = false;
-        auto limit  = clock::now() + std::chrono::seconds(1);
+        auto limit  = clock::now() + duration;
 
         while (not(status = std::invoke(callable)) && clock::now() < limit)
         {

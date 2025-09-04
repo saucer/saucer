@@ -18,37 +18,92 @@ namespace saucer::tests
         async = 1 << 1,
     };
 
-    template <std::uint8_t Policy, typename T = saucer::smartview<>>
+    template <typename T>
+    struct make;
+
+    template <>
+    struct make<saucer::window>
+    {
+        static auto operator()()
+        {
+            auto rtn = saucer::window::create(g_application).value();
+            rtn->show();
+            return rtn;
+        }
+    };
+
+    template <>
+    struct make<saucer::webview>
+    {
+        static auto operator()()
+        {
+            return saucer::webview::create({.window = make<saucer::window>{}()}).value();
+        }
+    };
+
+    template <>
+    struct make<saucer::smartview<>>
+    {
+        static auto operator()()
+        {
+            return saucer::smartview<>::create({.window = make<saucer::window>{}()}).value();
+        }
+    };
+
+    template <std::uint8_t Policy>
     struct test
     {
         std::string name;
 
       private:
-        auto make()
+        template <typename T, typename Callback>
+        void invoke(Callback &&callback)
         {
-            auto rtn = g_application->make<T>(saucer::preferences{.application = g_application});
-            rtn->show();
-
-            return rtn;
-        }
-
-      public:
-        constexpr void operator=(std::function<void(T &)> test) // NOLINT(*-assign*)
-        {
-            auto callback = [this, test = std::move(test)]() mutable
+            auto cb = [callback = std::forward<Callback>(callback)]() mutable
             {
-                std::invoke(test, *make());
+                auto instance = make<T>{}();
+
+                if constexpr (std::same_as<T, saucer::window>)
+                {
+                    return std::invoke(callback, *instance);
+                }
+                else
+                {
+                    return std::invoke(callback, instance);
+                }
             };
 
             if constexpr (Policy & sync)
             {
-                boost::ut::test(std::format("{}:seq", name)) = callback;
+                boost::ut::test(std::format("{}:seq", name)) = cb;
             }
 
             if constexpr (Policy & async)
             {
-                boost::ut::test(std::format("{}:par", name)) = callback;
+                boost::ut::test(std::format("{}:par", name)) = cb;
             }
+        }
+
+      public:
+        template <typename T>
+            requires std::invocable<T, saucer::window &>
+        constexpr void operator=(T &&callback) // NOLINT(*-assign*)
+        {
+            return invoke<saucer::window>(std::forward<T>(callback));
+        }
+
+        template <typename T>
+            requires std::invocable<T, saucer::webview &>
+        constexpr void operator=(T &&callback) // NOLINT(*-assign*)
+        {
+            return invoke<saucer::webview>(std::forward<T>(callback));
+        }
+
+        template <typename T>
+            requires(std::invocable<T, saucer::smartview<> &> and not std::invocable<T, saucer::webview &>)
+        constexpr void operator=(T &&callback) // NOLINT(*-assign*)
+        {
+            return invoke<saucer::smartview<>>(std::forward<T>(callback));
         }
     };
 

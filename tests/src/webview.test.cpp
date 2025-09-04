@@ -6,19 +6,53 @@ using namespace saucer::tests;
 
 suite<"webview"> webview_suite = []
 {
-    "page_title"_test_async = [](auto &webview)
+    using enum saucer::webview::event;
+
+    static constexpr auto duration = std::chrono::seconds(10);
+
+    "url"_test_async = [](saucer::webview &webview)
     {
-        std::string title{};
-        webview.template on<saucer::web_event::title>([&](auto value) { title = value; });
+        auto uri = webview.url();
+        webview.on<navigated>([&](auto value) { uri = std::move(value); });
 
-        webview.set_url("https://saucer.app");
-        saucer::tests::wait_for([&] { return title.contains("Saucer"); });
+        expect(not uri.has_value());
 
-        expect(title == "Saucer | Saucer");
-        expect(webview.page_title() == "Saucer | Saucer");
+        std::set<saucer::state> state;
+        webview.on<load>([&](auto value) { state.emplace(value); });
+
+        bool ready{false};
+        webview.on<dom_ready>([&] { ready = true; });
+
+        auto url = saucer::uri::parse("https://codeberg.org/saucer/saucer");
+        expect(url.has_value());
+
+        webview.set_url(url.value());
+        saucer::tests::wait_for([&] { return uri.has_value() && ready && state.contains(saucer::state::finished); }, duration);
+
+        expect(ready);
+        expect(uri.has_value());
+
+        expect(state.contains(saucer::state::started));
+        expect(state.contains(saucer::state::finished));
+
+        expect(uri->scheme() == "https");
+        expect(uri->host() == "codeberg.org");
+        expect(uri->path() == "/saucer/saucer");
     };
 
-    "dev_tools"_test_both = [](auto &webview)
+    "page_title"_test_async = [](saucer::webview &webview)
+    {
+        std::string page_title{};
+        webview.on<title>([&](auto value) { page_title = value; });
+
+        webview.set_url("https://codeberg.org/saucer/saucer");
+        saucer::tests::wait_for([&] { return page_title.contains("saucer"); }, duration);
+
+        expect(page_title.starts_with("saucer/saucer"));
+        expect(webview.page_title().starts_with("saucer/saucer"));
+    };
+
+    "dev_tools"_test_both = [](saucer::webview &webview)
     {
         expect(not webview.dev_tools());
 
@@ -29,26 +63,7 @@ suite<"webview"> webview_suite = []
         expect(not webview.dev_tools());
     };
 
-    "url"_test_async = [](auto &webview)
-    {
-        std::string url{};
-        webview.template on<saucer::web_event::navigated>([&](auto value) { url = value; });
-
-        std::set<saucer::state> state{};
-        webview.template on<saucer::web_event::load>([&](auto value) { state.emplace(value); });
-
-        bool ready{false};
-        webview.template on<saucer::web_event::dom_ready>([&] { ready = true; });
-
-        webview.set_url("https://saucer.app");
-        saucer::tests::wait_for([&] { return state.size() == 2 && ready; });
-
-        expect(state.size() == 2);
-        expect(url.starts_with("https://saucer.app"));
-        expect(webview.url().starts_with("https://saucer.app"));
-    };
-
-    "context-menu"_test_both = [](auto &webview)
+    "context-menu"_test_both = [](saucer::webview &webview)
     {
         expect(webview.context_menu());
 
@@ -59,200 +74,220 @@ suite<"webview"> webview_suite = []
         expect(webview.context_menu());
     };
 
-    "background"_test_both = [](auto &webview)
-    {
-        webview.set_background({50, 50, 50, 255});
-        expect(webview.background() == std::array<std::uint8_t, 4>{50, 50, 50, 255});
-    };
-
 #ifndef SAUCER_QT5
-    "force-dark"_test_both = [](auto &webview)
+    "force-dark"_test_both = [](saucer::webview &webview)
     {
-        expect(not webview.force_dark_mode());
+        expect(not webview.force_dark());
 
-        webview.set_force_dark_mode(true);
-        expect(webview.force_dark_mode());
+        webview.set_force_dark(true);
+        expect(webview.force_dark());
 
-        webview.set_force_dark_mode(false);
-        expect(not webview.force_dark_mode());
+        webview.set_force_dark(false);
+        expect(not webview.force_dark());
     };
 #endif
 
-    "scheme"_test_async = [](auto &webview)
+    "background"_test_both = [](saucer::webview &webview)
     {
-        bool finished{false};
-        webview.expose("finish", [&] { finished = true; });
+        static constexpr auto green = saucer::color{.r = 0, .g = 255, .b = 0, .a = 255};
+
+        expect(webview.background() != green);
+
+        webview.set_background(green);
+        expect(webview.background() == green);
+    };
+
+    "execute"_test_async = [](saucer::webview &webview)
+    {
+        auto uri = webview.url();
+        webview.on<navigated>([&](auto value) { uri = std::move(value); });
+
+        webview.set_url("https://github.com");
+        webview.execute("location.href = 'https://codeberg.org'");
+
+        saucer::tests::wait_for([&] { return uri.has_value() && uri->host() == "codeberg.org"; }, duration);
+
+        expect(uri.has_value());
+        expect(uri->host() == "codeberg.org");
+        expect(webview.url()->host() == "codeberg.org");
+    };
+
+    "inject"_test_async = [](saucer::webview &webview)
+    {
+        std::set<std::string> messages;
+        webview.on<message>(
+            [&](auto value)
+            {
+                messages.emplace(std::move(value));
+                return saucer::status::unhandled;
+            });
+
+        webview.inject({
+            .code   = "saucer.internal.message('creation')",
+            .run_at = saucer::script::time::creation,
+        });
+
+        webview.inject({
+            .code   = "saucer.internal.message('ready')",
+            .run_at = saucer::script::time::ready,
+        });
+
+        const auto id = webview.inject({
+            .code      = "saucer.internal.message('permanent')",
+            .run_at    = saucer::script::time::ready,
+            .clearable = false,
+        });
+
+        webview.set_url("https://codeberg.org/saucer/saucer");
+        saucer::tests::wait_for([&] { return messages.contains("ready"); }, duration);
+
+        expect(messages.contains("creation"));
+        expect(messages.contains("ready"));
+        expect(messages.contains("permanent"));
+
+        messages.clear();
+        webview.uninject();
+
+        webview.reload();
+        saucer::tests::wait_for([&] { return messages.contains("ready"); }, duration);
+
+        expect(not messages.contains("creation"));
+        expect(not messages.contains("ready"));
+        expect(messages.contains("permanent"));
+
+        messages.clear();
+        webview.uninject(id);
+
+        webview.reload();
+        saucer::tests::wait_for([&] { return messages.contains("ready"); }, duration);
+
+        expect(not messages.contains("permanent"));
+    };
+
+    "embed"_test_async = [](saucer::webview &webview)
+    {
+        static constexpr auto duration  = std::chrono::seconds(3);
+        static constexpr auto handle_if = [](auto &value, bool cond)
+        {
+            if (!cond)
+            {
+                return saucer::status::unhandled;
+            }
+
+            value = true;
+            return saucer::status::handled;
+        };
+
+        bool embedded{false};
+        webview.on<message>([&](auto value) { return handle_if(embedded, value == "embedded"); });
+
+        static constexpr std::string_view page = R"html(
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <title>Embedded</title>
+                        <script>
+                            saucer.internal.message("embedded");
+                        </script>
+                    </head>
+                    <body>
+                        Embedded Test
+                    </body>
+                </html>
+            )html";
+
+        std::size_t called{0};
+        auto lazy = [&]()
+        {
+            called++;
+            return saucer::stash<>::view(page);
+        };
+
+        webview.embed({{"/embed.html", saucer::embedded_file{
+                                           .content = saucer::stash<>::lazy(lazy),
+                                           .mime    = "text/html",
+                                       }}});
+
+        webview.serve("/embed.html");
+        saucer::tests::wait_for([&] { return embedded; }, duration);
+
+        expect(embedded);
+        expect(called == 1);
+
+        embedded = false;
+
+        webview.reload();
+        saucer::tests::wait_for([&] { return embedded; }, duration);
+
+        expect(embedded);
+        expect(called == 1);
+
+        embedded = false;
+        webview.unembed("/embed.html");
+
+        webview.reload();
+        saucer::tests::wait_for([&] { return embedded; }, duration);
+
+        expect(not embedded);
+    };
+
+    "scheme"_test_async = [](saucer::webview &webview)
+    {
+        static constexpr auto duration  = std::chrono::seconds(3);
+        static constexpr auto handle_if = [](auto &value, bool cond)
+        {
+            if (!cond)
+            {
+                return saucer::status::unhandled;
+            }
+
+            value = true;
+            return saucer::status::handled;
+        };
+
+        bool scheme{false};
+        webview.on<message>([&](auto value) { return handle_if(scheme, value == "scheme"); });
+
+        static constexpr std::string_view page = R"html(
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <title>Scheme</title>
+                        <script>
+                            saucer.internal.message("scheme");
+                        </script>
+                    </head>
+                    <body>
+                        Scheme Test
+                    </body>
+                </html>
+            )html";
 
         webview.handle_scheme("test",
-                              [](const auto &req)
+                              [](const saucer::scheme::request &req)
                               {
-                                  expect(req.url().starts_with("test://scheme.html"));
                                   expect(req.method() == "GET");
-
-                                  const std::string html = R"html(
-                                    <!DOCTYPE html>
-                                    <html>
-                                        <head>
-                                            <title>Custom Scheme</title>
-                                            <script>
-                                                saucer.exposed.finish();
-                                            </script>
-                                        </head>
-                                        <body>
-                                            Custom Scheme Test
-                                        </body>
-                                    </html>
-                                   )html";
+                                  expect(req.url().scheme() == "test");
+                                  expect(req.url().path() == "/test.html");
 
                                   return saucer::scheme::response{
-                                      .data = saucer::make_stash(html),
-                                      .mime = "text/html",
+                                      .data   = saucer::stash<>::view(page),
+                                      .mime   = "text/html",
+                                      .status = 200,
                                   };
                               });
 
-        webview.set_url("test://scheme.html");
-        saucer::tests::wait_for([&] { return finished; });
+        webview.set_url(saucer::uri::make({.scheme = "test", .path = "/test.html"}));
+        saucer::tests::wait_for([&] { return scheme; }, duration);
 
-        expect(finished);
+        expect(scheme);
 
-        finished = false;
+        scheme = false;
         webview.remove_scheme("test");
 
         webview.reload();
-        saucer::tests::wait_for([&] { return finished; });
+        saucer::tests::wait_for([&] { return scheme; }, duration);
 
-        expect(not finished);
-    };
-
-    "embed"_test_async = [](auto &webview)
-    {
-        bool finished{false};
-        webview.expose("finish", [&] { finished = true; });
-
-        const std::string page = R"html(
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Embedded</title>
-                    <script>
-                        saucer.exposed.finish();
-                    </script>
-                </head>
-                <body>
-                    Embedded Test
-                </body>
-            </html>
-        )html";
-
-        webview.embed({{"embed.html", saucer::embedded_file{
-                                          .content = saucer::make_stash(page),
-                                          .mime    = "text/html",
-                                      }}});
-
-        webview.serve("embed.html");
-        saucer::tests::wait_for([&] { return finished; });
-
-        expect(finished);
-
-        finished = false;
-        webview.clear_embedded("embed.html");
-
-        webview.reload();
-        saucer::tests::wait_for([&] { return finished; });
-
-        expect(not finished);
-    };
-
-    "embed_lazy"_test_async = [](auto &webview)
-    {
-        bool finished{false};
-        webview.expose("finish", [&] { finished = true; });
-
-        const std::string page = R"html(
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Lazy Embedded</title>
-                    <script>
-                        saucer.exposed.finish();
-                    </script>
-                </head>
-                <body>
-                    Lazy Embedded Test
-                </body>
-            </html>
-        )html";
-
-        std::size_t called{0};
-
-        webview.embed({{"embed.html", saucer::embedded_file{
-                                          .content = saucer::stash<>::lazy(
-                                              [&page, &called]
-                                              {
-                                                  called++;
-                                                  return saucer::make_stash(page);
-                                              }),
-                                          .mime = "text/html",
-                                      }}});
-
-        webview.serve("embed.html");
-        saucer::tests::wait_for([&] { return finished; });
-
-        expect(called == 1);
-
-        finished = false;
-
-        webview.reload();
-        saucer::tests::wait_for([&] { return finished; });
-
-        expect(called == 1);
-    };
-
-    "inject"_test_async = [](auto &webview)
-    {
-        std::set<std::string> received{};
-        webview.expose("receive", [&](std::string value) { received.emplace(value); });
-
-        webview.inject(saucer::script{
-            .code = "saucer.exposed.receive('creation')",
-            .time = saucer::load_time::creation,
-        });
-
-        webview.inject(saucer::script{
-            .code = "saucer.exposed.receive('ready')",
-            .time = saucer::load_time::ready,
-        });
-
-        webview.inject(saucer::script{
-            .code      = "saucer.exposed.receive('permanent')",
-            .time      = saucer::load_time::creation,
-            .permanent = true,
-        });
-
-        webview.set_url("https://saucer.app");
-        saucer::tests::wait_for([&] { return received.size() == 3; });
-
-        expect(received.contains("creation"));
-        expect(received.contains("ready"));
-        expect(received.contains("permanent"));
-
-        received.clear();
-        webview.clear_scripts();
-
-        webview.reload();
-        saucer::tests::wait_for([&] { return received.size() == 1; });
-
-        expect(received.size() == 1);
-        expect(received.contains("permanent"));
-    };
-
-    "execute"_test_async = [](auto &webview)
-    {
-        webview.set_url("https://github.com");
-
-        webview.execute("location.href = 'https://saucer.app'");
-        saucer::tests::wait_for([&] { return webview.url().starts_with("https://saucer.app"); });
-
-        expect(webview.url().starts_with("https://saucer.app"));
+        expect(not scheme);
     };
 };

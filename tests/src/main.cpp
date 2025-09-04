@@ -18,7 +18,7 @@ int main()
 
     bool status{false};
 
-    auto callback = [&](saucer::application *app) -> coco::stray
+    auto callback = [&](saucer::application *app) -> coco::stray // NOLINT(*-capturing-lambda-coroutines)
     {
         saucer::tests::g_application = app;
         status                       = co_await cfg<override>.run();
