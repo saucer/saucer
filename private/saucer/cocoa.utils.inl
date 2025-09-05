@@ -2,8 +2,6 @@
 
 #include "cocoa.utils.hpp"
 
-#import <MacTypes.h>
-
 extern "C"
 {
     void *objc_autoreleasePoolPush(void);
