@@ -239,7 +239,10 @@ namespace saucer
                                                 blue:static_cast<CGFloat>(b) / 255.f
                                                alpha:static_cast<CGFloat>(a) / 255.f];
 
+#ifdef SAUCER_WEBKIT_PRIVATE
         using func_t = void (*)(id, SEL, BOOL);
+
+        // https://github.com/WebKit/WebKit/blob/0e9bbd960894d8981be0d59b235924329a6c1b4f/Source/WebKit/UIProcess/API/mac/WKWebViewMac.mm#L1431
 
         static auto *const selector = @selector(_setDrawsBackground:);
         static auto draw_bg         = reinterpret_cast<func_t>(class_getMethodImplementation([WKWebView class], selector));
@@ -250,6 +253,9 @@ namespace saucer
         }
 
         draw_bg(platform->web_view.get(), selector, static_cast<BOOL>(a >= 255));
+#endif
+
+        [platform->web_view.get() setUnderPageBackgroundColor:rgba];
     }
 
     void impl::reset_bounds() // NOLINT(*-function-const)
