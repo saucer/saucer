@@ -50,6 +50,9 @@ namespace saucer
         void setup(impl *);
 
       public:
+        void inject(const script &) const;
+
+      public:
         static WKWebViewConfiguration *make_config(const options &);
         static NSUUID *data_store_id(const options &, const std::string &);
 
@@ -87,7 +90,5 @@ namespace saucer
   @public
     saucer::webview::impl *me;
 }
-- (instancetype)initWithParent:(saucer::webview::impl *)parent
-                 configuration:(WKWebViewConfiguration *)configuration
-                         frame:(CGRect)frame;
+- (instancetype)initWithParent:(saucer::webview::impl *)parent configuration:(WKWebViewConfiguration *)configuration frame:(CGRect)frame;
 @end

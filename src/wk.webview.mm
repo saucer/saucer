@@ -296,17 +296,9 @@ namespace saucer
 
     std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        using enum script::time;
-
-        const auto guard = utils::autorelease_guard{};
-        const auto time  = script.run_at == creation ? WKUserScriptInjectionTimeAtDocumentStart : WKUserScriptInjectionTimeAtDocumentEnd;
-
-        auto *const user_script = [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
-                                                          injectionTime:time
-                                                       forMainFrameOnly:static_cast<BOOL>(script.no_frames)] autorelease];
-        [platform->controller addUserScript:user_script];
-
         const auto id = platform->id_counter++;
+
+        platform->inject(script);
         platform->scripts.emplace(id, script);
 
         return id;
@@ -316,18 +308,18 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
 
-        auto remaining = platform->scripts                                                   //
-                         | std::views::filter([](auto &it) { return !it.second.clearable; }) //
-                         | std::views::values                                                //
-                         | std::ranges::to<std::vector>();
+        auto remove = platform->scripts                                                      //
+                      | std::views::filter([](auto &item) { return item.second.clearable; }) //
+                      | std::views::keys                                                     //
+                      | std::ranges::to<std::vector>();
 
         [platform->controller removeAllUserScripts];
 
-        platform->scripts.clear();
-        std::ranges::for_each(remaining, std::bind_front(&impl::inject, this));
+        std::ranges::for_each(remove, [this](auto id) { platform->scripts.erase(id); });
+        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
     }
 
-    void impl::uninject(std::size_t id)
+    void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
 
@@ -337,12 +329,9 @@ namespace saucer
         }
 
         platform->scripts.erase(id);
-        auto remaining = std::move(platform->scripts);
-
         [platform->controller removeAllUserScripts];
 
-        platform->scripts.clear();
-        std::ranges::for_each(remaining | std::views::values, std::bind_front(&impl::inject, this));
+        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
     }
 
     void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)

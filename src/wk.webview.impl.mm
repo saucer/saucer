@@ -122,6 +122,19 @@ namespace saucer
     {
     }
 
+    void native::inject(const script &script) const
+    {
+        using enum script::time;
+
+        const auto guard = utils::autorelease_guard{};
+        const auto time  = script.run_at == creation ? WKUserScriptInjectionTimeAtDocumentStart : WKUserScriptInjectionTimeAtDocumentEnd;
+
+        auto *const user_script = [[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:script.code.c_str()]
+                                                          injectionTime:time
+                                                       forMainFrameOnly:static_cast<BOOL>(script.no_frames)] autorelease];
+        [controller addUserScript:user_script];
+    }
+
     WKWebViewConfiguration *native::make_config(const options &opts)
     {
         const utils::autorelease_guard guard{};
