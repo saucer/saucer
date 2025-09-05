@@ -86,36 +86,22 @@ namespace saucer
 
     void impl::reject(std::size_t id, std::string_view reason)
     {
-        auto execute = [impl = this]<typename T>(T &&code)
-        {
-            return impl->execute(std::forward<T>(code));
-        };
+        static constexpr auto code = R"(
+            window.saucer.internal.rpc[{0}].reject({1});
+            delete window.saucer.internal.rpc[{0}];
+        )";
 
-        auto code = std::format(
-            R"(
-                window.saucer.internal.rpc[{0}].reject({1});
-                delete window.saucer.internal.rpc[{0}];
-            )",
-            id, reason);
-
-        return invoke(execute, this, std::move(code));
+        return invoke([this, id, reason] { execute(std::format(code, id, reason)); }, this);
     }
 
     void impl::resolve(std::size_t id, std::string_view result)
     {
-        auto execute = [impl = this]<typename T>(T &&code)
-        {
-            return impl->execute(std::forward<T>(code));
-        };
+        static constexpr auto code = R"(
+            window.saucer.internal.rpc[{0}].resolve({1});
+            delete window.saucer.internal.rpc[{0}];
+        )";
 
-        auto code = std::format(
-            R"(
-                window.saucer.internal.rpc[{0}].resolve({1});
-                delete window.saucer.internal.rpc[{0}];
-            )",
-            id, result);
-
-        return invoke(execute, this, std::move(code));
+        return invoke([this, id, result] { execute(std::format(code, id, result)); }, this);
     }
 
     window &webview::parent() const

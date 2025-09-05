@@ -28,7 +28,11 @@ namespace saucer::utils
     template <typename T, auto Release, T Empty>
     handle<T, Release, Empty> &handle<T, Release, Empty>::operator=(handle &&other) noexcept
     {
-        std::swap(m_handle, other.m_handle);
+        if (this != &other)
+        {
+            std::swap(m_handle, other.m_handle);
+        }
+
         return *this;
     }
 
@@ -46,8 +50,6 @@ namespace saucer::utils
             Release(m_handle);
         }
 
-        m_handle = std::move(handle);
-
-        return m_handle;
+        return (m_handle = std::move(handle));
     }
 } // namespace saucer::utils

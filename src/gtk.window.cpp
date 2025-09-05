@@ -19,6 +19,7 @@ namespace saucer
         platform->style   = gtk_css_provider_new();
         platform->header  = ADW_HEADER_BAR(adw_header_bar_new());
         platform->content = GTK_OVERLAY(gtk_overlay_new());
+        platform->lease   = utils::lease{this};
 
         auto *const box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
         auto *const bin = ADW_BIN(adw_bin_new());
@@ -227,7 +228,7 @@ namespace saucer
             platform->prev_resizable = false;
         }
 
-        parent->post([this, edge] { platform->start_resize(edge); });
+        parent->post(defer(platform->lease, [edge](auto *self) { self->start_resize(edge); }));
     }
 
     void impl::set_minimized(bool enabled) // NOLINT(*-function-const)

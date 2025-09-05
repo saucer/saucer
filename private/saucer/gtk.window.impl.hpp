@@ -2,6 +2,7 @@
 
 #include "window.impl.hpp"
 
+#include "lease.hpp"
 #include "handle.hpp"
 #include "gtk.utils.hpp"
 
@@ -54,6 +55,9 @@ namespace saucer
       public:
         std::optional<click_event> prev_click;
         [[nodiscard]] std::optional<event_data> prev_data() const;
+
+      public:
+        utils::lease<window::impl *> lease;
 
       public:
         template <event>

@@ -2,8 +2,8 @@
 
 #include "webview.impl.hpp"
 
+#include "lease.hpp"
 #include "scripts.hpp"
-#include "webview.hpp"
 
 #include <atomic>
 #include <functional>
@@ -22,15 +22,15 @@ namespace saucer
         using exposed = std::shared_ptr<function>;
 
       public:
-        std::shared_ptr<lockpp::lock<saucer::webview::impl *>> webview;
-
-      public:
         std::atomic_size_t id_counter{0};
         std::unique_ptr<serializer_core> serializer;
 
       public:
         lock<std::unordered_map<std::string, exposed>> functions;
         lock<std::unordered_map<std::size_t, resolver>> evaluations;
+
+      public:
+        utils::lease<saucer::webview::impl *> lease;
 
       public:
         status on_message(std::string_view);
@@ -45,7 +45,7 @@ namespace saucer
     {
         using namespace scripts;
 
-        m_impl->webview    = std::make_shared<lockpp::lock<webview::impl *>>(webview::m_impl.get());
+        m_impl->lease      = utils::lease{webview::m_impl.get()};
         m_impl->serializer = std::move(serializer);
 
         inject({
@@ -65,15 +65,7 @@ namespace saucer
 
     smartview_core::smartview_core(smartview_core &&) noexcept = default;
 
-    smartview_core::~smartview_core()
-    {
-        if (!m_impl)
-        {
-            return;
-        }
-
-        m_impl->webview->assign(nullptr);
-    }
+    smartview_core::~smartview_core() = default;
 
     status smartview_core::impl::on_message(std::string_view message)
     {
@@ -110,36 +102,12 @@ namespace saucer
         }
         else
         {
-            return webview->get_unsafe()->reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
+            return lease.value()->reject(message->id, std::format("\"No exposed function '{}'\"", message->name));
         }
 
-        auto resolve = [shared = webview, id = message->id](const auto &result)
-        {
-            auto webview = shared->read();
-
-            if (!webview.value())
-            {
-                return;
-            }
-
-            webview.value()->resolve(id, result);
-        };
-
-        auto reject = [shared = webview, id = message->id](const auto &error)
-        {
-            auto webview = shared->read();
-
-            if (!webview.value())
-            {
-                return;
-            }
-
-            webview.value()->reject(id, error);
-        };
-
         auto executor = serializer_core::executor{
-            std::move(resolve),
-            std::move(reject),
+            utils::defer(lease, [id = message->id](auto *self, auto result) { return self->resolve(id, result); }),
+            utils::defer(lease, [id = message->id](auto *self, auto error) { return self->reject(id, error); }),
         };
 
         return std::invoke(*function, std::move(message), std::move(executor));
