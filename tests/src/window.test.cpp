@@ -20,17 +20,19 @@ suite<"window"> window_suite = []
 #ifndef SAUCER_WEBKITGTK
     "minimize"_test_async = [](saucer::window &window)
     {
+        static constexpr auto duration = std::chrono::seconds(3);
+
         bool minimized{false};
         window.on<minimize>([&](bool value) { minimized = value; });
 
         window.set_minimized(true);
-        saucer::tests::wait_for([&] { return minimized; });
+        saucer::tests::wait_for([&] { return minimized; }, duration);
 
         expect(minimized);
         expect(window.minimized());
 
         window.set_minimized(false);
-        saucer::tests::wait_for([&] { return !minimized; });
+        saucer::tests::wait_for([&] { return !minimized; }, duration);
 
         expect(not minimized);
         expect(not window.minimized());
@@ -68,15 +70,19 @@ suite<"window"> window_suite = []
 
     "fullscreen"_test_async = [](saucer::window &window)
     {
+        static constexpr auto duration = std::chrono::seconds(3);
+
+        // We wait explicitly here, because macOS has a quite lengthy transition for fullscreening...
+
         expect(not window.fullscreen());
 
         window.set_fullscreen(true);
-        saucer::tests::wait_for([&] { return window.fullscreen(); });
+        std::this_thread::sleep_for(duration);
 
         expect(window.fullscreen());
 
         window.set_fullscreen(false);
-        saucer::tests::wait_for([&] { return !window.fullscreen(); });
+        std::this_thread::sleep_for(duration);
 
         expect(not window.fullscreen());
     };
