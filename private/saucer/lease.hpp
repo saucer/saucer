@@ -32,7 +32,7 @@ namespace saucer::utils
 
       public:
         [[nodiscard]] T &value() &;
-        [[nodsicard]] rental<T> rent() const;
+        [[nodiscard]] rental<T> rent() const;
     };
 
     template <typename T>
