@@ -117,13 +117,14 @@ namespace saucer
 
     color impl::background() const
     {
-        const auto color = platform->window.backgroundColor;
+        const auto guard  = utils::autorelease_guard{};
+        auto *const color = [platform->window.backgroundColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
 
         return {
-            .r = static_cast<std::uint8_t>(color.redComponent),
-            .g = static_cast<std::uint8_t>(color.greenComponent),
-            .b = static_cast<std::uint8_t>(color.blueComponent),
-            .a = static_cast<std::uint8_t>(color.alphaComponent),
+            .r = static_cast<std::uint8_t>(color.redComponent * 255.f),
+            .g = static_cast<std::uint8_t>(color.greenComponent * 255.f),
+            .b = static_cast<std::uint8_t>(color.blueComponent * 255.f),
+            .a = static_cast<std::uint8_t>(color.alphaComponent * 255.f),
         };
     }
 
@@ -305,10 +306,10 @@ namespace saucer
     {
         const auto [r, g, b, a] = color;
 
-        [platform->window setBackgroundColor:[NSColor colorWithCalibratedRed:static_cast<CGFloat>(r)
-                                                                       green:static_cast<CGFloat>(g)
-                                                                        blue:static_cast<CGFloat>(b)
-                                                                       alpha:static_cast<CGFloat>(a)]];
+        [platform->window setBackgroundColor:[NSColor colorWithSRGBRed:static_cast<CGFloat>(r) / 255.f
+                                                                 green:static_cast<CGFloat>(g) / 255.f
+                                                                  blue:static_cast<CGFloat>(b) / 255.f
+                                                                 alpha:static_cast<CGFloat>(a) / 255.f]];
     }
 
     void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
