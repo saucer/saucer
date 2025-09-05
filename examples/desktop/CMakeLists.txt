@@ -15,7 +15,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
 
 CPMFindPackage(
   NAME           saucer-desktop
-  VERSION        4.0.1
+  VERSION        4.0.2
   GIT_REPOSITORY "https://github.com/saucer/desktop"
 )
 
