@@ -1,24 +1,16 @@
 #pragma once
 
-#include "handle.hpp"
 #include "ref_obj.hpp"
 
-#import <MacTypes.h>
 #import <Foundation/Foundation.h>
 
 namespace saucer::utils
 {
     template <typename T>
-    constexpr auto objc_retain(T ptr)
-    {
-        [ptr retain];
-    };
+    constexpr void objc_retain(T);
 
     template <typename T>
-    constexpr auto objc_release(T ptr)
-    {
-        [ptr release];
-    };
+    constexpr void objc_release(T);
 
     template <typename T>
     using objc_obj = ref_obj<T, objc_retain<T>, objc_release<T>>;
