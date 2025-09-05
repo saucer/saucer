@@ -51,7 +51,12 @@ namespace saucer
                 .deferral = std::move(deferral),
             });
 
-            self->parent->post([self, req] { self->events.get<event::permission>().fire(req).find(status::handled); });
+            auto fire = [req](impl *self)
+            {
+                self->events.get<event::permission>().fire(req).find(status::handled);
+            };
+
+            self->parent->post(utils::defer(self->platform->lease, fire));
 
             return S_OK;
         };
@@ -92,7 +97,12 @@ namespace saucer
                 return S_OK;
             }
 
-            self->parent->post([self, url] { self->events.get<event::navigated>().fire(url.value()); });
+            auto fire = [url](impl *self)
+            {
+                self->events.get<event::navigated>().fire(url.value());
+            };
+
+            self->parent->post(utils::defer(self->platform->lease, fire));
 
             return S_OK;
         };
@@ -136,7 +146,7 @@ namespace saucer
         auto handler = [self](auto...)
         {
             auto title = self->page_title();
-            self->parent->post([self, title] { self->events.get<event::title>().fire(title); });
+            self->parent->post(utils::defer(self->platform->lease, [title](impl *self) { self->events.get<event::title>().fire(title); }));
 
             return S_OK;
         };
@@ -157,9 +167,14 @@ namespace saucer
             return;
         }
 
+        static constexpr auto fire = [](impl *self)
+        {
+            self->events.get<event::load>().fire(state::finished);
+        };
+
         auto handler = [self](auto...)
         {
-            self->parent->post([self] { self->events.get<event::load>().fire(state::finished); });
+            self->parent->post(utils::defer(self->platform->lease, fire));
             return S_OK;
         };
 
@@ -250,8 +265,13 @@ namespace saucer
         }
 
         auto message = utils::narrow(raw.get());
-        self->parent->post([self, message = std::move(message)]
-                           { self->events.get<event::message>().fire(message).find(status::handled); });
+
+        auto fire = [message = std::move(message)](impl *self)
+        {
+            self->events.get<event::message>().fire(message).find(status::handled);
+        };
+
+        self->parent->post(utils::defer(self->platform->lease, fire));
 
         return S_OK;
     }
@@ -304,15 +324,20 @@ namespace saucer
         }
 
         self->platform->pending.clear();
-        self->parent->post([self] { self->events.get<event::dom_ready>().fire(); });
+        self->parent->post(utils::defer(self->platform->lease, [](impl *self) { self->events.get<event::dom_ready>().fire(); }));
 
         return S_OK;
     }
 
     HRESULT native::on_navigation(impl *self, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *args)
     {
+        static constexpr auto fire = [](impl *self)
+        {
+            self->events.get<event::load>().fire(state::started);
+        };
+
         self->platform->dom_loaded = false;
-        self->parent->post([self] { self->events.get<event::load>().fire(state::started); });
+        self->parent->post(utils::defer(self->platform->lease, fire));
 
         auto nav = navigation{navigation::impl{
             .request = args,
@@ -368,19 +393,18 @@ namespace saucer
             return status;
         }
 
-        auto callback = [self, args, deferral]
+        auto fire = [args, deferral](impl *self)
         {
             auto nav = navigation{navigation::impl{
                 .request = args,
             }};
 
             self->events.get<event::navigate>().fire(nav).find(policy::block);
-
             deferral->Complete();
         };
 
         args->put_Handled(true);
-        self->parent->post(callback);
+        self->parent->post(utils::defer(self->platform->lease, fire));
 
         return S_OK;
     }
@@ -471,8 +495,9 @@ namespace saucer
         {
             return [self, callback = std::forward<T>(callback)]<typename... Ts>(Ts &&...args) mutable
             {
-                self->parent->post([callback = std::forward<T>(callback), ... args = std::forward<Ts>(args)]() mutable
-                                   { std::invoke(callback, std::forward<Ts>(args)...); });
+                self->parent->post(utils::defer(self->platform->lease,
+                                                [callback = std::forward<T>(callback), ... args = std::forward<Ts>(args)](auto *) mutable
+                                                { std::invoke(callback, std::forward<Ts>(args)...); }));
             };
         };
 

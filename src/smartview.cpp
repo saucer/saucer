@@ -30,7 +30,7 @@ namespace saucer
         lock<std::unordered_map<std::size_t, resolver>> evaluations;
 
       public:
-        utils::lease<saucer::webview::impl *> lease;
+        utils::lease<webview::impl *> lease;
 
       public:
         status on_message(std::string_view);

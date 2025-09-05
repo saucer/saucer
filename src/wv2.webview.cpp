@@ -91,6 +91,7 @@ namespace saucer
 
         platform->controller = std::move(controller.value());
         platform->web_view   = std::move(web_view);
+        platform->lease      = utils::lease<webview::impl *>{this};
 
         if (!opts.storage_path.has_value() && !opts.persistent_cookies)
         {

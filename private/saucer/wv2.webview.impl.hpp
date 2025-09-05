@@ -2,6 +2,8 @@
 
 #include "webview.impl.hpp"
 
+#include "lease.hpp"
+
 #include <limits>
 
 #include <wrl.h>
@@ -76,6 +78,9 @@ namespace saucer
       public:
         std::uint32_t browser_pid;
         std::optional<fs::path> cleanup;
+
+      public:
+        utils::lease<webview::impl *> lease;
 
       public:
         template <event>

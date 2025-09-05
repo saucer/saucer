@@ -96,7 +96,7 @@ namespace saucer::utils
     template <typename T, typename Func>
     auto defer(lease<T> &lease, Func &&func)
     {
-        return [rental = lease.rent(), func = std::forward<Func>(func)]<typename... Ts>(Ts &&...args)
+        return [rental = lease.rent(), func = std::forward<Func>(func)]<typename... Ts>(Ts &&...args) mutable
         {
             auto locked = rental.access();
             auto value  = locked.value();
