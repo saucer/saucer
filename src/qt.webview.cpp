@@ -345,17 +345,14 @@ namespace saucer
 
     void impl::uninject()
     {
-        auto scripts = platform->scripts;
+        static constexpr auto uninject = static_cast<void (impl::*)(std::size_t)>(&impl::uninject);
 
-        for (const auto &[id, script] : scripts)
-        {
-            if (!script.clearable)
-            {
-                continue;
-            }
+        auto clearable = platform->scripts                                                  //
+                         | std::views::filter([](auto &it) { return it.second.clearable; }) //
+                         | std::views::keys                                                 //
+                         | std::ranges::to<std::vector>();
 
-            uninject(id);
-        }
+        std::ranges::for_each(clearable, std::bind_front(uninject, this));
     }
 
     void impl::uninject(std::size_t id) // NOLINT(*-function-const)
