@@ -5,7 +5,7 @@
 
 namespace saucer
 {
-    uri::uri() : m_impl(std::make_unique<impl>([[NSURL alloc] init])) {}
+    uri::uri() : m_impl(std::move(make({}).m_impl)) {}
 
     uri::uri(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
