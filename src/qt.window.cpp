@@ -22,11 +22,11 @@ namespace saucer
     {
         platform = std::make_unique<native>();
 
-        platform->window   = new main_window{this};
+        platform->window   = utils::deferred_ptr<QMainWindow>{new main_window{this}};
         platform->max_size = platform->window->maximumSize();
         platform->min_size = platform->window->minimumSize();
 
-        auto *const content = new QWidget{platform->window};
+        auto *const content = new QWidget{platform->window.get()};
         content->setLayout(new overlay_layout);
 
         platform->window->setCentralWidget(content);
@@ -42,7 +42,6 @@ namespace saucer
         }
 
         platform->window->close();
-        platform->window->deleteLater();
     }
 
     template <window::event Event>

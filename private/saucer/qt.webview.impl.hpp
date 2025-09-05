@@ -1,6 +1,8 @@
 #pragma once
 
 #include "webview.impl.hpp"
+
+#include "qt.utils.hpp"
 #include "qt.scheme.impl.hpp"
 
 #include <string>
@@ -36,7 +38,7 @@ namespace saucer
         std::unique_ptr<QWebEngineProfile> profile;
 
       public:
-        QWebEngineView *web_view;
+        utils::deferred_ptr<QWebEngineView> web_view;
 
       public:
         std::unique_ptr<QWebEnginePage> web_page;

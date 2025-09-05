@@ -19,13 +19,13 @@ namespace saucer
     template <>
     natives<window, true> window::native<true>() const
     {
-        return {.window = m_impl->platform->window};
+        return {.window = m_impl->platform->window.get()};
     }
 
     template <>
     natives<webview, true> webview::native<true>() const
     {
-        return {.webview = m_impl->platform->web_view};
+        return {.webview = m_impl->platform->web_view.get()};
     }
 
     template <>

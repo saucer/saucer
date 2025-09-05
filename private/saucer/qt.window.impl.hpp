@@ -2,6 +2,8 @@
 
 #include "window.impl.hpp"
 
+#include "qt.utils.hpp"
+
 #include <QLayout>
 #include <QMainWindow>
 
@@ -9,7 +11,7 @@ namespace saucer
 {
     struct window::impl::native
     {
-        QMainWindow *window;
+        utils::deferred_ptr<QMainWindow> window;
 
       public:
         QSize max_size, min_size;
