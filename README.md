@@ -82,8 +82,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 * 🪶 Lightweight
   > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
 
-* 🧰 Customizability
-  > Supports a convenient API to access platform specific implementations, making it possible to tweak the library to your hearts content!
+* 🧰 Customizable
+  > Offers a convenient API to access platform specific implementations, making it possible to tweak the library to your hearts content!
   
   * Official Modules
     * 🖥️ [saucer/desktop](https://github.com/saucer/desktop)
