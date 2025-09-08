@@ -85,14 +85,12 @@ namespace saucer
 
             auto offset = 0;
 
-            if (native::windows_build < utils::windows_11_build)
+            // Windows 10 has a bug where the titlebar is rendered, even if `rect->top` is only slightly bigger than the client area.
+            // Thus, we do not set an offset here to fix said issue, this sacrifices default resizing from the top though.
+
+            if (keep)
             {
-                // Windows 10 has a bug where the titlebar is rendered, even if `rect->top` is only slightly bigger than the client area.
-                // Thus, we do not set an offset here to fix said issue, this sacrifices default resizing from the top though.
-            }
-            else if (keep)
-            {
-                offset += maximized ? 0 : 1;
+                offset = (native::windows_build < utils::windows_11_build) ? 0 : 1;
             }
             else
             {
