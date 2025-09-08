@@ -83,10 +83,15 @@ namespace saucer
             WINDOWINFO info{};
             GetWindowInfo(hwnd, &info);
 
-            auto offset = 0;
+            auto borders = POINT{
+                .x = static_cast<LONG>(info.cxWindowBorders),
+                .y = static_cast<LONG>(info.cyWindowBorders),
+            };
 
             // Windows 10 has a bug where the titlebar is rendered, even if `rect->top` is only slightly bigger than the client area.
             // Thus, we do not set an offset here to fix said issue, this sacrifices default resizing from the top though.
+
+            auto offset = 0;
 
             if (keep)
             {
@@ -94,14 +99,14 @@ namespace saucer
             }
             else
             {
-                offset = static_cast<LONG>(info.cyWindowBorders);
+                offset = borders.y;
             }
 
             rect->top += offset;
-            rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
+            rect->bottom -= borders.y;
 
-            rect->left += static_cast<LONG>(info.cxWindowBorders);
-            rect->right -= static_cast<LONG>(info.cxWindowBorders);
+            rect->left += borders.x;
+            rect->right -= borders.x;
 
             return 0;
         }
