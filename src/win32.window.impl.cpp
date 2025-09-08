@@ -134,7 +134,10 @@ namespace saucer
             }
 
             self->platform->prev_state = w_param;
-            self->events.get<event::resize>().fire(LOWORD(l_param), HIWORD(l_param));
+            auto [width, height]       = saucer::size{.w = LOWORD(l_param), .h = HIWORD(l_param)};
+
+            self->platform->window_target.Root().Size({static_cast<float>(width), static_cast<float>(height)});
+            self->events.get<event::resize>().fire(width, height);
 
             break;
         }

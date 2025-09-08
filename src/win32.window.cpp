@@ -65,7 +65,6 @@ namespace saucer
 
         auto root = compositor.CreateSpriteVisual();
         {
-            root.RelativeSizeAdjustment({1.0f, 1.0f});
             root.Brush(platform->background);
         }
         platform->window_target.Root(root);
