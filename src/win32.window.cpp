@@ -27,6 +27,12 @@ namespace saucer
 
         utils::set_dpi_awareness();
 
+        if (static auto once{true}; once)
+        {
+            native::windows_build = utils::version().dwBuildNumber;
+            once                  = false;
+        }
+
         utils::window_handle hwnd = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP,                     //
                                                     parent->native<false>()->platform->id.c_str(), //
                                                     L"",                                           //

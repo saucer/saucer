@@ -69,15 +69,41 @@ namespace saucer
             break;
         }
         case WM_NCCALCSIZE: {
-            if (self->platform->flags.decorations != decoration::partial)
+            if (self->platform->flags.decorations != decoration::partial || !w_param)
             {
                 break;
             }
 
-            CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);
+            auto *params = reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param);
+            auto *rect   = params->rgrc;
 
-            auto *params        = reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param);
-            params->rgrc[0].top = params->rgrc[1].top;
+            const auto maximized = self->maximized();
+            const auto keep      = !maximized || rect->top >= 0;
+
+            WINDOWINFO info{};
+            GetWindowInfo(hwnd, &info);
+
+            auto offset = 0;
+
+            if (native::windows_build < utils::windows_11_build)
+            {
+                // Windows 10 has a bug where the titlebar is rendered, even if `rect->top` is only slightly bigger than the client area.
+                // Thus, we do not set an offset here to fix said issue, this sacrifices default resizing from the top though.
+            }
+            else if (keep)
+            {
+                offset += maximized ? 0 : 1;
+            }
+            else
+            {
+                offset = static_cast<LONG>(info.cyWindowBorders);
+            }
+
+            rect->top += offset;
+            rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
+
+            rect->left += static_cast<LONG>(info.cxWindowBorders);
+            rect->right -= static_cast<LONG>(info.cxWindowBorders);
 
             return 0;
         }

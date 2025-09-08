@@ -48,6 +48,7 @@ namespace saucer
         std::optional<saucer::size> max_size, min_size;
 
       public:
+        static inline std::size_t windows_build;
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };
 } // namespace saucer

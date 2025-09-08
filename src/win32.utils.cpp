@@ -120,19 +120,20 @@ namespace saucer
         call_as<DwmExtendFrameIntoClientArea>(func, hwnd, &margins);
     }
 
-    std::string utils::narrow(std::wstring_view wide)
+    OSVERSIONINFOEXW utils::version()
     {
-        auto size = WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
+        auto ntdll = module_handle{LoadLibraryW(L"ntdll.dll")};
+        auto *func = GetProcAddress(ntdll.get(), "RtlGetVersion");
 
-        if (!size)
+        if (!func)
         {
             return {};
         }
 
-        std::string out(size, '\0');
-        WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), out.data(), size, nullptr, nullptr);
+        OSVERSIONINFOEXW rtn{};
+        std::invoke(reinterpret_cast<NTSTATUS(WINAPI *)(LPOSVERSIONINFOEXW)>(func), &rtn);
 
-        return out;
+        return rtn;
     }
 
     std::wstring utils::widen(std::string_view narrow)
@@ -146,6 +147,21 @@ namespace saucer
 
         std::wstring out(size, '\0');
         MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, narrow.data(), static_cast<int>(narrow.size()), out.data(), size);
+
+        return out;
+    }
+
+    std::string utils::narrow(std::wstring_view wide)
+    {
+        auto size = WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
+
+        if (!size)
+        {
+            return {};
+        }
+
+        std::string out(size, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), out.data(), size, nullptr, nullptr);
 
         return out;
     }

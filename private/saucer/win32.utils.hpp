@@ -29,6 +29,10 @@ namespace saucer::utils
     using atom_handle    = utils::handle<ATOM, GlobalDeleteAtom>;
     using process_handle = utils::handle<HANDLE, CloseHandle>;
 
+    // One of the earliest Windows 11 Build Numbers:
+    // https://en.wikipedia.org/wiki/Windows_11_version_history
+    static constexpr auto windows_11_build = 22000;
+
     class wnd_proc_hook
     {
         HWND m_hwnd{nullptr};
@@ -52,6 +56,8 @@ namespace saucer::utils
     void set_dpi_awareness();
     void set_immersive_dark(HWND, bool);
     void extend_frame(HWND, std::array<int, 4>);
+
+    [[nodiscard]] OSVERSIONINFOEXW version();
 
     [[nodiscard]] std::wstring widen(std::string_view);
     [[nodiscard]] std::string narrow(std::wstring_view);
