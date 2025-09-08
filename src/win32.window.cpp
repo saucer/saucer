@@ -405,11 +405,14 @@ namespace saucer
     {
         RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
 
-        const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
-        const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
-        const auto dpi      = GetDpiForWindow(platform->hwnd.get());
+        if (platform->flags.decorations == decoration::full)
+        {
+            const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
+            const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
+            const auto dpi      = GetDpiForWindow(platform->hwnd.get());
 
-        AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+            AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+        }
 
         const auto width  = desired.right - desired.left;
         const auto height = desired.bottom - desired.top;
