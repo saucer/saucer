@@ -74,20 +74,10 @@ namespace saucer
                 break;
             }
 
-            auto *const rect = w_param ? &reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param)->rgrc[0] //
-                                       : reinterpret_cast<RECT *>(l_param);
+            CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);
 
-            const auto maximized = self->maximized();
-            const auto keep      = !maximized || rect->top >= 0;
-
-            WINDOWINFO info{};
-            GetWindowInfo(hwnd, &info);
-
-            rect->top += keep ? (maximized ? 0 : 1) : static_cast<LONG>(info.cxWindowBorders);
-            rect->bottom -= static_cast<LONG>(info.cyWindowBorders);
-
-            rect->left += static_cast<LONG>(info.cxWindowBorders);
-            rect->right -= static_cast<LONG>(info.cxWindowBorders);
+            auto *params        = reinterpret_cast<NCCALCSIZE_PARAMS *>(l_param);
+            params->rgrc[0].top = params->rgrc[1].top;
 
             return 0;
         }
