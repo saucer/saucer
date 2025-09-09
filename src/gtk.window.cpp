@@ -320,6 +320,16 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
+        auto *const header = GTK_WIDGET(platform->header);
+
+        int height{};
+        gtk_widget_measure(header, GTK_ORIENTATION_VERTICAL, size.h, nullptr, &height, nullptr, nullptr);
+
+        if (gtk_widget_is_visible(header))
+        {
+            size.h += height;
+        }
+
         gtk_window_set_default_size(platform->window.get(), size.w, size.h);
     }
 
