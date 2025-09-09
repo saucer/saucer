@@ -405,13 +405,16 @@ namespace saucer
     {
         RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
 
-        if (platform->flags.decorations == decoration::full)
-        {
-            const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
-            const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
-            const auto dpi      = GetDpiForWindow(platform->hwnd.get());
+        const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
+        const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
+        const auto dpi      = GetDpiForWindow(platform->hwnd.get());
 
-            AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+        AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+
+        if (platform->flags.decorations == decoration::partial)
+        {
+            // Titlebar is accounted for even though it is not shown
+            desired.top = 0;
         }
 
         const auto width  = desired.right - desired.left;
