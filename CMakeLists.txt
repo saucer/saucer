@@ -49,11 +49,11 @@ if (WIN32 AND MINGW)
 endif()
 
 if (NOT saucer_no_sdk_version_check AND WIN32 AND CMAKE_SYSTEM_VERSION LESS 10.0.2263)
-    message(FATAL_ERROR "[saucer] The used Windows SDK seems to be outdated! You can disable this check with '-Dsaucer_no_sdk_version_check=ON'")
+  message(FATAL_ERROR "[saucer] The used Windows SDK seems to be outdated! You can disable this check with '-Dsaucer_no_sdk_version_check=ON'")
 endif()
 
 if (NOT saucer_no_compiler_version_check AND saucer_cxx_outdated)
-    message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_compiler_version_check=ON'")
+  message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_compiler_version_check=ON'")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -211,12 +211,12 @@ target_sources(${PROJECT_NAME} PRIVATE
 
     "src/request.cpp"
     "src/module/unstable.cpp"
-    
+
     "src/app.cpp"
     "src/window.cpp"
     "src/webview.cpp"
     "src/smartview.cpp"
-    
+
     "src/webview.impl.cpp"
 )
 
@@ -259,7 +259,7 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           polo 
+  NAME           polo
   VERSION        1.0.1
   GIT_REPOSITORY "https://github.com/Curve/polo"
 )
@@ -279,7 +279,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_backend MATCHES "^Qt.$")
-  file(GLOB_RECURSE qt_sources 
+  file(GLOB_RECURSE qt_sources
     "src/qt.*cpp"
     "private/saucer/qt.*hpp"
     "src/qt${QT_VERSION}.*cpp"
@@ -297,7 +297,7 @@ endif()
 if (saucer_backend STREQUAL "WebKit")
   enable_language(OBJCXX)
 
-  file(GLOB_RECURSE cocoa_sources 
+  file(GLOB_RECURSE cocoa_sources
     "src/cocoa.*mm"
     "src/wk.*mm"
   )
@@ -313,7 +313,7 @@ if (saucer_backend STREQUAL "WebKit")
 endif()
 
 if (saucer_backend STREQUAL "WebKitGtk")
-  file(GLOB_RECURSE gtk_sources 
+  file(GLOB_RECURSE gtk_sources
     "src/gtk.*cpp"
     "src/wkg.*cpp"
   )
@@ -332,14 +332,14 @@ if (saucer_backend STREQUAL "WebKitGtk")
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
-  file(GLOB_RECURSE win_sources 
+  file(GLOB_RECURSE win_sources
     "src/win32.*cpp"
     "src/wv2.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBVIEW2)
-  
+
   target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
   target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
 
@@ -358,7 +358,7 @@ if (saucer_serializer STREQUAL "Glaze")
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
-  file(GLOB_RECURSE glaze_sources 
+  file(GLOB_RECURSE glaze_sources
     "src/glaze.*cpp"
   )
 
@@ -374,7 +374,7 @@ if (saucer_serializer STREQUAL "Rflpp")
     SYSTEM         ON
   )
 
-  file(GLOB_RECURSE rflpp_sources 
+  file(GLOB_RECURSE rflpp_sources
     "src/rfl.*cpp"
   )
 
