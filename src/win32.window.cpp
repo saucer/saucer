@@ -185,7 +185,7 @@ namespace saucer
         const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
         const auto height = GetSystemMetrics(SM_CYMAXTRACK);
 
-        return platform->max_size.value_or({.w = width, .h = height});
+        return platform->offset<offset::sub>(platform->max_size.value_or({.w = width, .h = height}));
     }
 
     size impl::min_size() const
@@ -193,7 +193,7 @@ namespace saucer
         const auto width  = GetSystemMetrics(SM_CXMINTRACK);
         const auto height = GetSystemMetrics(SM_CYMINTRACK);
 
-        return platform->min_size.value_or({.w = width, .h = height});
+        return platform->offset<offset::sub>(platform->min_size.value_or({.w = width, .h = height}));
     }
 
     position impl::position() const
@@ -403,18 +403,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        auto [width, height] = platform->offset(size);
+        auto [width, height] = platform->offset<offset::add>(size);
         SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->max_size = platform->offset(size);
+        platform->max_size = platform->offset<offset::add>(size);
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->min_size = platform->offset(size);
+        platform->min_size = platform->offset<offset::add>(size);
     }
 
     void impl::set_position(saucer::position position) // NOLINT(*-function-const)

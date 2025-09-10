@@ -26,6 +26,12 @@ namespace saucer
         static constexpr auto standard = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     };
 
+    enum class offset : std::uint8_t
+    {
+        add,
+        sub
+    };
+
     struct window::impl::native
     {
         utils::window_handle hwnd;
@@ -48,7 +54,8 @@ namespace saucer
         std::optional<saucer::size> max_size, min_size;
 
       public:
-        [[nodiscard]] saucer::size offset(const saucer::size &) const;
+        template <offset>
+        [[nodiscard]] saucer::size offset(saucer::size) const;
 
       public:
         static inline std::size_t windows_build;

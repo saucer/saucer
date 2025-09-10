@@ -42,7 +42,8 @@ namespace saucer
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, extended);
     }
 
-    saucer::size native::offset(const saucer::size &size) const
+    template <offset T>
+    size native::offset(saucer::size size) const
     {
         RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
 
@@ -57,8 +58,25 @@ namespace saucer
             desired.top = 0;
         }
 
-        return {.w = desired.right - desired.left, .h = desired.bottom - desired.top};
+        const auto offset_x = (desired.right - desired.left) - size.w;
+        const auto offset_y = (desired.bottom - desired.top) - size.h;
+
+        if constexpr (T == offset::add)
+        {
+            size.w += offset_x;
+            size.h += offset_y;
+        }
+        else
+        {
+            size.w -= offset_x;
+            size.h -= offset_y;
+        }
+
+        return size;
     }
+
+    template size native::offset<offset::add>(saucer::size) const;
+    template size native::offset<offset::sub>(saucer::size) const;
 
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
