@@ -149,7 +149,7 @@ namespace saucer
     size impl::size() const
     {
         const auto guard           = utils::autorelease_guard{};
-        const auto [width, height] = platform->window.frame.size;
+        const auto [width, height] = platform->window.contentView.frame.size;
 
         return {.w = static_cast<int>(width), .h = static_cast<int>(height)};
     }
@@ -157,7 +157,7 @@ namespace saucer
     size impl::max_size() const
     {
         const auto guard           = utils::autorelease_guard{};
-        const auto [width, height] = platform->window.maxSize;
+        const auto [width, height] = platform->window.contentMaxSize;
 
         return {.w = static_cast<int>(width), .h = static_cast<int>(height)};
     }
@@ -165,7 +165,7 @@ namespace saucer
     size impl::min_size() const
     {
         const auto guard           = utils::autorelease_guard{};
-        const auto [width, height] = platform->window.minSize;
+        const auto [width, height] = platform->window.contentMinSize;
 
         return {.w = static_cast<int>(width), .h = static_cast<int>(height)};
     }
@@ -178,7 +178,7 @@ namespace saucer
         return {.x = static_cast<int>(x), .y = static_cast<int>(y)};
     }
 
-    std::optional<saucer::screen> impl::screen() const
+    std::optional<screen> impl::screen() const
     {
         const auto guard   = utils::autorelease_guard{};
         auto *const screen = platform->window.screen;
@@ -347,22 +347,19 @@ namespace saucer
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
         const auto guard = utils::autorelease_guard{};
-        auto frame       = platform->window.frame;
-        frame.size       = {.width = static_cast<float>(size.w), .height = static_cast<float>(size.h)};
-
-        [platform->window setFrame:frame display:YES animate:YES];
+        [platform->window setContentSize:{.width = static_cast<float>(size.w), .height = static_cast<float>(size.h)}];
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-        [platform->window setMaxSize:{static_cast<float>(size.w), static_cast<float>(size.h)}];
+        [platform->window setContentMaxSize:{static_cast<float>(size.w), static_cast<float>(size.h)}];
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-        [platform->window setMinSize:{static_cast<float>(size.w), static_cast<float>(size.h)}];
+        [platform->window setContentMinSize:{static_cast<float>(size.w), static_cast<float>(size.h)}];
     }
 
     void impl::set_position(saucer::position position) // NOLINT(*-function-const)
