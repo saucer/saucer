@@ -403,34 +403,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
-
-        const auto normal   = GetWindowLongPtrW(platform->hwnd.get(), GWL_STYLE);
-        const auto extended = GetWindowLongPtrW(platform->hwnd.get(), GWL_EXSTYLE);
-        const auto dpi      = GetDpiForWindow(platform->hwnd.get());
-
-        AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
-
-        if (platform->flags.decorations == decoration::partial)
-        {
-            // Titlebar is accounted for even though it is not shown
-            desired.top = 0;
-        }
-
-        const auto width  = desired.right - desired.left;
-        const auto height = desired.bottom - desired.top;
-
+        auto [width, height] = platform->offset(size);
         SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->max_size = size;
+        platform->max_size = platform->offset(size);
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->min_size = size;
+        platform->min_size = platform->offset(size);
     }
 
     void impl::set_position(saucer::position position) // NOLINT(*-function-const)

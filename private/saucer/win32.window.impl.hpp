@@ -48,6 +48,9 @@ namespace saucer
         std::optional<saucer::size> max_size, min_size;
 
       public:
+        [[nodiscard]] saucer::size offset(const saucer::size &) const;
+
+      public:
         static inline std::size_t windows_build;
         static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
     };

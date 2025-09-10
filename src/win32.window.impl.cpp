@@ -42,6 +42,24 @@ namespace saucer
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, extended);
     }
 
+    saucer::size native::offset(const saucer::size &size) const
+    {
+        RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
+
+        const auto normal   = GetWindowLongPtrW(hwnd.get(), GWL_STYLE);
+        const auto extended = GetWindowLongPtrW(hwnd.get(), GWL_EXSTYLE);
+        const auto dpi      = GetDpiForWindow(hwnd.get());
+
+        AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
+
+        if (flags.decorations == decoration::partial)
+        {
+            desired.top = 0;
+        }
+
+        return {.w = desired.right - desired.left, .h = desired.bottom - desired.top};
+    }
+
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
         const auto atom = application::impl::native::ATOM_WINDOW.get();
