@@ -145,7 +145,7 @@ namespace saucer
         int width{}, height{};
         gtk_window_get_default_size(platform->window.get(), &width, &height);
 
-        return {.w = width, .h = height};
+        return platform->offset<offset::sub>({.w = width, .h = height});
     }
 
     size impl::max_size() const // NOLINT(*-static)
@@ -158,7 +158,7 @@ namespace saucer
         int width{}, height{};
         gtk_widget_get_size_request(GTK_WIDGET(platform->window.get()), &width, &height);
 
-        return {.w = width, .h = height};
+        return platform->offset<offset::sub>({.w = width, .h = height});
     }
 
     position impl::position() const // NOLINT(*-static)
@@ -320,17 +320,8 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        auto *const header = GTK_WIDGET(platform->header);
-
-        int height{};
-        gtk_widget_measure(header, GTK_ORIENTATION_VERTICAL, size.h, nullptr, &height, nullptr, nullptr);
-
-        if (gtk_widget_is_visible(header))
-        {
-            size.h += height;
-        }
-
-        gtk_window_set_default_size(platform->window.get(), size.w, size.h);
+        auto [width, height] = platform->offset<offset::add>(size);
+        gtk_window_set_default_size(platform->window.get(), width, height);
     }
 
     void impl::set_max_size(saucer::size) // NOLINT(*-static, *-function-const)
@@ -339,7 +330,8 @@ namespace saucer
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        gtk_widget_set_size_request(GTK_WIDGET(platform->window.get()), size.w, size.h);
+        auto [width, height] = platform->offset<offset::add>(size);
+        gtk_widget_set_size_request(GTK_WIDGET(platform->window.get()), width, height);
     }
 
     void impl::set_position(saucer::position) // NOLINT(*-static, *-function-const)

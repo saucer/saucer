@@ -32,6 +32,12 @@ namespace saucer
         double y;
     };
 
+    enum class offset : std::uint8_t
+    {
+        add,
+        sub
+    };
+
     struct window::impl::native
     {
         utils::handle<GtkWindow *, gtk_window_destroy> window;
@@ -62,6 +68,10 @@ namespace saucer
       public:
         template <event>
         void setup(impl *);
+
+      public:
+        template <offset>
+        [[nodiscard]] saucer::size offset(saucer::size) const;
 
       public:
         void add_widget(GtkWidget *) const;

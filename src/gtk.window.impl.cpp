@@ -123,6 +123,34 @@ namespace saucer
     {
     }
 
+    template <offset T>
+    saucer::size native::offset(saucer::size size) const
+    {
+        auto *const widget = GTK_WIDGET(header);
+
+        if (!gtk_widget_is_visible(widget))
+        {
+            return size;
+        }
+
+        int offset{};
+        gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL, size.h, nullptr, &offset, nullptr, nullptr);
+
+        if constexpr (T == offset::add)
+        {
+            size.h += offset;
+        }
+        else
+        {
+            size.h -= offset;
+        }
+
+        return size;
+    }
+
+    template saucer::size native::offset<offset::add>(saucer::size) const;
+    template saucer::size native::offset<offset::sub>(saucer::size) const;
+
     void native::add_widget(GtkWidget *widget) const
     {
         gtk_overlay_add_overlay(content, widget);
