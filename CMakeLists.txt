@@ -167,6 +167,13 @@ target_include_directories(
 )
 
 # --------------------------------------------------------------------------------------------------------
+# Setup Modules
+# --------------------------------------------------------------------------------------------------------
+
+include("cmake/module.cmake")
+saucer_include_directories(${PROJECT_NAME} "private")
+
+# --------------------------------------------------------------------------------------------------------
 # Miscellaneous CMake-Setup
 # --------------------------------------------------------------------------------------------------------
 
@@ -213,7 +220,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 include("cmake/cpm.cmake")
 include("cmake/nuget.cmake")
-include("cmake/module.cmake")
 
 CPMFindPackage(
   NAME           lockpp
