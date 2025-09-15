@@ -50,7 +50,7 @@ jobs:
           - backend: WebView2
             platform: Windows
             os: windows-latest
-            cmake-args: -Dsaucer_tests=OFF
+            install: true
 
     name: ${{ matrix.backend }}-${{ matrix.config }}
 
