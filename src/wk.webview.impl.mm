@@ -203,9 +203,9 @@ namespace saucer
         // https://github.com/WebKit/WebKit/blob/0ba313f0755d90540c9c97a08e481c192f78c295/Source/WebKit/UIProcess/API/Cocoa/WKProcessPool.mm#L219
 
 #ifdef SAUCER_WEBKIT_PRIVATE
-        WKProcessPool *const pool = resolve(config, @"processPool");
-        auto *const secure        = @selector(_registerURLSchemeAsSecure:);
-        const auto can_secure     = pool && [pool respondsToSelector:secure];
+        id pool               = resolve(config, @"processPool");
+        auto *const secure    = @selector(_registerURLSchemeAsSecure:);
+        const auto can_secure = pool && [pool respondsToSelector:secure];
 #endif
 
         for (const auto &[name, handler] : schemes)
