@@ -73,9 +73,16 @@ jobs:
 
           xcode-version: ${{ matrix.xcode-version }}
           cmake-args: -Dsaucer_tests=ON -Dsaucer_examples=ON ${{ matrix.cmake-args }}
+      
+      - name: 📦 Upload Artifacts
+        if: ${{ matrix.install }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.backend }}-${{ matrix.config }}
+          path: artifact
 
       - name: 🐛 Debug
-        if: ${{ github.event.inputs.debug == 'true' }}
+        if: ${{ github.event.inputs.debug }}
         uses: mxschmitt/action-tmate@v3
         with:
           install-dependencies: false
@@ -86,9 +93,3 @@ jobs:
         uses: ./.github/actions/test
         if: ${{ matrix.backend != 'WebKitGtk' && matrix.backend != 'WebKit' && matrix.backend != 'WebView2' }}
 
-      - name: 📦 Upload Artifacts
-        uses: actions/upload-artifact@v4
-        if: ${{ matrix.install == 'true' }}
-        with:
-          name: ${{ matrix.backend }}-${{ matrix.config }}
-          path: artifact
