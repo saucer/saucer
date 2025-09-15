@@ -6,7 +6,6 @@ project(saucer LANGUAGES CXX VERSION 7.0.0)
 # --------------------------------------------------------------------------------------------------------
 
 option(saucer_static            "Build a static library"                            ON)
-option(saucer_modules           "Enable module support"                             ON)
 option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
 
 option(saucer_examples          "Build examples"                                   OFF)
@@ -156,18 +155,6 @@ if (saucer_private_webkit)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Linkage
-# └ To make module development easier, all system libraries will be linked publicly if module
-#   support is enabled.
-# --------------------------------------------------------------------------------------------------------
-
-set(saucer_linkage PRIVATE)
-
-if (saucer_modules)
-  set(saucer_linkage PUBLIC)
-endif()
-
-# --------------------------------------------------------------------------------------------------------
 # Include directories
 # --------------------------------------------------------------------------------------------------------
 
@@ -271,8 +258,8 @@ CPMFindPackage(
   OPTIONS        "fill_namespace std" "fill_silent ON"
 )
 
-target_link_libraries(${PROJECT_NAME} ${saucer_linkage} cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC            cr::coco cr::rebind cr::ereignis cr::polo saucer::fill)
+saucer_link_libraries(${PROJECT_NAME}         cr::lockpp cr::flagpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis cr::polo saucer::fill)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Backends
@@ -291,7 +278,7 @@ if (saucer_backend MATCHES "^Qt.$")
   set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
 
   find_package(Qt${QT_VERSION} ${QT_REQUIRED_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
+  saucer_link_libraries(${PROJECT_NAME} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
 endif()
 
 if (saucer_backend STREQUAL "WebKit")
@@ -309,7 +296,7 @@ if (saucer_backend STREQUAL "WebKit")
   find_library(webkit WebKit    REQUIRED)
   find_library(cimage CoreImage REQUIRED)
 
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} ${cocoa} ${webkit} ${cimage})
+  saucer_link_libraries(${PROJECT_NAME} ${cocoa} ${webkit} ${cimage})
 endif()
 
 if (saucer_backend STREQUAL "WebKitGtk")
@@ -328,7 +315,7 @@ if (saucer_backend STREQUAL "WebKitGtk")
   pkg_check_modules(json-glib  REQUIRED IMPORTED_TARGET json-glib-1.0)
   pkg_check_modules(webkitgtk  REQUIRED IMPORTED_TARGET webkitgtk-6.0)
 
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib)
+  saucer_link_libraries(${PROJECT_NAME} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
@@ -344,7 +331,7 @@ if (saucer_backend STREQUAL "WebView2")
   target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
 
   include("cmake/webview2.cmake")
-  target_link_libraries(${PROJECT_NAME} ${saucer_linkage} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2::webview2)
+  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2::webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
