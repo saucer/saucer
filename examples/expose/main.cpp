@@ -1,5 +1,8 @@
 #include <saucer/smartview.hpp>
 
+#include <chrono>
+#include <thread>
+
 static constexpr std::string_view demo = R"html(
 <!DOCTYPE html>
 <html>
