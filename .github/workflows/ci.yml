@@ -51,6 +51,7 @@ jobs:
             platform: Windows
             os: windows-latest
             install: true
+            cmake-args: -Dsaucer_tests=OFF
 
     name: ${{ matrix.backend }}-${{ matrix.config }}
 
