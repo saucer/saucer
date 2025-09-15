@@ -405,23 +405,23 @@ configure_config()
 # Setup Tests
 # --------------------------------------------------------------------------------------------------------
 
-# if (saucer_tests)
-message(STATUS "[saucer] Building Tests")
-add_subdirectory(tests)
-# endif()
+if (saucer_tests)
+  message(STATUS "[saucer] Building Tests")
+  add_subdirectory(tests)
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Examples
 # --------------------------------------------------------------------------------------------------------
 
-# if (saucer_examples)
-message(STATUS "[saucer] Building Examples")
-add_subdirectory("examples/desktop")
-add_subdirectory("examples/multiple")
-add_subdirectory("examples/expose")
-add_subdirectory("examples/loop")
-add_subdirectory("examples/pdf")
-# endif()
+if (saucer_examples)
+  message(STATUS "[saucer] Building Examples")
+  add_subdirectory("examples/desktop")
+  add_subdirectory("examples/multiple")
+  add_subdirectory("examples/expose")
+  add_subdirectory("examples/loop")
+  add_subdirectory("examples/pdf")
+endif()
 
 # --------------------------------------------------------------------------------------------------------
 # Package Config
