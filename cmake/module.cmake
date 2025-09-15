@@ -20,7 +20,7 @@ macro(saucer_add_module NAME)
     message(STATUS "[saucer] Adding module: ${NAME}")
 
     target_link_libraries(${NAME}              PUBLIC  saucer::saucer)
-    target_link_libraries(${NAME}              PRIVATE ${_saucer_link_targets})
+    target_link_libraries(${NAME}              PRIVATE saucer::private)
     target_include_directories(${PROJECT_NAME} PRIVATE "${_saucer_root}/private")
 
     set(saucer_backend ${_saucer_backend})
