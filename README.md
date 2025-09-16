@@ -71,7 +71,6 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   > Supports custom schemes, script injection, favicons, and much more!
 
 * ㊗️ Unicode Support
-  > Uses UTF-8 encoded strings
 
 * 🔀 Seamless C++ / JavaScript interoperability
 
@@ -192,3 +191,11 @@ int main()
 ## 🍵 Buy me a tea!
 
 Saucer is a passion project and I develop it in my free-time. If you'd like to support me, consider [sponsoring](https://github.com/sponsors/Curve) my tea-addiction 🫂
+
+---
+
+> Saucer is 100% human written. No AI-Tools were used in the development process.
+
+<a href="https://notbyai.fyi/" target="_blank">
+  <img align="right" src="https://raw.githubusercontent.com/gasolinehorse/not-by-ai/refs/heads/main/dist/img/developed-by-human-not-by-ai-white.svg" />
+</a>
