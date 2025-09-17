@@ -299,6 +299,8 @@ namespace saucer
             return S_OK;
         }
 
+        self->events.get<event::request>().fire(url.value());
+
         return scheme_handler(self, {.raw = args, .request = std::move(request), .url = std::move(url.value())});
     }
 
