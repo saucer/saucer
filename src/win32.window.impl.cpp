@@ -45,17 +45,24 @@ namespace saucer
     template <offset T>
     size native::offset(saucer::size size) const
     {
-        RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
-
         const auto normal   = GetWindowLongPtrW(hwnd.get(), GWL_STYLE);
         const auto extended = GetWindowLongPtrW(hwnd.get(), GWL_EXSTYLE);
-        const auto dpi      = GetDpiForWindow(hwnd.get());
 
+        const auto dpi     = GetDpiForWindow(hwnd.get());
+        const auto scaling = static_cast<float>(dpi) / 96.f;
+
+        if (scaling != 1.f)
+        {
+            size.w = static_cast<int>(static_cast<float>(size.w) * scaling);
+            size.h = static_cast<int>(static_cast<float>(size.h) * scaling);
+        }
+
+        RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
         AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
 
         if (flags.decorations == decoration::partial)
         {
-            desired.top = 0;
+            desired.top = -1; // Remove offset for non-existent titlebar
         }
 
         const auto offset_x = (desired.right - desired.left) - size.w;
