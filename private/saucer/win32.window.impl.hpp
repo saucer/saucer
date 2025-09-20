@@ -26,7 +26,7 @@ namespace saucer
         static constexpr auto standard = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     };
 
-    enum class offset : std::uint8_t
+    enum class mode : std::uint8_t
     {
         add,
         sub
@@ -37,7 +37,10 @@ namespace saucer
         utils::window_handle hwnd;
 
       public:
+        UINT dpi;
         UINT prev_state;
+
+      public:
         std::optional<decoration> prev_decoration;
         std::optional<WINDOWPLACEMENT> prev_placement;
 
@@ -54,7 +57,10 @@ namespace saucer
         std::optional<saucer::size> max_size, min_size;
 
       public:
-        template <offset>
+        template <mode>
+        [[nodiscard]] saucer::size scale(saucer::size) const;
+
+        template <mode>
         [[nodiscard]] saucer::size offset(saucer::size) const;
 
       public:

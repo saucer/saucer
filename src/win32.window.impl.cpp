@@ -42,20 +42,33 @@ namespace saucer
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, extended);
     }
 
-    template <offset T>
+    template <mode T>
+    size native::scale(saucer::size size) const
+    {
+        const auto factor = static_cast<float>(dpi) / 96.f;
+
+        if constexpr (T == mode::add)
+        {
+            size.w = static_cast<int>(static_cast<float>(size.w) * factor);
+            size.h = static_cast<int>(static_cast<float>(size.h) * factor);
+        }
+        else
+        {
+            size.w = static_cast<int>(static_cast<float>(size.w) / factor);
+            size.h = static_cast<int>(static_cast<float>(size.h) / factor);
+        }
+
+        return size;
+    }
+
+    template size native::scale<mode::add>(saucer::size) const;
+    template size native::scale<mode::sub>(saucer::size) const;
+
+    template <mode T>
     size native::offset(saucer::size size) const
     {
         const auto normal   = GetWindowLongPtrW(hwnd.get(), GWL_STYLE);
         const auto extended = GetWindowLongPtrW(hwnd.get(), GWL_EXSTYLE);
-
-        const auto dpi     = GetDpiForWindow(hwnd.get());
-        const auto scaling = static_cast<float>(dpi) / 96.f;
-
-        if (scaling != 1.f)
-        {
-            size.w = static_cast<int>(static_cast<float>(size.w) * scaling);
-            size.h = static_cast<int>(static_cast<float>(size.h) * scaling);
-        }
 
         RECT desired{.left = 0, .top = 0, .right = size.w, .bottom = size.h};
         AdjustWindowRectExForDpi(&desired, normal, false, extended, dpi);
@@ -68,7 +81,7 @@ namespace saucer
         const auto offset_x = (desired.right - desired.left) - size.w;
         const auto offset_y = (desired.bottom - desired.top) - size.h;
 
-        if constexpr (T == offset::add)
+        if constexpr (T == mode::add)
         {
             size.w += offset_x;
             size.h += offset_y;
@@ -82,8 +95,8 @@ namespace saucer
         return size;
     }
 
-    template size native::offset<offset::add>(saucer::size) const;
-    template size native::offset<offset::sub>(saucer::size) const;
+    template size native::offset<mode::add>(saucer::size) const;
+    template size native::offset<mode::sub>(saucer::size) const;
 
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
     {
@@ -196,10 +209,14 @@ namespace saucer
             }
 
             self->platform->prev_state = w_param;
-            auto [width, height]       = saucer::size{.w = LOWORD(l_param), .h = HIWORD(l_param)};
 
+            const auto width  = LOWORD(l_param);
+            const auto height = HIWORD(l_param);
+
+            const auto [w, h] = self->platform->scale<mode::sub>({.w = width, .h = height});
+
+            self->events.get<event::resize>().fire(w, h);
             self->platform->window_target.Root().Size({static_cast<float>(width), static_cast<float>(height)});
-            self->events.get<event::resize>().fire(width, height);
 
             break;
         }
@@ -232,6 +249,16 @@ namespace saucer
 
             return 0;
         }
+        case WM_DPICHANGED:
+            const auto size     = self->size();
+            self->platform->dpi = HIWORD(w_param);
+
+            self->set_size(size);
+
+            auto *const rect = reinterpret_cast<RECT *>(l_param);
+            self->set_position({.x = rect->left, .y = rect->top});
+
+            return 0;
         }
 
         return CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);

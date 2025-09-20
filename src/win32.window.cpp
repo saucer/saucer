@@ -63,6 +63,7 @@ namespace saucer
 
         platform->hwnd          = std::move(hwnd);
         platform->window_target = std::move(window_target.value());
+        platform->dpi           = GetDpiForWindow(platform->hwnd.get());
         platform->background    = compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
         platform->hook          = {platform->hwnd.get(), native::wnd_proc};
 
@@ -177,7 +178,7 @@ namespace saucer
     {
         RECT rect;
         GetClientRect(platform->hwnd.get(), &rect);
-        return {.w = rect.right - rect.left, .h = rect.bottom - rect.top};
+        return platform->scale<mode::sub>({.w = rect.right - rect.left, .h = rect.bottom - rect.top});
     }
 
     size impl::max_size() const
@@ -185,7 +186,7 @@ namespace saucer
         const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
         const auto height = GetSystemMetrics(SM_CYMAXTRACK);
 
-        return platform->offset<offset::sub>(platform->max_size.value_or({.w = width, .h = height}));
+        return platform->scale<mode::sub>(platform->offset<mode::sub>(platform->max_size.value_or({.w = width, .h = height})));
     }
 
     size impl::min_size() const
@@ -193,7 +194,7 @@ namespace saucer
         const auto width  = GetSystemMetrics(SM_CXMINTRACK);
         const auto height = GetSystemMetrics(SM_CYMINTRACK);
 
-        return platform->offset<offset::sub>(platform->min_size.value_or({.w = width, .h = height}));
+        return platform->scale<mode::sub>(platform->offset<mode::sub>(platform->min_size.value_or({.w = width, .h = height})));
     }
 
     position impl::position() const
@@ -403,18 +404,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        auto [width, height] = platform->offset<offset::add>(size);
+        auto [width, height] = platform->offset<mode::add>(platform->scale<mode::add>(size));
         SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->max_size = platform->offset<offset::add>(size);
+        platform->max_size = platform->offset<mode::add>(platform->scale<mode::add>(size));
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->min_size = platform->offset<offset::add>(size);
+        platform->min_size = platform->offset<mode::add>(platform->scale<mode::add>(size));
     }
 
     void impl::set_position(saucer::position position) // NOLINT(*-function-const)

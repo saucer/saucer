@@ -65,8 +65,10 @@ namespace saucer
             return err(environment);
         }
 
-        auto *const hwnd = window->native<false>()->platform->hwnd.get();
-        auto controller  = native::create_controller(parent, hwnd, environment->Get());
+        auto *const parent_window = window->native<false>()->platform.get();
+        auto *const hwnd          = parent_window->hwnd.get();
+
+        auto controller = native::create_controller(parent, hwnd, environment->Get());
 
         if (!controller.has_value())
         {
@@ -127,10 +129,14 @@ namespace saucer
         platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
         platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
 
-        auto on_resize = [this](int width, int height)
+        auto on_resize = [this, parent_window](int width, int height)
         {
-            auto rect = platform->bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
-            platform->controller->put_Bounds({rect.x, rect.y, rect.x + rect.w, rect.y + rect.h});
+            const auto bounds = platform->bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
+
+            const auto [x, y] = parent_window->scale<mode::add>({.w = bounds.x, .h = bounds.y});
+            const auto [w, h] = parent_window->scale<mode::add>({.w = bounds.w, .h = bounds.h});
+
+            platform->controller->put_Bounds({x, y, x + w, y + h});
         };
 
         auto on_minimize = [this](bool minimized)
