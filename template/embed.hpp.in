@@ -1,0 +1,17 @@
+#pragma once
+
+#include <saucer/webview.hpp>
+
+@INCLUDES@
+
+namespace saucer::embedded
+{
+    inline std::unordered_map<fs::path, embedded_file> all()
+    {
+        using namespace files;
+
+        return {
+            @FILES@
+        };
+    }
+} // namespace saucer::embedded

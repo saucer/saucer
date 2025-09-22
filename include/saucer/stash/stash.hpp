@@ -36,12 +36,12 @@ namespace saucer
         [[nodiscard]] std::size_t size() const;
 
       public:
-        [[nodiscard]] static stash from(owning_t data);
-        [[nodiscard]] static stash view(viewing_t data);
-        [[nodiscard]] static stash lazy(lazy_t data);
+        [[nodiscard]] static stash from(owning_t);
+        [[nodiscard]] static stash view(viewing_t);
+        [[nodiscard]] static stash lazy(lazy_t);
 
       public:
-        [[nodiscard]] static stash view(std::string_view data)
+        [[nodiscard]] static stash view(std::string_view)
             requires std::same_as<T, std::uint8_t>;
 
       public:

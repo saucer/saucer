@@ -167,10 +167,12 @@ target_include_directories(
 )
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Modules
+# Setup Embedding & Modules
 # --------------------------------------------------------------------------------------------------------
 
+include("cmake/embed.cmake")
 include("cmake/module.cmake")
+
 saucer_include_directories(${PROJECT_NAME} "private")
 
 # --------------------------------------------------------------------------------------------------------
@@ -389,7 +391,7 @@ function(configure_config)
     set(DEFAULT_SERIALIZER "void")
   endif()
 
-  configure_file("config/config.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/config.hpp")
+  configure_file("template/config.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/saucer/config.hpp")
 endfunction()
 
 configure_config()

@@ -1,0 +1,3 @@
+#include "@INCLUDE@"
+
+constinit std::array<std::uint8_t, @SIZE@> saucer::embedded::files::@IDENTIFIER@ = {@CONTENT@};

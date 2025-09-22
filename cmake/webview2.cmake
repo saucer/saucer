@@ -1,4 +1,4 @@
-include("cmake/nuget.cmake")
+include("nuget.cmake")
 
 if (saucer_windows_arch STREQUAL "Default")
     if (CMAKE_GENERATOR_PLATFORM)
@@ -13,7 +13,7 @@ if (saucer_windows_arch STREQUAL "Default")
 endif()
 
 if (NOT saucer_prefer_remote)
-    find_package(webview2 CONFIG REQUIRED)
+    find_package(webview2 REQUIRED)
     return()
 endif()
 
@@ -33,6 +33,6 @@ if (NOT TARGET webview2::webview2)
 
     set_target_properties(webview2 PROPERTIES
         IMPORTED_LOCATION "${webview2_lib_path}"
-        INTERFACE_INCLUDE_DIRECTORIES "${WebView2_PATH}/build/native/include" 
+        INTERFACE_INCLUDE_DIRECTORIES "${WebView2_PATH}/build/native/include"
     )
 endif()
