@@ -11,12 +11,7 @@ function(saucer_read FILE OUTPUT)
 endfunction()
 
 function(saucer_generate OUTPUT)
-    cmake_parse_arguments(PARSE_ARGV 1 generate "" "FILE;ROOT;SIZE;CONTENT;IDENTIFIER;DESTINATION" "")
-    cmake_path(APPEND generate_DESTINATION "files")
-
-    if (NOT EXISTS "${generate_DESTINATION}")
-        file(MAKE_DIRECTORY "${generate_DESTINATION}")
-    endif()
+    cmake_parse_arguments(PARSE_ARGV 1 generate "" "FILE;ROOT;SIZE;CONTENT;IDENTIFIER;DESTINATION;TEMPLATES" "")
 
     set(generate_RELATIVE "${generate_FILE}")
     cmake_path(RELATIVE_PATH generate_RELATIVE BASE_DIRECTORY "${generate_ROOT}")
@@ -35,8 +30,8 @@ function(saucer_generate OUTPUT)
 
     cmake_path(GET generate_HEADER FILENAME INCLUDE)
 
-    configure_file("template/embed.file.cpp.in" "${generate_SOURCE}")
-    configure_file("template/embed.file.hpp.in" "${generate_HEADER}")
+    configure_file("${generate_TEMPLATES}/embed.file.cpp.in" "${generate_SOURCE}")
+    configure_file("${generate_TEMPLATES}/embed.file.hpp.in" "${generate_HEADER}")
 
     set(${OUTPUT}_HEADER "${generate_HEADER}"    PARENT_SCOPE)
     set(${OUTPUT}_PATH   "/${generate_RELATIVE}" PARENT_SCOPE)
@@ -64,7 +59,7 @@ function(saucer_embed_target NAME DIRECTORY)
     set(target_ALIAS "saucer::${NAME}")
 
     set(target_GLOBDIR "${DESTINATION}")
-    cmake_path(APPEND target_GLOBDIR "files" "*.cpp")
+    cmake_path(APPEND target_GLOBDIR "*.cpp")
     file(GLOB_RECURSE target_SOURCES ${target_GLOBDIR})
 
     add_library(${target_NAME}  STATIC)
@@ -90,6 +85,9 @@ function(saucer_embed DIRECTORY)
 
     cmake_path(ABSOLUTE_PATH DIRECTORY)
 
+    cmake_path(GET CMAKE_CURRENT_FUNCTION_LIST_DIR PARENT_PATH embed_TEMPLATES)
+    cmake_path(APPEND embed_TEMPLATES "template")
+
     set(embed_GLOBDIR "${DIRECTORY}")
     cmake_path(APPEND embed_GLOBDIR "*")
     file(GLOB_RECURSE embed_FILES ${embed_GLOBDIR})
@@ -97,13 +95,18 @@ function(saucer_embed DIRECTORY)
     set(DESTINATION "${embed_DESTINATION}")
     cmake_path(ABSOLUTE_PATH DESTINATION)
 
-    set(HEADER_DESTINATION "${embed_DESTINATION}")
+    set(HEADER_DESTINATION "${DESTINATION}")
     cmake_path(APPEND HEADER_DESTINATION "saucer" "embedded")
+
+    set(FILE_DESTINATION "${HEADER_DESTINATION}")
+    cmake_path(APPEND FILE_DESTINATION "files")
 
     set(embed_INCLUDES "")
     set(embed_EMBEDDED "")
 
     foreach(path IN LISTS embed_FILES)
+        message(STATUS "[embed] Embedding ${path}")
+
         cmake_path(HASH path FILE_HASH)
         string(MAKE_C_IDENTIFIER "${FILE_HASH}" IDENTIFIER)
 
@@ -111,7 +114,8 @@ function(saucer_embed DIRECTORY)
             FILE        "${path}"
             ROOT        "${DIRECTORY}"
             IDENTIFIER  "${IDENTIFIER}"
-            DESTINATION "${HEADER_DESTINATION}"
+            TEMPLATES   "${embed_TEMPLATES}"
+            DESTINATION "${FILE_DESTINATION}"
         )
 
         cmake_path(RELATIVE_PATH FILE_HEADER BASE_DIRECTORY "${HEADER_DESTINATION}")
@@ -127,7 +131,7 @@ function(saucer_embed DIRECTORY)
     list(JOIN embed_INCLUDES "\n"  INCLUDES)
     list(JOIN embed_EMBEDDED ",\n" FILES)
 
-    configure_file("template/embed.hpp.in" "${embed_FILE}")
+    configure_file("${embed_TEMPLATES}/embed.hpp.in" "${embed_FILE}")
 
     if (CMAKE_SCRIPT_MODE_FILE)
         return()
