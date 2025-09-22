@@ -1,4 +1,4 @@
-include("nuget.cmake")
+include("cmake/nuget.cmake")
 
 if (saucer_windows_arch STREQUAL "Default")
     if (CMAKE_GENERATOR_PLATFORM)
