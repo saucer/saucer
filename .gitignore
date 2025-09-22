@@ -1,5 +1,7 @@
+**/build
+**/embedded
+
 include/saucer/config.hpp
-build
 
 .vs
 .cache
