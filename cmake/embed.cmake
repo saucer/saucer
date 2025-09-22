@@ -58,11 +58,11 @@ function(saucer_embed_target NAME DIRECTORY)
     set(target_NAME  "saucer_${NAME}")
     set(target_ALIAS "saucer::${NAME}")
 
-    set(target_GLOBDIR "${DESTINATION}")
+    set(target_GLOBDIR "${DIRECTORY}")
     cmake_path(APPEND target_GLOBDIR "*.cpp")
     file(GLOB_RECURSE target_SOURCES ${target_GLOBDIR})
 
-    add_library(${target_NAME}  STATIC)
+    add_library(${target_NAME} STATIC)
     add_library(${target_ALIAS} ALIAS ${target_NAME})
 
     target_sources(${target_NAME} PRIVATE ${target_SOURCES})
@@ -73,6 +73,7 @@ function(saucer_embed_target NAME DIRECTORY)
 endfunction()
 
 function(saucer_embed DIRECTORY)
+    cmake_path(ABSOLUTE_PATH DIRECTORY)
     cmake_parse_arguments(PARSE_ARGV 1 embed "" "NAME;DESTINATION" "")
 
     if (NOT embed_DESTINATION)
@@ -82,8 +83,6 @@ function(saucer_embed DIRECTORY)
     if (NOT embed_NAME)
         set(embed_NAME "embedded")
     endif()
-
-    cmake_path(ABSOLUTE_PATH DIRECTORY)
 
     cmake_path(GET CMAKE_CURRENT_FUNCTION_LIST_DIR PARENT_PATH embed_TEMPLATES)
     cmake_path(APPEND embed_TEMPLATES "template")
