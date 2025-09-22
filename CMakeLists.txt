@@ -17,6 +17,14 @@ option(saucer_private_webkit    "Enable private api usage for wkwebview"        
 option(saucer_no_version_check  "Skip compiler version check"                      OFF)
 
 # --------------------------------------------------------------------------------------------------------
+# Convenience wrapper over `message`
+# --------------------------------------------------------------------------------------------------------
+
+function(saucer_message LEVEL MESSAGE)
+  message(${LEVEL} "saucer: ${MESSAGE}")
+endfunction()
+
+# --------------------------------------------------------------------------------------------------------
 # Check requirements
 # └ The main use case of this check is to prevent users from reporting
 #   issues only to find out that their compiler is too old.
@@ -43,16 +51,16 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 endif()
 
 if (WIN32 AND MINGW)
-  message(WARNING "[saucer] WebView2 requires certain headers that are not provided by MinGW!")
-  message(WARNING "[saucer] Expect to run into issues...")
+  saucer_message(WARNING "WebView2 requires certain headers that are not provided by MinGW!")
+  saucer_message(WARNING "Expect to run into issues...")
 endif()
 
 if (NOT saucer_no_sdk_version_check AND WIN32 AND CMAKE_SYSTEM_VERSION LESS 10.0.2263)
-  message(FATAL_ERROR "[saucer] The used Windows SDK seems to be outdated! You can disable this check with '-Dsaucer_no_sdk_version_check=ON'")
+  saucer_message(FATAL_ERROR "The used Windows SDK seems to be outdated! You can disable this check with '-Dsaucer_no_sdk_version_check=ON'")
 endif()
 
 if (NOT saucer_no_compiler_version_check AND saucer_cxx_outdated)
-  message(FATAL_ERROR "[saucer] The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_compiler_version_check=ON'")
+  saucer_message(FATAL_ERROR "The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_compiler_version_check=ON'")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -60,7 +68,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 set(saucer_webview2_version "1.0.3296.44"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
-set(saucer_windows_arch     "Default"       CACHE STRING "The windows architecture (Win32, x64, ARM64) used for linking against NuGet packages")
+set(saucer_webview2_arch    "Default"       CACHE STRING "The architecture (Win32, x64, ARM64) used for linking against NuGet packages")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropriate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
 
@@ -69,7 +77,7 @@ set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serialize
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_prefer_remote)
-  message(STATUS "[saucer] Avoiding local packages as 'saucer_prefer_remote' is ON")
+  saucer_message(STATUS "Avoiding local packages as 'saucer_prefer_remote' is ON")
 endif()
 
 set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
@@ -82,14 +90,14 @@ set(saucer_valid_backends Qt5 Qt6 WebKitGtk WebView2 WebKit Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
-  message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
+  saucer_message(FATAL_ERROR "Bad Backend, expected one of ${saucer_valid_backends}")
 endif()
 
 set(saucer_valid_serializers Glaze Rflpp None)
 set_property(CACHE saucer_serializer PROPERTY STRINGS ${saucer_valid_serializers})
 
 if (NOT saucer_serializer IN_LIST saucer_valid_serializers)
-  message(FATAL_ERROR "Bad Serializer, expected one of ${saucer_valid_serializers}")
+  saucer_message(FATAL_ERROR "Bad Serializer, expected one of ${saucer_valid_serializers}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -105,7 +113,21 @@ if (saucer_backend STREQUAL "Default")
     set(saucer_backend WebKitGtk)
   endif()
 
-  message(STATUS "[saucer] Backend is 'Default', using ${saucer_backend}")
+  saucer_message(STATUS "Backend is 'Default', using ${saucer_backend}")
+endif()
+
+# --------------------------------------------------------------------------------------------------------
+# Determine appropriate default architecture
+# --------------------------------------------------------------------------------------------------------
+
+if (WIN32 AND saucer_webview2_arch STREQUAL "Default")
+  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(saucer_webview2_arch "x64")
+  else()
+    set(saucer_webview2_arch "x86")
+  endif()
+
+  saucer_message(STATUS "Architecture is 'Default', using ${saucer_webview2_arch}")
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -338,8 +360,16 @@ if (saucer_backend STREQUAL "WebView2")
   target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
   target_compile_definitions(${PROJECT_NAME} PUBLIC  UNICODE _UNICODE)
 
-  include("cmake/webview2.cmake")
-  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2::webview2)
+  NuGetFindPackage(
+    NAME         webview2
+    PACKAGE      "Microsoft.Web.WebView2"
+    VERSION      "${saucer_webview2_version}"
+    INCLUDES     "build" "native" "include"
+    LIBRARIES    "build" "native" "${saucer_webview2_arch}" "WebView2LoaderStatic.lib"
+    ALTERNATIVES "unofficial-webview2|unofficial::webview2::webview2"
+  )
+
+  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2)
 endif()
 
 # --------------------------------------------------------------------------------------------------------
@@ -401,7 +431,7 @@ configure_config()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_tests)
-  message(STATUS "[saucer] Building Tests")
+  saucer_message(STATUS "Building Tests")
   add_subdirectory(tests)
 endif()
 
@@ -410,7 +440,7 @@ endif()
 # --------------------------------------------------------------------------------------------------------
 
 if (saucer_examples)
-  message(STATUS "[saucer] Building Examples")
+  saucer_message(STATUS "Building Examples")
   add_subdirectory("examples/embedding")
   add_subdirectory("examples/multiple")
   add_subdirectory("examples/desktop")
@@ -427,7 +457,7 @@ set(saucer_blacklist "reflectcpp" "nontype_functional" "jthread")
 
 foreach(target IN LISTS saucer_blacklist)
   if (TARGET ${target})
-    message(WARNING "[saucer] Package-Config not supported with current configuration (${target})")
+    saucer_message(WARNING "Package-Config not supported with current configuration (${target})")
     return()
   endif()
 endforeach()
