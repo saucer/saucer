@@ -8,7 +8,8 @@ using namespace saucer::request::utils;
 template <std::size_t N>
 consteval auto to_array(std::string_view name)
 {
-    std::array<char, N + 1> rtn{0};
+    auto rtn  = std::array<char, N + 1>{};
+    rtn.at(N) = '\0';
 
     for (auto i = 0uz; N > i; i++)
     {
@@ -27,10 +28,12 @@ consteval auto generate()
     if constexpr (I < size)
     {
         constexpr auto current = std::get<I>(members);
+        using current_t        = decltype(current)::type;
 
-        using type          = decltype(current)::type;
-        constexpr auto name = to_array<current.name.size()>(current.name);
-        return generate<T, I + 1, State..., rfl::Field<name, type>>();
+        constexpr auto raw_name = current.name;
+        constexpr auto name     = to_array<raw_name.size()>(raw_name);
+
+        return generate<T, I + 1, State..., rfl::Field<name, current_t>>();
     }
     else
     {
@@ -38,52 +41,47 @@ consteval auto generate()
     }
 }
 
-template <typename T, typename Variant, std::size_t I = 0>
-consteval auto index_of()
-{
-    if constexpr (std::same_as<T, std::variant_alternative_t<I, Variant>>)
-    {
-        return I;
-    }
-    else
-    {
-        return index_of<T, Variant, I + 1>();
-    }
-}
-
 template <typename T, typename Named>
-constexpr auto convert(Named &&tuple)
+constexpr auto convert(Named &tuple)
 {
-    constexpr auto size = std::tuple_size_v<decltype(rebind::members<T>)>;
-
     auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
     {
-        return T{std::forward<Named>(tuple).template get<Is + 1>()...};
+        return T{tuple.template get<Is + 1>()...};
     };
 
-    return unpack(std::make_index_sequence<size>());
+    return unpack(std::make_index_sequence<rebind::arity<T>>());
 }
 
-template <typename T>
-struct variants
+template <typename T, typename U>
+struct variant_index;
+
+template <typename T, typename... Ts>
+struct variant_index<T, std::variant<Ts...>>
 {
-    using type = void;
+    static constexpr auto value = std::variant<std::type_identity<Ts>...>{std::type_identity<T>{}}.index();
 };
 
+template <typename T, typename U>
+static constexpr auto variant_index_v = variant_index<T, U>::value;
+
+template <typename T>
+struct mapped_variant;
+
 template <typename... Ts>
-struct variants<std::variant<Ts...>>
+struct mapped_variant<std::variant<Ts...>>
 {
     using type = std::variant<typename decltype(generate<Ts>())::type...>;
 };
+
+template <typename T>
+using mapped_variant_t = mapped_variant<T>::type;
 
 namespace saucer
 {
     std::optional<request::request> request::parse(std::string_view data)
     {
-        using variant       = variants<request>;
-        using named_variant = variant::type;
-
-        auto result = rfl::json::read<named_variant>(data);
+        using variant = mapped_variant_t<request>;
+        auto result   = rfl::json::read<variant>(data);
 
         if (!result)
         {
@@ -92,9 +90,8 @@ namespace saucer
 
         auto visitor = []<typename T>(T &named) -> request
         {
-            constexpr auto index = index_of<T, named_variant>();
-            using mapped         = std::variant_alternative_t<index, request>;
-            return convert<mapped>(named);
+            using original = std::variant_alternative_t<variant_index_v<T, variant>, request>;
+            return convert<original>(named);
         };
 
         return std::visit(visitor, result.value());
