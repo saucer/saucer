@@ -1,5 +1,9 @@
 set(_SAUCER_TEMPLATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/template" CACHE PATH "Template Path" FORCE)
 
+function(embed_message LEVEL MESSAGE)
+    message(${LEVEL} "embed: ${MESSAGE}")
+endfunction()
+
 function(embed_read FILE OUTPUT)
     file(READ "${FILE}" FILE_HEX HEX)
     file(SIZE "${FILE}" FILE_SIZE)
@@ -100,7 +104,7 @@ function(saucer_embed DIRECTORY)
     set(generated_EMBEDDED "")
 
     foreach(path IN LISTS FILES)
-        saucer_message(STATUS "Embedding ${path}")
+        embed_message(STATUS "Embedding ${path}")
 
         cmake_path(HASH path embedded_HASH)
         string(MAKE_C_IDENTIFIER "${embedded_HASH}" embedded_NAME)
@@ -139,7 +143,7 @@ if (NOT CMAKE_SCRIPT_MODE_FILE)
 endif()
 
 if (CMAKE_ARGC LESS 4)
-    saucer_message(FATAL_ERROR "Usage: embed <directory> [destination]")
+    embed_message(FATAL_ERROR "Usage: embed <directory> [destination]")
 endif()
 
 saucer_embed("${CMAKE_ARGV3}" "${CMAKE_ARGV4}")
