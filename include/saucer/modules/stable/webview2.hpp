@@ -40,9 +40,9 @@ namespace saucer
     };
 
     template <>
-    struct stable_natives<uri>
+    struct stable_natives<url>
     {
-        std::wstring *uri;
+        std::wstring *url;
         URL_COMPONENTSW *components;
     };
 

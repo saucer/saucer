@@ -29,7 +29,7 @@ namespace saucer
     }
 
     template <>
-    natives<uri, false> uri::native<false>() const
+    natives<url, false> url::native<false>() const
     {
         return m_impl.get();
     }

@@ -38,9 +38,9 @@ namespace saucer
     };
 
     template <>
-    struct stable_natives<uri>
+    struct stable_natives<url>
     {
-        QUrl uri;
+        QUrl url;
     };
 
     template <>

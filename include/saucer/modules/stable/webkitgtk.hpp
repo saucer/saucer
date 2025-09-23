@@ -36,7 +36,7 @@ namespace saucer
     };
 
     template <>
-    struct stable_natives<uri>
+    struct stable_natives<url>
     {
         GUri *uri;
     };

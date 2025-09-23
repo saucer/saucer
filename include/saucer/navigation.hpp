@@ -1,6 +1,6 @@
 #pragma once
 
-#include "uri.hpp"
+#include "url.hpp"
 
 #include <memory>
 
@@ -20,7 +20,7 @@ namespace saucer
         ~navigation();
 
       public:
-        [[nodiscard]] uri url() const;
+        [[nodiscard]] saucer::url url() const;
 
       public:
         [[nodiscard]] bool new_window() const;

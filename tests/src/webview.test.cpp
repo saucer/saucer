@@ -12,8 +12,8 @@ suite<"webview"> webview_suite = []
 
     "url"_test_async = [](saucer::webview &webview)
     {
-        auto uri = webview.url();
-        webview.on<navigated>([&](auto value) { uri = std::move(value); });
+        auto url = webview.url();
+        webview.on<navigated>([&](auto value) { url = std::move(value); });
 
         std::set<saucer::state> state;
         webview.on<load>([&](auto value) { state.emplace(value); });
@@ -21,21 +21,21 @@ suite<"webview"> webview_suite = []
         bool ready{false};
         webview.on<dom_ready>([&] { ready = true; });
 
-        auto url = saucer::uri::parse("https://codeberg.org/saucer/saucer");
-        expect(url.has_value());
+        auto parsed = saucer::url::parse("https://codeberg.org/saucer/saucer");
+        expect(parsed.has_value());
 
-        webview.set_url(url.value());
-        saucer::tests::wait_for([&] { return uri.has_value() && ready && state.contains(saucer::state::finished); }, duration);
+        webview.set_url(parsed.value());
+        saucer::tests::wait_for([&] { return url.has_value() && ready && state.contains(saucer::state::finished); }, duration);
 
         expect(ready);
-        expect(uri.has_value());
+        expect(url.has_value());
 
         expect(state.contains(saucer::state::started));
         expect(state.contains(saucer::state::finished));
 
-        expect(uri->scheme() == "https");
-        expect(uri->host() == "codeberg.org");
-        expect(uri->path() == "/saucer/saucer");
+        expect(url->scheme() == "https");
+        expect(url->host() == "codeberg.org");
+        expect(url->path() == "/saucer/saucer");
     };
 
     "page_title"_test_async = [](saucer::webview &webview)
@@ -97,16 +97,16 @@ suite<"webview"> webview_suite = []
 
     "execute"_test_async = [](saucer::webview &webview)
     {
-        auto uri = webview.url();
-        webview.on<navigated>([&](auto value) { uri = std::move(value); });
+        auto url = webview.url();
+        webview.on<navigated>([&](auto value) { url = std::move(value); });
 
         webview.set_url("https://github.com");
         webview.execute("location.href = 'https://codeberg.org'");
 
-        saucer::tests::wait_for([&] { return uri.has_value() && uri->host() == "codeberg.org"; }, duration);
+        saucer::tests::wait_for([&] { return url.has_value() && url->host() == "codeberg.org"; }, duration);
 
-        expect(uri.has_value());
-        expect(uri->host() == "codeberg.org");
+        expect(url.has_value());
+        expect(url->host() == "codeberg.org");
         expect(webview.url()->host() == "codeberg.org");
     };
 
@@ -198,7 +198,7 @@ suite<"webview"> webview_suite = []
         auto lazy = [&]()
         {
             called++;
-            return saucer::stash<>::view(page);
+            return saucer::stash<>::view_str(page);
         };
 
         webview.embed({{"/embed.html", saucer::embedded_file{
@@ -271,13 +271,13 @@ suite<"webview"> webview_suite = []
                            expect(req.url().path() == "/test.html");
 
                            return saucer::scheme::response{
-                               .data   = saucer::stash<>::view(page),
+                               .data   = saucer::stash<>::view_str(page),
                                .mime   = "text/html",
                                .status = 200,
                            };
                        });
 
-        webview.set_url(saucer::uri::make({.scheme = "test", .host = "host", .path = "/test.html"}));
+        webview.set_url(saucer::url::make({.scheme = "test", .host = "host", .path = "/test.html"}));
         saucer::tests::wait_for([&] { return scheme; }, duration);
 
         expect(scheme);

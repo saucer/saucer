@@ -10,11 +10,11 @@ namespace saucer::scheme
 
     request::~request() = default;
 
-    uri request::url() const
+    url request::url() const
     {
         utils::string_handle raw;
         m_impl->request->get_Uri(&raw.reset());
-        return uri::parse(utils::narrow(raw.get())).value_or({});
+        return saucer::url::parse(utils::narrow(raw.get())).value_or({});
     }
 
     std::string request::method() const

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <saucer/uri.hpp>
+#include <saucer/url.hpp>
 
 #include "cocoa.utils.hpp"
 
@@ -8,7 +8,7 @@
 
 namespace saucer
 {
-    struct uri::impl
+    struct url::impl
     {
         utils::objc_ptr<NSURL> url;
     };

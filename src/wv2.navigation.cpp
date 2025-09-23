@@ -9,7 +9,7 @@ namespace saucer
 
     navigation::~navigation() = default;
 
-    uri navigation::url() const
+    url navigation::url() const
     {
         utils::string_handle raw;
 
@@ -19,16 +19,13 @@ namespace saucer
         };
         std::visit(visitor, m_impl->request);
 
-        return uri::parse(utils::narrow(raw.get())).value_or({});
+        return url::parse(utils::narrow(raw.get())).value_or({});
     }
 
     bool navigation::new_window() const
     {
         auto visitor = overload{[](ICoreWebView2NewWindowRequestedEventArgs *) { return true; },
-                                [](ICoreWebView2NavigationStartingEventArgs *)
-                                {
-                                    return false;
-                                }};
+                                [](ICoreWebView2NavigationStartingEventArgs *) { return false; }};
 
         return std::visit(visitor, m_impl->request);
     }

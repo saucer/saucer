@@ -6,13 +6,13 @@ namespace saucer
 
     navigation::~navigation() = default;
 
-    uri navigation::url() const
+    url navigation::url() const
     {
         auto *const action  = webkit_navigation_policy_decision_get_navigation_action(m_impl->decision);
         auto *const request = webkit_navigation_action_get_request(action);
-        const auto *url     = webkit_uri_request_get_uri(request);
+        const auto *uri     = webkit_uri_request_get_uri(request);
 
-        return uri::parse(url).value_or({});
+        return saucer::url::parse(uri).value_or({});
     }
 
     bool navigation::redirection() const

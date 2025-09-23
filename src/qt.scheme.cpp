@@ -1,6 +1,6 @@
 #include "qt.scheme.impl.hpp"
 
-#include "qt.uri.impl.hpp"
+#include "qt.url.impl.hpp"
 
 #include <ranges>
 
@@ -16,10 +16,10 @@ namespace saucer::scheme
 
     request::~request() = default;
 
-    uri request::url() const
+    url request::url() const
     {
         const auto request = m_impl->request->write();
-        return uri::impl{request.value()->requestUrl()};
+        return saucer::url::impl{request.value()->requestUrl()};
     }
 
     std::string request::method() const

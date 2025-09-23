@@ -12,7 +12,7 @@ static constexpr std::string_view demo = R"html(
         <ul>
             <li>pick_folder(opts?)</li>
             <li>pick_file(opts?)</li>
-            <li>open(uri: string)</li>
+            <li>open(url: string)</li>
             <li>mouse_position()</li>
         </ul>
         <p>You can use the Dev-Tools to call them!</p>
@@ -36,7 +36,7 @@ coco::stray start(saucer::application *app)
     webview->expose("pick_file", [&](saucer::modules::picker::options opts)
                     { return desktop.pick<type::file>(std::move(opts)).transform_error(&saucer::error::message); });
 
-    webview->expose("open", [&](const std::string &uri) { desktop.open(uri); });
+    webview->expose("open", [&](const std::string &url) { desktop.open(url); });
     webview->expose("mouse_position", [&] { return desktop.mouse_position(); });
 
     webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});

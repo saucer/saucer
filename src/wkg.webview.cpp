@@ -102,16 +102,16 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<uri> impl::url() const
+    result<url> impl::url() const
     {
-        const auto *url = webkit_web_view_get_uri(platform->web_view);
+        const auto *uri = webkit_web_view_get_uri(platform->web_view);
 
-        if (!url)
+        if (!uri)
         {
             return err(std::errc::not_connected);
         }
 
-        return uri::parse(url);
+        return saucer::url::parse(uri);
     }
 
     icon impl::favicon() const
@@ -179,7 +179,7 @@ namespace saucer
         };
     }
 
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    void impl::set_url(const saucer::url &url) // NOLINT(*-function-const)
     {
         webkit_web_view_load_uri(platform->web_view, url.string().c_str());
     }

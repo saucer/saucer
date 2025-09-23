@@ -9,7 +9,7 @@ namespace saucer::permission
         accept(false);
     }
 
-    uri request::url() const
+    url request::url() const
     {
         return m_impl->url;
     }

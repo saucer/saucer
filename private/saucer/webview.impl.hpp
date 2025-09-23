@@ -36,14 +36,14 @@ namespace saucer
         void setup();
 
       public:
-        void handle_scheme(const std::string &, scheme::resolver &&);
+        void handle(const std::string &, scheme::resolver &&);
 
       public:
         void reject(std::size_t, std::string_view);
         void resolve(std::size_t, std::string_view);
 
       public:
-        [[nodiscard]] result<uri> url() const;
+        [[nodiscard]] result<saucer::url> url() const;
 
       public:
         [[nodiscard]] icon favicon() const;
@@ -61,7 +61,7 @@ namespace saucer
         [[nodiscard]] saucer::bounds bounds() const;
 
       public:
-        void set_url(const uri &);
+        void set_url(const saucer::url &);
 
       public:
         void set_dev_tools(bool);

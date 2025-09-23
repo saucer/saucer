@@ -13,7 +13,7 @@ namespace saucer
 {
     namespace fs = std::filesystem;
 
-    struct uri
+    struct url
     {
         struct impl;
         struct options;
@@ -22,23 +22,23 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       public:
-        uri();
-        uri(impl);
+        url();
+        url(impl);
 
       public:
-        uri(const uri &);
-        uri(uri &&) noexcept;
+        url(const url &);
+        url(url &&) noexcept;
 
       public:
-        ~uri();
+        ~url();
 
       public:
-        uri &operator=(uri) noexcept;
-        friend void swap(uri &, uri &) noexcept;
+        url &operator=(url) noexcept;
+        friend void swap(url &, url &) noexcept;
 
       public:
         template <bool Stable = true>
-        [[nodiscard]] natives<uri, Stable> native() const;
+        [[nodiscard]] natives<url, Stable> native() const;
 
       public:
         [[nodiscard]] std::string string() const;
@@ -56,14 +56,14 @@ namespace saucer
         [[nodiscard]] std::optional<std::string> password() const;
 
       public:
-        static result<uri> from(const fs::path &file);
-        static result<uri> parse(const std::string &input);
+        static result<url> from(const fs::path &file);
+        static result<url> parse(const std::string &input);
 
       public:
-        static uri make(const options &);
+        static url make(const options &);
     }; // namespace std::filesystem
 
-    struct saucer::uri::options
+    struct saucer::url::options
     {
         std::string scheme;
 

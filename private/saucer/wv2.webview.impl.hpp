@@ -45,7 +45,7 @@ namespace saucer
         ComPtr<ICoreWebView2WebResourceRequest> request;
 
       public:
-        uri url;
+        saucer::url url;
     };
 
     struct wv2_script : script

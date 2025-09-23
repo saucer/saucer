@@ -1,42 +1,42 @@
-#include "wk.uri.impl.hpp"
+#include "wk.url.impl.hpp"
 
 #include "error.impl.hpp"
 #include "cocoa.utils.hpp"
 
 namespace saucer
 {
-    uri::uri() : m_impl(std::move(make({}).m_impl)) {}
+    url::url() : m_impl(std::move(make({}).m_impl)) {}
 
-    uri::uri(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
+    url::url.impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    uri::uri(const uri &other) : uri(*other.m_impl) {}
+    url::url(const url const url &other) : url(*other.m_impl) {}
 
-    uri::uri(uri &&other) noexcept : uri()
+    url::url(url &&other) noexcept : url()
     {
         swap(*this, other);
     }
 
-    uri::~uri() = default;
+    url::~url() = default;
 
-    uri &uri::operator=(uri other) noexcept
+    url &url::operator=(url other) noexcept
     {
         swap(*this, other);
         return *this;
     }
 
-    void swap(uri &first, uri &second) noexcept
+    void swap(url &first, url &second) noexcept
     {
         using std::swap;
         swap(first.m_impl, second.m_impl);
     }
 
-    std::string uri::string() const
+    std::string url::string() const
     {
         const utils::autorelease_guard guard{};
         return m_impl->url.get().absoluteString.UTF8String;
     }
 
-    fs::path uri::path() const
+    fs::path url::path() const
     {
         const utils::autorelease_guard guard{};
         const auto *rtn = m_impl->url.get().path;
@@ -49,7 +49,7 @@ namespace saucer
         return rtn.UTF8String;
     }
 
-    std::string uri::scheme() const
+    std::string url::scheme() const
     {
         const utils::autorelease_guard guard{};
         const auto *rtn = m_impl->url.get().scheme;
@@ -62,7 +62,7 @@ namespace saucer
         return rtn.UTF8String;
     }
 
-    std::optional<std::string> uri::host() const
+    std::optional<std::string> url::host() const
     {
         const utils::autorelease_guard guard{};
         const auto *rtn = m_impl->url.get().host;
@@ -75,7 +75,7 @@ namespace saucer
         return rtn.UTF8String;
     }
 
-    std::optional<std::size_t> uri::port() const
+    std::optional<std::size_t> url::port() const
     {
         const utils::autorelease_guard guard{};
         const auto *rtn = m_impl->url.get().port;
@@ -88,7 +88,7 @@ namespace saucer
         return rtn.unsignedLongValue;
     }
 
-    std::optional<std::string> uri::user() const
+    std::optional<std::string> url::user() const
     {
         const utils::autorelease_guard guard{};
         const auto *rtn = m_impl->url.get().user;
@@ -101,7 +101,7 @@ namespace saucer
         return rtn.UTF8String;
     }
 
-    std::optional<std::string> uri::password() const
+    std::optional<std::string> url::password() const
     {
         const utils::autorelease_guard guard{};
         const auto *rtn = m_impl->url.get().password;
@@ -114,7 +114,7 @@ namespace saucer
         return rtn.UTF8String;
     }
 
-    result<uri> uri::from(const fs::path &file)
+    result<url> url::from(const fs::path &file)
     {
         const utils::autorelease_guard guard{};
         auto *const rtn = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file.c_str()]];
@@ -127,7 +127,7 @@ namespace saucer
         return impl{utils::objc_ptr<NSURL>::ref(rtn)};
     }
 
-    result<uri> uri::parse(const std::string &input)
+    result<url> url::parse(const std::string &input)
     {
         const utils::autorelease_guard guard{};
         auto *const rtn = [NSURL URLWithString:[NSString stringWithUTF8String:input.c_str()]];
@@ -140,7 +140,7 @@ namespace saucer
         return impl{utils::objc_ptr<NSURL>::ref(rtn)};
     }
 
-    uri uri::make(const options &opts)
+    url url::make(const options &opts)
     {
         const utils::autorelease_guard guard{};
         auto *const rtn = [[[NSURLComponents alloc] init] autorelease];

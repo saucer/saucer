@@ -13,7 +13,7 @@ namespace saucer::permission
         utils::g_object_ptr<WebKitPermissionRequest> request;
 
       public:
-        uri url;
+        saucer::url url;
         permission::type type;
     };
 } // namespace saucer::permission

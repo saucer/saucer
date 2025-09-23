@@ -5,7 +5,7 @@
 #include "scripts.hpp"
 #include "instantiate.hpp"
 
-#include "qt.uri.impl.hpp"
+#include "qt.url.impl.hpp"
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
 
@@ -156,16 +156,16 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<uri> impl::url() const
+    result<saucer::url> impl::url() const
     {
-        auto url = platform->web_view->url();
+        auto rtn = platform->web_view->url();
 
-        if (!url.isValid())
+        if (!rtn.isValid())
         {
             return err(std::errc::not_connected);
         }
 
-        return uri::impl{url};
+        return saucer::url::impl{rtn};
     }
 
     icon impl::favicon() const
@@ -216,9 +216,9 @@ namespace saucer
         return {.x = geometry.x(), .y = geometry.y(), .w = geometry.width(), .h = geometry.height()};
     }
 
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    void impl::set_url(const saucer::url &url) // NOLINT(*-function-const)
     {
-        platform->web_view->setUrl(url.native<false>()->uri);
+        platform->web_view->setUrl(url.native<false>()->url);
     }
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)

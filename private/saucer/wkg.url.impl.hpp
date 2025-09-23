@@ -1,6 +1,6 @@
 #pragma once
 
-#include <saucer/uri.hpp>
+#include <saucer/url.hpp>
 
 #include "ref_obj.hpp"
 
@@ -8,7 +8,7 @@
 
 namespace saucer
 {
-    struct uri::impl
+    struct url::impl
     {
         utils::ref_ptr<GUri, g_uri_ref, g_uri_unref> uri;
     };

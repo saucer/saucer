@@ -1,6 +1,6 @@
 #include "qt.permission.impl.hpp"
 
-#include "qt.uri.impl.hpp"
+#include "qt.url.impl.hpp"
 
 #include <flagpp/flags.hpp>
 
@@ -16,9 +16,9 @@ namespace saucer::permission
         accept(false);
     }
 
-    uri request::url() const
+    url request::url() const
     {
-        return uri::impl{m_impl->origin};
+        return saucer::url::impl{m_impl->origin};
     }
 
     permission::type request::type() const

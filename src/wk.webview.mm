@@ -5,7 +5,7 @@
 #include "scripts.hpp"
 #include "instantiate.hpp"
 
-#include "wk.uri.impl.hpp"
+#include "wk.url.impl.hpp"
 #include "cocoa.app.impl.hpp"
 #include "cocoa.window.impl.hpp"
 
@@ -95,17 +95,17 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<uri> impl::url() const
+    result<url> impl::url() const
     {
         const auto guard = utils::autorelease_guard{};
-        auto *const url  = platform->web_view.get().URL;
+        auto *const raw  = platform->web_view.get().URL;
 
-        if (!url)
+        if (!raw)
         {
             return err(std::errc::not_connected);
         }
 
-        return uri::impl{[url copy]};
+        return saucer::url::impl{[raw copy]};
     }
 
     icon impl::favicon() const // NOLINT(*-static)
@@ -170,7 +170,7 @@ namespace saucer
         };
     }
 
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    void impl::set_url(const saucer::url &url) // NOLINT(*-function-const)
     {
         const auto guard = utils::autorelease_guard{};
         auto *const raw  = url.native<false>()->url.get();

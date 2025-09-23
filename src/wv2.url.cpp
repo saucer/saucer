@@ -1,4 +1,4 @@
-#include "wv2.uri.impl.hpp"
+#include "wv2.url.impl.hpp"
 
 #include "win32.utils.hpp"
 #include "win32.error.hpp"
@@ -9,47 +9,47 @@
 
 namespace saucer
 {
-    uri::uri() : m_impl(std::move(make({}).m_impl)) {}
+    url::url() : m_impl(std::move(make({}).m_impl)) {}
 
-    uri::uri(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
+    url::url.impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    uri::uri(const uri &other) : m_impl(std::move(parse(other.string())->m_impl)) {}
+    url::url(const url const url &other) : m_impl(std::move(parse(other.string())->m_impl)) {}
 
-    uri::uri(uri &&other) noexcept : uri()
+    url::url(url &&other) noexcept : url()
     {
         swap(*this, other);
     }
 
-    uri::~uri() = default;
+    url::~url() = default;
 
-    uri &uri::operator=(uri other) noexcept
+    url &url::operator=(url other) noexcept
     {
         swap(*this, other);
         return *this;
     }
 
-    void swap(uri &first, uri &second) noexcept
+    void swap(url &first, url &second) noexcept
     {
         using std::swap;
         swap(first.m_impl, second.m_impl);
     }
 
-    std::string uri::string() const
+    std::string url::string() const
     {
         return utils::narrow(m_impl->url);
     }
 
-    fs::path uri::path() const
+    fs::path url::path() const
     {
         return utils::narrow({m_impl->components.lpszUrlPath, m_impl->components.dwUrlPathLength});
     }
 
-    std::string uri::scheme() const
+    std::string url::scheme() const
     {
         return utils::narrow({m_impl->components.lpszScheme, m_impl->components.dwSchemeLength});
     }
 
-    std::optional<std::string> uri::host() const
+    std::optional<std::string> url::host() const
     {
         const auto *rtn = m_impl->components.lpszHostName;
 
@@ -61,12 +61,12 @@ namespace saucer
         return utils::narrow({rtn, m_impl->components.dwHostNameLength});
     }
 
-    std::optional<std::size_t> uri::port() const
+    std::optional<std::size_t> url::port() const
     {
         return static_cast<std::size_t>(m_impl->components.nPort);
     }
 
-    std::optional<std::string> uri::user() const
+    std::optional<std::string> url::user() const
     {
         const auto *rtn = m_impl->components.lpszUserName;
 
@@ -78,7 +78,7 @@ namespace saucer
         return utils::narrow({rtn, m_impl->components.dwUserNameLength});
     }
 
-    std::optional<std::string> uri::password() const
+    std::optional<std::string> url::password() const
     {
         const auto *rtn = m_impl->components.lpszPassword;
 
@@ -90,7 +90,7 @@ namespace saucer
         return utils::narrow({rtn, m_impl->components.dwPasswordLength});
     }
 
-    result<uri> uri::from(const fs::path &file)
+    result<url> url::from(const fs::path &file)
     {
         std::wstring rtn{};
         DWORD len{INTERNET_MAX_URL_LENGTH};
@@ -105,7 +105,7 @@ namespace saucer
         return parse(utils::narrow(rtn));
     }
 
-    result<uri> uri::parse(const std::string &input)
+    result<url> url::parse(const std::string &input)
     {
         auto wide = utils::widen(input);
 
@@ -126,7 +126,7 @@ namespace saucer
         return impl{.url = std::move(wide), .components = components};
     }
 
-    uri uri::make(const options &opts)
+    url url::make(const options &opts)
     {
         auto components = URL_COMPONENTSW{.dwStructSize = sizeof(URL_COMPONENTSW)};
 
@@ -152,23 +152,23 @@ namespace saucer
             components.nPort = opts.port.value();
         }
 
-        std::wstring url{};
+        std::wstring raw{};
         DWORD len{0};
 
-        InternetCreateUrlW(&components, 0, url.data(), &len);
-        url.resize(len + 1);
+        InternetCreateUrlW(&components, 0, raw.data(), &len);
+        raw.resize(len + 1);
 
-        if (InternetCreateUrlW(&components, 0, url.data(), &len) != TRUE)
+        if (InternetCreateUrlW(&components, 0, raw.data(), &len) != TRUE)
         {
             assert(false);
         }
 
-        auto parsed = parse(utils::narrow(url));
+        auto parsed = parse(utils::narrow(raw));
 
         if (!parsed.has_value())
         {
             assert(false);
-            return impl{.url = std::move(url)};
+            return impl{.url = std::move(raw)};
         }
 
         return parsed.value();

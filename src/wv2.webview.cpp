@@ -201,16 +201,16 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<uri> impl::url() const
+    result<url> impl::url() const
     {
-        utils::string_handle url;
+        utils::string_handle rtn;
 
-        if (auto status = platform->web_view->get_Source(&url.reset()); !SUCCEEDED(status))
+        if (auto status = platform->web_view->get_Source(&rtn.reset()); !SUCCEEDED(status))
         {
             return err(status);
         }
 
-        return uri::parse(utils::narrow(url.get()));
+        return saucer::url::parse(utils::narrow(rtn.get()));
     }
 
     icon impl::favicon() const
@@ -281,7 +281,7 @@ namespace saucer
         return platform->bounds.value_or({});
     }
 
-    void impl::set_url(const uri &url) // NOLINT(*-function-const)
+    void impl::set_url(const saucer::url &url) // NOLINT(*-function-const)
     {
         platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }

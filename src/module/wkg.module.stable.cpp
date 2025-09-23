@@ -4,7 +4,7 @@
 #include "gtk.icon.impl.hpp"
 #include "gtk.window.impl.hpp"
 
-#include "wkg.uri.impl.hpp"
+#include "wkg.url.impl.hpp"
 #include "wkg.webview.impl.hpp"
 #include "wkg.permission.impl.hpp"
 
@@ -35,7 +35,7 @@ namespace saucer
     }
 
     template <>
-    natives<uri, true> uri::native<true>() const
+    natives<url, true> url::native<true>() const
     {
         return {.uri = m_impl->uri.get()};
     }

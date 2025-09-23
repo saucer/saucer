@@ -1,6 +1,6 @@
 #include "wk.permission.impl.hpp"
 
-#include "wk.uri.impl.hpp"
+#include "wk.url.impl.hpp"
 
 #include <flagpp/flags.hpp>
 
@@ -16,10 +16,10 @@ namespace saucer::permission
         accept(false);
     }
 
-    uri request::url() const
+    url request::url() const
     {
         const utils::autorelease_guard guard{};
-        return uri::impl{[m_impl->frame.get().webView.URL copy]};
+        return saucer::url::impl{[m_impl->frame.get().webView.URL copy]};
     }
 
     permission::type request::type() const

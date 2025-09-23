@@ -1,51 +1,51 @@
-#include "wkg.uri.impl.hpp"
+#include "wkg.url.impl.hpp"
 
 #include "gtk.utils.hpp"
 #include "gtk.error.hpp"
 
 namespace saucer
 {
-    uri::uri() : m_impl(std::move(make({}).m_impl)) {}
+    url::url() : m_impl(std::move(make({}).m_impl)) {}
 
-    uri::uri(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
+    url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    uri::uri(const uri &other) : uri(*other.m_impl) {}
+    url::url(const url &other) : url(*other.m_impl) {}
 
-    uri::uri(uri &&other) noexcept : uri()
+    url::url(url &&other) noexcept : url()
     {
         swap(*this, other);
     }
 
-    uri::~uri() = default;
+    url::~url() = default;
 
-    uri &uri::operator=(uri other) noexcept
+    url &url::operator=(url other) noexcept
     {
         swap(*this, other);
         return *this;
     }
 
-    void swap(uri &first, uri &second) noexcept
+    void swap(url &first, url &second) noexcept
     {
         using std::swap;
         swap(first.m_impl, second.m_impl);
     }
 
-    std::string uri::string() const
+    std::string url::string() const
     {
         return std::string{utils::g_str_ptr{g_uri_to_string(m_impl->uri.get())}.get()};
     }
 
-    fs::path uri::path() const
+    fs::path url::path() const
     {
         return g_uri_get_path(m_impl->uri.get());
     }
 
-    std::string uri::scheme() const
+    std::string url::scheme() const
     {
         return g_uri_get_scheme(m_impl->uri.get());
     }
 
-    std::optional<std::string> uri::host() const
+    std::optional<std::string> url::host() const
     {
         const auto *rtn = g_uri_get_host(m_impl->uri.get());
 
@@ -57,7 +57,7 @@ namespace saucer
         return rtn;
     }
 
-    std::optional<std::size_t> uri::port() const
+    std::optional<std::size_t> url::port() const
     {
         const auto rtn = g_uri_get_port(m_impl->uri.get());
 
@@ -69,7 +69,7 @@ namespace saucer
         return static_cast<std::size_t>(rtn);
     }
 
-    std::optional<std::string> uri::user() const
+    std::optional<std::string> url::user() const
     {
         const auto *rtn = g_uri_get_user(m_impl->uri.get());
 
@@ -81,7 +81,7 @@ namespace saucer
         return rtn;
     }
 
-    std::optional<std::string> uri::password() const
+    std::optional<std::string> url::password() const
     {
         const auto *rtn = g_uri_get_password(m_impl->uri.get());
 
@@ -93,7 +93,7 @@ namespace saucer
         return rtn;
     }
 
-    result<uri> uri::from(const fs::path &file)
+    result<url> url::from(const fs::path &file)
     {
         auto ec   = std::error_code{};
         auto path = fs::canonical(file, ec);
@@ -114,7 +114,7 @@ namespace saucer
         return parse(rtn);
     }
 
-    result<uri> uri::parse(const std::string &input)
+    result<url> url::parse(const std::string &input)
     {
         auto error      = utils::g_error_ptr{};
         auto *const rtn = g_uri_parse(input.c_str(), G_URI_FLAGS_NONE, &error.reset());
@@ -127,7 +127,7 @@ namespace saucer
         return impl{rtn};
     }
 
-    uri uri::make(const options &opts)
+    url url::make(const options &opts)
     {
         return impl{
             g_uri_build(G_URI_FLAGS_NONE,                                                               //

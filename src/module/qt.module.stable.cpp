@@ -4,7 +4,7 @@
 #include "qt.icon.impl.hpp"
 #include "qt.window.impl.hpp"
 
-#include "qt.uri.impl.hpp"
+#include "qt.url.impl.hpp"
 #include "qt.webview.impl.hpp"
 #include "qt.permission.impl.hpp"
 
@@ -39,9 +39,9 @@ namespace saucer
     }
 
     template <>
-    natives<uri, true> uri::native<true>() const
+    natives<url, true> url::native<true>() const
     {
-        return {.uri = m_impl->uri};
+        return {.url = m_impl->url};
     }
 
     template <>

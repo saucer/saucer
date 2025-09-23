@@ -292,7 +292,7 @@ namespace saucer
             return status;
         }
 
-        auto url = uri::parse(utils::narrow(raw.get()));
+        auto url = saucer::url::parse(utils::narrow(raw.get()));
 
         if (!url)
         {

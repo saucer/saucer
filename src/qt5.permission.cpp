@@ -6,7 +6,7 @@ namespace saucer::permission
 
     request::~request() = default;
 
-    uri request::url() const // NOLINT(*-static)
+    url request::url() const // NOLINT(*-static)
     {
         return {};
     }

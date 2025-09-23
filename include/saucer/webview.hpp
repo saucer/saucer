@@ -7,7 +7,7 @@
 
 #include "stash/stash.hpp"
 
-#include "uri.hpp"
+#include "url.hpp"
 #include "icon.hpp"
 #include "script.hpp"
 #include "permission.hpp"
@@ -91,10 +91,10 @@ namespace saucer
             ereignis::event<event::permission, status(const std::shared_ptr<permission::request> &)>, //
             ereignis::event<event::fullscreen, policy(bool)>,                                         //
             ereignis::event<event::dom_ready, void()>,                                                //
-            ereignis::event<event::navigated, void(const uri &)>,                                     //
+            ereignis::event<event::navigated, void(const saucer::url &)>,                             //
             ereignis::event<event::navigate, policy(const navigation &)>,                             //
             ereignis::event<event::message, status(std::string_view)>,                                //
-            ereignis::event<event::request, void(const uri &)>,                                       //
+            ereignis::event<event::request, void(const saucer::url &)>,                               //
             ereignis::event<event::favicon, void(const icon &)>,                                      //
             ereignis::event<event::title, void(std::string_view)>,                                    //
             ereignis::event<event::load, void(const state &)>                                         //
@@ -131,7 +131,7 @@ namespace saucer
         [[nodiscard]] window &parent() const;
 
       public:
-        [[sc::thread_safe]] [[nodiscard]] result<uri> url() const;
+        [[sc::thread_safe]] [[nodiscard]] result<saucer::url> url() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;
@@ -149,7 +149,7 @@ namespace saucer
         [[sc::thread_safe]] [[nodiscard]] saucer::bounds bounds() const;
 
       public:
-        [[sc::thread_safe]] void set_url(const uri &);
+        [[sc::thread_safe]] void set_url(const saucer::url &);
         [[sc::thread_safe]] void set_url(const std::string &);
 
       public:

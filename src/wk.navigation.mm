@@ -1,6 +1,6 @@
 #include "wk.navigation.impl.hpp"
 
-#include "wk.uri.impl.hpp"
+#include "wk.url.impl.hpp"
 
 namespace saucer
 {
@@ -8,9 +8,9 @@ namespace saucer
 
     navigation::~navigation() = default;
 
-    uri navigation::url() const
+    url navigation::url() const
     {
-        return uri::impl{[m_impl->action.get().request.URL copy]};
+        return saucer::url::impl{[m_impl->action.get().request.URL copy]};
     }
 
     bool navigation::redirection() const

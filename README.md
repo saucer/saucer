@@ -147,7 +147,7 @@ coco::stray start(saucer::application *app)
         co_return a + b + co_await webview->evaluate<double>("Math.random()"); 
     });
 
-    auto index = saucer::uri::from("index.html");
+    auto index = saucer::url::from("index.html");
 
     if (!index.has_value())
     {

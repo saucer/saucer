@@ -1,13 +1,13 @@
 #pragma once
 
-#include <saucer/uri.hpp>
+#include <saucer/url.hpp>
 
 #include <QUrl>
 
 namespace saucer
 {
-    struct uri::impl
+    struct url::impl
     {
-        QUrl uri;
+        QUrl url;
     };
 } // namespace saucer

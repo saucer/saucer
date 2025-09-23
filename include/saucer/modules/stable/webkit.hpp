@@ -37,7 +37,7 @@ namespace saucer
     };
 
     template <>
-    struct stable_natives<uri>
+    struct stable_natives<url>
     {
         NSURL *url;
     };

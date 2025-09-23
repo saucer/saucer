@@ -1,6 +1,6 @@
 #include "wk.scheme.impl.hpp"
 
-#include "wk.uri.impl.hpp"
+#include "wk.url.impl.hpp"
 
 namespace saucer::scheme
 {
@@ -10,9 +10,9 @@ namespace saucer::scheme
 
     request::~request() = default;
 
-    uri request::url() const
+    url request::url() const
     {
-        return uri::impl{[m_impl->task.get().request.URL copy]};
+        return saucer::url::impl{[m_impl->task.get().request.URL copy]};
     }
 
     std::string request::method() const

@@ -1,52 +1,52 @@
-#include "qt.uri.impl.hpp"
+#include "qt.url.impl.hpp"
 
 #include "qt.error.hpp"
 
 namespace saucer
 {
-    uri::uri() : m_impl(std::make_unique<impl>()) {}
+    url::url() : m_impl(std::make_unique<impl>()) {}
 
-    uri::uri(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
+    url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    uri::uri(const uri &other) : uri(*other.m_impl) {}
+    url::url(const url &other) : url(*other.m_impl) {}
 
-    uri::uri(uri &&other) noexcept : uri()
+    url::url(url &&other) noexcept : url()
     {
         swap(*this, other);
     }
 
-    uri::~uri() = default;
+    url::~url() = default;
 
-    uri &uri::operator=(uri other) noexcept
+    url &url::operator=(url other) noexcept
     {
         swap(*this, other);
         return *this;
     }
 
-    void swap(uri &first, uri &second) noexcept
+    void swap(url &first, url &second) noexcept
     {
         using std::swap;
         swap(first.m_impl, second.m_impl);
     }
 
-    std::string uri::string() const
+    std::string url::string() const
     {
-        return m_impl->uri.toString().toStdString();
+        return m_impl->url.toString().toStdString();
     }
 
-    fs::path uri::path() const
+    fs::path url::path() const
     {
-        return m_impl->uri.path().toStdString();
+        return m_impl->url.path().toStdString();
     }
 
-    std::string uri::scheme() const
+    std::string url::scheme() const
     {
-        return m_impl->uri.scheme().toStdString();
+        return m_impl->url.scheme().toStdString();
     }
 
-    std::optional<std::string> uri::host() const
+    std::optional<std::string> url::host() const
     {
-        auto rtn = m_impl->uri.host();
+        auto rtn = m_impl->url.host();
 
         if (rtn.isEmpty())
         {
@@ -56,9 +56,9 @@ namespace saucer
         return rtn.toStdString();
     }
 
-    std::optional<std::size_t> uri::port() const
+    std::optional<std::size_t> url::port() const
     {
-        auto rtn = m_impl->uri.port();
+        auto rtn = m_impl->url.port();
 
         if (rtn == -1)
         {
@@ -68,9 +68,9 @@ namespace saucer
         return static_cast<std::size_t>(rtn);
     }
 
-    std::optional<std::string> uri::user() const
+    std::optional<std::string> url::user() const
     {
-        auto rtn = m_impl->uri.userName();
+        auto rtn = m_impl->url.userName();
 
         if (rtn.isEmpty())
         {
@@ -80,9 +80,9 @@ namespace saucer
         return rtn.toStdString();
     }
 
-    std::optional<std::string> uri::password() const
+    std::optional<std::string> url::password() const
     {
-        auto rtn = m_impl->uri.password();
+        auto rtn = m_impl->url.password();
 
         if (rtn.isEmpty())
         {
@@ -92,7 +92,7 @@ namespace saucer
         return rtn.toStdString();
     }
 
-    result<uri> uri::from(const fs::path &file)
+    result<url> url::from(const fs::path &file)
     {
         auto rtn = QUrl::fromLocalFile(QString::fromStdString(file.string()));
 
@@ -104,7 +104,7 @@ namespace saucer
         return impl{rtn};
     }
 
-    result<uri> uri::parse(const std::string &input)
+    result<url> url::parse(const std::string &input)
     {
         auto rtn = QUrl::fromUserInput(QString::fromStdString(input));
 
@@ -116,7 +116,7 @@ namespace saucer
         return impl{rtn};
     }
 
-    uri uri::make(const options &opts)
+    url url::make(const options &opts)
     {
         auto rtn = QUrl{};
 

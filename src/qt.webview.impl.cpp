@@ -1,6 +1,6 @@
 #include "qt.webview.impl.hpp"
 
-#include "qt.uri.impl.hpp"
+#include "qt.url.impl.hpp"
 #include "qt.icon.impl.hpp"
 
 #include "qt.navigation.impl.hpp"
@@ -43,7 +43,7 @@ namespace saucer
 
     void request_interceptor::interceptRequest(QWebEngineUrlRequestInfo &request)
     {
-        impl->events.get<event::request>().fire(uri::impl{request.requestUrl()});
+        impl->events.get<event::request>().fire(url::impl{request.requestUrl()});
     }
 
     template <>
@@ -107,7 +107,7 @@ namespace saucer
                 return;
             }
 
-            self->events.get<event::navigated>().fire(uri::impl{url});
+            self->events.get<event::navigated>().fire(url::impl{url});
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::urlChanged, handler);

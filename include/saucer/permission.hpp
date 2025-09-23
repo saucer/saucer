@@ -1,7 +1,7 @@
 #pragma once
 
 #include "modules/module.hpp"
-#include "uri.hpp"
+#include "url.hpp"
 
 #include <memory>
 #include <cstdint>
@@ -39,7 +39,7 @@ namespace saucer::permission
         [[nodiscard]] natives<request, Stable> native() const;
 
       public:
-        [[nodiscard]] uri url() const;
+        [[nodiscard]] saucer::url url() const;
         [[nodiscard]] permission::type type() const;
 
       public:

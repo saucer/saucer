@@ -1,13 +1,13 @@
 #pragma once
 
-#include <saucer/uri.hpp>
+#include <saucer/url.hpp>
 
 #include <windows.h>
 #include <wininet.h>
 
 namespace saucer
 {
-    struct uri::impl
+    struct url::impl
     {
         std::wstring url;
         URL_COMPONENTSW components;

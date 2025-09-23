@@ -4,7 +4,7 @@
 #include "cocoa.icon.impl.hpp"
 #include "cocoa.window.impl.hpp"
 
-#include "wk.uri.impl.hpp"
+#include "wk.url.impl.hpp"
 #include "wk.webview.impl.hpp"
 #include "wk.permission.impl.hpp"
 
@@ -35,7 +35,7 @@ namespace saucer
     }
 
     template <>
-    natives<uri, true> uri::native<true>() const
+    natives<url, true> url::native<true>() const
     {
         return {.url = m_impl->url.get()};
     }

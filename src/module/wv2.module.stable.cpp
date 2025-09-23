@@ -4,7 +4,7 @@
 #include "win32.icon.impl.hpp"
 #include "win32.window.impl.hpp"
 
-#include "wv2.uri.impl.hpp"
+#include "wv2.url.impl.hpp"
 #include "wv2.webview.impl.hpp"
 #include "wv2.permission.impl.hpp"
 
@@ -35,9 +35,9 @@ namespace saucer
     }
 
     template <>
-    natives<uri, true> uri::native<true>() const
+    natives<url, true> url::native<true>() const
     {
-        return {.uri = &m_impl->url, .components = &m_impl->components};
+        return {.url = &m_impl->url, .components = &m_impl->components};
     }
 
     template <>
