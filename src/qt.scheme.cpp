@@ -66,7 +66,7 @@ namespace saucer::scheme
 #ifdef SAUCER_QT6
         auto *const body = raw->requestBody();
 
-        if (raw->requestBody())
+        if (body && body->open(QIODevice::OpenModeFlag::ReadOnly))
         {
             content = body->readAll();
         }
