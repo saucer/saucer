@@ -6,10 +6,10 @@
 namespace saucer
 {
     template <typename T>
-    void webview::handle_scheme(const std::string &name, T &&handler)
+    void webview::handle(const std::string &name, T &&handler)
     {
         using transformer = traits::transformer<T, std::tuple<scheme::request>, scheme::executor>;
-        handle_scheme(name, scheme::resolver{transformer::transform(std::forward<T>(handler))});
+        handle(name, scheme::resolver{transformer::transform(std::forward<T>(handler))});
     }
 
     template <webview::event Event>

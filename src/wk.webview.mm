@@ -340,7 +340,7 @@ namespace saucer
         std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
     }
 
-    void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
+    void impl::handle(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
     {
         if (!native::schemes.contains(name))
         {

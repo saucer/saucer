@@ -79,9 +79,9 @@ namespace saucer
         return utils::invoke<&impl::setup<Event>>(m_impl.get());
     }
 
-    void webview::handle_scheme(const std::string &name, scheme::resolver &&handler)
+    void webview::handle(const std::string &name, scheme::resolver &&handler)
     {
-        return utils::invoke<&impl::handle_scheme>(m_impl.get(), name, std::move(handler));
+        return utils::invoke<&impl::handle>(m_impl.get(), name, std::move(handler));
     }
 
     void impl::reject(std::size_t id, std::string_view reason)
@@ -247,7 +247,7 @@ namespace saucer
         auto embed = [impl = m_impl.get()](auto files, auto handler)
         {
             impl->embedded.merge(std::move(files));
-            impl->handle_scheme("saucer", std::move(handler));
+            impl->handle("saucer", std::move(handler));
         };
 
         return utils::invoke(embed, m_impl.get(), std::move(files), std::move(handler));
