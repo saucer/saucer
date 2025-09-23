@@ -210,7 +210,7 @@ namespace saucer
             return err(status);
         }
 
-        return saucer::url::parse(utils::narrow(rtn.get()));
+        return url::parse(utils::narrow(rtn.get()));
     }
 
     icon impl::favicon() const

@@ -154,9 +154,9 @@ namespace saucer
         return utils::invoke<&impl::set_url>(m_impl.get(), url);
     }
 
-    void webview::set_url(const std::string &url)
+    void webview::set_url(const std::string &str)
     {
-        auto parsed = saucer::url::parse(url);
+        auto parsed = url::parse(str);
 
         if (!parsed.has_value())
         {
@@ -213,7 +213,7 @@ namespace saucer
 
     void webview::serve(fs::path file)
     {
-        return set_url(saucer::url::make({.scheme = "saucer", .host = "embedded", .path = std::move(file)}));
+        return set_url(url::make({.scheme = "saucer", .host = "embedded", .path = std::move(file)}));
     }
 
     void webview::embed(embedded_files files)

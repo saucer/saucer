@@ -292,16 +292,16 @@ namespace saucer
             return status;
         }
 
-        auto url = saucer::url::parse(utils::narrow(raw.get()));
+        auto parsed = url::parse(utils::narrow(raw.get()));
 
-        if (!url)
+        if (!parsed)
         {
             return S_OK;
         }
 
-        self->events.get<event::request>().fire(url.value());
+        self->events.get<event::request>().fire(parsed.value());
 
-        return scheme_handler(self, {.raw = args, .request = std::move(request), .url = std::move(url.value())});
+        return scheme_handler(self, {.raw = args, .request = std::move(request), .url = std::move(parsed.value())});
     }
 
     HRESULT native::on_dom(impl *self, ICoreWebView2 *, ICoreWebView2DOMContentLoadedEventArgs *)

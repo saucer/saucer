@@ -212,15 +212,15 @@ namespace saucer
                 return;
             }
 
-            auto url = saucer::url::parse(raw);
+            auto parsed = url::parse(raw);
 
-            if (!url.has_value())
+            if (!parsed.has_value())
             {
                 assert(false);
                 return;
             }
 
-            self->events.get<event::request>().fire(url.value());
+            self->events.get<event::request>().fire(parsed.value());
         };
 
         const auto id = utils::connect(web_view, "resource-load-started", +callback, self);

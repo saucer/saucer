@@ -111,7 +111,7 @@ namespace saucer
             return err(std::errc::not_connected);
         }
 
-        return saucer::url::parse(uri);
+        return url::parse(uri);
     }
 
     icon impl::favicon() const

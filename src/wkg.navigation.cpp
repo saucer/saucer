@@ -12,7 +12,7 @@ namespace saucer
         auto *const request = webkit_navigation_action_get_request(action);
         const auto *uri     = webkit_uri_request_get_uri(request);
 
-        return saucer::url::parse(uri).value_or({});
+        return url::parse(uri).value_or({});
     }
 
     bool navigation::redirection() const

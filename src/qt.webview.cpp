@@ -165,7 +165,7 @@ namespace saucer
             return err(std::errc::not_connected);
         }
 
-        return saucer::url::impl{rtn};
+        return url::impl{rtn};
     }
 
     icon impl::favicon() const

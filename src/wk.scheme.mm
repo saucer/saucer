@@ -12,7 +12,7 @@ namespace saucer::scheme
 
     url request::url() const
     {
-        return saucer::url::impl{[m_impl->task.get().request.URL copy]};
+        return url::impl{[m_impl->task.get().request.URL copy]};
     }
 
     std::string request::method() const

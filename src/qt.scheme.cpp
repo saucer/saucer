@@ -19,7 +19,7 @@ namespace saucer::scheme
     url request::url() const
     {
         const auto request = m_impl->request->write();
-        return saucer::url::impl{request.value()->requestUrl()};
+        return url::impl{request.value()->requestUrl()};
     }
 
     std::string request::method() const

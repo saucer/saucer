@@ -105,7 +105,7 @@ namespace saucer
             return err(std::errc::not_connected);
         }
 
-        return saucer::url::impl{[raw copy]};
+        return url::impl{[raw copy]};
     }
 
     icon impl::favicon() const // NOLINT(*-static)

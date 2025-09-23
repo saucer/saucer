@@ -10,7 +10,7 @@ namespace saucer
 
     url navigation::url() const
     {
-        return saucer::url::impl{[m_impl->action.get().request.URL copy]};
+        return url::impl{[m_impl->action.get().request.URL copy]};
     }
 
     bool navigation::redirection() const

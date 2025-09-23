@@ -18,7 +18,7 @@ namespace saucer::permission
 
     url request::url() const
     {
-        return saucer::url::impl{m_impl->origin};
+        return url::impl{m_impl->origin};
     }
 
     permission::type request::type() const

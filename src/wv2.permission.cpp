@@ -15,7 +15,7 @@ namespace saucer::permission
     {
         utils::string_handle raw;
         m_impl->request->get_Uri(&raw.reset());
-        return saucer::url::parse(utils::narrow(raw.get())).value_or({});
+        return url::parse(utils::narrow(raw.get())).value_or({});
     }
 
     permission::type request::type() const

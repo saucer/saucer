@@ -19,7 +19,7 @@ namespace saucer::permission
     url request::url() const
     {
         const utils::autorelease_guard guard{};
-        return saucer::url::impl{[m_impl->frame.get().webView.URL copy]};
+        return url::impl{[m_impl->frame.get().webView.URL copy]};
     }
 
     permission::type request::type() const

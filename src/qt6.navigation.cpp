@@ -16,7 +16,7 @@ namespace saucer
             [](QWebEngineNavigationRequest *request) { return request->url(); },
         };
 
-        return saucer::url::impl{std::visit(visitor, m_impl->request)};
+        return url::impl{std::visit(visitor, m_impl->request)};
     }
 
     bool navigation::new_window() const
