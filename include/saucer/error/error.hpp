@@ -48,17 +48,16 @@ namespace saucer
 
     enum class error::category : std::uint8_t
     {
-        invalid  = 0,
-        unknown  = 1,
-        platform = 2,
-        contract = 3,
+        invalid,
+        unknown,
+        platform,
+        contract,
     };
 
     enum class contract_error : std::uint8_t
     {
-        success          = 0,
-        instance_exists  = 1,
-        required_invalid = 3,
+        instance_exists,
+        required_invalid,
     };
 
     template <typename T = void>
