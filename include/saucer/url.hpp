@@ -63,7 +63,7 @@ namespace saucer
         static url make(const options &);
     }; // namespace std::filesystem
 
-    struct saucer::url::options
+    struct url::options
     {
         std::string scheme;
 
