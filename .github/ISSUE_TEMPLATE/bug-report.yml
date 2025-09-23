@@ -17,6 +17,13 @@ body:
       description: Steps to reproduce the behavior.
     validations:
       required: true
+  
+  - type: textarea
+    attributes:
+      label: 🔗 Reproduction Example
+      description: If applicable, please provide a reproduction example. This can either be a code-snippet or a link to a repository. 
+    validations:
+      required: false
 
   - type: textarea
     attributes:
@@ -35,7 +42,7 @@ body:
   - type: input
     attributes:
       label: 🛸 Saucer Version
-      description: Please state the version of saucer this bug occurs on here.
+      description: Please state the version of saucer this bug occurs on.
     validations:
       required: true
 
@@ -48,28 +55,28 @@ body:
         - MacOS
         - Windows 10
         - Windows 11
-        - Other
+        - Other (Please specify)
     validations:
       required: true
 
   - type: input
     attributes:
       label: 🧰 Compiler
-      description: The exact compiler (and compiler version) used.
+      description: The exact compiler (and compiler version) used. You can typically find this information in the CMake output.
     validations:
       required: true
 
   - type: input
     attributes:
       label: 📦 Environment
-      description: The exact WebView2 / QT / Webkit version that is installed on the system.
+      description: The exact WebView2 / Qt / Webkit version that is installed on the system.
     validations:
       required: true
 
   - type: input
     attributes:
       label: 🖥️ Distribution
-      description: "If you're using linux or a special windows version please state it here"
+      description: If applicable, please state the Linux Distribution or Windows-Build Number here.
     validations:
       required: false
 
@@ -82,7 +89,5 @@ body:
           required: true
         - label: I searched for an existing bug report for this issue
           required: true
-        - label: the problem does occur with the reproduction steps I provided
-          required: true
-        - label: what I described is indeed a problem
+        - label: The problem does occur with the reproduction steps I provided
           required: true

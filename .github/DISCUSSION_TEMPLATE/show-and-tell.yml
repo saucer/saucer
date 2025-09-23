@@ -1,0 +1,16 @@
+title: "[Showcase] "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief summary of what you've built.
+    validations:
+      required: true
+  - type: textarea
+    id: preview 
+    attributes:
+      label: Images / Preview
+      description: Some Images showing off the project, or links to e.g. a demo repository.
+    validations:
+      required: true
