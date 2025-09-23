@@ -45,7 +45,7 @@ coco::stray start(saucer::application *app)
 
     webview->expose("print_with", [&](const saucer::modules::pdf::settings &settings) { pdf.save(settings); });
 
-    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view(demo), .mime = "text/html"}}});
+    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});
     webview->serve("/index.html");
 
     webview->set_dev_tools(true);

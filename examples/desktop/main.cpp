@@ -39,7 +39,7 @@ coco::stray start(saucer::application *app)
     webview->expose("open", [&](const std::string &uri) { desktop.open(uri); });
     webview->expose("mouse_position", [&] { return desktop.mouse_position(); });
 
-    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view(demo), .mime = "text/html"}}});
+    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});
     webview->serve("/index.html");
 
     webview->set_dev_tools(true);

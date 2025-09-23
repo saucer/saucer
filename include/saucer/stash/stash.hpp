@@ -3,11 +3,12 @@
 #include <memory>
 #include <cstdint>
 
-#include <variant>
+#include <string>
 #include <string_view>
 
 #include <span>
 #include <vector>
+#include <variant>
 
 namespace saucer
 {
@@ -36,12 +37,19 @@ namespace saucer
         [[nodiscard]] std::size_t size() const;
 
       public:
+        [[nodiscard]] std::string str()
+            requires std::same_as<T, std::uint8_t>;
+
+      public:
         [[nodiscard]] static stash from(owning_t);
         [[nodiscard]] static stash view(viewing_t);
         [[nodiscard]] static stash lazy(lazy_t);
 
       public:
-        [[nodiscard]] static stash view(std::string_view)
+        [[nodiscard]] static stash from_str(std::string)
+            requires std::same_as<T, std::uint8_t>;
+
+        [[nodiscard]] static stash view_str(std::string_view)
             requires std::same_as<T, std::uint8_t>;
 
       public:

@@ -112,7 +112,7 @@ coco::stray start(saucer::application *app)
                         co_return (a / b) / co_await webview->evaluate<double>("Math.random()");
                     });
 
-    webview->embed({{"/index.html", {.content = saucer::stash<>::view(demo), .mime = "text/html"}}});
+    webview->embed({{"/index.html", {.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});
 
     webview->set_dev_tools(true);
     webview->serve("/index.html");

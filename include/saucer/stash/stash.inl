@@ -62,6 +62,16 @@ namespace saucer
     }
 
     template <typename T>
+    std::string stash<T>::str()
+        requires std::same_as<T, std::uint8_t>
+    {
+        const auto *begin = reinterpret_cast<const char *>(data());
+        const auto *end   = reinterpret_cast<const char *>(begin + size());
+
+        return {begin, end};
+    }
+
+    template <typename T>
     stash<T> stash<T>::from(owning_t data)
     {
         return {std::move(data)};
@@ -80,7 +90,17 @@ namespace saucer
     }
 
     template <typename T>
-    stash<T> stash<T>::view(std::string_view data)
+    stash<T> stash<T>::from_str(std::string data)
+        requires std::same_as<T, std::uint8_t>
+    {
+        auto *const begin = reinterpret_cast<const T *>(data.data());
+        auto *const end   = reinterpret_cast<const T *>(data.data() + data.size());
+
+        return {owning_t{begin, end}};
+    }
+
+    template <typename T>
+    stash<T> stash<T>::view_str(std::string_view data)
         requires std::same_as<T, std::uint8_t>
     {
         auto *const begin = reinterpret_cast<const T *>(data.data());
