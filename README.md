@@ -12,7 +12,7 @@
 
 <div align="center"> 
 
-<img src="https://raw.githubusercontent.com/saucer/saucer.github.io/rewrite/static/assets/preview.png" width="600" />
+<img src="https://raw.githubusercontent.com/saucer/saucer.github.io/refs/heads/v7/src/assets/preview.png" width="600" />
 
 ### Documentation
 
