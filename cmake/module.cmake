@@ -24,7 +24,7 @@ set(_saucer_backend ${saucer_backend} CACHE INTERNAL "")
 # --------------------------------------------------------------------------------------------------------
 
 function(saucer_add_module TARGET)
-    message(STATUS "[saucer] Adding module: ${TARGET}")
+    saucer_message(STATUS "Adding module: ${TARGET}")
 
     target_link_libraries(${TARGET} PUBLIC  saucer::saucer)
     target_link_libraries(${TARGET} PRIVATE saucer::private)
