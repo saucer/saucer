@@ -11,9 +11,9 @@ namespace saucer
 {
     url::url() : m_impl(std::move(make({}).m_impl)) {}
 
-    url::url.impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
+    url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
-    url::url(const url const url &other) : m_impl(std::move(parse(other.string())->m_impl)) {}
+    url::url(const url &other) : m_impl(std::move(parse(other.string())->m_impl)) {}
 
     url::url(url &&other) noexcept : url()
     {
