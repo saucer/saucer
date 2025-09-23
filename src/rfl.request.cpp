@@ -10,7 +10,7 @@ consteval auto to_array(std::string_view name)
 {
     std::array<char, N + 1> rtn{0};
 
-    for (auto i = 0; N > i; i++)
+    for (auto i = 0uz; N > i; i++)
     {
         rtn.at(i) = name.at(i);
     }

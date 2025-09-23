@@ -28,8 +28,8 @@ namespace saucer::serializers::rflpp
 
     struct serializer : saucer::serializer<serializer>
     {
-        using result_data   = result_data;
-        using function_data = function_data;
+        using result_data   = rflpp::result_data;
+        using function_data = rflpp::function_data;
 
       public:
         ~serializer() override;
