@@ -56,9 +56,6 @@ namespace saucer
         {
             using enum contract_error;
 
-        case success:
-            return "success";
-
         case instance_exists:
             return "instance already exists";
 
