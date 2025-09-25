@@ -1,7 +1,7 @@
 <hr>
 
 <div align="center"> 
-    <img src="https://raw.githubusercontent.com/saucer/saucer.github.io/master/static/img/logo.png" height="312" />
+    <img src="https://raw.githubusercontent.com/saucer/saucer.github.io/v7/src/assets/logo-alt.svg" height="312" />
 </div>
 
 <p align="center"> 
@@ -24,7 +24,7 @@ Examples can be found [here](./examples).
 
 ### Getting started
 
-Learn how to create your first _saucer_ app [here](https://saucer.github.io/docs/getting-started).
+Learn how to create your first _saucer_ app [here](https://saucer.github.io/getting-started/).
 
 ### Community
 
