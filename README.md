@@ -1,7 +1,7 @@
 <hr>
 
 <div align="center"> 
-    <img src="https://raw.githubusercontent.com/saucer/saucer.github.io/v7/src/assets/logo-alt.svg" height="312" />
+    <img src="https://github.com/saucer/saucer.github.io/blob/v7/src/assets/logo-alt.svg?raw=true" height="312" />
 </div>
 
 <p align="center"> 
@@ -11,8 +11,7 @@
 ---
 
 <div align="center"> 
-
-<img src="https://raw.githubusercontent.com/saucer/saucer.github.io/refs/heads/v7/src/assets/preview.png" width="600" />
+<img src="https://github.com/saucer/saucer.github.io/blob/v7/src/assets/preview.png?raw=true" width="600" />
 
 ### Documentation
 
@@ -197,5 +196,5 @@ Saucer is a passion project and I develop it in my free-time. If you'd like to s
 > Saucer is 100% human written. No AI-Tools were used in the development process.
 
 <a href="https://notbyai.fyi/" target="_blank">
-  <img align="right" src="https://raw.githubusercontent.com/gasolinehorse/not-by-ai/refs/heads/main/dist/img/developed-by-human-not-by-ai-white.svg" />
+  <img align="right" src="https://github.com/gasolinehorse/not-by-ai/blob/main/dist/img/developed-by-human-not-by-ai-white.svg?raw=true" />
 </a>
