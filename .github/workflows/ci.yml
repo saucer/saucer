@@ -15,45 +15,52 @@ jobs:
       fail-fast: false
 
       matrix:
-        backend:
+        variant:
           - Qt5
           - Qt6
           - WebKitGtk
           - WebKit
           - WebView2
+          - WebView2-Clang
 
         config:
           - Release
           - Debug
 
         include:
-          - backend: Qt5
+          - variant: Qt5
             platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
 
-          - backend: Qt6
+          - variant: Qt6
             platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
 
-          - backend: WebKitGtk
+          - variant: WebKitGtk
             platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
 
-          - backend: WebKit
+          - variant: WebKit
             platform: MacOS
             os: macos-15
             xcode-version: latest-stable
 
-          - backend: WebView2
+          - variant: WebView2
             platform: Windows
             os: windows-latest
             install: true
             cmake-args: -Dsaucer_tests=OFF
+          
+          - variant: WebView2-Clang
+            backend: WebView2
+            platform: Windows
+            os: windows-latest
+            cmake-args: -Dsaucer_tests=OFF -T ClangCL -A x64
 
-    name: ${{ matrix.backend }}-${{ matrix.config }}
+    name: ${{ matrix.variant }}-${{ matrix.config }}
 
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
@@ -65,7 +72,7 @@ jobs:
       - name: 👽 Setup Saucer
         uses: ./.github/actions/setup
         with:
-          backend: ${{ matrix.backend }}
+          backend: ${{ matrix.backend || matrix.variant }}
           platform: ${{ matrix.platform }}
 
           build-type: ${{ matrix.config }}
@@ -78,7 +85,7 @@ jobs:
         if: ${{ matrix.install }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.backend }}-${{ matrix.config }}
+          name: ${{ matrix.variant }}-${{ matrix.config }}
           path: artifact
 
       - name: 🐛 Debug
@@ -91,5 +98,4 @@ jobs:
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-        if: ${{ matrix.backend != 'WebKitGtk' && matrix.backend != 'WebKit' && matrix.backend != 'WebView2' }}
-
+        if: ${{ matrix.backend == 'Qt5' || matrix.backend == 'Qt6' }}
