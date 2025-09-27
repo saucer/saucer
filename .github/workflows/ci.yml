@@ -50,14 +50,14 @@ jobs:
 
           - variant: WebView2
             platform: Windows
-            os: windows-latest
+            os: windows-2025
             install: true
             cmake-args: -Dsaucer_tests=OFF
           
           - variant: WebView2-Clang
             backend: WebView2
             platform: Windows
-            os: windows-latest
+            os: windows-2025
             cmake-args: -Dsaucer_tests=OFF -T ClangCL -A x64
 
     name: ${{ matrix.variant }}-${{ matrix.config }}
