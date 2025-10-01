@@ -2,6 +2,8 @@
 
 #include <saucer/error/error.hpp>
 
+#include <system_error>
+
 namespace saucer
 {
     struct error::impl

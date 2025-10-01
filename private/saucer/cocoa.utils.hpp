@@ -2,6 +2,8 @@
 
 #include "ref_obj.hpp"
 
+#include <string>
+
 #import <Foundation/Foundation.h>
 
 namespace saucer::utils
