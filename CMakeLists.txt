@@ -189,12 +189,10 @@ target_include_directories(
 )
 
 # --------------------------------------------------------------------------------------------------------
-# Setup Embedding & Modules
+# Setup Modules
 # --------------------------------------------------------------------------------------------------------
 
-include("cmake/embed.cmake")
 include("cmake/module.cmake")
-
 saucer_include_directories(${PROJECT_NAME} "private")
 
 # --------------------------------------------------------------------------------------------------------
@@ -282,10 +280,16 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           fill
+  NAME           saucer-fill
   VERSION        1.3.0
   GIT_REPOSITORY "https://github.com/saucer/fill"
   OPTIONS        "fill_namespace std" "fill_silent ON"
+)
+
+CPMFindPackage(
+  NAME           saucer-embed
+  VERSION        1.0.0
+  GIT_REPOSITORY "https://github.com/saucer/embed"
 )
 
 saucer_link_libraries(${PROJECT_NAME}         cr::lockpp cr::flagpp)
