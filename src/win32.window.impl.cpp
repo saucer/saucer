@@ -98,7 +98,7 @@ namespace saucer
     template size native::offset<mode::add>(saucer::size) const;
     template size native::offset<mode::sub>(saucer::size) const;
 
-    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
+    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) // NOLINT(*-recursion)
     {
         const auto atom = application::impl::native::ATOM_WINDOW.get();
         auto *self      = reinterpret_cast<impl *>(GetPropW(hwnd, MAKEINTATOM(atom)));
@@ -186,6 +186,14 @@ namespace saucer
         case WM_NCACTIVATE:
             self->events.get<event::focus>().fire(w_param);
             break;
+        case WM_SYSCOMMAND:
+            if (w_param == SC_RESTORE)
+            {
+                // This fixes a bug where event::minimized(false) event is
+                // not fired when a maximized window is restored from the taskbar.
+                wnd_proc(hwnd, WM_SIZE, SIZE_RESTORED, -1);
+            }
+            break;
         case WM_SIZE: {
             switch (w_param)
             {
@@ -209,6 +217,11 @@ namespace saucer
             }
 
             self->platform->prev_state = w_param;
+
+            if (l_param == -1)
+            {
+                return 0;
+            }
 
             const auto width  = LOWORD(l_param);
             const auto height = HIWORD(l_param);
