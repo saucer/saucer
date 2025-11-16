@@ -36,7 +36,7 @@ runs:
     - name: 📋 Install Qt5-Dependencies
       shell: bash
       if: inputs.backend == 'Qt5'
-      run: "paru --noconfirm -Syu qt5-base qt5-webchannel qt5-webengine"
+      run: "aur-install qt5-base qt5-webchannel qt5-webengine"
 
     - name: 📋 Install Qt6-Dependencies
       shell: bash
