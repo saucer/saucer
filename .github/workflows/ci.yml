@@ -31,7 +31,7 @@ jobs:
           - variant: Qt5
             platform: Linux
             os: ubuntu-latest
-            container: archlinux:base-devel
+            container: greyltc/archlinux-aur:paru # Qt5 packages moved to AUR 
 
           - variant: Qt6
             platform: Linux
