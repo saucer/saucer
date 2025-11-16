@@ -196,5 +196,5 @@ Saucer is a passion project and I develop it in my free-time. If you'd like to s
 > Saucer is 100% human written. No AI-Tools were used in the development process.
 
 <a href="https://notbyai.fyi/" target="_blank">
-  <img align="right" src="https://github.com/gasolinehorse/not-by-ai/blob/main/dist/img/developed-by-human-not-by-ai-white.svg?raw=true" />
+  <img align="right" src="https://raw.githubusercontent.com/saucer/saucer.github.io/refs/heads/v7/src/assets/badge.svg" />
 </a>
