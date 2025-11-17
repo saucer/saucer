@@ -16,8 +16,7 @@ jobs:
 
       matrix:
         variant:
-          - Qt5
-          - Qt6
+          - Qt
           - WebKitGtk
           - WebKit
           - WebView2
@@ -28,12 +27,7 @@ jobs:
           - Debug
 
         include:
-          - variant: Qt5
-            platform: Linux
-            os: ubuntu-latest
-            container: greyltc/archlinux-aur:paru # Qt5 packages moved to AUR 
-
-          - variant: Qt6
+          - variant: Qt
             platform: Linux
             os: ubuntu-latest
             container: archlinux:base-devel
@@ -98,4 +92,4 @@ jobs:
       - name: 🧪 Test
         timeout-minutes: 10
         uses: ./.github/actions/test
-        if: ${{ matrix.backend == 'Qt5' || matrix.backend == 'Qt6' }}
+        if: ${{ matrix.backend == 'Qt' }}

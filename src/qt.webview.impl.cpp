@@ -8,7 +8,9 @@
 
 #include <QFile>
 #include <QBuffer>
+
 #include <QWebEngineUrlRequestJob>
+#include <QWebEngineScriptCollection>
 
 namespace saucer
 {
@@ -51,7 +53,6 @@ namespace saucer
     {
         using permission::request;
 
-#ifdef SAUCER_QT6
         auto &event = self->events.get<event::permission>();
 
         if (!event.empty())
@@ -77,7 +78,6 @@ namespace saucer
 
         const auto id = web_page->connect(web_page.get(), &QWebEnginePage::permissionRequested, handler);
         event.on_clear([this, id] { web_page->disconnect(id); });
-#endif
     }
 
     template <>
@@ -117,7 +117,6 @@ namespace saucer
     template <>
     void native::setup<event::navigate>([[maybe_unused]] impl *self)
     {
-#ifdef SAUCER_QT6
         auto &event = self->events.get<event::navigate>();
 
         if (!event.empty())
@@ -149,7 +148,6 @@ namespace saucer
                 web_page->disconnect(new_id);
                 web_page->disconnect(nav_id);
             });
-#endif
     }
 
     template <>
@@ -228,6 +226,11 @@ namespace saucer
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
         event.on_clear([this, id] { web_view->disconnect(id); });
+    }
+
+    QWebEngineScript native::find(const char *name) const
+    {
+        return web_page->scripts().find(name).at(0);
     }
 
     bool native::init_web_channel()

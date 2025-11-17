@@ -63,10 +63,8 @@ namespace saucer
             profile->setPersistentStoragePath(path);
         }
 
-#ifdef SAUCER_QT6
         using enum QWebEngineProfile::PersistentPermissionsPolicy;
         profile->setPersistentPermissionsPolicy(AskEveryTime);
-#endif
 
         profile->setPersistentCookiesPolicy(opts.persistent_cookies ? ForcePersistentCookies : NoPersistentCookies);
         profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
@@ -190,12 +188,8 @@ namespace saucer
 
     bool impl::force_dark() const
     {
-#ifdef SAUCER_QT6
         const auto *settings = platform->profile->settings();
         return settings->testAttribute(QWebEngineSettings::ForceDarkMode);
-#else
-        return false;
-#endif
     }
 
     color impl::background() const
@@ -253,10 +247,8 @@ namespace saucer
 
     void impl::set_force_dark([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
     {
-#ifdef SAUCER_QT6
         auto *settings = platform->profile->settings();
         settings->setAttribute(QWebEngineSettings::ForceDarkMode, enabled);
-#endif
     }
 
     void impl::set_background(color color) // NOLINT(*-function-const)
@@ -411,13 +403,9 @@ namespace saucer
         using enum QWebEngineUrlScheme::Flag;
 
         auto scheme = QWebEngineUrlScheme{QByteArray::fromStdString(name)};
-        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
 
-#ifdef SAUCER_QT6
+        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
         scheme.setFlags(SecureScheme | FetchApiAllowed | CorsEnabled);
-#else
-        scheme.setFlags(SecureScheme | CorsEnabled);
-#endif
 
         QWebEngineUrlScheme::registerScheme(scheme);
     }

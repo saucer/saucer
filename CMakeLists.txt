@@ -86,7 +86,7 @@ set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
 # Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_valid_backends Qt5 Qt6 WebKitGtk WebView2 WebKit Default)
+set(saucer_valid_backends Qt WebKitGtk WebView2 WebKit Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
@@ -199,16 +199,6 @@ saucer_include_directories(${PROJECT_NAME} "private")
 # Miscellaneous CMake-Setup
 # --------------------------------------------------------------------------------------------------------
 
-if (saucer_backend STREQUAL "Qt5")
-  set(QT_VERSION 5)
-  set(QT_REQUIRED_VERSION 5.0.0)
-endif()
-
-if (saucer_backend STREQUAL "Qt6")
-  set(QT_VERSION 6)
-  set(QT_REQUIRED_VERSION 6.7.0)
-endif()
-
 if (saucer_serializer STREQUAL "Glaze")
   set(SERIALIZER_DEP "glaze 5.7.2")
 endif()
@@ -299,20 +289,20 @@ target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis c
 # Setup Backends
 # --------------------------------------------------------------------------------------------------------
 
-if (saucer_backend MATCHES "^Qt.$")
+if (saucer_backend STREQUAL "Qt")
   file(GLOB_RECURSE qt_sources
     "src/qt.*cpp"
     "private/saucer/qt.*hpp"
-    "src/qt${QT_VERSION}.*cpp"
+    "src/qt.*cpp"
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${qt_sources})
-  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT${QT_VERSION})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_QT)
 
   set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC ON)
+  find_package(Qt6 6.7.0 COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
 
-  find_package(Qt${QT_VERSION} ${QT_REQUIRED_VERSION} COMPONENTS Widgets WebEngineWidgets WebChannel REQUIRED)
-  saucer_link_libraries(${PROJECT_NAME} Qt${QT_VERSION}::Widgets Qt${QT_VERSION}::WebChannel Qt${QT_VERSION}::WebEngineWidgets)
+  saucer_link_libraries(${PROJECT_NAME} Qt6::Widgets Qt6::WebChannel Qt6::WebEngineWidgets)
 endif()
 
 if (saucer_backend STREQUAL "WebKit")

@@ -117,7 +117,7 @@ suite<"window"> window_suite = []
         expect(decoration == full);
         expect(window.decorations() == full);
 
-#if !defined(SAUCER_QT5) && !defined(SAUCER_QT6)
+#if !defined(SAUCER_QT)
         window.set_decorations(partial);
 
         expect(decoration == partial);
