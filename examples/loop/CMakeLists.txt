@@ -15,7 +15,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
 
 CPMFindPackage(
   NAME           saucer-loop
-  VERSION        2.0.0
+  VERSION        2.1.0
   GIT_REPOSITORY "https://github.com/saucer/loop"
 )
 

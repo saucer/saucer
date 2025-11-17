@@ -15,7 +15,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
 
 CPMFindPackage(
   NAME           saucer-pdf
-  VERSION        3.0.3
+  VERSION        3.1.0
   GIT_REPOSITORY "https://github.com/saucer/pdf"
 )
 
