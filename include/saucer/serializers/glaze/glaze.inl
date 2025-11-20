@@ -12,14 +12,14 @@ namespace saucer::serializers::glaze
         static constexpr auto opts = glz::opts{.error_on_missing_keys = true};
 
         template <typename T>
-        auto try_parse(T &value, const glz::json_t &data)
+        auto try_parse(T &value, const glz::generic &data)
         {
             return !glz::read<opts>(value, data);
         }
 
         template <typename T>
             requires(not tuple::Tuple<T>)
-        std::optional<std::string> mismatch(T &value, const glz::json_t &data)
+        std::optional<std::string> mismatch(T &value, const glz::generic &data)
         {
             if (try_parse(value, data))
             {
@@ -31,13 +31,13 @@ namespace saucer::serializers::glaze
 
         template <tuple::Tuple T, std::size_t I = 0>
             requires(I >= std::tuple_size_v<T>)
-        std::optional<std::string> mismatch(T &, const glz::json_t &)
+        std::optional<std::string> mismatch(T &, const glz::generic &)
         {
             return std::nullopt;
         }
 
         template <tuple::Tuple T, std::size_t I = 0>
-        std::optional<std::string> mismatch(T &value, const glz::json_t &data)
+        std::optional<std::string> mismatch(T &value, const glz::generic &data)
         {
             using current = std::tuple_element_t<I, T>;
 
@@ -66,7 +66,7 @@ namespace saucer::serializers::glaze
             return rtn;
         }
 
-        glz::json_t json{};
+        glz::generic json{};
 
         if (auto err = glz::read<detail::opts>(json, data); err)
         {
