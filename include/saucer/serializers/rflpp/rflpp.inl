@@ -40,7 +40,10 @@ namespace saucer::serializers::rflpp
         template <typename T>
         auto read_impl(const rfl::Generic &value)
         {
-            return rfl::from_generic<T>(value);
+            // We have to serialize and deserialize again here, due to rflpp not allowing casts when using `rfl::from_generic`:
+            // https://github.com/getml/reflect-cpp/issues/548
+            auto serialized = rfl::json::write(value);
+            return rfl::json::read<T>(std::move(serialized));
         }
 
         template <typename T, typename U>
