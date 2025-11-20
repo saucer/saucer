@@ -54,7 +54,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
     <tr>
       <td><b>Windows</b></td>
       <td>Win32 & WebView2</td>
-      <td rowspan="3">Qt5 / Qt6 + QWebEngine</td>
+      <td rowspan="3">Qt + QWebEngine</td>
     </tr>
     <tr>
       <td><b>Linux</b></td>

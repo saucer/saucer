@@ -10,10 +10,6 @@ namespace saucer
     {
         platform = std::make_unique<native>();
 
-#ifdef SAUCER_QT5
-        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-
         auto make_args = [](auto &&argv)
         {
             return std::vector<char *>{argv, argv + native::argc};

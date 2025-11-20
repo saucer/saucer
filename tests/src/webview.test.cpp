@@ -72,7 +72,6 @@ suite<"webview"> webview_suite = []
         expect(webview.context_menu());
     };
 
-#ifndef SAUCER_QT5
     "force-dark"_test_both = [](saucer::webview &webview)
     {
         expect(not webview.force_dark());
@@ -83,7 +82,6 @@ suite<"webview"> webview_suite = []
         webview.set_force_dark(false);
         expect(not webview.force_dark());
     };
-#endif
 
     "background"_test_both = [](saucer::webview &webview)
     {
