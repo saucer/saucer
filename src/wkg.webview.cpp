@@ -184,6 +184,11 @@ namespace saucer
         webkit_web_view_load_uri(platform->web_view, url.string().c_str());
     }
 
+    void impl::set_html(const std::string &html) // NOLINT(*-function-const)
+    {
+        webkit_web_view_load_html(platform->web_view, html.c_str(), nullptr);
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         auto *const settings  = webkit_web_view_get_settings(platform->web_view);

@@ -62,6 +62,7 @@ namespace saucer
 
       public:
         void set_url(const saucer::url &);
+        void set_html(const std::string &);
 
       public:
         void set_dev_tools(bool);

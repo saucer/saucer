@@ -153,6 +153,9 @@ namespace saucer
         [[sc::thread_safe]] void set_url(const std::string &);
 
       public:
+        [[sc::theead_safe]] void set_html(const std::string &);
+
+      public:
         [[sc::thread_safe]] void set_dev_tools(bool);
         [[sc::thread_safe]] void set_context_menu(bool);
 

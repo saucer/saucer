@@ -166,6 +166,11 @@ namespace saucer
         set_url(parsed.value());
     }
 
+    void webview::set_html(const std::string &html)
+    {
+        return utils::invoke<&impl::set_html>(m_impl.get(), html);
+    }
+
     void webview::set_dev_tools(bool value)
     {
         return utils::invoke<&impl::set_dev_tools>(m_impl.get(), value);

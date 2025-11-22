@@ -215,6 +215,11 @@ namespace saucer
         platform->web_view->setUrl(url.native<false>()->url);
     }
 
+    void impl::set_html(const std::string &html) // NOLINT(*-function-const)
+    {
+        platform->web_view->setHtml(QString::fromStdString(html));
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         if (!platform->dev_page && !enabled)
