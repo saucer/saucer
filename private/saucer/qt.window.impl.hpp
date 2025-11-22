@@ -4,6 +4,8 @@
 
 #include "qt.utils.hpp"
 
+#include <unordered_set>
+
 #include <QLayout>
 #include <QMainWindow>
 
@@ -15,6 +17,7 @@ namespace saucer
 
       public:
         QSize max_size, min_size;
+        std::unordered_set<QWidget *> unmanaged;
 
       public:
         void set_flags(std::initializer_list<std::pair<Qt::WindowType, bool>> flags) const;
@@ -39,11 +42,14 @@ namespace saucer
 
     class overlay_layout : public QLayout
     {
+        window::impl *impl;
+
+      private:
         bool m_initialized{false};
         std::vector<QLayoutItem *> m_items;
 
       public:
-        using QLayout::QLayout;
+        overlay_layout(window::impl *);
 
       public:
         ~overlay_layout() override;

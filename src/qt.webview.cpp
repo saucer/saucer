@@ -261,12 +261,13 @@ namespace saucer
 
     void impl::reset_bounds() // NOLINT(*-function-const)
     {
-        platform->web_view->setGeometry(QRect{});
+        window->native<false>()->platform->unmanaged.erase(platform->web_view.get());
         platform->web_view->layout()->invalidate();
     }
 
     void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
     {
+        window->native<false>()->platform->unmanaged.emplace(platform->web_view.get());
         platform->web_view->setGeometry({bounds.x, bounds.y, bounds.w, bounds.h});
     }
 

@@ -82,6 +82,8 @@ namespace saucer
         impl->events.get<event::resize>().fire(width(), height());
     }
 
+    overlay_layout::overlay_layout(window::impl *impl) : QLayout(), impl(impl) {}
+
     overlay_layout::~overlay_layout()
     {
         for (auto *const item : m_items)
@@ -137,11 +139,9 @@ namespace saucer
 
     void overlay_layout::setGeometry(const QRect &rect)
     {
-        const auto previous = geometry();
-
         for (auto *const item : m_items)
         {
-            const auto resize = !m_initialized || item->geometry() == previous || item->geometry().isNull();
+            const auto resize = m_initialized && !impl->platform->unmanaged.contains(item->widget());
 
             if (!resize)
             {

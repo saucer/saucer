@@ -27,7 +27,7 @@ namespace saucer
         platform->min_size = platform->window->minimumSize();
 
         auto *const content = new QWidget{platform->window.get()};
-        content->setLayout(new overlay_layout);
+        content->setLayout(new overlay_layout{this});
 
         platform->window->setCentralWidget(content);
 
