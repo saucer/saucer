@@ -6,14 +6,28 @@
 
 namespace saucer::serializers::rflpp
 {
-    struct function_data : saucer::function_data
+    template <typename T>
+    struct function_data
     {
-        rfl::Generic params;
+        T params;
     };
 
-    struct result_data : saucer::result_data
+    template <typename T>
+    struct result_data
     {
-        rfl::Generic result;
+        T result;
+    };
+
+    template <>
+    struct function_data<void> : saucer::function_data
+    {
+        std::string raw;
+    };
+
+    template <>
+    struct result_data<void> : saucer::result_data
+    {
+        std::string raw;
     };
 
     template <typename T>
@@ -28,8 +42,8 @@ namespace saucer::serializers::rflpp
 
     struct serializer : saucer::serializer<serializer>
     {
-        using result_data   = rflpp::result_data;
-        using function_data = rflpp::function_data;
+        using result_data   = rflpp::result_data<void>;
+        using function_data = rflpp::function_data<void>;
 
       public:
         ~serializer() override;
