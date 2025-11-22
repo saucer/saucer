@@ -286,6 +286,11 @@ namespace saucer
         platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
+    void impl::set_html(const std::string &html)
+    {
+        platform->web_view->NavigateToString(utils::widen(html).c_str());
+    }
+
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         platform->settings->put_AreDevToolsEnabled(enabled);
