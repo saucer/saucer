@@ -185,6 +185,11 @@ namespace saucer
         [platform->web_view.get() loadRequest:request];
     }
 
+    void impl::set_html(const std::string &html) // NOLINT(*-function-const)
+    {
+        [platform->web_view.get() loadHTMLString:[NSString stringWithUTF8String:html.c_str()] baseURL:nil];
+    }
+
     void impl::set_dev_tools([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
