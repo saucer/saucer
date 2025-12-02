@@ -259,21 +259,21 @@ suite<"webview"> webview_suite = []
                 </html>
             )html";
 
-        webview.handle("test",
-                       [](const saucer::scheme::request &req)
-                       {
-                           expect(req.method() == "GET");
-                           expect(req.url().scheme() == "test");
+        webview.handle_scheme("test",
+                              [](const saucer::scheme::request &req)
+                              {
+                                  expect(req.method() == "GET");
+                                  expect(req.url().scheme() == "test");
 
-                           expect(req.url().host() == "host");
-                           expect(req.url().path() == "/test.html");
+                                  expect(req.url().host() == "host");
+                                  expect(req.url().path() == "/test.html");
 
-                           return saucer::scheme::response{
-                               .data   = saucer::stash<>::view_str(page),
-                               .mime   = "text/html",
-                               .status = 200,
-                           };
-                       });
+                                  return saucer::scheme::response{
+                                      .data   = saucer::stash<>::view_str(page),
+                                      .mime   = "text/html",
+                                      .status = 200,
+                                  };
+                              });
 
         webview.set_url(saucer::url::make({.scheme = "test", .host = "host", .path = "/test.html"}));
         saucer::tests::wait_for([&] { return scheme; }, duration);
