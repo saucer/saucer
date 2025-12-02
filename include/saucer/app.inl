@@ -55,7 +55,7 @@ namespace saucer
             return std::invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
         };
 
-        auto task   = std::packaged_task{task_callback};
+        auto task   = std::packaged_task{std::move(task_callback)};
         auto future = task.get_future();
 
         post([task = std::move(task)]() mutable { std::invoke(task); });
