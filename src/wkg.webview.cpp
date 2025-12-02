@@ -325,7 +325,7 @@ namespace saucer
         platform->scripts.erase(id);
     }
 
-    void impl::handle(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
+    void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
     {
         if (!native::schemes.contains(name))
         {

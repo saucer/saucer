@@ -79,9 +79,35 @@ namespace saucer
         return utils::invoke<&impl::setup<Event>>(m_impl.get());
     }
 
-    void webview::handle(const std::string &name, scheme::resolver &&handler)
+    void webview::impl::handle_embed(const scheme::request &request, const scheme::executor &exec)
     {
-        return utils::invoke<&impl::handle>(m_impl.get(), name, std::move(handler));
+        const auto &[resolve, reject] = exec;
+        const auto url                = request.url();
+
+        if (url.scheme() != "saucer" || url.host() != "embedded")
+        {
+            return reject(scheme::error::invalid);
+        }
+
+        const auto file = url.path();
+
+        if (!embedded.contains(file))
+        {
+            return reject(scheme::error::not_found);
+        }
+
+        const auto &data = embedded.at(file);
+
+        return resolve({
+            .data    = data.content,
+            .mime    = data.mime,
+            .headers = {{"Access-Control-Allow-Origin", "*"}},
+        });
+    }
+
+    void webview::handle_scheme(const std::string &name, scheme::resolver &&handler)
+    {
+        return utils::invoke<&impl::handle_scheme>(m_impl.get(), name, std::move(handler));
     }
 
     void impl::reject(std::size_t id, std::string_view reason)
@@ -223,39 +249,13 @@ namespace saucer
 
     void webview::embed(embedded_files files)
     {
-        auto handler = [impl = m_impl.get()](const scheme::request &request, const scheme::executor &exec)
-        {
-            const auto &[resolve, reject] = exec;
-            auto url                      = request.url();
-
-            if (url.scheme() != "saucer" || url.host() != "embedded")
-            {
-                return reject(scheme::error::invalid);
-            }
-
-            auto file = url.path();
-
-            if (!impl->embedded.contains(file))
-            {
-                return reject(scheme::error::not_found);
-            }
-
-            const auto &data = impl->embedded.at(file);
-
-            return resolve({
-                .data    = data.content,
-                .mime    = data.mime,
-                .headers = {{"Access-Control-Allow-Origin", "*"}},
-            });
-        };
-
-        auto embed = [impl = m_impl.get()](auto files, auto handler)
+        auto embed = [impl = m_impl.get()](auto files)
         {
             impl->embedded.merge(std::move(files));
-            impl->handle("saucer", std::move(handler));
+            impl->handle_scheme("saucer", std::bind_front(&impl::handle_embed, impl));
         };
 
-        return utils::invoke(embed, m_impl.get(), std::move(files), std::move(handler));
+        return utils::invoke(embed, m_impl.get(), std::move(files));
     }
 
     void webview::unembed()

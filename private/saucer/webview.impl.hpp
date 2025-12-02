@@ -36,7 +36,8 @@ namespace saucer
         void setup();
 
       public:
-        void handle(const std::string &, scheme::resolver &&);
+        void handle_embed(const scheme::request &, const scheme::executor &);
+        void handle_scheme(const std::string &, scheme::resolver &&);
 
       public:
         void reject(std::size_t, std::string_view);

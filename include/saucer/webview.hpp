@@ -121,7 +121,7 @@ namespace saucer
         void setup();
 
       protected:
-        void handle(const std::string &, scheme::resolver &&);
+        void handle_scheme(const std::string &, scheme::resolver &&);
 
       public:
         template <bool Stable = true>
@@ -192,7 +192,7 @@ namespace saucer
 
       public:
         template <typename T>
-        [[sc::thread_safe]] void handle(const std::string &name, T &&handler);
+        [[sc::thread_safe]] void handle_scheme(const std::string &name, T &&handler);
         [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:

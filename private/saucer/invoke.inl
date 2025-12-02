@@ -13,52 +13,7 @@ namespace saucer::utils
     namespace detail
     {
         template <typename T>
-        struct invoker;
-
-        template <typename T>
-        constexpr auto noop();
-
-        template <typename Callback, typename T, typename... Ts>
-            requires std::invocable<Callback, Ts...>
-        constexpr auto invoke(bool, invoker<T>, Callback &&, Ts &&...);
-    } // namespace detail
-
-    template <typename T>
-    struct detail::invoker
-    {
-        T *self;
-
-      public:
-        template <typename U, typename... Us>
-        constexpr auto operator()(U &&callback, Us &&...args)
-        {
-            return self->parent->invoke(std::forward<U>(callback), std::forward<Us>(args)...);
-        }
-    };
-
-    template <typename T>
-    constexpr auto detail::noop()
-    {
-        return T{};
-    }
-
-    template <>
-    constexpr auto detail::noop<void>()
-    {
-    }
-
-    template <typename Callback, typename T, typename... Ts>
-        requires std::invocable<Callback, Ts...>
-    constexpr auto detail::invoke(bool cond, invoker<T> invoker, Callback &&callback, Ts &&...args)
-    {
-        using result = std::invoke_result_t<Callback, Ts...>;
-
-        if (!cond)
-        {
-            return noop<result>();
-        }
-
-        return invoker(std::forward<Callback>(callback), std::forward<Ts>(args)...);
+        constexpr T noop();
     }
 
     template <typename T>
@@ -78,12 +33,29 @@ namespace saucer::utils
         }
     };
 
+    template <typename T>
+    constexpr T detail::noop()
+    {
+        return T{};
+    }
+
+    template <>
+    constexpr void detail::noop<void>()
+    {
+    }
+
     template <typename Callback, typename T, typename... Ts>
         requires std::invocable<Callback, Ts...>
     constexpr auto invoke(Callback &&callback, T *self, Ts &&...args)
     {
-        return detail::invoke(static_cast<bool>(self), detail::invoker<T>{self}, std::forward<Callback>(callback),
-                              std::forward<Ts>(args)...);
+        using result = std::invoke_result_t<Callback, Ts...>;
+
+        if (!self)
+        {
+            return detail::noop<result>();
+        }
+
+        return self->parent->invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
     }
 
     template <detail::callback Callback, typename T, typename... Ts>
