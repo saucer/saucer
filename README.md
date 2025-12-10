@@ -136,7 +136,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 coco::stray start(saucer::application *app)
 {
     auto window  = saucer::window::create(app).value();
-    auto webview = saucer::smartview<>::create({.window = window});
+    auto webview = saucer::smartview::create({.window = window});
 
     window->set_title("Hello World!");
     window->set_size({.w = 800, .h = 600});

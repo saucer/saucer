@@ -7,7 +7,7 @@ int main()
     auto loop = saucer::modules::loop{app.value()};
 
     auto window  = saucer::window::create(loop.application()).value();
-    auto webview = saucer::smartview<>::create({.window = window});
+    auto webview = saucer::smartview::create({.window = window});
 
     window->set_title("Hello World!");
     webview->set_url("https://github.com/saucer/saucer");

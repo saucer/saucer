@@ -43,11 +43,11 @@ namespace saucer::tests
     };
 
     template <>
-    struct make<saucer::smartview<>>
+    struct make<saucer::smartview>
     {
         static auto operator()()
         {
-            return saucer::smartview<>::create({.window = make<saucer::window>{}()}).value();
+            return saucer::smartview::create({.window = make<saucer::window>{}()}).value();
         }
     };
 
@@ -116,10 +116,10 @@ namespace saucer::tests
         }
 
         template <typename T>
-            requires(std::invocable<T, saucer::smartview<> &> and not std::invocable<T, saucer::webview &>)
+            requires(std::invocable<T, saucer::smartview &> and not std::invocable<T, saucer::webview &>)
         constexpr void operator=(T &&callback) // NOLINT(*-assign*)
         {
-            return invoke<saucer::smartview<>>(std::forward<T>(callback));
+            return invoke<saucer::smartview>(std::forward<T>(callback));
         }
     };
 

@@ -3,7 +3,6 @@
 #include "webview.hpp"
 #include "config.hpp"
 
-#include <optional>
 #include <string_view>
 
 #include <memory>
@@ -13,7 +12,7 @@
 
 namespace saucer
 {
-    struct smartview_core : webview
+    struct smartview_base : webview
     {
         struct impl;
 
@@ -21,13 +20,13 @@ namespace saucer
         std::unique_ptr<impl> m_impl;
 
       protected:
-        smartview_core(webview &&, std::unique_ptr<serializer_core>);
+        smartview_base(webview &&, std::unique_ptr<serializer_core>);
 
       public:
-        smartview_core(smartview_core &&) noexcept;
+        smartview_base(smartview_base &&) noexcept;
 
       public:
-        ~smartview_core();
+        ~smartview_base();
 
       protected:
         void add_function(std::string, serializer_core::function &&);
@@ -38,16 +37,16 @@ namespace saucer
         [[sc::thread_safe]] void unexpose(const std::string &name);
     };
 
-    template <Serializer Serializer = default_serializer>
-    class smartview : public smartview_core
+    template <Serializer Serializer>
+    class basic_smartview : public smartview_base
     {
-        smartview(webview &&);
+        basic_smartview(webview &&);
 
       public:
-        smartview(smartview &&) noexcept;
+        basic_smartview(basic_smartview &&) noexcept;
 
       public:
-        static result<smartview> create(const options &);
+        static result<basic_smartview> create(const options &);
 
       public:
         template <typename T>
@@ -61,6 +60,8 @@ namespace saucer
         template <typename R, typename... Ts>
         [[sc::thread_safe]] [[nodiscard]] coco::future<R> evaluate(format_string<Serializer, Ts...> code, Ts &&...params);
     };
+
+    using smartview = basic_smartview<default_serializer>;
 } // namespace saucer
 
 #include "smartview.inl"

@@ -6,7 +6,7 @@ using namespace saucer::tests;
 
 suite<"smartview"> smartview_suite = []
 {
-    "expose/evaluate"_test_async = [](saucer::smartview<> &webview)
+    "expose/evaluate"_test_async = [](saucer::smartview &webview)
     {
         webview.set_url("https://codeberg.org/saucer/saucer");
 

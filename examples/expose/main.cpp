@@ -39,7 +39,7 @@ struct simple_aggregate
 coco::stray start(saucer::application *app)
 {
     auto window  = saucer::window::create(app).value();
-    auto webview = saucer::smartview<>::create({.window = window});
+    auto webview = saucer::smartview::create({.window = window});
 
     webview->expose("add",
                     [](double a, double b)

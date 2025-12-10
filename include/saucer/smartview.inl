@@ -5,15 +5,15 @@
 namespace saucer
 {
     template <Serializer Serializer>
-    smartview<Serializer>::smartview(webview &&webview) : smartview_core(std::move(webview), std::make_unique<Serializer>())
+    basic_smartview<Serializer>::basic_smartview(webview &&webview) : smartview_base(std::move(webview), std::make_unique<Serializer>())
     {
     }
 
     template <Serializer Serializer>
-    smartview<Serializer>::smartview(smartview &&other) noexcept = default;
+    basic_smartview<Serializer>::basic_smartview(basic_smartview &&other) noexcept = default;
 
     template <Serializer Serializer>
-    result<smartview<Serializer>> smartview<Serializer>::create(const options &opts)
+    result<basic_smartview<Serializer>> basic_smartview<Serializer>::create(const options &opts)
     {
         auto base = webview::create(opts);
 
@@ -22,19 +22,19 @@ namespace saucer
             return err(base);
         }
 
-        return smartview{std::move(base.value())};
+        return basic_smartview{std::move(base.value())};
     }
 
     template <Serializer Serializer>
     template <typename... Ts>
-    void smartview<Serializer>::execute(format_string<Serializer, Ts...> code, Ts &&...params)
+    void basic_smartview<Serializer>::execute(format_string<Serializer, Ts...> code, Ts &&...params)
     {
         webview::execute(std::format(code, Serializer::serialize(std::forward<Ts>(params))...));
     }
 
     template <Serializer Serializer>
     template <typename R, typename... Ts>
-    coco::future<R> smartview<Serializer>::evaluate(format_string<Serializer, Ts...> code, Ts &&...params)
+    coco::future<R> basic_smartview<Serializer>::evaluate(format_string<Serializer, Ts...> code, Ts &&...params)
     {
         auto promise = coco::promise<R>{};
         auto rtn     = promise.get_future();
@@ -49,7 +49,7 @@ namespace saucer
 
     template <Serializer Serializer>
     template <typename Function>
-    void smartview<Serializer>::expose(std::string name, Function &&func)
+    void basic_smartview<Serializer>::expose(std::string name, Function &&func)
     {
         auto resolve = Serializer::convert(std::forward<Function>(func));
         add_function(std::move(name), std::move(resolve));

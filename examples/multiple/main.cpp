@@ -4,8 +4,8 @@ coco::stray start(saucer::application *app)
 {
     auto window = saucer::window::create(app).value();
 
-    auto first  = std::make_unique<saucer::smartview<>>(saucer::smartview<>::create({.window = window}).value());
-    auto second = std::make_unique<saucer::smartview<>>(saucer::smartview<>::create({.window = window}).value());
+    auto first  = std::make_unique<saucer::smartview>(saucer::smartview::create({.window = window}).value());
+    auto second = std::make_unique<saucer::smartview>(saucer::smartview::create({.window = window}).value());
 
     window->on<saucer::window::event::resize>(
         [&](auto width, auto height)

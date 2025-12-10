@@ -28,7 +28,7 @@ coco::stray start(saucer::application *app)
     auto desktop = saucer::modules::desktop{app};
 
     auto window  = saucer::window::create(app).value();
-    auto webview = saucer::smartview<>::create({.window = window});
+    auto webview = saucer::smartview::create({.window = window});
 
     webview->expose("pick_folder", [&](saucer::modules::picker::options opts)
                     { return desktop.pick<type::folder>(std::move(opts)).transform_error(&saucer::error::message); });
