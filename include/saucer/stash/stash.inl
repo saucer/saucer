@@ -42,7 +42,7 @@ namespace saucer
     template <typename T>
     const T *stash<T>::data() const
     {
-        overload visitor = {
+        auto visitor = overload{
             [](const lazy_t &data) { return data->value().data(); },
             [](const auto &data) { return data.data(); },
         };
@@ -53,7 +53,7 @@ namespace saucer
     template <typename T>
     std::size_t stash<T>::size() const
     {
-        overload visitor = {
+        auto visitor = overload{
             [](const lazy_t &data) { return data->value().size(); },
             [](const auto &data) { return data.size(); },
         };

@@ -11,7 +11,7 @@ namespace saucer
 
     url navigation::url() const
     {
-        overload visitor = {
+        auto visitor = overload{
             [](QWebEngineNewWindowRequest *request) { return request->requestedUrl(); },
             [](QWebEngineNavigationRequest *request) { return request->url(); },
         };
@@ -21,7 +21,7 @@ namespace saucer
 
     bool navigation::new_window() const
     {
-        overload visitor = {
+        auto visitor = overload{
             [](QWebEngineNewWindowRequest *) { return true; },
             [](QWebEngineNavigationRequest *) { return false; },
         };
@@ -31,7 +31,7 @@ namespace saucer
 
     bool navigation::redirection() const
     {
-        overload visitor = {
+        auto visitor = overload{
             [](QWebEngineNewWindowRequest *) { return false; },
             [](QWebEngineNavigationRequest *request)
             { return request->navigationType() == QWebEngineNavigationRequest::RedirectNavigation; },
@@ -42,7 +42,7 @@ namespace saucer
 
     bool navigation::user_initiated() const
     {
-        overload visitor = {
+        auto visitor = overload{
             [](QWebEngineNewWindowRequest *request) { return request->isUserInitiated(); },
             [](QWebEngineNavigationRequest *) { return true; },
         };
