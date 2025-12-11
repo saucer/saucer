@@ -10,8 +10,10 @@
 
 #include <ranges>
 
-namespace saucer::utils
+namespace saucer
 {
+    using wnd_proc_hook = utils::wnd_proc_hook;
+
     wnd_proc_hook::wnd_proc_hook() = default;
 
     wnd_proc_hook::wnd_proc_hook(HWND hwnd, WNDPROC proc) : m_hwnd(hwnd)
@@ -50,14 +52,11 @@ namespace saucer::utils
     {
         return m_original;
     }
-} // namespace saucer::utils
 
-namespace saucer
-{
-    template <typename Func, typename T, typename... Ts>
-    auto call_as(T func, Ts &&...args)
+    template <typename T, typename U, typename... Us>
+    auto call_as(U func, Us &&...args)
     {
-        return reinterpret_cast<Func>(func)(std::forward<Ts>(args)...);
+        return reinterpret_cast<T *>(func)(std::forward<Us>(args)...);
     }
 
     void utils::set_dpi_awareness()
