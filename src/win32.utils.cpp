@@ -54,11 +54,10 @@ namespace saucer::utils
 
 namespace saucer
 {
-    template <auto Func, typename T, typename... Ts>
+    template <typename Func, typename T, typename... Ts>
     auto call_as(T func, Ts &&...args)
     {
-        using func_t = decltype(Func);
-        return reinterpret_cast<func_t>(func)(std::forward<Ts>(args)...);
+        return reinterpret_cast<Func>(func)(std::forward<Ts>(args)...);
     }
 
     void utils::set_dpi_awareness()
@@ -68,13 +67,13 @@ namespace saucer
 
         if (auto *func = GetProcAddress(user32.get(), "SetProcessDpiAwarenessContext"); func)
         {
-            call_as<SetProcessDpiAwarenessContext>(func, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+            call_as<decltype(SetProcessDpiAwarenessContext)>(func, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
             return;
         }
 
         if (auto *func = GetProcAddress(shcore.get(), "SetProcessDpiAwareness"); func)
         {
-            call_as<SetProcessDpiAwareness>(func, PROCESS_PER_MONITOR_DPI_AWARE);
+            call_as<decltype(SetProcessDpiAwareness)>(func, PROCESS_PER_MONITOR_DPI_AWARE);
             return;
         }
 
@@ -85,7 +84,7 @@ namespace saucer
             return;
         }
 
-        call_as<SetProcessDPIAware>(func);
+        call_as<decltype(SetProcessDPIAware)>(func);
     }
 
     void utils::set_immersive_dark(HWND hwnd, bool enabled)
@@ -101,7 +100,7 @@ namespace saucer
         static constexpr auto immersive_dark = 20;
         auto enable_immersive_dark           = static_cast<BOOL>(enabled);
 
-        call_as<DwmSetWindowAttribute>(func, hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
+        call_as<decltype(DwmSetWindowAttribute)>(func, hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
     }
 
     void utils::extend_frame(HWND hwnd, std::array<int, 4> area)
@@ -117,7 +116,7 @@ namespace saucer
         const auto &[left, right, top, bottom] = area;
         const auto margins                     = MARGINS{left, right, top, bottom};
 
-        call_as<DwmExtendFrameIntoClientArea>(func, hwnd, &margins);
+        call_as<decltype(DwmExtendFrameIntoClientArea)>(func, hwnd, &margins);
     }
 
     OSVERSIONINFOEXW utils::version()
