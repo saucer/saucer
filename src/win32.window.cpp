@@ -25,8 +25,6 @@ namespace saucer
     {
         using namespace winrt::Windows::UI::ViewManagement;
 
-        utils::set_dpi_awareness();
-
         if (static auto once{true}; once)
         {
             native::windows_build = utils::version().dwBuildNumber;

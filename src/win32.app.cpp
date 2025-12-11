@@ -52,6 +52,7 @@ namespace saucer
             return err(GetLastError());
         }
 
+        utils::set_dpi_awareness();
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
         Gdiplus::GdiplusStartupInput input{};
