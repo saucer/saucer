@@ -12,7 +12,6 @@ coco::stray start(saucer::application *app)
         {
             auto w = first && second ? width / 2 : width;
             auto o = first ? w : 0;
-            auto h = height;
 
             if (first)
             {

@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-static constexpr std::string_view demo = R"html(
+static constexpr const char *demo = R"html(
 <!DOCTYPE html>
 <html>
     <body>
@@ -112,11 +112,8 @@ coco::stray start(saucer::application *app)
                         co_return (a / b) / co_await webview->evaluate<double>("Math.random()");
                     });
 
-    webview->embed({{"/index.html", {.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});
-
     webview->set_dev_tools(true);
-    webview->serve("/index.html");
-
+    webview->set_html(demo);
     window->show();
 
     co_await app->finish();

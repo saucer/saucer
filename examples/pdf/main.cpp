@@ -3,7 +3,7 @@
 
 #include <filesystem>
 
-static constexpr std::string_view demo = R"html(
+static constexpr const char *demo = R"html(
 <!DOCTYPE html>
 <html>
     <body>
@@ -45,10 +45,8 @@ coco::stray start(saucer::application *app)
 
     webview->expose("print_with", [&](const saucer::modules::pdf::settings &settings) { pdf.save(settings); });
 
-    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});
-    webview->serve("/index.html");
-
     webview->set_dev_tools(true);
+    webview->set_html(demo);
     window->show();
 
     co_await app->finish();

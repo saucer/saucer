@@ -1,7 +1,7 @@
 #include <saucer/smartview.hpp>
 #include <saucer/modules/desktop.hpp>
 
-static constexpr std::string_view demo = R"html(
+static constexpr const char *demo = R"html(
 <!DOCTYPE html>
 <html>
     <body>
@@ -39,10 +39,8 @@ coco::stray start(saucer::application *app)
     webview->expose("open", [&](const std::string &url) { desktop.open(url); });
     webview->expose("mouse_position", [&] { return desktop.mouse_position(); });
 
-    webview->embed({{"/index.html", saucer::embedded_file{.content = saucer::stash<>::view_str(demo), .mime = "text/html"}}});
-    webview->serve("/index.html");
-
     webview->set_dev_tools(true);
+    webview->set_html(demo);
     window->show();
 
     co_await app->finish();
