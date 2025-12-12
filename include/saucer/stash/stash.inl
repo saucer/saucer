@@ -90,7 +90,7 @@ namespace saucer
     }
 
     template <typename T>
-    stash<T> stash<T>::from_str(std::string data)
+    stash<T> stash<T>::from_str(std::string_view data)
         requires std::same_as<T, std::uint8_t>
     {
         auto *const begin = reinterpret_cast<const T *>(data.data());

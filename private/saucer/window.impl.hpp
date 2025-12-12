@@ -89,7 +89,7 @@ namespace saucer
 
       public:
         void set_icon(const icon &);
-        void set_title(const std::string &);
+        void set_title(cstring_view);
 
       public:
         void set_background(color);

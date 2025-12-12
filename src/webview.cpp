@@ -180,7 +180,7 @@ namespace saucer
         return utils::invoke<&impl::set_url>(m_impl.get(), url);
     }
 
-    void webview::set_url(const std::string &str)
+    void webview::set_url(cstring_view str)
     {
         auto parsed = url::parse(str);
 
@@ -192,7 +192,7 @@ namespace saucer
         set_url(parsed.value());
     }
 
-    void webview::set_html(const std::string &html)
+    void webview::set_html(cstring_view html)
     {
         return utils::invoke<&impl::set_html>(m_impl.get(), html);
     }
@@ -274,7 +274,7 @@ namespace saucer
         return utils::invoke([impl = m_impl.get(), file] { impl->embedded.erase(file); }, m_impl.get());
     }
 
-    void webview::execute(const std::string &code)
+    void webview::execute(cstring_view code)
     {
         return utils::invoke<&impl::execute>(m_impl.get(), code);
     }

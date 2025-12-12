@@ -46,7 +46,7 @@ namespace saucer
         [[nodiscard]] static stash lazy(lazy_t);
 
       public:
-        [[nodiscard]] static stash from_str(std::string)
+        [[nodiscard]] static stash from_str(std::string_view)
             requires std::same_as<T, std::uint8_t>;
 
         [[nodiscard]] static stash view_str(std::string_view)

@@ -63,7 +63,7 @@ namespace saucer
 
       public:
         void set_url(const saucer::url &);
-        void set_html(const std::string &);
+        void set_html(cstring_view);
 
       public:
         void set_dev_tools(bool);
@@ -85,7 +85,7 @@ namespace saucer
         void reload();
 
       public:
-        void execute(const std::string &);
+        void execute(cstring_view);
         std::size_t inject(const script &);
 
       public:

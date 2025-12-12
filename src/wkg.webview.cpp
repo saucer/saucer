@@ -184,7 +184,7 @@ namespace saucer
         webkit_web_view_load_uri(platform->web_view, url.string().c_str());
     }
 
-    void impl::set_html(const std::string &html) // NOLINT(*-function-const)
+    void impl::set_html(cstring_view html) // NOLINT(*-function-const)
     {
         webkit_web_view_load_html(platform->web_view, html.c_str(), nullptr);
     }
@@ -267,7 +267,7 @@ namespace saucer
         webkit_web_view_reload(platform->web_view);
     }
 
-    void impl::execute(const std::string &code) // NOLINT(*-function-const)
+    void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
         if (!platform->dom_loaded)
         {

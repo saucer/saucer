@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utils/cstring.hpp"
 #include "modules/module.hpp"
 
 #include "app.hpp"
@@ -158,7 +159,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void set_icon(const icon &);
-        [[sc::thread_safe]] void set_title(const std::string &);
+        [[sc::thread_safe]] void set_title(cstring_view);
 
       public:
         [[sc::thread_safe]] void set_background(color);

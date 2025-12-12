@@ -1,7 +1,9 @@
 #pragma once
 
-#include "error/error.hpp"
 #include "modules/module.hpp"
+
+#include "error/error.hpp"
+#include "utils/cstring.hpp"
 
 #include <string>
 #include <filesystem>
@@ -56,8 +58,8 @@ namespace saucer
         [[nodiscard]] std::optional<std::string> password() const;
 
       public:
+        static result<url> parse(cstring_view input);
         static result<url> from(const fs::path &file);
-        static result<url> parse(const std::string &input);
 
       public:
         static url make(const options &);

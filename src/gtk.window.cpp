@@ -296,7 +296,7 @@ namespace saucer
     {
     }
 
-    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
+    void impl::set_title(cstring_view title) // NOLINT(*-function-const)
     {
         gtk_window_set_title(platform->window.get(), title.c_str());
     }

@@ -191,7 +191,7 @@ namespace saucer
         return utils::invoke<&impl::set_icon>(m_impl.get(), icon);
     }
 
-    void window::set_title(const std::string &title)
+    void window::set_title(cstring_view title)
     {
         return utils::invoke<&impl::set_title>(m_impl.get(), title);
     }

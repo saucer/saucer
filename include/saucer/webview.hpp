@@ -3,6 +3,8 @@
 #include "window.hpp"
 
 #include "modules/module.hpp"
+
+#include "utils/cstring.hpp"
 #include "utils/required.hpp"
 
 #include "stash/stash.hpp"
@@ -150,10 +152,10 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void set_url(const saucer::url &);
-        [[sc::thread_safe]] void set_url(const std::string &);
+        [[sc::thread_safe]] void set_url(cstring_view);
 
       public:
-        [[sc::theead_safe]] void set_html(const std::string &);
+        [[sc::theead_safe]] void set_html(cstring_view);
 
       public:
         [[sc::thread_safe]] void set_dev_tools(bool);
@@ -183,7 +185,7 @@ namespace saucer
         [[sc::thread_safe]] void unembed(const fs::path &);
 
       public:
-        [[sc::thread_safe]] void execute(const std::string &);
+        [[sc::thread_safe]] void execute(cstring_view);
         [[sc::thread_safe]] std::size_t inject(const script &);
 
       public:
