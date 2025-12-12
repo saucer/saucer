@@ -185,7 +185,7 @@ namespace saucer
         [platform->web_view.get() loadRequest:request];
     }
 
-    void impl::set_html(const std::string &html) // NOLINT(*-function-const)
+    void impl::set_html(cstring_view html) // NOLINT(*-function-const)
     {
         [platform->web_view.get() loadHTMLString:[NSString stringWithUTF8String:html.c_str()] baseURL:nil];
     }
@@ -292,7 +292,7 @@ namespace saucer
         [platform->web_view.get() reload];
     }
 
-    void impl::execute(const std::string &code) // NOLINT(*-function-const)
+    void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
 

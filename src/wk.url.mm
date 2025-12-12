@@ -127,7 +127,7 @@ namespace saucer
         return impl{utils::objc_ptr<NSURL>::ref(rtn)};
     }
 
-    result<url> url::parse(const std::string &input)
+    result<url> url::parse(cstring_view input)
     {
         const utils::autorelease_guard guard{};
         auto *const rtn = [NSURL URLWithString:[NSString stringWithUTF8String:input.c_str()]];

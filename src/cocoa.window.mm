@@ -296,7 +296,7 @@ namespace saucer
         [tile display];
     }
 
-    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
+    void impl::set_title(cstring_view title) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
         [platform->window setTitle:[NSString stringWithUTF8String:title.c_str()]];
