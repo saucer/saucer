@@ -375,7 +375,7 @@ namespace saucer
         SendMessage(platform->hwnd.get(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(platform->icon.get()));
     }
 
-    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
+    void impl::set_title(cstring_view title) // NOLINT(*-function-const)
     {
         SetWindowTextW(platform->hwnd.get(), utils::widen(title).c_str());
     }

@@ -105,7 +105,7 @@ namespace saucer
         return parse(utils::narrow(rtn));
     }
 
-    result<url> url::parse(const std::string &input)
+    result<url> url::parse(cstring_view input)
     {
         auto wide = utils::widen(input);
 

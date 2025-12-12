@@ -286,7 +286,7 @@ namespace saucer
         platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
-    void impl::set_html(const std::string &html)
+    void impl::set_html(cstring_view html)
     {
         platform->web_view->NavigateToString(utils::widen(html).c_str());
     }
@@ -360,7 +360,7 @@ namespace saucer
         platform->web_view->Reload();
     }
 
-    void impl::execute(const std::string &code) // NOLINT(*-function-const)
+    void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
         if (!platform->dom_loaded)
         {
