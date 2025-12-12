@@ -17,14 +17,16 @@ namespace rfl
             rfl::Rename<"saucer:call", bool> tag;
             std::size_t id;
             std::string name;
+            rfl::Generic params;
         };
 
         static function_data to(const ReflType &v) noexcept
         {
             function_data rtn;
 
-            rtn.id   = v.id;
-            rtn.name = v.name;
+            rtn.id     = v.id;
+            rtn.name   = v.name;
+            rtn.params = v.params;
 
             return rtn;
         }
@@ -37,13 +39,15 @@ namespace rfl
         {
             rfl::Rename<"saucer:resolve", bool> tag;
             std::size_t id;
+            rfl::Generic result;
         };
 
         static result_data to(const ReflType &v) noexcept
         {
             result_data rtn;
 
-            rtn.id = v.id;
+            rtn.id     = v.id;
+            rtn.result = v.result;
 
             return rtn;
         }
@@ -81,16 +85,12 @@ namespace saucer::serializers::rflpp
     {
         if (auto res = parse_as<function_data>(data); res.has_value())
         {
-            auto rtn = std::make_unique<function_data>(res.value());
-            rtn->raw = data;
-            return rtn;
+            return std::make_unique<function_data>(res.value());
         }
 
         if (auto res = parse_as<result_data>(data); res.has_value())
         {
-            auto rtn = std::make_unique<result_data>(res.value());
-            rtn->raw = data;
-            return rtn;
+            return std::make_unique<result_data>(res.value());
         }
 
         return std::monostate{};

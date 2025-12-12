@@ -32,9 +32,21 @@ namespace saucer::serializers::rflpp
         }
 
         template <typename T, typename U>
+        auto read_impl(U &&value)
+        {
+            return rfl::json::read<T>(std::forward<U>(value));
+        }
+
+        template <typename T>
+        auto read_impl(const rfl::Generic &value)
+        {
+            return rfl::from_generic<T>(value);
+        }
+
+        template <typename T, typename U>
         serializer::result<T> read(U &&value)
         {
-            auto rtn = rfl::json::read<T>(std::forward<U>(value));
+            auto rtn = read_impl<T>(std::forward<U>(value));
 
             if (!rtn.has_value())
             {
@@ -60,26 +72,12 @@ namespace saucer::serializers::rflpp
     template <Readable T>
     serializer::result<T> serializer::read(const result_data &data)
     {
-        auto rtn = detail::read<rflpp::result_data<T>>(data.raw);
-
-        if (!rtn.has_value())
-        {
-            return std::unexpected{rtn.error()};
-        }
-
-        return rtn->result;
+        return detail::read<T>(data.result);
     }
 
     template <Readable T>
     serializer::result<T> serializer::read(const function_data &data)
     {
-        auto rtn = detail::read<rflpp::function_data<T>>(data.raw);
-
-        if (!rtn.has_value())
-        {
-            return std::unexpected{rtn.error()};
-        }
-
-        return rtn->params;
+        return detail::read<T>(data.params);
     }
 } // namespace saucer::serializers::rflpp

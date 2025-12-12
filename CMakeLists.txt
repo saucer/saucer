@@ -388,9 +388,9 @@ endif()
 if (saucer_serializer STREQUAL "Rflpp")
   CPMFindPackage(
     NAME           reflectcpp
-    VERSION        0.22.0
+    GIT_TAG        c732e45
     GIT_REPOSITORY "https://github.com/getml/reflect-cpp"
-    SYSTEM         ON
+    SYSTEM         TRUE
   )
 
   file(GLOB_RECURSE rflpp_sources
