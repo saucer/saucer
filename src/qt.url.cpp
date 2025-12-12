@@ -104,9 +104,9 @@ namespace saucer
         return impl{rtn};
     }
 
-    result<url> url::parse(const std::string &input)
+    result<url> url::parse(cstring_view input)
     {
-        auto rtn = QUrl::fromUserInput(QString::fromStdString(input));
+        auto rtn = QUrl::fromUserInput(QString::fromUtf8(input));
 
         if (!rtn.isValid())
         {

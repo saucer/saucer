@@ -2,6 +2,7 @@
 
 #include "cstring.hpp"
 
+#include <cassert>
 #include <concepts>
 #include <type_traits>
 

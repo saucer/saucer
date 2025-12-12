@@ -215,9 +215,9 @@ namespace saucer
         platform->web_view->setUrl(url.native<false>()->url);
     }
 
-    void impl::set_html(const std::string &html) // NOLINT(*-function-const)
+    void impl::set_html(cstring_view html) // NOLINT(*-function-const)
     {
-        platform->web_view->setHtml(QString::fromStdString(html));
+        platform->web_view->setHtml(QString::fromUtf8(html));
     }
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
@@ -291,7 +291,7 @@ namespace saucer
         platform->web_view->reload();
     }
 
-    void impl::execute(const std::string &code) // NOLINT(*-function-const)
+    void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
         if (!platform->dom_loaded)
         {
@@ -299,7 +299,7 @@ namespace saucer
             return;
         }
 
-        platform->web_view->page()->runJavaScript(QString::fromStdString(code));
+        platform->web_view->page()->runJavaScript(QString::fromUtf8(code));
     }
 
     std::size_t impl::inject(const script &script) // NOLINT(*-function-const)

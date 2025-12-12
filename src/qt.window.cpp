@@ -295,9 +295,9 @@ namespace saucer
         platform->window->setWindowIcon(icon.native<false>()->icon);
     }
 
-    void impl::set_title(const std::string &title) // NOLINT(*-function-const)
+    void impl::set_title(cstring_view title) // NOLINT(*-function-const)
     {
-        platform->window->setWindowTitle(QString::fromStdString(title));
+        platform->window->setWindowTitle(QString::fromUtf8(title));
     }
 
     void impl::set_background(color color) // NOLINT(*-function-const)
