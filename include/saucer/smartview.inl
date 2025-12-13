@@ -34,9 +34,11 @@ namespace saucer
 
     template <Serializer Serializer>
     template <typename R, typename... Ts>
-    coco::future<R> basic_smartview<Serializer>::evaluate(format_string<Serializer, Ts...> code, Ts &&...params)
+    auto basic_smartview<Serializer>::evaluate(format_string<Serializer, Ts...> code, Ts &&...params)
     {
-        auto promise = coco::promise<R>{};
+        using result = std::conditional_t<std::is_void_v<R>, void, serializer_core::result<R>>;
+
+        auto promise = coco::promise<result>{};
         auto rtn     = promise.get_future();
 
         auto format  = std::format(code, Serializer::serialize(std::forward<Ts>(params))...);

@@ -23,6 +23,9 @@ namespace saucer
         template <typename T, typename Interface>
         struct is_writable;
 
+        template <typename T, typename Interface, typename Buffer>
+        struct is_readable;
+
         template <typename T>
         struct is_serializer;
     } // namespace detail
@@ -52,10 +55,8 @@ namespace saucer
     template <typename T, typename Interface>
     concept Writable = detail::is_writable<T, Interface>::value;
 
-    template <typename T, typename Interface, typename V = std::string>
-    concept Readable = requires(V value) {
-        { Interface::template read<T>(value) } -> std::same_as<serializer_core::result<T>>;
-    };
+    template <typename T, typename Interface, typename Buffer = std::string>
+    concept Readable = detail::is_readable<T, Interface, Buffer>::value;
 
     template <typename T>
     concept Serializer = detail::is_serializer<T>::value;

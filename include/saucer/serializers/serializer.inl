@@ -41,6 +41,27 @@ namespace saucer
         {
         };
 
+        template <typename T, typename Interface, typename Buffer>
+        struct is_readable : std::false_type
+        {
+        };
+
+        template <typename T, typename Interface, typename Buffer>
+        concept Readable = requires(Buffer value) {
+            { Interface::template read<T>(value) } -> std::same_as<serializer_core::result<T>>;
+        };
+
+        template <typename T, typename Interface, typename Buffer>
+            requires Readable<T, Interface, Buffer>
+        struct is_readable<T, Interface, Buffer> : std::true_type
+        {
+        };
+
+        template <typename Interface, typename Buffer>
+        struct is_readable<void, Interface, Buffer> : std::true_type
+        {
+        };
+
         template <typename T>
         struct is_serializer : std::is_base_of<serializer<T>, T>
         {
@@ -109,8 +130,7 @@ namespace saucer
         using executor    = resolver::executor;
         using transformer = resolver::transformer;
 
-        static_assert(transformer::valid,
-                      "Could not transform callable. Please refer to the documentation on how to expose functions!");
+        static_assert(transformer::valid, "Could not transform callable. Please refer to the documentation on how to expose functions!");
 
         return [converted = transformer::transform(std::forward<T>(callable))](std::unique_ptr<function_data> data,
                                                                                serializer_core::executor exec) mutable
@@ -150,18 +170,7 @@ namespace saucer
 
             if constexpr (!std::is_void_v<T>)
             {
-                auto parsed = detail::read<Interface, T>(res);
-
-                if (!parsed)
-                {
-                    auto exception = std::runtime_error{parsed.error()};
-                    auto ptr       = std::make_exception_ptr(exception);
-
-                    promise.set_exception(ptr);
-                    return;
-                }
-
-                promise.set_value(parsed.value());
+                promise.set_value(detail::read<Interface, typename T::value_type>(res));
             }
             else
             {
