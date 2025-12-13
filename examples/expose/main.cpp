@@ -52,7 +52,7 @@ coco::stray start(saucer::application *app)
                     [&](double a, double b) -> coco::task<double>
                     {
                         // We can also use `evaluate` to evaluate JavaScript code and capture its result:
-                        auto random = co_await webview->evaluate<double>("Math.random()");
+                        auto random = *co_await webview->evaluate<double>("Math.random()");
                         co_return a + b + random;
                     });
 
@@ -109,7 +109,7 @@ coco::stray start(saucer::application *app)
                             co_return std::unexpected{"Second operand must not be zero"};
                         }
 
-                        co_return (a / b) / co_await webview->evaluate<double>("Math.random()");
+                        co_return (a / b) / *co_await webview->evaluate<double>("Math.random()");
                     });
 
     webview->set_dev_tools(true);

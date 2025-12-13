@@ -22,7 +22,7 @@ suite<"smartview"> smartview_suite = []
 
         static const auto string = saucer::tests::random_string(10);
 
-        expect(eq(webview.evaluate<int>("await saucer.exposed.test1({})", 10).get(), 10));
+        expect(eq(webview.evaluate<int>("await saucer.exposed.test1({})", 10).get().value_or(0), 10));
         expect(webview.evaluate<std::string>("await saucer.exposed.test2({}).then(() => {{}}, err => err)", string).get() == string);
 
         webview.expose("test3",
@@ -38,7 +38,7 @@ suite<"smartview"> smartview_suite = []
                            return resolve(value);
                        });
 
-        expect(eq(webview.evaluate<int>("await saucer.exposed.test3({})", 10).get(), 10));
+        expect(eq(webview.evaluate<int>("await saucer.exposed.test3({})", 10).get().value_or(0), 10));
         expect(webview.evaluate<std::string>("await saucer.exposed.test3({}).then(() => {{}}, err => err)", -10).get() == "negative");
 
         webview.expose("test4",
@@ -61,7 +61,7 @@ suite<"smartview"> smartview_suite = []
                            thread.detach();
                        });
 
-        expect(eq(webview.evaluate<int>("await saucer.exposed.test4({})", 10).get(), 10));
+        expect(eq(webview.evaluate<int>("await saucer.exposed.test4({})", 10).get().value_or(0), 10));
         expect(webview.evaluate<std::string>("await saucer.exposed.test4({}).then(() => {{}}, err => err)", -10).get() == "negative");
     };
 };
