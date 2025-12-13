@@ -166,10 +166,9 @@ namespace saucer
     {
         return [promise = std::move(promise)](std::unique_ptr<result_data> data) mutable
         {
-            const auto &res = *static_cast<Interface::result_data *>(data.get());
-
             if constexpr (!std::is_void_v<T>)
             {
+                const auto &res = *static_cast<Interface::result_data *>(data.get());
                 promise.set_value(detail::read<Interface, typename T::value_type>(res));
             }
             else
