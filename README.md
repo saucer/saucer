@@ -60,7 +60,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 * ㊗️ Unicode Support
 
 * 🚀 Coroutine Support
-  > See [Code Example](#-code-example) below!
+  > See [Code Example](#%EF%B8%8F-code-example) below!
 
 * 📦 Supports Embedding Frontend into binary
   > Ship a contained binary with ease!  
