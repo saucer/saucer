@@ -82,6 +82,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   > Exposes platform specific implementations, making it possible to tweak the library to your hearts content!  
   > \> [Documentation](https://saucer.app/misc/native/)
 
+  Saucer also provides official extensions in the form of modules:
   | Module                                                  | Description                                                                                           |
   |---------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
   | 🖥️ [saucer/desktop](https://github.com/saucer/desktop) | 📂 File-Picker, Mouse-Position retrieval and URI-Launch support <br> \> [Example](./examples/desktop) |
