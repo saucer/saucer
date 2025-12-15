@@ -85,9 +85,9 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   Saucer also provides official extensions in the form of modules:
   | Module                                                  | Description                                                                                           |
   |---------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-  | 🖥️ [saucer/desktop](https://github.com/saucer/desktop) | 📂 File-Picker, Mouse-Position retrieval and URI-Launch support <br> \> [Example](./examples/desktop) |
-  | 🖨️ [saucer/pdf](https://github.com/saucer/pdf)         | 📄 Export current page as PDF  <br> \> [Example](./examples/pdf)                                      |
-  | ➰ [saucer/loop](https://github.com/saucer/loop)         | 🛞 "Legacy"[^2] loop implementation  <br> \> [Example](./examples/loop)                               |
+  | [saucer/desktop](https://github.com/saucer/desktop) | 📂 File-Picker, Mouse-Position retrieval and URI-Launch support <br> \> [Example](./examples/desktop) |
+  | [saucer/pdf](https://github.com/saucer/pdf)         | 📄 Export current page as PDF  <br> \> [Example](./examples/pdf)                                      |
+  | [saucer/loop](https://github.com/saucer/loop)         | 🛞 "Legacy"[^2] loop implementation  <br> \> [Example](./examples/loop)                               |
 
 * 💻 Supports various backends 
   
