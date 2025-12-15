@@ -167,6 +167,10 @@ int main()
 
 > 🔍 See more [examples](./examples)!
 
+## 🍵 Buy me a tea!
+
+Saucer is a passion project and I develop it in my free-time. If you'd like to support me, consider [sponsoring](https://github.com/sponsors/Curve) my tea-addiction 🫂
+
 ## 🌐 Who's using saucer?
 
 <div align="center">
@@ -184,12 +188,7 @@ int main()
 
 ## ⭐ Star History
 
-
 ![](https://api.star-history.com/svg?repos=saucer/saucer&type=Date)
-
-## 🍵 Buy me a tea!
-
-Saucer is a passion project and I develop it in my free-time. If you'd like to support me, consider [sponsoring](https://github.com/sponsors/Curve) my tea-addiction 🫂
 
 ---
 
