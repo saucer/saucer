@@ -60,6 +60,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 * ㊗️ Unicode Support
 
 * 🚀 Coroutine Support
+  > See [Code Example](#-code-example) below!
 
 * 📦 Supports Embedding Frontend into binary
   > Ship a contained binary with ease!  
@@ -141,7 +142,7 @@ coco::stray start(saucer::application *app)
 
     webview->expose("add_demo", [&](double a, double b) -> coco::task<double>
     { 
-        co_return a + b + co_await webview->evaluate<double>("Math.random()"); 
+        co_return a + b + *co_await webview->evaluate<double>("Math.random()"); 
     });
 
     auto index = saucer::url::from("index.html");
