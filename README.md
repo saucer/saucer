@@ -5,7 +5,7 @@
 </div>
 
 <p align="center"> 
-    Build cross-platform desktop apps with C++ & Web Technologies 
+    Build small, fast and modern cross-platform desktop apps with C++ & Web Technologies 
 </p>
 
 ---
@@ -44,7 +44,50 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 ## 🛸 Features
 
-* 💻 Cross Platform
+* ⚖️ FOSS
+  > Licensed under MIT!
+
+* 🪶 Lightweight
+  > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
+
+* 🔀 Seamless C++ / JavaScript interoperability
+  > Convenient API to evaluate JavaScript Code or expose C++ functions to JavaScript!   
+  > \> [Example](./examples/expose/main.cpp)
+
+* 👾 Feature-Rich
+  > Supports custom schemes, script injection, favicons, and much more!
+
+* ㊗️ Unicode Support
+
+* 🚀 Coroutine Support
+
+* 📦 Supports Embedding Frontend into binary
+  > Ship a contained binary with ease!  
+  > \> [Documentation](https://saucer.app/webview/embedding/)
+
+* 🦺 Thread-Safe
+
+* 🧨 No Exceptions 
+  > Compiles with `-fno-exceptions`!
+
+* 🏃 No RTTI
+  > Compiles with `-fno-rtti`!
+
+* 🪟 Built-in support for frame-less windows and transparency
+  > Supports `data-webview` attributes to allow effortless custom title-bars.  
+  > \> [Documentation](https://saucer.app/window/decorations/)
+
+* 🧰 Customizable
+  > Exposes platform specific implementations, making it possible to tweak the library to your hearts content!  
+  > \> [Documentation](https://saucer.app/misc/native/)
+
+  | Module                                                  | Description                                                                                           |
+  |---------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+  | 🖥️ [saucer/desktop](https://github.com/saucer/desktop) | 📂 File-Picker, Mouse-Position retrieval and URI-Launch support <br> \> [Example](./examples/desktop) |
+  | 🖨️ [saucer/pdf](https://github.com/saucer/pdf)         | 📄 Export current page as PDF  <br> \> [Example](./examples/pdf)                                      |
+  | ➰ [saucer/loop](https://github.com/saucer/loop)         | 🛞 "Legacy"[^2] loop implementation  <br> \> [Example](./examples/loop)                               |
+
+* 💻 Supports various backends 
   
   <table>
     <tr>
@@ -66,40 +109,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
     </tr>
   </table>
 
-* 👾 Feature-Rich
-  > Supports custom schemes, script injection, favicons, and much more!
-
-* ㊗️ Unicode Support
-
-* 🔀 Seamless C++ / JavaScript interoperability
-
-* 🚀 Coroutine support
-
-* 📦 Supports Embedding Frontend into binary
-
-* 🪶 Lightweight
-  > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
-
-* 🧰 Customizable
-  > Offers a convenient API to access platform specific implementations, making it possible to tweak the library to your hearts content!
-  
-  * Official Modules
-    * 🖥️ [saucer/desktop](https://github.com/saucer/desktop)
-      > 📂 File-Picker, Mouse-Position retrieval and URI-Launch support  
-      > \> [Example](./examples/desktop)
-
-    * 🖨️ [saucer/pdf](https://github.com/saucer/pdf) 
-      > 📄 Export current page as PDF  
-      > \> [Example](./examples/pdf)
-
-    * ➰ [saucer/loop](https://github.com/saucer/loop)
-      > 🛞 "Legacy"[^2] loop implementation  
-      > \> [Example](./examples/loop)
-
 * 🏗️ [Bindings](https://github.com/saucer/bindings)
   > Saucer also exposes a C-Interface, thus making it possible to write bindings for it in your favorite language!  
-  
-  * Community Bindings
     
     | Language | Repository                         |
     | -------- | ---------------------------------- |
@@ -108,19 +119,6 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
     | Rust     | https://github.com/skjsjhb/saucers |
 
     _Please note: All bindings are community maintained!_
-
-* 🦺 Thread-Safe
-
-* 🧨 No Exceptions 
-  > Compiles with `-fno-exceptions`!
-
-* 🏃 No RTTI
-  > Compiles with `-fno-rtti`!
-
-* ⚖️ FOSS
-  > Licensed under MIT!
-
-* 🪟 Built-in support for frame-less windows and transparency
 
 * 🦥 [... and more!](https://saucer.github.io/)
 
