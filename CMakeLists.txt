@@ -86,7 +86,7 @@ set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
 # Ensure valid library options
 # --------------------------------------------------------------------------------------------------------
 
-set(saucer_valid_backends Qt WebKitGtk WebView2 WebKit Default)
+set(saucer_valid_backends Qt WebKitGtk WebView2 WebKit None Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
 
 if (NOT saucer_backend IN_LIST saucer_valid_backends)
