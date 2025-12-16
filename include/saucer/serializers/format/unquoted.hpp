@@ -1,11 +1,13 @@
 #pragma once
 
-#include <string_view>
+#include <string>
+#include <concepts>
 
 namespace saucer
 {
-    struct unquoted
-    {
-        std::string_view str;
-    };
+    template <typename T>
+        requires std::constructible_from<std::string, T>
+    auto unquoted(T &&);
 } // namespace saucer
+
+#include "unquoted.inl"

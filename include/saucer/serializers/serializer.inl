@@ -40,7 +40,7 @@ namespace saucer
         };
 
         template <typename Interface>
-        struct is_writable<unquoted, Interface> : std::true_type
+        struct is_writable<unquoted_t, Interface> : std::true_type
         {
         };
 
@@ -111,9 +111,16 @@ namespace saucer
         }
 
         template <typename Interface>
-        std::string write(unquoted value)
+        std::string write(unquoted_t &&value) // NOLINT(*-not-moved)
         {
-            return std::string{value.str};
+            return std::move(value.str);
+        }
+
+        template <typename Interface>
+        std::string write(unquoted_t &)
+        {
+            static_assert(false, "Do not pass `saucer::unquoted` as l-value reference!");
+            return {};
         }
 
         template <typename Interface, typename... Ts>
@@ -140,7 +147,7 @@ namespace saucer
 
     template <typename Interface>
     template <typename T>
-    auto serializer<Interface>::convert(T &&callable)
+    auto serializer<Interface>::convert(T &&callable) // NOLINT(*-std-forward)
     {
         using resolver = traits::resolver<T>;
 
