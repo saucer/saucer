@@ -144,13 +144,7 @@ namespace saucer
             locked->emplace(id, std::move(resolve));
         }
 
-        webview::execute(std::format(
-            R"(
-                (async () =>
-                    window.saucer.internal.resolve({}, {})
-                )();
-            )",
-            id, code));
+        webview::execute(std::format("window.saucer.internal.resolve({}, async () => {})", id, code));
     }
 
     void smartview_base::unexpose()

@@ -21,6 +21,7 @@ struct glz::meta<saucer::serializers::glaze::result_data>
     static constexpr auto value = object(  //
         "saucer:resolve", skip{},          //
         "id", &T::id,                      //
+        "exception", &T::exception,        //
         "result", glz::escaped<&T::result> //
     );
 };

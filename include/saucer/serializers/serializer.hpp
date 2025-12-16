@@ -81,7 +81,7 @@ namespace saucer
         static auto convert(T &&);
 
         template <Readable<Interface> T>
-        static auto resolve(coco::promise<T>);
+        static auto resolve(coco::promise<result<T>>);
 
       public:
         template <Writable<Interface> T>

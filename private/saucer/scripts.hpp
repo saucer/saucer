@@ -111,11 +111,24 @@ namespace saucer::scripts
     )js";
 
     static constexpr std::string_view bridge_script = R"js(
-    window.saucer.internal.resolve = async (id, value) =>
+    window.saucer.internal.resolve = async (id, fn) =>
     {{
+        let value     = undefined;
+        let exception = false;
+
+        try
+        {{
+            value = await fn();
+        }} catch (e)
+        {{
+            value     = e.toString();
+            exception = true;
+        }}
+
         await window.saucer.internal.message({0}({{
                 ["saucer:resolve"]: true,
                 id,
+                exception, 
                 result: value === undefined ? null : value,
         }}));
     }};

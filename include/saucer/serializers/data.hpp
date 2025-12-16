@@ -17,6 +17,7 @@ namespace saucer
     struct result_data
     {
         std::size_t id;
+        bool exception;
 
       public:
         virtual ~result_data() = default;

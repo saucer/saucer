@@ -39,6 +39,7 @@ namespace rfl
         {
             rfl::Rename<"saucer:resolve", bool> tag;
             std::size_t id;
+            bool exception;
             rfl::Generic result;
         };
 
@@ -46,8 +47,9 @@ namespace rfl
         {
             result_data rtn;
 
-            rtn.id     = v.id;
-            rtn.result = v.result;
+            rtn.id        = v.id;
+            rtn.result    = v.result;
+            rtn.exception = v.exception;
 
             return rtn;
         }

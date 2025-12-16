@@ -71,17 +71,32 @@ namespace saucer
         };
 
         template <typename Interface, typename T>
-        result<T> read(const auto &value)
+        struct reader
         {
-            return Interface::template read<T>(value);
-        }
+            static result<T> operator()(const auto &value)
+            {
+                return Interface::template read<T>(value);
+            }
+        };
 
         template <typename Interface, tuple::Tuple T>
             requires(std::tuple_size_v<T> == 0)
-        result<T> read(const auto &)
+        struct reader<Interface, T>
         {
-            return {};
-        }
+            static result<T> operator()(auto &&)
+            {
+                return {};
+            }
+        };
+
+        template <typename Interface>
+        struct reader<Interface, void>
+        {
+            static result<void> operator()(auto &&)
+            {
+                return {};
+            }
+        };
 
         template <typename Interface>
         std::string write()
@@ -139,7 +154,7 @@ namespace saucer
                                                                                serializer_core::executor exec) mutable
         {
             const auto &message = *static_cast<Interface::function_data *>(data.get());
-            auto parsed         = detail::read<Interface, args>(message);
+            auto parsed         = detail::reader<Interface, args>{}(message);
 
             if (!parsed)
             {
@@ -165,19 +180,21 @@ namespace saucer
 
     template <typename Interface>
     template <Readable<Interface> T>
-    auto serializer<Interface>::resolve(coco::promise<T> promise)
+    auto serializer<Interface>::resolve(coco::promise<result<T>> promise)
     {
         return [promise = std::move(promise)](std::unique_ptr<result_data> data) mutable
         {
-            if constexpr (!std::is_void_v<T>)
+            const auto &res = *static_cast<Interface::result_data *>(data.get());
+
+            if (!res.exception) [[likely]]
             {
-                const auto &res = *static_cast<Interface::result_data *>(data.get());
-                promise.set_value(detail::read<Interface, typename T::value_type>(res));
+                return promise.set_value(detail::reader<Interface, T>{}(res));
             }
-            else
-            {
-                promise.set_value();
-            }
+
+            auto exception = detail::reader<Interface, std::string>{}(res);
+            auto error     = exception.has_value() ? *exception : exception.error();
+
+            promise.set_value(std::unexpected{error});
         };
     }
 
