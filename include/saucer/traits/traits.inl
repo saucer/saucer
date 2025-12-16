@@ -170,8 +170,7 @@ namespace saucer::traits
         template <typename U, typename... Rs>
         static auto resolve(U &&executor, Rs &&...result)
         {
-            detail::awaitable<T, std::tuple<Ts...>, Executor>::transformer::resolve(std::forward<U>(executor),
-                                                                                    std::forward<Rs>(result)...);
+            detail::awaitable<T, std::tuple<Ts...>, Executor>::transformer::resolve(std::forward<U>(executor), std::forward<Rs>(result)...);
         }
 
         static auto transform(T callable)
