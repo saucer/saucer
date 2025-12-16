@@ -32,7 +32,7 @@ namespace saucer
 
     window::~window()
     {
-        utils::invoke([impl = m_impl.get()] { impl->events.clear(true); }, m_impl.get());
+        utils::invoke([](auto *impl) { impl->events.clear(true); }, m_impl.get());
     }
 
     template <window::event Event>
@@ -228,12 +228,12 @@ namespace saucer
 
     void window::off(event event)
     {
-        return utils::invoke([impl = m_impl.get(), event] { impl->events.clear(event); }, m_impl.get());
+        return utils::invoke([event](auto *impl) { impl->events.clear(event); }, m_impl.get());
     }
 
     void window::off(event event, std::size_t id)
     {
-        return utils::invoke([impl = m_impl.get(), event, id] { impl->events.remove(event, id); }, m_impl.get());
+        return utils::invoke([event, id](auto *impl) { impl->events.remove(event, id); }, m_impl.get());
     }
 
     SAUCER_INSTANTIATE_WINDOW_EVENTS(SAUCER_INSTANTIATE_WINDOW_EVENT);

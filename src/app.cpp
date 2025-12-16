@@ -119,7 +119,7 @@ namespace saucer
             return;
         }
 
-        return invoke([impl = m_impl.get(), event] { impl->events.clear(event); });
+        return invoke([event](auto *impl) { impl->events.clear(event); }, m_impl.get());
     }
 
     void application::off(event event, std::size_t id)
@@ -129,6 +129,6 @@ namespace saucer
             return;
         }
 
-        return invoke([impl = m_impl.get(), event, id] { impl->events.remove(event, id); });
+        return invoke([event, id](auto *impl) { impl->events.remove(event, id); }, m_impl.get());
     }
 } // namespace saucer

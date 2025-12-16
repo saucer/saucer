@@ -70,7 +70,7 @@ namespace saucer
 
     webview::~webview()
     {
-        utils::invoke([impl = m_impl.get()] { impl->events.clear(true); }, m_impl.get());
+        utils::invoke([](auto *impl) { impl->events.clear(true); }, m_impl.get());
     }
 
     template <webview::event Event>
@@ -117,7 +117,7 @@ namespace saucer
             delete window.saucer.internal.rpc[{0}];
         )";
 
-        return utils::invoke([this, id, reason] { execute(std::format(code, id, reason)); }, this);
+        return utils::invoke([id, reason](auto *impl) { impl->execute(std::format(code, id, reason)); }, this);
     }
 
     void impl::resolve(std::size_t id, std::string_view result)
@@ -127,7 +127,7 @@ namespace saucer
             delete window.saucer.internal.rpc[{0}];
         )";
 
-        return utils::invoke([this, id, result] { execute(std::format(code, id, result)); }, this);
+        return utils::invoke([id, result](auto *impl) { impl->execute(std::format(code, id, result)); }, this);
     }
 
     window &webview::parent() const
@@ -249,7 +249,7 @@ namespace saucer
 
     void webview::embed(embedded_files files)
     {
-        auto embed = [impl = m_impl.get()](auto files)
+        auto embed = [](auto *impl, auto files)
         {
             impl->embedded.merge(std::move(files));
             impl->handle_scheme("saucer", std::bind_front(&impl::handle_embed, impl));
@@ -260,7 +260,7 @@ namespace saucer
 
     void webview::unembed()
     {
-        auto unembed = [impl = m_impl.get()]
+        auto unembed = [](auto *impl)
         {
             impl->embedded.clear();
             impl->remove_scheme("saucer");
@@ -271,7 +271,7 @@ namespace saucer
 
     void webview::unembed(const fs::path &file)
     {
-        return utils::invoke([impl = m_impl.get(), file] { impl->embedded.erase(file); }, m_impl.get());
+        return utils::invoke([file](auto *impl) { impl->embedded.erase(file); }, m_impl.get());
     }
 
     void webview::execute(cstring_view code)
@@ -303,12 +303,12 @@ namespace saucer
 
     void webview::off(event event)
     {
-        return utils::invoke([impl = m_impl.get(), event] { impl->events.clear(event); }, m_impl.get());
+        return utils::invoke([event](auto *impl) { impl->events.clear(event); }, m_impl.get());
     }
 
     void webview::off(event event, std::size_t id)
     {
-        return utils::invoke([impl = m_impl.get(), event, id] { impl->events.remove(event, id); }, m_impl.get());
+        return utils::invoke([event, id](auto *impl) { impl->events.remove(event, id); }, m_impl.get());
     }
 
     void webview::register_scheme(const std::string &name)

@@ -45,17 +45,17 @@ namespace saucer::utils
     }
 
     template <typename Callback, typename T, typename... Ts>
-        requires std::invocable<Callback, Ts...>
+        requires std::invocable<Callback, T *, Ts...>
     constexpr auto invoke(Callback &&callback, T *self, Ts &&...args)
     {
-        using result = std::invoke_result_t<Callback, Ts...>;
+        using result = std::invoke_result_t<Callback, T *, Ts...>;
 
         if (!self)
         {
             return detail::noop<result>();
         }
 
-        return self->parent->invoke(std::forward<Callback>(callback), std::forward<Ts>(args)...);
+        return self->parent->invoke(std::forward<Callback>(callback), self, std::forward<Ts>(args)...);
     }
 
     template <detail::callback Callback, typename T, typename... Ts>
@@ -65,6 +65,6 @@ namespace saucer::utils
         static constexpr auto pure = name.substr(0, name.find_first_of("(<"));
         static_assert(pure == Callback.name, "Name of implementation does not match interface");
 
-        return invoke(Callback.value, self, self, std::forward<Ts>(args)...);
+        return invoke(Callback.value, self, std::forward<Ts>(args)...);
     }
 } // namespace saucer::utils

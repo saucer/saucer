@@ -11,7 +11,7 @@ namespace saucer::utils
     }
 
     template <typename Callback, typename T, typename... Ts>
-        requires std::invocable<Callback, Ts...>
+        requires std::invocable<Callback, T *, Ts...>
     constexpr auto invoke(Callback &&, T *, Ts &&...);
 
     template <detail::callback Callback, typename T, typename... Ts>
