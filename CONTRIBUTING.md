@@ -1,10 +1,10 @@
 <hr>
 
-<div align="center"> 
+<div align="center">
     <img src="https://raw.githubusercontent.com/saucer/saucer.github.io/master/static/img/logo.png" height=312/>
 </div>
 
-<p align="center"> 
+<p align="center">
     <b>Welcome to our contribution guidelines!</b>
     <br/>
     <br/>
@@ -12,12 +12,12 @@
     Please try to adhere to the following rules to help us maintain a clean codebase and to make the merge-process as simple as possible!
 </p>
 
-----
+---
 
 # Talk to us!
 
-Before starting to work on any patches please talk to us before hand.  
-This helps us prevent situations where you may want to implement a feature that is already in the works.  
+Before starting to work on any patches please talk to us before hand.\
+This helps us prevent situations where you may want to implement a feature that is already in the works.
 
 We're always grateful for your contributions :) We just want to make sure your hard work doesn't go to waste!
 
@@ -38,14 +38,14 @@ Please always use [semantic commit messages](https://www.conventionalcommits.org
 We follow a specific coding-style throughout the project:
 
 - Includes
-    - Includes should be sorted by length where applicable
-    - Project/Internal Headers always come first
-    - System and Project Headers should be separated by a line break
-    - If applicable, separate includes into reasonable groups
+  - Includes should be sorted by length where applicable
+  - Project/Internal Headers always come first
+  - System and Project Headers should be separated by a line break
+  - If applicable, separate includes into reasonable groups
 
 - Naming Convention
   - We use a "standard library-ish" naming convention
-     > _As there is no such definitive convention, it is sometimes up to debate how to name things, but if you look through the source code you should get the gist of how to name things, it's mostly just <kbd>snake_case</kbd>, except for Template-Parameters, which should be in <kbd>CamelCase</kbd>._
+    > _As there is no such definitive convention, it is sometimes up to debate how to name things, but if you look through the source code you should get the gist of how to name things, it's mostly just <kbd>snake_case</kbd>, except for Template-Parameters, which should be in <kbd>CamelCase</kbd>._
 
 - Nesting
   - Function depth should be kept to a minimum
