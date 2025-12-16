@@ -14,6 +14,9 @@ namespace saucer
 {
     namespace detail
     {
+        template <typename T>
+        using result = serializer_core::result<T>;
+
         template <typename T, typename Interface>
         struct is_writable : std::false_type
         {
@@ -68,14 +71,14 @@ namespace saucer
         };
 
         template <typename Interface, typename T>
-        std::expected<T, std::string> read(const auto &value)
+        result<T> read(const auto &value)
         {
             return Interface::template read<T>(value);
         }
 
         template <typename Interface, tuple::Tuple T>
             requires(std::tuple_size_v<T> == 0)
-        std::expected<T, std::string> read(const auto &)
+        result<T> read(const auto &)
         {
             return {};
         }
