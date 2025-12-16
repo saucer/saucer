@@ -73,7 +73,7 @@ namespace saucer
         template <typename Interface, typename T>
         struct reader
         {
-            static result<T> operator()(const auto &value)
+            static result<T> read(const auto &value)
             {
                 return Interface::template read<T>(value);
             }
@@ -83,7 +83,7 @@ namespace saucer
             requires(std::tuple_size_v<T> == 0)
         struct reader<Interface, T>
         {
-            static result<T> operator()(auto &&)
+            static result<T> read(auto &&)
             {
                 return {};
             }
@@ -92,7 +92,7 @@ namespace saucer
         template <typename Interface>
         struct reader<Interface, void>
         {
-            static result<void> operator()(auto &&)
+            static result<void> read(auto &&)
             {
                 return {};
             }
@@ -154,6 +154,7 @@ namespace saucer
         using args        = resolver::args;
         using executor    = resolver::executor;
         using transformer = resolver::transformer;
+        using reader      = detail::reader<Interface, args>;
 
         static_assert(transformer::valid, "Could not transform callable. Please refer to the documentation on how to expose functions!");
 
@@ -161,7 +162,7 @@ namespace saucer
                                                                                serializer_core::executor exec) mutable
         {
             const auto &message = *static_cast<Interface::function_data *>(data.get());
-            auto parsed         = detail::reader<Interface, args>{}(message);
+            auto parsed         = reader::read(message);
 
             if (!parsed)
             {
@@ -189,16 +190,19 @@ namespace saucer
     template <Readable<Interface> T>
     auto serializer<Interface>::resolve(coco::promise<result<T>> promise)
     {
+        using reader           = detail::reader<Interface, T>;
+        using exception_reader = detail::reader<Interface, std::string>;
+
         return [promise = std::move(promise)](std::unique_ptr<result_data> data) mutable
         {
             const auto &res = *static_cast<Interface::result_data *>(data.get());
 
             if (!res.exception) [[likely]]
             {
-                return promise.set_value(detail::reader<Interface, T>{}(res));
+                return promise.set_value(reader::read(res));
             }
 
-            auto exception = detail::reader<Interface, std::string>{}(res);
+            auto exception = exception_reader::read(res);
             auto error     = exception.has_value() ? *exception : exception.error();
 
             promise.set_value(std::unexpected{error});
