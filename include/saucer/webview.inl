@@ -9,7 +9,7 @@ namespace saucer
     void webview::handle_scheme(const std::string &name, T &&handler)
     {
         using transformer = traits::transformer<T, std::tuple<scheme::request>, scheme::executor>;
-        handle_scheme(name, scheme::resolver{transformer::transform(std::forward<T>(handler))});
+        handle_scheme(name, scheme::resolver{transformer{std::forward<T>(handler)}});
     }
 
     template <webview::event Event>
