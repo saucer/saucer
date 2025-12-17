@@ -198,11 +198,11 @@ namespace saucer
 #endif
 
             auto transformed_exec = executor{std::move(resolve), std::move(reject)};
-            auto params           = std::tuple_cat(std::move(parsed.value()), std::make_tuple(
+            auto params           = std::tuple_cat(
 #ifdef __cpp_exceptions
-                                                                        std::move(except),
+                std::make_tuple(std::move(except)),
 #endif
-                                                                        std::move(transformed_exec)));
+                std::move(parsed.value()), std::make_tuple(std::move(transformed_exec)));
 
             std::apply(converted, std::move(params));
         };

@@ -120,14 +120,14 @@ namespace saucer::traits
         static constexpr auto valid = true;
 
       public:
-        void operator()(Ts... args)
+        void operator()(Ts... args, Executor executor)
         {
-            return std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)...);
+            std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)..., std::move(executor));
         }
 
-        void operator()(auto except, Ts... args)
+        void operator()(auto except, Ts... args, Executor executor)
         {
-            SAUCER_CATCH(operator()(std::forward<Ts>(args)...), std::invoke(except, std::current_exception()));
+            SAUCER_CATCH(operator()(std::forward<Ts>(args)..., std::move(executor)), std::invoke(except, std::current_exception()));
         }
     };
 
