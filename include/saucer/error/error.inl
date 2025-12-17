@@ -18,19 +18,24 @@ namespace saucer
         struct is_expected<std::expected<T, E>> : std::true_type
         {
         };
+
+        template <typename T>
+        concept expected = is_expected<T>::value;
     } // namespace detail
 
     template <typename T>
     auto err(T &&value, std::source_location location)
     {
-        if constexpr (detail::is_expected<std::decay_t<T>>::value)
+        using U = std::remove_cvref_t<T>;
+
+        if constexpr (detail::expected<U>)
         {
             return std::unexpected{value.error()};
         }
         else
         {
             return std::unexpected{error{
-                cr::polo<error::impl>{std::in_place_type_t<error::of<std::decay_t<T>>>{}, std::forward<T>(value)},
+                cr::polo<error::impl>{std::in_place_type_t<error::of<U>>{}, std::forward<T>(value)},
                 location,
             }};
         }

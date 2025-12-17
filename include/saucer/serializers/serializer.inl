@@ -158,8 +158,8 @@ namespace saucer
 
         static_assert(transformer::valid, "Could not transform callable. Please refer to the documentation on how to expose functions!");
 
-        return [converted = transformer::transform(std::forward<T>(callable))](std::unique_ptr<function_data> data,
-                                                                               serializer_core::executor exec) mutable
+        return [converted = transformer{std::forward<T>(callable)}](std::unique_ptr<function_data> data,
+                                                                    serializer_core::executor exec) mutable
         {
             const auto &message = *static_cast<Interface::function_data *>(data.get());
             auto parsed         = reader::read(message);
@@ -174,13 +174,35 @@ namespace saucer
                 std::invoke(resolve, detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
-            auto reject = [reject = std::move(exec.reject)]<typename... Ts>(Ts &&...value)
+            auto reject = [reject = exec.reject]<typename... Ts>(Ts &&...value)
             {
                 std::invoke(reject, detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
+#ifdef __cpp_exceptions
+            auto except = [reject = std::move(exec.reject)](const std::exception_ptr &ptr)
+            {
+                try
+                {
+                    std::rethrow_exception(ptr);
+                }
+                catch (std::exception &ex)
+                {
+                    std::invoke(reject, detail::write<Interface>(ex.what()));
+                }
+                catch (...)
+                {
+                    std::invoke(reject, detail::write<Interface>("Unknown Exception"));
+                }
+            };
+#endif
+
             auto transformed_exec = executor{std::move(resolve), std::move(reject)};
-            auto params           = std::tuple_cat(std::move(parsed.value()), std::make_tuple(std::move(transformed_exec)));
+            auto params           = std::tuple_cat(std::move(parsed.value()), std::make_tuple(
+#ifdef __cpp_exceptions
+                                                                        std::move(except),
+#endif
+                                                                        std::move(transformed_exec)));
 
             std::apply(converted, std::move(params));
         };

@@ -241,7 +241,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           coco
-  VERSION        3.2.3
+  VERSION        4.0.0
   GIT_REPOSITORY "https://github.com/Curve/coco"
 )
 
@@ -469,5 +469,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 3.2.3;rebind 5.3.1;ereignis 6.2.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.0.0;rebind 5.3.1;ereignis 6.2.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
 )
