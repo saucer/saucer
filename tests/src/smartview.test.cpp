@@ -17,6 +17,11 @@ suite<"smartview"> smartview_suite = []
         expect(webview.evaluate<std::string>("{} + {}", "C++", "23").get() == "C++23");
         expect(webview.evaluate<std::array<int, 2>>("Array.of({})", saucer::make_args(1, 2)).get() == std::array<int, 2>{1, 2});
 
+        auto range_error = webview.evaluate<std::vector<int>>("Array(-1).fill(1)").get();
+
+        expect(not range_error.has_value());
+        expect(range_error.error().contains("RangeError"));
+
         webview.expose("test1", [](int value) { return value; });
         webview.expose("test2", [](std::string value) -> std::expected<int, std::string> { return std::unexpected{std::move(value)}; });
 
@@ -63,5 +68,20 @@ suite<"smartview"> smartview_suite = []
 
         expect(eq(webview.evaluate<int>("await saucer.exposed.test4({})", 10).get().value_or(0), 10));
         expect(webview.evaluate<std::string>("await saucer.exposed.test4({}).then(() => {{}}, err => err)", -10).get() == "negative");
+
+#ifdef __cpp_exceptions
+        webview.expose("test5", []() { throw std::runtime_error("Oh no!"); });
+        expect(webview.evaluate<std::string>("await saucer.exposed.test5().then(() => {{}}, err => err)").get() == "Oh no!");
+
+        webview.expose("test5",
+                       [&webview](saucer::executor<std::string> exec) -> coco::task<void> // NOLINT(*-capturing-lambda-coroutines)
+                       {
+                           expect(*co_await webview.evaluate<double>("Math.random()") <= 1);
+                           throw std::runtime_error("Oh no!");
+                           exec.reject("unreachable");
+                       });
+
+        expect(webview.evaluate<std::string>("await saucer.exposed.test5().then(() => {{}}, err => err)").get() == "Oh no!");
+#endif
     };
 };
