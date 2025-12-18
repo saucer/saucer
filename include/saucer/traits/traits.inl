@@ -116,10 +116,10 @@ namespace saucer::traits
     {
         static constexpr auto valid = true;
 
-      private:
+      public:
         using result = std::invoke_result_t<T, Ts..., Executor>;
 
-      private:
+      public:
         decltype(auto) call(Ts... args, Executor executor)
         {
             return std::invoke(this->callable, std::forward<Ts>(args)..., std::move(executor));
