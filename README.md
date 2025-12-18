@@ -69,7 +69,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 - 🦺 Thread-Safe
 
 - 🧨 No Exceptions[^3]
-  > Compiles with `-fno-exceptions`!\
+  > Compiles with `-fno-exceptions`!
 
 - 🏃 No RTTI
   > Compiles with `-fno-rtti`!
