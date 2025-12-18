@@ -1,34 +1,35 @@
 cmake_minimum_required(VERSION 3.25)
 project(saucer LANGUAGES CXX VERSION 8.0.0)
 
-# --------------------------------------------------------------------------------------------------------
-# Library switches
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Library switches                                                                                      |
+# +-------------------------------------------------------------------------------------------------------+
 
-option(saucer_static            "Build a static library"                            ON)
-option(saucer_prefer_remote     "Prefer remote packages over local packages"        ON)
+option(saucer_static           "Build a static library"                                               ON)
+option(saucer_prefer_remote    "Prefer remote packages over local packages"                           ON)
+option(saucer_exceptions       "Enable exception support (Respects -fno-exceptions even if enabled)"  ON)
 
-option(saucer_examples          "Build examples"                                   OFF)
-option(saucer_tests             "Build tests"                                      OFF)
+option(saucer_examples         "Build examples"                                                      OFF)
+option(saucer_tests            "Build tests"                                                         OFF)
 
-option(saucer_msvc_hack         "Fix mutex crashes on mismatching runtimes"        OFF) # See VS2022 17.10 Changelog
-option(saucer_private_webkit    "Enable private api usage for wkwebview"            ON)
+option(saucer_msvc_hack        "Fix mutex crash on mismatching runtimes. See VS2022 17.10 changelog" OFF)
+option(saucer_private_webkit   "Enable private api usage for wkwebview"                               ON)
 
-option(saucer_no_version_check  "Skip compiler version check"                      OFF)
+option(saucer_no_version_check "Skip compiler version check"                                         OFF)
 
-# --------------------------------------------------------------------------------------------------------
-# Convenience wrapper over `message`
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Convenience wrapper over `message`                                                                    |
+# +-------------------------------------------------------------------------------------------------------+
 
 function(saucer_message LEVEL MESSAGE)
   message(${LEVEL} "saucer: ${MESSAGE}")
 endfunction()
 
-# --------------------------------------------------------------------------------------------------------
-# Check requirements
-# └ The main use case of this check is to prevent users from reporting
-#   issues only to find out that their compiler is too old.
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Check requirements                                                                                    |
+# | > The main use case of this check is to prevent users from reporting                                  |
+# |   issues only to find out that their compiler is too old.                                             |
+# +-------------------------------------------------------------------------------------------------------+
 
 macro(saucer_mark_outdated)
   if (${ARGN})
@@ -63,18 +64,18 @@ if (NOT saucer_no_compiler_version_check AND saucer_cxx_outdated)
   saucer_message(FATAL_ERROR "The used compiler seems to be outdated! You can disable this check with '-Dsaucer_no_compiler_version_check=ON'")
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Library options
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Library options                                                                                       |
+# +-------------------------------------------------------------------------------------------------------+
 
 set(saucer_webview2_version "1.0.3296.44"   CACHE STRING "The WebView2 version to use (Ignored when using offline packages)")
 set(saucer_webview2_arch    "Default"       CACHE STRING "The architecture (Win32, x64, ARM64) used for linking against NuGet packages")
 set(saucer_backend          "Default"       CACHE STRING "The backend to use, will use the most appropriate one for the current platform by default")
 set(saucer_serializer       "Glaze"         CACHE STRING "The built-in serializer to use for e.g. request parsing. Also used as the default smartview serializer")
 
-# --------------------------------------------------------------------------------------------------------
-# Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Set "saucer_prefer_remote" and "CPM_USE_LOCAL_PACKAGES" to equal values                               |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_prefer_remote)
   saucer_message(STATUS "Avoiding local packages as 'saucer_prefer_remote' is ON")
@@ -82,9 +83,9 @@ endif()
 
 set(CPM_DOWNLOAD_ALL ${saucer_prefer_remote})
 
-# --------------------------------------------------------------------------------------------------------
-# Ensure valid library options
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Ensure valid library options                                                                          |
+# +-------------------------------------------------------------------------------------------------------+
 
 set(saucer_valid_backends Qt WebKitGtk WebView2 WebKit None Default)
 set_property(CACHE saucer_backend PROPERTY STRINGS ${saucer_valid_backends})
@@ -100,9 +101,9 @@ if (NOT saucer_serializer IN_LIST saucer_valid_serializers)
   saucer_message(FATAL_ERROR "Bad Serializer, expected one of ${saucer_valid_serializers}")
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Determine appropriate default backend
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Determine appropriate default backend                                                                 |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_backend STREQUAL "Default")
   if (WIN32)
@@ -116,9 +117,9 @@ if (saucer_backend STREQUAL "Default")
   saucer_message(STATUS "Backend is 'Default', using ${saucer_backend}")
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Determine appropriate default architecture
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Determine appropriate default architecture                                                            |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (WIN32 AND saucer_webview2_arch STREQUAL "Default")
   if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -130,9 +131,9 @@ if (WIN32 AND saucer_webview2_arch STREQUAL "Default")
   saucer_message(STATUS "Architecture is 'Default', using ${saucer_webview2_arch}")
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Library
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Library                                                                                         |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_static)
   add_library(${PROJECT_NAME} STATIC)
@@ -164,9 +165,13 @@ else()
   target_compile_options(${PROJECT_NAME} PUBLIC -Wno-unknown-attributes)
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Compile Definitions
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Compile Definitions                                                                             |
+# +-------------------------------------------------------------------------------------------------------+
+
+if (NOT saucer_exceptions)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_NO_EXCEPTIONS)
+endif()
 
 if (saucer_msvc_hack)
   target_compile_definitions(${PROJECT_NAME} PUBLIC _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
@@ -176,9 +181,9 @@ if (saucer_private_webkit)
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT_PRIVATE)
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Include directories
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Include directories                                                                                   |
+# +-------------------------------------------------------------------------------------------------------+
 
 target_include_directories(${PROJECT_NAME} PRIVATE "include/saucer")
 target_include_directories(${PROJECT_NAME} PRIVATE "private/saucer")
@@ -188,16 +193,16 @@ target_include_directories(
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Modules
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Modules                                                                                         |
+# +-------------------------------------------------------------------------------------------------------+
 
 include("cmake/module.cmake")
 saucer_include_directories(${PROJECT_NAME} "private")
 
-# --------------------------------------------------------------------------------------------------------
-# Miscellaneous CMake-Setup
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Miscellaneous CMake-Setup                                                                             |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_serializer STREQUAL "Glaze")
   set(SERIALIZER_DEP "glaze 6.0.3")
@@ -207,9 +212,9 @@ if (saucer_serializer STREQUAL "Rflpp")
   set(SERIALIZER_DEP "reflectcpp 0.22.0")
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Sources
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Sources                                                                                         |
+# +-------------------------------------------------------------------------------------------------------+
 
 target_sources(${PROJECT_NAME} PRIVATE
     "src/error.cpp"
@@ -226,9 +231,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     "src/webview.impl.cpp"
 )
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Dependencies
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Dependencies                                                                                    |
+# +-------------------------------------------------------------------------------------------------------+
 
 include("cmake/cpm.cmake")
 include("cmake/nuget.cmake")
@@ -241,8 +246,9 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           coco
-  VERSION        4.1.0
+  VERSION        4.2.0
   GIT_REPOSITORY "https://github.com/Curve/coco"
+  OPTIONS        "coco_exceptions ${saucer_exceptions}"
 )
 
 CPMFindPackage(
@@ -285,9 +291,9 @@ CPMFindPackage(
 saucer_link_libraries(${PROJECT_NAME}         cr::lockpp cr::flagpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis cr::polo saucer::fill)
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Backends
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Backends                                                                                        |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_backend STREQUAL "Qt")
   file(GLOB_RECURSE qt_sources
@@ -366,9 +372,9 @@ if (saucer_backend STREQUAL "WebView2")
   saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2)
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Serializers
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Serializers                                                                                     |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
@@ -401,9 +407,9 @@ if (saucer_serializer STREQUAL "Rflpp")
   target_link_libraries(${PROJECT_NAME} PUBLIC reflectcpp)
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Configure Config
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Configure Config                                                                                      |
+# +-------------------------------------------------------------------------------------------------------+
 
 function(configure_config)
   string(TOLOWER ${saucer_serializer} SERIALIZER)
@@ -420,18 +426,18 @@ endfunction()
 
 configure_config()
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Tests
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Tests                                                                                           |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_tests)
   saucer_message(STATUS "Building Tests")
   add_subdirectory(tests)
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Setup Examples
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup Examples                                                                                        |
+# +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_examples)
   saucer_message(STATUS "Building Examples")
@@ -443,9 +449,9 @@ if (saucer_examples)
   add_subdirectory("examples/pdf")
 endif()
 
-# --------------------------------------------------------------------------------------------------------
-# Package Config
-# --------------------------------------------------------------------------------------------------------
+# +-------------------------------------------------------------------------------------------------------+
+# | Package Config                                                                                        |
+# +-------------------------------------------------------------------------------------------------------+
 
 set(saucer_blacklist "reflectcpp" "nontype_functional" "jthread")
 
@@ -469,5 +475,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.1.0;rebind 5.3.1;ereignis 6.2.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.2.0;rebind 5.3.1;ereignis 6.2.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
 )

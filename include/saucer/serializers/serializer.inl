@@ -174,7 +174,7 @@ namespace saucer
                 std::invoke(resolve, detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
-#ifdef __cpp_exceptions
+#if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
             auto except = [reject = exec.reject](const std::exception_ptr &ptr)
             {
                 try
@@ -199,7 +199,7 @@ namespace saucer
 
             auto transformed_exec = executor{std::move(resolve), std::move(reject)};
             auto params           = std::tuple_cat(
-#ifdef __cpp_exceptions
+#if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
                 std::make_tuple(std::move(except)),
 #endif
                 std::move(parsed.value()), std::make_tuple(std::move(transformed_exec)));

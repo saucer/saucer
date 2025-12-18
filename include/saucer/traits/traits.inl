@@ -49,22 +49,18 @@ namespace saucer::traits
         T callable;
     };
 
-#ifdef __cpp_exceptions
     template <typename T, typename E, typename... Ts>
     void detail::safe_invoke(E &&except, T &&fn, Ts &&...args)
+#if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
     try
+#endif
     {
         std::invoke(std::forward<T>(fn), std::forward<Ts>(args)...);
     }
+#if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
     catch (...)
     {
         std::invoke(std::forward<E>(except), std::current_exception());
-    }
-#else
-    template <typename T, typename E, typename... Ts>
-    void detail::safe_invoke(E &&, T &&fn, Ts &&...args)
-    {
-        std::invoke(std::forward<T>(fn), std::forward<Ts>(args)...);
     }
 #endif
 
