@@ -62,3 +62,7 @@ We follow a specific coding-style throughout the project:
 
 - Annotations
   - All functions exposed to the user should be annotated accordingly _(only if applicable)_ _[for an example see [webview.hpp](include/saucer/webview.hpp)]_
+
+- Artifial Intelligence
+  - All contributions must not use AI. Saucer is 100% human written and intends to stay that way.\
+    Thus, when submitting a Pull Request, please also acknowledge that you have not used AI.
