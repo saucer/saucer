@@ -14,26 +14,15 @@
 #include <coco/utils/utils.hpp>
 #include <coco/traits/traits.hpp>
 
-#ifdef __cpp_exceptions
-#define SAUCER_CATCH(expr, except)                                                                                                         \
-    try                                                                                                                                    \
-    {                                                                                                                                      \
-        expr;                                                                                                                              \
-    }                                                                                                                                      \
-    catch (...)                                                                                                                            \
-    {                                                                                                                                      \
-        except;                                                                                                                            \
-    }
-#else
-#define SAUCER_CATCH(expr, except) expr;
-#endif
-
 namespace saucer::traits
 {
     namespace detail
     {
         template <typename T>
         struct callable;
+
+        template <typename T, typename E, typename... Ts>
+        void safe_invoke(E &&, T &&, Ts &&...);
 
         template <typename T, typename Args, typename Executor>
         struct awaitable;
@@ -57,15 +46,27 @@ namespace saucer::traits
     template <typename T>
     struct detail::callable
     {
-        template <typename U>
-            requires(not std::same_as<std::remove_cvref_t<U>, callable> and not std::derived_from<std::remove_cvref_t<U>, callable>)
-        callable(U &&callable) : m_callable(std::forward<U>(callable))
-        {
-        }
-
-      protected:
-        T m_callable;
+        T callable;
     };
+
+#ifdef __cpp_exceptions
+    template <typename T, typename E, typename... Ts>
+    void detail::safe_invoke(E &&except, T &&fn, Ts &&...args)
+    try
+    {
+        std::invoke(std::forward<T>(fn), std::forward<Ts>(args)...);
+    }
+    catch (...)
+    {
+        std::invoke(std::forward<E>(except), std::current_exception());
+    }
+#else
+    template <typename T, typename E, typename... Ts>
+    void detail::safe_invoke(E &&, T &&fn, Ts &&...args)
+    {
+        std::invoke(std::forward<T>(fn), std::forward<Ts>(args)...);
+    }
+#endif
 
     template <typename T, typename Args, typename Executor>
     struct detail::awaitable
@@ -122,12 +123,13 @@ namespace saucer::traits
       public:
         void operator()(Ts... args, Executor executor)
         {
-            std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)..., std::move(executor));
+            std::invoke(this->callable, std::forward<Ts>(args)..., std::move(executor));
         }
 
-        void operator()(auto except, Ts... args, Executor executor)
+        template <typename F>
+        void operator()(F &&except, Ts... args, Executor executor)
         {
-            SAUCER_CATCH(operator()(std::forward<Ts>(args)..., std::move(executor)), std::invoke(except, std::current_exception()));
+            detail::safe_invoke(std::forward<F>(except), *this, std::forward<Ts>(args)..., std::move(executor));
         }
     };
 
@@ -146,21 +148,22 @@ namespace saucer::traits
 
       public:
         void operator()(Ts... args, executor<R, E> executor)
+            requires std::is_void_v<R>
         {
-            if constexpr (std::is_void_v<R>)
-            {
-                std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)...);
-                resolve(std::move(executor));
-            }
-            else
-            {
-                resolve(std::move(executor), std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)...));
-            }
+            std::invoke(this->callable, std::forward<Ts>(args)...);
+            resolve(std::move(executor));
         }
 
-        void operator()(auto except, Ts... args, executor<R, E> executor)
+        void operator()(Ts... args, executor<R, E> executor)
+            requires(not std::is_void_v<R>)
         {
-            SAUCER_CATCH(operator()(std::forward<Ts>(args)..., std::move(executor)), std::invoke(except, std::current_exception()));
+            resolve(std::move(executor), std::invoke(this->callable, std::forward<Ts>(args)...));
+        }
+
+        template <typename F>
+        void operator()(F &&except, Ts... args, executor<R, E> executor)
+        {
+            detail::safe_invoke(std::forward<F>(except), *this, std::forward<Ts>(args)..., std::move(executor));
         }
     };
 
@@ -192,12 +195,13 @@ namespace saucer::traits
       public:
         void operator()(Ts... args, executor<R, E> executor)
         {
-            resolve(std::move(executor), std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)...));
+            resolve(std::move(executor), std::invoke(this->callable, std::forward<Ts>(args)...));
         }
 
-        void operator()(auto except, Ts... args, executor<R, E> executor)
+        template <typename F>
+        void operator()(F &&except, Ts... args, executor<R, E> executor)
         {
-            SAUCER_CATCH(operator()(std::forward<Ts>(args)..., std::move(executor)), std::invoke(except, std::current_exception()));
+            detail::safe_invoke(std::forward<F>(except), *this, std::forward<Ts>(args)..., std::move(executor));
         }
     };
 
@@ -216,17 +220,21 @@ namespace saucer::traits
         }
 
       public:
-        void operator()(Ts... args, Executor executor, auto &...except)
+        template <typename... F>
+        void operator()(Ts... args, Executor executor, F... except)
         {
-            coco::then(
-                std::invoke(detail::callable<T>::m_callable, std::forward<Ts>(args)...),
-                [executor = std::move(executor)]<typename... Rs>(Rs &&...result) mutable
-                { resolve(std::move(executor), std::forward<Rs>(result)...); }, except...);
+            auto fn = [executor = std::move(executor)]<typename... Rs>(Rs &&...result) mutable
+            {
+                resolve(std::move(executor), std::forward<Rs>(result)...);
+            };
+
+            coco::then(std::invoke(this->callable, std::forward<Ts>(args)...), std::move(fn), std::move(except)...);
         }
 
-        void operator()(auto except, Ts... args, Executor executor)
+        template <typename F>
+        void operator()(F except, Ts... args, Executor executor)
         {
-            SAUCER_CATCH(operator()(std::forward<Ts>(args)..., std::move(executor), except), std::invoke(except, std::current_exception()));
+            detail::safe_invoke(except, *this, std::forward<Ts>(args)..., std::move(executor), except);
         }
     };
 
@@ -264,5 +272,3 @@ namespace saucer::traits
     {
     };
 } // namespace saucer::traits
-
-#undef SAUCER_CATCH
