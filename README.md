@@ -64,7 +64,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 - 📦 Supports Embedding Frontend into binary
   > Ship a contained binary with ease!\
-  > \> [Documentation](https://saucer.app/webview/embedding/)
+  > \> [Documentation](https://saucer.github.io/webview/embedding/)
 
 - 🦺 Thread-Safe
 
@@ -76,11 +76,11 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 - 🪟 Built-in support for frame-less windows and transparency
   > Supports `data-webview` attributes to allow effortless custom title-bars.\
-  > \> [Documentation](https://saucer.app/window/decorations/)
+  > \> [Documentation](https://saucer.github.io/window/decorations/)
 
 - 🧰 Customizable
   > Exposes platform specific implementations, making it possible to tweak the library to your hearts content!\
-  > \> [Documentation](https://saucer.app/misc/native/)
+  > \> [Documentation](https://saucer.github.io/misc/native/)
 
   Saucer also provides official extensions in the form of modules:
 
@@ -130,6 +130,54 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 [^2]: For lack of a better word
 
 [^3]: Saucer catches exceptions thrown in exposed functions - **if not compiled with** `-fno-exceptions` - by default. This can be explicitly disabled via `set(saucer_exceptions OFF)`
+
+## 📦 Installation
+
+<table>
+<tr>
+<th>
+<a href="https://github.com/cpm-cmake/CPM.cmake" target="_blank">CPM</a>
+</th>
+<th>
+FetchContent
+</th>
+</tr>
+<tr>
+<td>
+
+```cmake
+CPMFindPackage(
+  NAME           saucer
+  VERSION        8.0.0
+  GIT_REPOSITORY "https://github.com/saucer/saucer"
+)
+```
+
+</td>
+<td>
+
+```cmake
+FetchContent_Declare(
+  saucer 
+  GIT_TAG v8.0.0
+  GIT_REPOSITORY "https://github.com/saucer/saucer" 
+)
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+```cmake
+target_link_libraries(<target> saucer::saucer)
+```
+
+</td>
+</tr>
+</table>
+
+See the [documentation](https://saucer.github.io/getting-started/) for more information!
 
 ## ✍️ Code Example
 
