@@ -116,16 +116,44 @@ namespace saucer::traits
     {
         static constexpr auto valid = true;
 
+      private:
+        using result = std::invoke_result_t<T, Ts..., Executor>;
+
+      private:
+        decltype(auto) call(Ts... args, Executor executor)
+        {
+            return std::invoke(this->callable, std::forward<Ts>(args)..., std::move(executor));
+        }
+
       public:
         void operator()(Ts... args, Executor executor)
+            requires(not coco::awaitable<result>)
         {
-            std::invoke(this->callable, std::forward<Ts>(args)..., std::move(executor));
+            static_assert(std::is_void_v<result>, "Exposed functions taking an executor should return void");
+            call(std::forward<Ts>(args)..., std::move(executor));
+        }
+
+        template <typename... F>
+        void operator()(Ts... args, Executor executor, F... except)
+            requires(coco::awaitable<result>)
+        {
+            static_assert(std::is_void_v<typename coco::traits<result>::result>, "Exposed functions taking an executor should return void");
+            coco::then(call(std::forward<Ts>(args)..., std::move(executor)), [](auto &&...) {}, std::move(except)...);
+        }
+
+      public:
+        template <typename F>
+        void operator()(F &&except, Ts... args, Executor executor)
+            requires(not coco::awaitable<result>)
+        {
+            detail::safe_invoke(std::forward<F>(except), *this, std::forward<Ts>(args)..., std::move(executor));
         }
 
         template <typename F>
-        void operator()(F &&except, Ts... args, Executor executor)
+        void operator()(F except, Ts... args, Executor executor)
+            requires(coco::awaitable<result>)
         {
-            detail::safe_invoke(std::forward<F>(except), *this, std::forward<Ts>(args)..., std::move(executor));
+            detail::safe_invoke(except, *this, std::forward<Ts>(args)..., std::move(executor), except);
         }
     };
 
@@ -156,6 +184,7 @@ namespace saucer::traits
             resolve(std::move(executor), std::invoke(this->callable, std::forward<Ts>(args)...));
         }
 
+      public:
         template <typename F>
         void operator()(F &&except, Ts... args, executor<R, E> executor)
         {
@@ -194,6 +223,7 @@ namespace saucer::traits
             resolve(std::move(executor), std::invoke(this->callable, std::forward<Ts>(args)...));
         }
 
+      public:
         template <typename F>
         void operator()(F &&except, Ts... args, executor<R, E> executor)
         {
@@ -227,6 +257,7 @@ namespace saucer::traits
             coco::then(std::invoke(this->callable, std::forward<Ts>(args)...), std::move(fn), std::move(except)...);
         }
 
+      public:
         template <typename F>
         void operator()(F except, Ts... args, Executor executor)
         {
@@ -250,8 +281,8 @@ namespace saucer::traits
         using transformer = traits::transformer<T, args, executor>;
     };
 
-    template <typename T, typename Args, typename R, typename E>
-    struct detail::resolver<T, Args, void, executor<R, E>>
+    template <typename T, typename Args, typename Result, typename R, typename E>
+    struct detail::resolver<T, Args, Result, executor<R, E>>
     {
         using args        = tuple::drop_last_t<Args>;
         using executor    = saucer::executor<R, E>;
