@@ -162,6 +162,8 @@ FetchContent_Declare(
   GIT_TAG v8.0.0
   GIT_REPOSITORY "https://github.com/saucer/saucer" 
 )
+
+FetchContent_MakeAvailable(saucer)
 ```
 
 </td>
