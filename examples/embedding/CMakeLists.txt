@@ -13,7 +13,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS 
 # Embed Content
 # --------------------------------------------------------------------------------------------------------
 
-saucer_embed("content")
+saucer_embed("content" TARGET ${PROJECT_NAME})
 
 # --------------------------------------------------------------------------------------------------------
 # Link libraries
