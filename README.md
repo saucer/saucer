@@ -68,12 +68,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 - 🦺 Thread-Safe
 
-- 🧨 (No) Exceptions
+- 🧨 No Exceptions[^3]
   > Compiles with `-fno-exceptions`!\
-
-  > [!NOTE]
-  > Saucer catches exceptions thrown in exposed functions - **if not compiled with** `-fno-exceptions` - by default.\
-  > This can be explicitly disabled via `set(saucer_exceptions OFF)`!
 
 - 🏃 No RTTI
   > Compiles with `-fno-rtti`!
@@ -132,6 +128,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 [^1]: ... or a commonly used one
 
 [^2]: For lack of a better word
+
+[^3]: Saucer catches exceptions thrown in exposed functions - **if not compiled with** `-fno-exceptions` - by default. This can be explicitly disabled via `set(saucer_exceptions OFF)`
 
 ## ✍️ Code Example
 
