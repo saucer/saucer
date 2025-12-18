@@ -171,6 +171,13 @@ FetchContent_MakeAvailable(saucer)
 <tr>
 <td colspan="2">
 
+**Note**: Replace `<target>` with your respective target:
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
 ```cmake
 target_link_libraries(<target> saucer::saucer)
 ```
