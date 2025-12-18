@@ -379,7 +379,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        6.3.0
+    GIT_TAG        2535468c758122f732ce5fbd6ff2c0f5dbb77126
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
