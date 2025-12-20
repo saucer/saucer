@@ -284,7 +284,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           saucer-embed
-  VERSION        1.1.0
+  VERSION        1.1.1
   GIT_REPOSITORY "https://github.com/saucer/embed"
 )
 
