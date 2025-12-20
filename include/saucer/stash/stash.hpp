@@ -18,19 +18,19 @@ namespace saucer
         struct lazy;
     };
 
-    template <typename T = std::uint8_t>
-    struct stash
+    template <typename T>
+    struct basic_stash
     {
         using owning_t  = std::vector<std::remove_const_t<T>>;
         using viewing_t = std::span<std::add_const_t<T>>;
-        using lazy_t    = std::shared_ptr<detail::lazy<stash<T>>>;
+        using lazy_t    = std::shared_ptr<detail::lazy<basic_stash<T>>>;
         using variant_t = std::variant<owning_t, viewing_t, lazy_t>;
 
       private:
         variant_t m_data;
 
       private:
-        stash(variant_t);
+        basic_stash(variant_t);
 
       public:
         [[nodiscard]] const T *data() const;
@@ -41,25 +41,27 @@ namespace saucer
             requires std::same_as<T, std::uint8_t>;
 
       public:
-        [[nodiscard]] static stash from(owning_t);
-        [[nodiscard]] static stash view(viewing_t);
-        [[nodiscard]] static stash lazy(lazy_t);
+        [[nodiscard]] static basic_stash from(owning_t);
+        [[nodiscard]] static basic_stash view(viewing_t);
+        [[nodiscard]] static basic_stash lazy(lazy_t);
 
       public:
-        [[nodiscard]] static stash from_str(std::string_view)
+        [[nodiscard]] static basic_stash from_str(std::string_view)
             requires std::same_as<T, std::uint8_t>;
 
-        [[nodiscard]] static stash view_str(std::string_view)
+        [[nodiscard]] static basic_stash view_str(std::string_view)
             requires std::same_as<T, std::uint8_t>;
 
       public:
         template <typename Callback>
-            requires std::same_as<std::invoke_result_t<Callback>, stash<T>>
-        [[nodiscard]] static stash lazy(Callback);
+            requires std::same_as<std::invoke_result_t<Callback>, basic_stash<T>>
+        [[nodiscard]] static basic_stash lazy(Callback);
 
       public:
-        [[nodiscard]] static stash empty();
+        [[nodiscard]] static basic_stash empty();
     };
+
+    using stash = basic_stash<std::uint8_t>;
 } // namespace saucer
 
 #include "stash.inl"

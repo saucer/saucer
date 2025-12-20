@@ -20,17 +20,17 @@ namespace saucer::scheme
         return m_impl->task.get().request.HTTPMethod.UTF8String;
     }
 
-    stash<> request::content() const
+    stash request::content() const
     {
         auto *const body = m_impl->task.get().request.HTTPBody;
 
         if (!body)
         {
-            return stash<>::empty();
+            return stash::empty();
         }
 
         const auto *raw = reinterpret_cast<const std::uint8_t *>(body.bytes);
-        return stash<>::from({raw, raw + body.length});
+        return stash::from({raw, raw + body.length});
     }
 
     std::map<std::string, std::string> request::headers() const

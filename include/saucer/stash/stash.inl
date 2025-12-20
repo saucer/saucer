@@ -35,12 +35,12 @@ namespace saucer
     };
 
     template <typename T>
-    stash<T>::stash(variant_t data) : m_data(std::move(data))
+    basic_stash<T>::basic_stash(variant_t data) : m_data(std::move(data))
     {
     }
 
     template <typename T>
-    const T *stash<T>::data() const
+    const T *basic_stash<T>::data() const
     {
         auto visitor = overload{
             [](const lazy_t &data) { return data->value().data(); },
@@ -51,7 +51,7 @@ namespace saucer
     }
 
     template <typename T>
-    std::size_t stash<T>::size() const
+    std::size_t basic_stash<T>::size() const
     {
         auto visitor = overload{
             [](const lazy_t &data) { return data->value().size(); },
@@ -62,7 +62,7 @@ namespace saucer
     }
 
     template <typename T>
-    std::string stash<T>::str()
+    std::string basic_stash<T>::str()
         requires std::same_as<T, std::uint8_t>
     {
         const auto *begin = reinterpret_cast<const char *>(data());
@@ -72,25 +72,25 @@ namespace saucer
     }
 
     template <typename T>
-    stash<T> stash<T>::from(owning_t data)
+    basic_stash<T> basic_stash<T>::from(owning_t data)
     {
         return {std::move(data)};
     }
 
     template <typename T>
-    stash<T> stash<T>::view(viewing_t data)
+    basic_stash<T> basic_stash<T>::view(viewing_t data)
     {
         return {std::move(data)};
     }
 
     template <typename T>
-    stash<T> stash<T>::lazy(lazy_t data)
+    basic_stash<T> basic_stash<T>::lazy(lazy_t data)
     {
         return {std::move(data)};
     }
 
     template <typename T>
-    stash<T> stash<T>::from_str(std::string_view data)
+    basic_stash<T> basic_stash<T>::from_str(std::string_view data)
         requires std::same_as<T, std::uint8_t>
     {
         auto *const begin = reinterpret_cast<const T *>(data.data());
@@ -100,7 +100,7 @@ namespace saucer
     }
 
     template <typename T>
-    stash<T> stash<T>::view_str(std::string_view data)
+    basic_stash<T> basic_stash<T>::view_str(std::string_view data)
         requires std::same_as<T, std::uint8_t>
     {
         auto *const begin = reinterpret_cast<const T *>(data.data());
@@ -111,14 +111,14 @@ namespace saucer
 
     template <typename T>
     template <typename Callback>
-        requires std::same_as<std::invoke_result_t<Callback>, stash<T>>
-    stash<T> stash<T>::lazy(Callback callback)
+        requires std::same_as<std::invoke_result_t<Callback>, basic_stash<T>>
+    basic_stash<T> basic_stash<T>::lazy(Callback callback)
     {
-        return {std::make_shared<detail::lazy<stash<T>>>(std::move(callback))};
+        return {std::make_shared<detail::lazy<basic_stash<T>>>(std::move(callback))};
     }
 
     template <typename T>
-    stash<T> stash<T>::empty()
+    basic_stash<T> basic_stash<T>::empty()
     {
         return {{}};
     }

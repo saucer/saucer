@@ -28,10 +28,10 @@ namespace saucer::scheme
         return request.value()->requestMethod().toStdString();
     }
 
-    stash<> request::content() const
+    stash request::content() const
     {
         const auto *data = reinterpret_cast<const std::uint8_t *>(m_impl->body.data());
-        return stash<>::view({data, data + m_impl->body.size()});
+        return stash::view({data, data + m_impl->body.size()});
     }
 
     std::map<std::string, std::string> request::headers() const

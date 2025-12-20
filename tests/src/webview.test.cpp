@@ -196,11 +196,11 @@ suite<"webview"> webview_suite = []
         auto lazy = [&]()
         {
             called++;
-            return saucer::stash<>::view_str(page);
+            return saucer::stash::view_str(page);
         };
 
         webview.embed({{"/embed.html", saucer::embedded_file{
-                                           .content = saucer::stash<>::lazy(lazy),
+                                           .content = saucer::stash::lazy(lazy),
                                            .mime    = "text/html",
                                        }}});
 
@@ -269,7 +269,7 @@ suite<"webview"> webview_suite = []
                                   expect(req.url().path() == "/test.html");
 
                                   return saucer::scheme::response{
-                                      .data   = saucer::stash<>::view_str(page),
+                                      .data   = saucer::stash::view_str(page),
                                       .mime   = "text/html",
                                       .status = 200,
                                   };

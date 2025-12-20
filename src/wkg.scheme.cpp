@@ -18,13 +18,13 @@ namespace saucer::scheme
         return webkit_uri_scheme_request_get_http_method(m_impl->request.get());
     }
 
-    stash<> request::content() const
+    stash request::content() const
     {
         auto stream = utils::g_object_ptr<GInputStream>{webkit_uri_scheme_request_get_http_body(m_impl->request.get())};
 
         if (!stream)
         {
-            return stash<>::empty();
+            return stash::empty();
         }
 
         static constexpr auto chunk_size = 4096;
@@ -42,10 +42,10 @@ namespace saucer::scheme
 
         if (read == -1)
         {
-            return stash<>::empty();
+            return stash::empty();
         }
 
-        return stash<>::from(std::move(content));
+        return stash::from(std::move(content));
     }
 
     std::map<std::string, std::string> request::headers() const

@@ -36,11 +36,11 @@ namespace saucer
         return !m_impl->texture;
     }
 
-    stash<> icon::data() const
+    stash icon::data() const
     {
         if (!m_impl->texture)
         {
-            return stash<>::empty();
+            return stash::empty();
         }
 
         const auto bytes = utils::g_bytes_ptr{gdk_texture_save_to_png_bytes(m_impl->texture.get())};
@@ -48,7 +48,7 @@ namespace saucer
         gsize size{};
         const auto *data = reinterpret_cast<const std::uint8_t *>(g_bytes_get_data(bytes.get(), &size));
 
-        return stash<>::from({data, data + size});
+        return stash::from({data, data + size});
     }
 
     void icon::save(const fs::path &path) const
@@ -63,7 +63,7 @@ namespace saucer
         gdk_texture_save_to_png(m_impl->texture.get(), path.c_str());
     }
 
-    result<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash &ico)
     {
         auto error          = utils::g_error_ptr{};
         const auto bytes    = utils::g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};

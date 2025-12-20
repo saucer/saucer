@@ -37,7 +37,7 @@ namespace saucer
         return !m_impl->icon.get().isValid;
     }
 
-    stash<> icon::data() const
+    stash icon::data() const
     {
         const utils::autorelease_guard guard{};
 
@@ -46,7 +46,7 @@ namespace saucer
         auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
 
         const auto *raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
-        return stash<>::from({raw, raw + data.length});
+        return stash::from({raw, raw + data.length});
     }
 
     void icon::save(const fs::path &path) const
@@ -63,7 +63,7 @@ namespace saucer
         [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:0 error:&error];
     }
 
-    result<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash &ico)
     {
         const utils::autorelease_guard guard{};
 

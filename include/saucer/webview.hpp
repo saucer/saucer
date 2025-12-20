@@ -50,7 +50,7 @@ namespace saucer
 
     struct embedded_file
     {
-        stash<> content;
+        stash content;
         std::string mime;
     };
 

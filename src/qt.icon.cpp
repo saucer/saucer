@@ -39,13 +39,13 @@ namespace saucer
         return m_impl->icon.isNull();
     }
 
-    stash<> icon::data() const
+    stash icon::data() const
     {
         auto pixmap = m_impl->pixmap();
 
         if (!pixmap)
         {
-            return stash<>::empty();
+            return stash::empty();
         }
 
         QByteArray bytes;
@@ -53,7 +53,7 @@ namespace saucer
         QBuffer buffer{&bytes};
         pixmap->save(&buffer, "PNG");
 
-        return stash<>::from({bytes.begin(), bytes.end()});
+        return stash::from({bytes.begin(), bytes.end()});
     }
 
     void icon::save(const fs::path &path) const
@@ -70,7 +70,7 @@ namespace saucer
         pixmap->save(path.c_str());
     }
 
-    result<icon> icon::from(const stash<> &ico)
+    result<icon> icon::from(const stash &ico)
     {
         QPixmap rtn{};
 

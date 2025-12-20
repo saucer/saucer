@@ -25,14 +25,14 @@ namespace saucer::scheme
         return utils::narrow(raw.get());
     }
 
-    stash<> request::content() const
+    stash request::content() const
     {
         if (!m_impl->body)
         {
-            return stash<>::empty();
+            return stash::empty();
         }
 
-        return stash<>::from(utils::read(m_impl->body.Get()));
+        return stash::from(utils::read(m_impl->body.Get()));
     }
 
     std::map<std::string, std::string> request::headers() const
