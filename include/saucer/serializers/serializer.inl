@@ -70,6 +70,11 @@ namespace saucer
         {
         };
 
+        template <>
+        struct is_serializer<void> : std::true_type
+        {
+        };
+
         template <typename Interface, typename T>
         struct reader
         {

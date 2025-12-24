@@ -1,7 +1,9 @@
 #pragma once
 
 #include "webview.hpp"
+
 #include "config.hpp"
+#include "serializers/serializer.hpp"
 
 #include <string_view>
 
@@ -59,6 +61,11 @@ namespace saucer
       public:
         template <typename R, typename... Ts>
         [[sc::thread_safe]] [[nodiscard]] auto evaluate(format_string<Serializer, Ts...> code, Ts &&...params);
+    };
+
+    template <>
+    class basic_smartview<void>
+    {
     };
 
     using smartview = basic_smartview<default_serializer>;
