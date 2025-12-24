@@ -56,8 +56,8 @@ namespace saucer
 
     enum class contract_error : std::uint8_t
     {
-        instance_exists,
-        required_invalid,
+        instance_exists  = 1,
+        required_invalid = 2,
     };
 
     template <typename T = void>
