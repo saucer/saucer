@@ -110,7 +110,7 @@ namespace saucer
             utils::defer(lease, [id = message->id](auto *self, auto error) { return self->reject(id, error); }),
         };
 
-        return (*function)(std::move(message), executor);
+        return (*function)(std::move(message), std::move(executor));
     }
 
     void smartview_base::impl::resolve(std::unique_ptr<result_data> message)

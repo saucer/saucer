@@ -246,7 +246,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           coco
-  VERSION        4.2.0
+  VERSION        4.3.0
   GIT_REPOSITORY "https://github.com/Curve/coco"
   OPTIONS        "coco_exceptions ${saucer_exceptions}"
 )
@@ -259,7 +259,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           ereignis
-  VERSION        6.2.0
+  VERSION        6.3.0
   GIT_REPOSITORY "https://github.com/Curve/ereignis"
 )
 
@@ -475,5 +475,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.2.0;rebind 5.3.1;ereignis 6.2.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
 )
