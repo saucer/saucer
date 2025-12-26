@@ -138,6 +138,6 @@ namespace saucer::scheme
 
         connect(raw, &QObject::destroyed, [request]() { request->assign(nullptr); });
 
-        return std::invoke(resolver, std::move(req), std::move(executor));
+        return resolver(req, executor);
     }
 } // namespace saucer::scheme

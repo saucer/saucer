@@ -52,7 +52,7 @@ namespace saucer
                        {
                            const auto guard = utils::autorelease_guard{};
                            auto callback    = std::unique_ptr<post_callback_t>{ptr};
-                           std::invoke(*callback);
+                           (*callback)();
                        });
     }
 
@@ -63,7 +63,7 @@ namespace saucer
         auto promise = coco::promise<void>{};
         finish       = promise.get_future();
 
-        self->post([self, &callback] { std::invoke(callback, self); });
+        self->post([self, &callback] { callback(self); });
         [NSApp run];
 
         promise.set_value();

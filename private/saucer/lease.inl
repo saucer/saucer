@@ -5,7 +5,6 @@
 
 #include <mutex>
 #include <optional>
-#include <functional>
 
 namespace saucer::utils
 {
@@ -106,7 +105,7 @@ namespace saucer::utils
                 return detail::noop<std::invoke_result_t<Func, T, Ts...>>();
             }
 
-            return std::invoke(func, *value, std::forward<Ts>(args)...);
+            return func(*value, std::forward<Ts>(args)...);
         };
     }
 } // namespace saucer::utils

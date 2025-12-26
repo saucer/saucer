@@ -183,7 +183,7 @@ using namespace saucer;
                         change:(NSDictionary<NSKeyValueChangeKey, id> *)change
                        context:(void *)context
 {
-    std::invoke(m_callback);
+    m_callback();
 }
 @end
 

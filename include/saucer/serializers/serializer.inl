@@ -171,12 +171,12 @@ namespace saucer
 
             if (!parsed)
             {
-                return std::invoke(exec.reject, detail::write<Interface>(parsed.error()));
+                return exec.reject(detail::write<Interface>(parsed.error()));
             }
 
             auto resolve = [resolve = std::move(exec.resolve)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(resolve, detail::write<Interface>(std::forward<Ts>(value)...));
+                resolve(detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
 #if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
@@ -188,18 +188,18 @@ namespace saucer
                 }
                 catch (std::exception &ex)
                 {
-                    std::invoke(reject, detail::write<Interface>(ex.what()));
+                    reject(detail::write<Interface>(ex.what()));
                 }
                 catch (...)
                 {
-                    std::invoke(reject, detail::write<Interface>("Unknown Exception"));
+                    reject(detail::write<Interface>("Unknown Exception"));
                 }
             };
 #endif
 
             auto reject = [reject = std::move(exec.reject)]<typename... Ts>(Ts &&...value)
             {
-                std::invoke(reject, detail::write<Interface>(std::forward<Ts>(value)...));
+                reject(detail::write<Interface>(std::forward<Ts>(value)...));
             };
 
             auto transformed_exec = executor{std::move(resolve), std::move(reject)};

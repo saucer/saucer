@@ -58,7 +58,7 @@ namespace saucer
         auto task   = std::packaged_task{std::move(task_callback)};
         auto future = task.get_future();
 
-        post([task = std::move(task)]() mutable { std::invoke(task); });
+        post([task = std::move(task)]() mutable { task(); });
 
         return future.get();
     }

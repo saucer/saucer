@@ -499,7 +499,7 @@ namespace saucer
             {
                 self->parent->post(utils::defer(self->platform->lease,
                                                 [callback = std::forward<T>(callback), ... args = std::forward<Ts>(args)](auto *) mutable
-                                                { std::invoke(callback, std::forward<Ts>(args)...); }));
+                                                { callback(std::forward<Ts>(args)...); }));
             };
         };
 
@@ -508,7 +508,7 @@ namespace saucer
         auto req      = scheme::request{{.request = opts.request, .body = content}};
         auto executor = scheme::executor{forward(std::move(resolve)), forward(std::move(reject))};
 
-        std::invoke(resolver, std::move(req), std::move(executor));
+        resolver(req, executor);
 
         return S_OK;
     }

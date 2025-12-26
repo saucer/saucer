@@ -53,7 +53,7 @@ namespace saucer
         auto promise = coco::promise<void>{};
         finish       = promise.get_future();
 
-        self->post([self, &callback] { std::invoke(callback, self); });
+        self->post([self, &callback] { callback(self); });
         const auto rtn = QApplication::exec();
         promise.set_value();
 

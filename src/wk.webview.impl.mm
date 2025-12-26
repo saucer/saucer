@@ -307,7 +307,7 @@ using namespace saucer;
 
     [alert runModal];
 
-    std::invoke(complete);
+    complete();
 }
 
 - (void)webView:(WKWebView *)webview
@@ -325,7 +325,7 @@ using namespace saucer;
     [alert addButtonWithTitle:@"OK"];
     [alert addButtonWithTitle:@"Cancel"];
 
-    std::invoke(complete, static_cast<BOOL>([alert runModal] == NSAlertFirstButtonReturn));
+    complete(static_cast<BOOL>([alert runModal] == NSAlertFirstButtonReturn));
 }
 
 - (void)webView:(WKWebView *)webview
@@ -376,10 +376,10 @@ using namespace saucer;
 
     if (me->events.get<event::navigate>().fire(nav).find(policy::block))
     {
-        return std::invoke(handler, WKNavigationActionPolicyCancel);
+        return handler(WKNavigationActionPolicyCancel);
     }
 
-    return std::invoke(handler, WKNavigationActionPolicyAllow);
+    return handler(WKNavigationActionPolicyAllow);
 }
 
 - (void)webView:(WKWebView *)webview didFinishNavigation:(WKNavigation *)navigation

@@ -60,7 +60,7 @@ namespace saucer
         auto once = [](post_callback_t *data)
         {
             auto callback = std::unique_ptr<post_callback_t>{data};
-            std::invoke(*callback);
+            (*callback)();
         };
 
         g_idle_add_once(reinterpret_cast<GSourceOnceFunc>(+once), new post_callback_t{std::move(callback)});

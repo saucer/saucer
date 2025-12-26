@@ -6,7 +6,6 @@
 #include <chrono>
 #include <thread>
 
-#include <functional>
 #include <algorithm>
 
 namespace saucer::tests
@@ -49,7 +48,7 @@ namespace saucer::tests
         auto status = false;
         auto limit  = clock::now() + duration;
 
-        while (not(status = std::invoke(callable)) && clock::now() < limit)
+        while (not(status = callable()) && clock::now() < limit)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }

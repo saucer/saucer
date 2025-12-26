@@ -27,7 +27,7 @@ namespace saucer
         {
             if (!self.m_value.has_value())
             {
-                self.m_value.emplace(std::invoke(self.m_callback));
+                self.m_value.emplace(self.m_callback());
             }
 
             return std::forward<Self>(self).m_value.value();

@@ -64,6 +64,6 @@ namespace saucer
 
     safe_message::~safe_message()
     {
-        std::invoke(m_callback);
+        m_callback();
     }
 } // namespace saucer

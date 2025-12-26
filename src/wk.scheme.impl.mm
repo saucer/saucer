@@ -92,7 +92,7 @@ using namespace saucer::scheme;
     auto req      = scheme::request{{ref}};
     auto executor = scheme::executor{std::move(resolve), std::move(reject)};
 
-    return std::invoke(self->m_callbacks[instance], std::move(req), std::move(executor));
+    return self->m_callbacks[instance](req, executor);
 }
 
 - (void)webView:(nonnull WKWebView *)webview stopURLSchemeTask:(nonnull id<WKURLSchemeTask>)task

@@ -48,6 +48,6 @@ namespace saucer::permission
 
         auto handler = std::move(m_impl->handler);
 
-        std::invoke(handler.get(), value ? WKPermissionDecisionGrant : WKPermissionDecisionDeny);
+        (handler.get())(value ? WKPermissionDecisionGrant : WKPermissionDecisionDeny);
     }
 } // namespace saucer::permission

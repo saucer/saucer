@@ -91,7 +91,7 @@ namespace saucer
         auto promise = coco::promise<void>{};
         finish       = promise.get_future();
 
-        self->post([&callback, self] { std::invoke(callback, self); });
+        self->post([&callback, self] { callback(self); });
 
         MSG msg{};
 

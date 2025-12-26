@@ -129,7 +129,7 @@ namespace saucer
         }
 
         OSVERSIONINFOEXW rtn{};
-        std::invoke(reinterpret_cast<NTSTATUS(WINAPI *)(LPOSVERSIONINFOEXW)>(func), &rtn);
+        reinterpret_cast<NTSTATUS(WINAPI *)(LPOSVERSIONINFOEXW)>(func)(&rtn);
 
         return rtn;
     }

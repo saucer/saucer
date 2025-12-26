@@ -81,11 +81,11 @@ namespace saucer::tests
 
                 if constexpr (std::same_as<T, saucer::window>)
                 {
-                    return std::invoke(callback, *instance);
+                    return callback(*instance);
                 }
                 else
                 {
-                    return std::invoke(callback, instance);
+                    return callback(instance);
                 }
             };
 

@@ -24,6 +24,6 @@ namespace saucer
 
     safe_event::~safe_event()
     {
-        std::invoke(m_callback);
+        m_callback();
     }
 } // namespace saucer

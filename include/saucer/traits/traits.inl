@@ -55,12 +55,12 @@ namespace saucer::traits
     try
 #endif
     {
-        std::invoke(std::forward<T>(fn), std::forward<Ts>(args)...);
+        std::forward<T>(fn)(std::forward<Ts>(args)...);
     }
 #if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
     catch (...)
     {
-        std::invoke(std::forward<E>(except), std::current_exception());
+        std::forward<E>(except)(std::current_exception());
     }
 #endif
 
@@ -122,7 +122,7 @@ namespace saucer::traits
       public:
         decltype(auto) call(Ts... args, Executor executor)
         {
-            return std::invoke(this->callable, std::forward<Ts>(args)..., std::move(executor));
+            return this->callable(std::forward<Ts>(args)..., std::move(executor));
         }
 
       public:
@@ -167,21 +167,21 @@ namespace saucer::traits
         template <typename... Rs>
         static void resolve(auto &&executor, Rs &&...result)
         {
-            std::invoke(executor.resolve, std::forward<Rs>(result)...);
+            executor.resolve(std::forward<Rs>(result)...);
         }
 
       public:
         void operator()(Ts... args, executor<R, E> executor)
             requires std::is_void_v<R>
         {
-            std::invoke(this->callable, std::forward<Ts>(args)...);
+            this->callable(std::forward<Ts>(args)...);
             resolve(std::move(executor));
         }
 
         void operator()(Ts... args, executor<R, E> executor)
             requires(not std::is_void_v<R>)
         {
-            resolve(std::move(executor), std::invoke(this->callable, std::forward<Ts>(args)...));
+            resolve(std::move(executor), this->callable(std::forward<Ts>(args)...));
         }
 
       public:
@@ -203,24 +203,24 @@ namespace saucer::traits
         {
             if (!result.has_value())
             {
-                std::invoke(executor.reject, result.error());
+                executor.reject(result.error());
                 return;
             }
 
             if constexpr (std::is_void_v<R>)
             {
-                std::invoke(executor.resolve);
+                executor.resolve();
             }
             else
             {
-                std::invoke(executor.resolve, result.value());
+                executor.resolve(result.value());
             }
         }
 
       public:
         void operator()(Ts... args, executor<R, E> executor)
         {
-            resolve(std::move(executor), std::invoke(this->callable, std::forward<Ts>(args)...));
+            resolve(std::move(executor), this->callable(std::forward<Ts>(args)...));
         }
 
       public:
@@ -254,7 +254,7 @@ namespace saucer::traits
                 resolve(std::move(executor), std::forward<Rs>(result)...);
             };
 
-            coco::then(std::invoke(this->callable, std::forward<Ts>(args)...), std::move(fn), std::move(except)...);
+            coco::then(this->callable(std::forward<Ts>(args)...), std::move(fn), std::move(except)...);
         }
 
       public:
