@@ -2,9 +2,6 @@
 
 #include <saucer/window.hpp>
 
-#include <rebind/member.hpp>
-#include <rebind/utils/name.hpp>
-
 namespace saucer
 {
     struct window::impl

@@ -7,7 +7,6 @@
 
 #include <AppKit/AppKit.h>
 #include <Foundation/Foundation.h>
-#include <rebind/enum.hpp>
 
 namespace saucer
 {

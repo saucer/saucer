@@ -13,12 +13,11 @@
 #include <format>
 #include <ranges>
 
-#include <rebind/utils/enum.hpp>
+#include <winerror.h>
 
 #include <windows.h>
 #include <gdiplus.h>
 #include <shlwapi.h>
-#include <winerror.h>
 
 namespace saucer
 {

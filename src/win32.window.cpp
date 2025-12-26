@@ -10,8 +10,6 @@
 
 #include <cassert>
 
-#include <rebind/enum.hpp>
-
 #include <dwmapi.h>
 #include <winrt/windows.ui.viewmanagement.core.h>
 
