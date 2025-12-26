@@ -63,6 +63,6 @@ namespace saucer::scheme
         auto executor = scheme::executor{std::move(resolve), std::move(reject)};
         auto req      = scheme::request{{request}};
 
-        return state->m_callbacks[identifier](req, executor);
+        return state->m_callbacks[identifier](std::move(req), std::move(executor));
     }
 } // namespace saucer::scheme

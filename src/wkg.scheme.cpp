@@ -6,6 +6,8 @@ namespace saucer::scheme
 
     request::request(const request &other) : request(*other.m_impl) {}
 
+    request::request(request &&) noexcept = default;
+
     request::~request() = default;
 
     url request::url() const

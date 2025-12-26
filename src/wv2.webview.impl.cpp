@@ -507,7 +507,7 @@ namespace saucer
         auto req      = scheme::request{{.request = opts.request, .body = content}};
         auto executor = scheme::executor{forward(std::move(resolve)), forward(std::move(reject))};
 
-        resolver(req, executor);
+        resolver(std::move(req), std::move(executor));
 
         return S_OK;
     }
