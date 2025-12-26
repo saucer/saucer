@@ -22,12 +22,17 @@ namespace saucer
     };
 
     template <typename T, typename Traits>
-    constexpr basic_cstring_view<T, Traits>::basic_cstring_view() noexcept : m_data(nullptr)
+    constexpr basic_cstring_view<T, Traits>::basic_cstring_view() noexcept : m_size(0), m_data(nullptr)
     {
     }
 
     template <typename T, typename Traits>
-    constexpr basic_cstring_view<T, Traits>::basic_cstring_view(const T *data) noexcept : m_data(data)
+    constexpr basic_cstring_view<T, Traits>::basic_cstring_view(const T *data) noexcept : m_size(Traits::length(data)), m_data(data)
+    {
+    }
+
+    template <typename T, typename Traits>
+    constexpr basic_cstring_view<T, Traits>::basic_cstring_view(const T *data, std::size_t size) noexcept : m_size(size), m_data(data)
     {
     }
 
@@ -91,7 +96,7 @@ namespace saucer
     template <typename T, typename Traits>
     constexpr basic_cstring_view<T, Traits>::size_type basic_cstring_view<T, Traits>::size() const noexcept
     {
-        return Traits::length(m_data);
+        return m_size;
     }
 
     template <typename T, typename Traits>

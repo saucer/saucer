@@ -26,11 +26,13 @@ namespace saucer
         using difference_type = std::ptrdiff_t;
 
       private:
+        std::size_t m_size;
         const_pointer m_data;
 
       public:
         constexpr basic_cstring_view() noexcept;
         constexpr basic_cstring_view(const T *) noexcept;
+        constexpr basic_cstring_view(const T *, std::size_t) noexcept;
 
       public:
         template <cstring_like U>
