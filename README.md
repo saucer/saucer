@@ -51,7 +51,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
   > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
 
 - 🔀 Seamless C++ / JavaScript interoperability
-  > Convenient API to evaluate JavaScript Code or expose C++ functions to JavaScript!\
+  > Convenient API (powered by reflection) to evaluate JavaScript Code or expose C++ functions to JavaScript!\
   > \> [Example](./examples/expose/main.cpp)
 
 - 👾 Feature-Rich
