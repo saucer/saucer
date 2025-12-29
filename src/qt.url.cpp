@@ -106,6 +106,11 @@ namespace saucer
 
     result<url> url::parse(cstring_view input)
     {
+        if (std::string_view{input}.empty())
+        {
+            return url{};
+        }
+
         auto rtn = QUrl::fromUserInput(QString::fromUtf8(input));
 
         if (!rtn.isValid())

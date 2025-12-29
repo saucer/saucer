@@ -116,6 +116,11 @@ namespace saucer
 
     result<url> url::parse(cstring_view input)
     {
+        if (std::string_view{input}.empty())
+        {
+            return url{};
+        }
+
         auto error      = utils::g_error_ptr{};
         auto *const rtn = g_uri_parse(input.c_str(), G_URI_FLAGS_NONE, &error.reset());
 

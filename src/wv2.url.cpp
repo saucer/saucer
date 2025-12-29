@@ -107,6 +107,11 @@ namespace saucer
 
     result<url> url::parse(cstring_view input)
     {
+        if (std::string_view{input}.empty())
+        {
+            return url{};
+        }
+
         auto wide = utils::widen(input);
 
         auto components = URL_COMPONENTSW{

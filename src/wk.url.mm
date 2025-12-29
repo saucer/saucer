@@ -129,6 +129,11 @@ namespace saucer
 
     result<url> url::parse(cstring_view input)
     {
+        if (std::string_view{input}.empty())
+        {
+            return url{};
+        }
+
         const utils::autorelease_guard guard{};
         auto *const rtn = [NSURL URLWithString:[NSString stringWithUTF8String:input.c_str()]];
 
