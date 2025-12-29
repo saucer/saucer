@@ -310,7 +310,7 @@ namespace saucer
         const auto id = platform->id_counter++;
 
         platform->inject(script);
-        platform->scripts.emplace(id, script);
+        platform->scripts.emplace_back(id, script);
 
         return id;
     }
@@ -319,30 +319,46 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
 
-        auto remove = platform->scripts                                                      //
-                      | std::views::filter([](auto &item) { return item.second.clearable; }) //
-                      | std::views::keys                                                     //
-                      | std::ranges::to<std::vector>();
+        // Because we have to clear all scripts, it is important that we keep the scripts in insertion order.
+        // Thus, we store them as a vector instead of a map...
+
+        for (auto it = platform->scripts.begin(); it != platform->scripts.end();)
+        {
+            if (!it->second.clearable)
+            {
+                ++it;
+                continue;
+            }
+
+            it = platform->scripts.erase(it);
+        }
 
         [platform->controller removeAllUserScripts];
 
-        std::ranges::for_each(remove, [this](auto id) { platform->scripts.erase(id); });
-        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
+        for (const auto &[_, script] : platform->scripts)
+        {
+            platform->inject(script);
+        }
     }
 
     void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
 
-        if (!platform->scripts.contains(id))
+        auto it = std::ranges::find_if(platform->scripts, [id](const auto &item) { return item.first == id; });
+
+        if (it == platform->scripts.end())
         {
             return;
         }
 
-        platform->scripts.erase(id);
+        platform->scripts.erase(it);
         [platform->controller removeAllUserScripts];
 
-        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
+        for (const auto &[_, script] : platform->scripts)
+        {
+            platform->inject(script);
+        }
     }
 
     void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)
