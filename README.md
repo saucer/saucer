@@ -148,7 +148,7 @@ FetchContent
 ```cmake
 CPMFindPackage(
   NAME           saucer
-  VERSION        8.0.0
+  VERSION        8.0.1
   GIT_REPOSITORY "https://github.com/saucer/saucer"
 )
 ```
@@ -159,7 +159,7 @@ CPMFindPackage(
 ```cmake
 FetchContent_Declare(
   saucer 
-  GIT_TAG v8.0.0
+  GIT_TAG v8.0.1
   GIT_REPOSITORY "https://github.com/saucer/saucer" 
 )
 
