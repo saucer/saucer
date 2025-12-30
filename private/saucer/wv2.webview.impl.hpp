@@ -4,7 +4,9 @@
 
 #include "lease.hpp"
 
+#include <map>
 #include <limits>
+#include <unordered_map>
 
 #include <wrl.h>
 #include <WebView2.h>
@@ -68,7 +70,7 @@ namespace saucer
 
       public:
         std::size_t id_counter{0};
-        std::unordered_map<std::size_t, wv2_script> scripts;
+        std::map<std::size_t, wv2_script> scripts;
         std::unordered_map<std::string, scheme::resolver> schemes;
 
       public:

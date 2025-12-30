@@ -309,8 +309,12 @@ namespace saucer
     {
         const auto id = platform->id_counter++;
 
+        // The order of the scripts is important as they might depend on each other, as we need to clear all scripts to remove one specific
+        // one, we have to re-inject all of the scripts as well - thus we have to preserve the order in which they were added. Using
+        // ascending IDs ensures that the order in the `std::map` is preserved (items are sorted based on their keys).
+
         platform->inject(script);
-        platform->scripts.emplace_back(id, script);
+        platform->scripts.emplace(id, script);
 
         return id;
     }
@@ -319,46 +323,30 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
 
-        // Because we have to clear all scripts, it is important that we keep the scripts in insertion order.
-        // Thus, we store them as a vector instead of a map...
-
-        for (auto it = platform->scripts.begin(); it != platform->scripts.end();)
-        {
-            if (!it->second.clearable)
-            {
-                ++it;
-                continue;
-            }
-
-            it = platform->scripts.erase(it);
-        }
+        auto remove = platform->scripts                                                      //
+                      | std::views::filter([](auto &item) { return item.second.clearable; }) //
+                      | std::views::keys                                                     //
+                      | std::ranges::to<std::vector>();
 
         [platform->controller removeAllUserScripts];
 
-        for (const auto &[_, script] : platform->scripts)
-        {
-            platform->inject(script);
-        }
+        std::ranges::for_each(remove, [this](auto id) { platform->scripts.erase(id); });
+        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
     }
 
     void impl::uninject(std::size_t id) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
 
-        auto it = std::ranges::find_if(platform->scripts, [id](const auto &item) { return item.first == id; });
-
-        if (it == platform->scripts.end())
+        if (!platform->scripts.contains(id))
         {
             return;
         }
 
-        platform->scripts.erase(it);
+        platform->scripts.erase(id);
         [platform->controller removeAllUserScripts];
 
-        for (const auto &[_, script] : platform->scripts)
-        {
-            platform->inject(script);
-        }
+        std::ranges::for_each(platform->scripts | std::views::values, std::bind_front(&native::inject, platform.get()));
     }
 
     void impl::handle_scheme(const std::string &name, scheme::resolver &&resolver) // NOLINT(*-function-const)

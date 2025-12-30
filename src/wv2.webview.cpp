@@ -389,6 +389,9 @@ namespace saucer
                                       script.code);
         }
 
+        // As scripts that run at `ready` are iterated later on, it is important that they keep the order in which they were added.
+        // Using ascending IDs ensures this, as the items of a `std::map` are sorted based on their keys.
+
         if (script.run_at == ready)
         {
             platform->scripts.emplace(id, std::move(script));

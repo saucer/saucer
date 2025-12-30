@@ -6,8 +6,8 @@
 #include "wk.scheme.impl.hpp"
 #include "cocoa.window.impl.hpp"
 
+#include <map>
 #include <vector>
-#include <utility>
 #include <unordered_map>
 
 #import <WebKit/WebKit.h>
@@ -37,7 +37,7 @@ namespace saucer
 
       public:
         std::size_t id_counter{0};
-        std::vector<std::pair<std::size_t, script>> scripts;
+        std::map<std::size_t, script> scripts;
 
       public:
         bool dom_loaded{false};
