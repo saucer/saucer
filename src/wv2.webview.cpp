@@ -278,7 +278,7 @@ namespace saucer
 
     bounds impl::bounds() const
     {
-        return platform->bounds.value_or({});
+        return unwrap_safe(platform->bounds);
     }
 
     void impl::set_url(const saucer::url &url) // NOLINT(*-function-const)

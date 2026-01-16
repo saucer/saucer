@@ -64,6 +64,15 @@ namespace saucer
     using result = std::expected<T, error>;
 
     template <typename T>
+    concept Unwrappable = requires(T value) {
+        { value.has_value() } -> std::same_as<bool>;
+        requires std::default_initializable<typename T::value_type>;
+    };
+
+    template <Unwrappable T>
+    auto unwrap_safe(T &&);
+
+    template <typename T>
     auto err(T &&, std::source_location = std::source_location::current());
 } // namespace saucer
 

@@ -99,7 +99,7 @@ namespace saucer
 
             auto req = std::make_shared<request>(request::impl{
                 .request = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw),
-                .url     = self->url().value_or({}),
+                .url     = unwrap_safe(self->url()),
                 .type    = type,
             });
 

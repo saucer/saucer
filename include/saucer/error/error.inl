@@ -20,15 +20,28 @@ namespace saucer
         };
 
         template <typename T>
-        concept expected = is_expected<T>::value;
+        concept Expected = is_expected<T>::value;
     } // namespace detail
+
+    template <Unwrappable T>
+    auto unwrap_safe(T &&value)
+    {
+        using value_t = T::value_type;
+
+        if (!value.has_value())
+        {
+            return value_t{};
+        }
+
+        return *std::forward<T>(value);
+    }
 
     template <typename T>
     auto err(T &&value, std::source_location location)
     {
         using U = std::remove_cvref_t<T>;
 
-        if constexpr (detail::expected<U>)
+        if constexpr (detail::Expected<U>)
         {
             return std::unexpected{value.error()};
         }

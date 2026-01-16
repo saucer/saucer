@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(saucer LANGUAGES CXX VERSION 8.0.2)
+project(saucer LANGUAGES CXX VERSION 8.0.3)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Library switches                                                                                      |
@@ -271,7 +271,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           polo
-  VERSION        1.0.1
+  VERSION        1.0.2
   GIT_REPOSITORY "https://github.com/Curve/polo"
 )
 
@@ -475,5 +475,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;polo 1.0.1;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;polo 1.0.2;saucer-fill 1.3.0;${SERIALIZER_DEP}"
 )

@@ -12,7 +12,7 @@ namespace saucer::scheme
 
     url request::url() const
     {
-        return url::parse(webkit_uri_scheme_request_get_uri(m_impl->request.get())).value_or({});
+        return unwrap_safe(url::parse(webkit_uri_scheme_request_get_uri(m_impl->request.get())));
     }
 
     std::string request::method() const

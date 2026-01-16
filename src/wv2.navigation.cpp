@@ -19,7 +19,7 @@ namespace saucer
         };
         std::visit(visitor, m_impl->request);
 
-        return url::parse(utils::narrow(raw.get())).value_or({});
+        return unwrap_safe(url::parse(utils::narrow(raw.get())));
     }
 
     bool navigation::new_window() const
