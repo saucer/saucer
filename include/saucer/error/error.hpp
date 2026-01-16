@@ -63,10 +63,10 @@ namespace saucer
     template <typename T = void>
     using result = std::expected<T, error>;
 
-    template <typename T>
-    concept Unwrappable = requires(T value) {
+    template <typename T, typename D = std::remove_cvref_t<T>>
+    concept Unwrappable = requires(D value) {
         { value.has_value() } -> std::same_as<bool>;
-        requires std::default_initializable<typename T::value_type>;
+        requires std::default_initializable<typename D::value_type>;
     };
 
     template <Unwrappable T>

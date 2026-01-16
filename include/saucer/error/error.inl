@@ -26,7 +26,7 @@ namespace saucer
     template <Unwrappable T>
     auto unwrap_safe(T &&value)
     {
-        using value_t = T::value_type;
+        using value_t = std::remove_cvref_t<T>::value_type;
 
         if (!value.has_value())
         {
