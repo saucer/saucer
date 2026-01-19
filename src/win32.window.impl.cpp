@@ -114,7 +114,7 @@ namespace saucer
             auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
 
-            if (prev.has_value() && prev.value() == current)
+            if (prev.has_value() && *prev == current)
             {
                 break;
             }
@@ -169,15 +169,15 @@ namespace saucer
         case WM_GETMINMAXINFO: {
             auto *info = reinterpret_cast<MINMAXINFO *>(l_param);
 
-            if (auto min_size = self->platform->min_size; min_size)
+            if (auto min_size = self->platform->min_size; min_size.has_value())
             {
-                auto [min_x, min_y]  = min_size.value();
+                auto [min_x, min_y]  = *min_size;
                 info->ptMinTrackSize = {.x = min_x, .y = min_y};
             }
 
-            if (auto max_size = self->platform->max_size; max_size)
+            if (auto max_size = self->platform->max_size; max_size.has_value())
             {
-                auto [max_x, max_y]  = max_size.value();
+                auto [max_x, max_y]  = *max_size;
                 info->ptMaxTrackSize = {.x = max_x, .y = max_y};
             }
 

@@ -45,7 +45,7 @@ namespace saucer::utils
     template <typename T>
     T &lease<T>::value() &
     {
-        return m_state->value.value();
+        return *m_state->value;
     }
 
     template <typename T>
@@ -89,7 +89,7 @@ namespace saucer::utils
             return nullptr;
         }
 
-        return std::addressof(rtn.value());
+        return std::addressof(*rtn);
     }
 
     template <typename T, typename Func>

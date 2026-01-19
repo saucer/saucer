@@ -211,12 +211,12 @@ namespace saucer
     {
         const auto data = platform->prev_data();
 
-        if (!data)
+        if (!data.has_value())
         {
             return;
         }
 
-        const auto [device, surface, button, time, x, y] = data.value();
+        const auto [device, surface, button, time, x, y] = *data;
         gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), device, button, x, y, time);
     }
 

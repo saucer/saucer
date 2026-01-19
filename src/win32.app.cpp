@@ -20,7 +20,7 @@ namespace saucer
 
         platform->id                         = utils::widen(opts.id.value());
         platform->handle                     = GetModuleHandleW(nullptr);
-        platform->dispatch_controller        = std::move(controller.value());
+        platform->dispatch_controller        = std::move(*controller);
         platform->quit_on_last_window_closed = opts.quit_on_last_window_closed;
 
         platform->wnd_class = WNDCLASSW{

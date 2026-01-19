@@ -75,24 +75,24 @@ namespace saucer::serializers::rflpp
     {
         auto result = rfl::json::read<T>(buffer);
 
-        if (!result)
+        if (!result.has_value())
         {
             return std::nullopt;
         }
 
-        return result.value();
+        return *result;
     }
 
     serializer::parse_result serializer::parse(std::string_view data) const
     {
         if (auto res = parse_as<function_data>(data); res.has_value())
         {
-            return std::make_unique<function_data>(res.value());
+            return std::make_unique<function_data>(*res);
         }
 
         if (auto res = parse_as<result_data>(data); res.has_value())
         {
-            return std::make_unique<result_data>(res.value());
+            return std::make_unique<result_data>(*res);
         }
 
         return std::monostate{};

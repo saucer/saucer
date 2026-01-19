@@ -16,7 +16,7 @@ namespace saucer
 
         auto request = request::parse(message);
 
-        if (!request)
+        if (!request.has_value())
         {
             return status::unhandled;
         }
@@ -31,7 +31,7 @@ namespace saucer
             [this](const request::minimized &data) { resolve(data.id, std::format("{}", window->minimized())); },
         };
 
-        std::visit(visitor, request.value());
+        std::visit(visitor, *request);
 
         return status::handled;
     }

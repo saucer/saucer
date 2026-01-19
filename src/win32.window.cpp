@@ -58,7 +58,7 @@ namespace saucer
         platform = std::make_unique<native>();
 
         platform->hwnd          = std::move(hwnd);
-        platform->window_target = std::move(window_target.value());
+        platform->window_target = std::move(*window_target);
         platform->dpi           = GetDpiForWindow(platform->hwnd.get());
         platform->background    = compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
         platform->hook          = {platform->hwnd.get(), native::wnd_proc};
@@ -314,7 +314,7 @@ namespace saucer
 
         if (!enabled && platform->prev_placement.has_value())
         {
-            SetWindowPlacement(hwnd, &platform->prev_placement.value());
+            SetWindowPlacement(hwnd, &*platform->prev_placement);
         }
 
         if (!enabled)
@@ -324,7 +324,7 @@ namespace saucer
         }
 
         platform->prev_placement.emplace(WINDOWPLACEMENT{.length = sizeof(WINDOWPLACEMENT)});
-        GetWindowPlacement(hwnd, &platform->prev_placement.value());
+        GetWindowPlacement(hwnd, &*platform->prev_placement);
 
         const auto monitor = screen();
 

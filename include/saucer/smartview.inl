@@ -22,7 +22,7 @@ namespace saucer
             return err(base);
         }
 
-        return basic_smartview{std::move(base.value())};
+        return basic_smartview{std::move(*base)};
     }
 
     template <Serializer Serializer>

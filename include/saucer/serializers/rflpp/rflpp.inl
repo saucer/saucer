@@ -53,7 +53,7 @@ namespace saucer::serializers::rflpp
                 return std::unexpected{rtn.error().what()};
             }
 
-            return rtn.value();
+            return *rtn;
         }
     } // namespace detail
 

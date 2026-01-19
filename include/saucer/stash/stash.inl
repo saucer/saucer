@@ -30,7 +30,7 @@ namespace saucer
                 self.m_value.emplace(self.m_callback());
             }
 
-            return std::forward<Self>(self).m_value.value();
+            return *std::forward<Self>(self).m_value;
         }
     };
 

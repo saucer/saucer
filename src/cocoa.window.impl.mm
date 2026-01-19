@@ -96,8 +96,8 @@ namespace saucer
             return;
         }
 
-        auto [frame, prev] = prev_click.value();
-        auto underlying    = std::to_underlying(edge.value());
+        auto [frame, prev] = *prev_click;
+        auto underlying    = std::to_underlying(*edge);
 
         auto current   = NSEvent.mouseLocation;
         auto diff      = NSPoint{current.x - prev.x, current.y - prev.y};

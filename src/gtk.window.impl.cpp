@@ -16,7 +16,7 @@ namespace saucer
             return std::nullopt;
         }
 
-        const auto [event, controller] = prev_click.value();
+        const auto [event, controller] = *prev_click;
         auto *const widget             = gtk_event_controller_get_widget(controller);
 
         double x{}, y{};
@@ -231,12 +231,12 @@ namespace saucer
 
         const auto data = prev_data();
 
-        if (!data)
+        if (!data.has_value())
         {
             return;
         }
 
-        const auto [device, surface, button, time, x, y] = data.value();
+        const auto [device, surface, button, time, x, y] = *data;
         gdk_toplevel_begin_resize(GDK_TOPLEVEL(surface), translated, device, button, x, y, time);
     }
 
@@ -267,7 +267,7 @@ namespace saucer
             auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
 
-            if (prev.has_value() && prev.value() == current)
+            if (prev.has_value() && *prev == current)
             {
                 return;
             }

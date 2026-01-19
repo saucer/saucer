@@ -83,7 +83,7 @@ namespace saucer
         using variant = mapped_variant_t<request>;
         auto result   = rfl::json::read<variant>(data);
 
-        if (!result)
+        if (!result.has_value())
         {
             return std::nullopt;
         }
@@ -94,6 +94,6 @@ namespace saucer
             return convert<original>(named);
         };
 
-        return std::visit(visitor, result.value());
+        return std::visit(visitor, *result);
     }
 } // namespace saucer

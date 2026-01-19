@@ -213,7 +213,7 @@ namespace saucer::traits
             }
             else
             {
-                executor.resolve(result.value());
+                executor.resolve(*result);
             }
         }
 

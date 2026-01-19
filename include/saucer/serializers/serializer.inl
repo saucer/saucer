@@ -169,7 +169,7 @@ namespace saucer
             const auto &message = *static_cast<Interface::function_data *>(data.get());
             auto parsed         = reader::read(message);
 
-            if (!parsed)
+            if (!parsed.has_value())
             {
                 return exec.reject(detail::write<Interface>(parsed.error()));
             }
@@ -207,7 +207,7 @@ namespace saucer
 #if defined(__cpp_exceptions) && !defined(SAUCER_NO_EXCEPTIONS)
                 std::make_tuple(std::move(except)),
 #endif
-                std::move(parsed.value()), std::make_tuple(std::move(transformed_exec)));
+                std::move(*parsed), std::make_tuple(std::move(transformed_exec)));
 
             std::apply(converted, std::move(params));
         };
