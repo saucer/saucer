@@ -212,7 +212,14 @@ namespace saucer
                 return;
             }
 
-            self->events.get<event::request>().fire(unwrap_safe(url::parse(raw)));
+            auto parsed = url::parse(raw);
+
+            if (!parsed.has_value())
+            {
+                assert(false);
+            }
+
+            self->events.get<event::request>().fire(unwrap_safe(parsed));
         };
 
         const auto id = utils::connect(web_view, "resource-load-started", +callback, self);

@@ -102,11 +102,6 @@ namespace saucer
 
         auto handler = [self](const QUrl &url)
         {
-            if (url.isEmpty())
-            {
-                return;
-            }
-
             self->events.get<event::navigated>().fire(url::impl{url});
         };
 
