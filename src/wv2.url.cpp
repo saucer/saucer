@@ -9,7 +9,7 @@
 
 namespace saucer
 {
-    url::url() : m_impl(std::move(make({}).m_impl)) {}
+    url::url() : m_impl(std::move(make({.scheme = "about", .path = "blank"}).m_impl)) {}
 
     url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
@@ -90,6 +90,16 @@ namespace saucer
         return utils::narrow({rtn, m_impl->components.dwPasswordLength});
     }
 
+    bool url::operator==(const url &other) const
+    {
+        return string() == other.string();
+    }
+
+    bool url::operator==(std::string_view other) const
+    {
+        return string() == other;
+    }
+
     result<url> url::from(const fs::path &file)
     {
         std::wstring rtn{};
@@ -147,14 +157,14 @@ namespace saucer
 
         if (opts.host.has_value())
         {
-            host                        = utils::widen(opts.host.value());
+            host                        = utils::widen(*opts.host);
             components.lpszHostName     = host.data();
             components.dwHostNameLength = host.length();
         }
 
-        if (opts.port)
+        if (opts.port.has_value())
         {
-            components.nPort = opts.port.value();
+            components.nPort = *opts.port;
         }
 
         std::wstring raw{};
@@ -173,9 +183,8 @@ namespace saucer
         if (!parsed.has_value())
         {
             assert(false);
-            return impl{.url = std::move(raw)};
         }
 
-        return parsed.value();
+        return unwrap_safe(parsed);
     }
 } // namespace saucer

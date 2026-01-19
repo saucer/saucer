@@ -56,7 +56,7 @@ namespace saucer
         }
 
         auto environment = native::create_environment(parent, {
-                                                                  .storage_path = storage_path.value(),
+                                                                  .storage_path = *storage_path,
                                                                   .opts         = env_options.Get(),
                                                               });
 
@@ -77,7 +77,7 @@ namespace saucer
 
         ComPtr<ICoreWebView2> raw;
 
-        if (auto status = controller.value()->get_CoreWebView2(&raw); !SUCCEEDED(status))
+        if (auto status = (*controller)->get_CoreWebView2(&raw); !SUCCEEDED(status))
         {
             return err(status);
         }
@@ -91,13 +91,13 @@ namespace saucer
 
         platform = std::make_unique<native>();
 
-        platform->controller = std::move(controller.value());
+        platform->controller = std::move(*controller);
         platform->web_view   = std::move(web_view);
         platform->lease      = utils::lease<webview::impl *>{this};
 
         if (!opts.storage_path.has_value() && !opts.persistent_cookies)
         {
-            platform->cleanup = storage_path.value();
+            platform->cleanup = *storage_path;
             platform->web_view->get_BrowserProcessId(&platform->browser_pid);
         }
 
@@ -106,7 +106,7 @@ namespace saucer
 
         if (ComPtr<ICoreWebView2Settings2> settings; opts.user_agent.has_value() && SUCCEEDED(platform->settings.As(&settings)))
         {
-            settings->put_UserAgent(utils::widen(opts.user_agent.value()).c_str());
+            settings->put_UserAgent(utils::widen(*opts.user_agent).c_str());
         }
 
         if (ComPtr<ICoreWebView2Settings3> settings; SUCCEEDED(platform->settings.As(&settings)))
@@ -192,7 +192,7 @@ namespace saucer
         WaitForSingleObject(handle.get(), 1000);
 
         std::error_code ec{};
-        fs::remove_all(platform->cleanup.value(), ec);
+        fs::remove_all(*platform->cleanup, ec);
     }
 
     template <webview::event Event>
@@ -201,16 +201,23 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<url> impl::url() const
+    url impl::url() const
     {
         utils::string_handle rtn;
 
         if (auto status = platform->web_view->get_Source(&rtn.reset()); !SUCCEEDED(status))
         {
-            return err(status);
+            return {};
         }
 
-        return url::parse(utils::narrow(rtn.get()));
+        auto parsed = url::parse(utils::narrow(rtn.get()));
+
+        if (!parsed.has_value())
+        {
+            assert(false);
+        }
+
+        return unwrap_safe(parsed);
     }
 
     icon impl::favicon() const

@@ -135,7 +135,7 @@ namespace saucer
         return *m_impl->window;
     }
 
-    result<saucer::url> webview::url() const
+    saucer::url webview::url() const
     {
         return utils::invoke<&impl::url>(m_impl.get());
     }
@@ -189,7 +189,7 @@ namespace saucer
             return;
         }
 
-        set_url(parsed.value());
+        set_url(*parsed);
     }
 
     void webview::set_html(cstring_view html)

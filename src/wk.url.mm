@@ -5,7 +5,7 @@
 
 namespace saucer
 {
-    url::url() : m_impl(std::move(make({}).m_impl)) {}
+    url::url() : m_impl(std::move(make({.scheme = "about", .path = "blank"}).m_impl)) {}
 
     url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
@@ -114,6 +114,16 @@ namespace saucer
         return rtn.UTF8String;
     }
 
+    bool url::operator==(const url &other) const
+    {
+        return string() == other.string();
+    }
+
+    bool url::operator==(std::string_view other) const
+    {
+        return string() == other;
+    }
+
     result<url> url::from(const fs::path &file)
     {
         const utils::autorelease_guard guard{};
@@ -157,12 +167,12 @@ namespace saucer
 
         if (opts.host.has_value())
         {
-            [rtn setHost:[NSString stringWithUTF8String:opts.host.value().c_str()]];
+            [rtn setHost:[NSString stringWithUTF8String:opts.host->c_str()]];
         }
 
         if (opts.port.has_value())
         {
-            [rtn setPort:[NSNumber numberWithUnsignedLong:opts.port.value()]];
+            [rtn setPort:[NSNumber numberWithUnsignedLong:*opts.port]];
         }
 
         [rtn setPath:[NSString stringWithUTF8String:opts.path.c_str()]];

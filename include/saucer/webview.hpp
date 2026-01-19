@@ -133,7 +133,7 @@ namespace saucer
         [[nodiscard]] window &parent() const;
 
       public:
-        [[sc::thread_safe]] [[nodiscard]] result<saucer::url> url() const;
+        [[sc::thread_safe]] [[nodiscard]] saucer::url url() const;
 
       public:
         [[sc::thread_safe]] [[nodiscard]] icon favicon() const;

@@ -58,6 +58,10 @@ namespace saucer
         [[nodiscard]] std::optional<std::string> password() const;
 
       public:
+        [[nodiscard]] bool operator==(const url &) const;
+        [[nodiscard]] bool operator==(std::string_view) const;
+
+      public:
         static result<url> parse(cstring_view input);
         static result<url> from(const fs::path &file);
 

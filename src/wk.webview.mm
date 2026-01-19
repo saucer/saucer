@@ -95,14 +95,14 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<url> impl::url() const
+    url impl::url() const
     {
         const auto guard = utils::autorelease_guard{};
         auto *const raw  = platform->web_view.get().URL;
 
         if (!raw)
         {
-            return err(std::errc::not_connected);
+            return {};
         }
 
         return url::impl{[raw copy]};

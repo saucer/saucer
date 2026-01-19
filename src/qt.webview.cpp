@@ -52,7 +52,7 @@ namespace saucer
 
         if (opts.user_agent.has_value())
         {
-            profile->setHttpUserAgent(QString::fromStdString(opts.user_agent.value()));
+            profile->setHttpUserAgent(QString::fromStdString(*opts.user_agent));
         }
 
         if (opts.storage_path.has_value())
@@ -154,13 +154,13 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<saucer::url> impl::url() const
+    url impl::url() const
     {
         auto rtn = platform->web_view->url();
 
-        if (!rtn.isValid())
+        if (rtn.isEmpty() || !rtn.isValid())
         {
-            return err(std::errc::not_connected);
+            return {};
         }
 
         return url::impl{rtn};
@@ -168,7 +168,7 @@ namespace saucer
 
     icon impl::favicon() const
     {
-        return {icon::impl{platform->web_view->icon()}};
+        return icon::impl{platform->web_view->icon()};
     }
 
     std::string impl::page_title() const

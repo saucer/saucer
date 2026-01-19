@@ -44,7 +44,7 @@ namespace saucer
         void resolve(std::size_t, std::string_view);
 
       public:
-        [[nodiscard]] result<saucer::url> url() const;
+        [[nodiscard]] saucer::url url() const;
 
       public:
         [[nodiscard]] icon favicon() const;

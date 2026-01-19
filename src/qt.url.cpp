@@ -4,7 +4,7 @@
 
 namespace saucer
 {
-    url::url() : m_impl(std::make_unique<impl>()) {}
+    url::url() : m_impl(std::move(make({.scheme = "about", .path = "blank"}).m_impl)) {}
 
     url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
@@ -92,6 +92,16 @@ namespace saucer
         return rtn.toStdString();
     }
 
+    bool url::operator==(const url &other) const
+    {
+        return string() == other.string();
+    }
+
+    bool url::operator==(std::string_view other) const
+    {
+        return string() == other;
+    }
+
     result<url> url::from(const fs::path &file)
     {
         auto rtn = QUrl::fromLocalFile(QString::fromStdString(file.string()));
@@ -129,12 +139,12 @@ namespace saucer
 
         if (opts.host.has_value())
         {
-            rtn.setHost(QString::fromStdString(opts.host.value()));
+            rtn.setHost(QString::fromStdString(*opts.host));
         }
 
         if (opts.port.has_value())
         {
-            rtn.setPort(static_cast<int>(opts.port.value()));
+            rtn.setPort(static_cast<int>(*opts.port));
         }
 
         rtn.setPath(QString::fromStdString(opts.path.string()));

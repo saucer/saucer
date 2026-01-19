@@ -99,7 +99,7 @@ namespace saucer
 
             auto req = std::make_shared<request>(request::impl{
                 .request = utils::g_object_ptr<WebKitPermissionRequest>::ref(raw),
-                .url     = unwrap_safe(self->url()),
+                .url     = self->url(),
                 .type    = type,
             });
 
@@ -212,15 +212,7 @@ namespace saucer
                 return;
             }
 
-            auto parsed = url::parse(raw);
-
-            if (!parsed.has_value())
-            {
-                assert(false);
-                return;
-            }
-
-            self->events.get<event::request>().fire(parsed.value());
+            self->events.get<event::request>().fire(unwrap_safe(url::parse(raw)));
         };
 
         const auto id = utils::connect(web_view, "resource-load-started", +callback, self);
@@ -299,17 +291,9 @@ namespace saucer
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
     {
-        auto url = self->url();
-
-        if (!url.has_value())
-        {
-            assert(false);
-            return;
-        }
-
         if (event == WEBKIT_LOAD_COMMITTED)
         {
-            self->events.get<event::navigated>().fire(url.value());
+            self->events.get<event::navigated>().fire(self->url());
             return;
         }
 
@@ -348,7 +332,7 @@ namespace saucer
             return;
         }
 
-        self->window->set_resizable(previous.value());
+        self->window->set_resizable(*previous);
         previous.reset();
     }
 

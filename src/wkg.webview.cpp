@@ -102,16 +102,23 @@ namespace saucer
         platform->setup<Event>(this);
     }
 
-    result<url> impl::url() const
+    url impl::url() const
     {
         const auto *uri = webkit_web_view_get_uri(platform->web_view);
 
         if (!uri)
         {
-            return err(std::errc::not_connected);
+            return {};
         }
 
-        return url::parse(uri);
+        auto parsed = url::parse(uri);
+
+        if (!parsed.has_value())
+        {
+            assert(false);
+        }
+
+        return unwrap_safe(parsed);
     }
 
     icon impl::favicon() const

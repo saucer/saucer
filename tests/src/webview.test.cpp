@@ -25,17 +25,17 @@ suite<"webview"> webview_suite = []
         expect(parsed.has_value());
 
         webview.set_url(parsed.value());
-        saucer::tests::wait_for([&] { return url.has_value() && ready && state.contains(saucer::state::finished); }, duration);
+        saucer::tests::wait_for([&] { return url != saucer::url{} && ready && state.contains(saucer::state::finished); }, duration);
 
         expect(ready);
-        expect(url.has_value());
+        expect(url != saucer::url{});
 
         expect(state.contains(saucer::state::started));
         expect(state.contains(saucer::state::finished));
 
-        expect(url->scheme() == "https");
-        expect(url->host() == "codeberg.org");
-        expect(url->path() == "/saucer/saucer");
+        expect(url.scheme() == "https");
+        expect(url.host() == "codeberg.org");
+        expect(url.path() == "/saucer/saucer");
     };
 
     "page_title"_test_async = [](saucer::webview &webview)
@@ -101,11 +101,11 @@ suite<"webview"> webview_suite = []
         webview.set_url("https://github.com");
         webview.execute("location.href = 'https://codeberg.org'");
 
-        saucer::tests::wait_for([&] { return url.has_value() && url->host() == "codeberg.org"; }, duration);
+        saucer::tests::wait_for([&] { return url != saucer::url{} && url.host() == "codeberg.org"; }, duration);
 
-        expect(url.has_value());
-        expect(url->host() == "codeberg.org");
-        expect(webview.url()->host() == "codeberg.org");
+        expect(url != saucer::url{});
+        expect(url.host() == "codeberg.org");
+        expect(webview.url().host() == "codeberg.org");
     };
 
     "inject"_test_async = [](saucer::webview &webview)

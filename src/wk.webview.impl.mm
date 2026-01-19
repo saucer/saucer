@@ -63,15 +63,7 @@ namespace saucer
 
         const utils::objc_ptr<Observer> observer = [[Observer alloc] initWithCallback:[self]
                                                                      {
-                                                                         auto url = self->url();
-
-                                                                         if (!url.has_value())
-                                                                         {
-                                                                             assert(false);
-                                                                             return;
-                                                                         }
-
-                                                                         self->events.get<event::navigated>().fire(url.value());
+                                                                         self->events.get<event::navigated>().fire(self->url());
                                                                      }];
 
         [web_view.get() addObserver:observer.get() forKeyPath:@"URL" options:0 context:nullptr];

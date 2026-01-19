@@ -88,17 +88,11 @@ namespace saucer
 
         auto handler = [self](auto...)
         {
-            auto url = self->url();
-
-            if (!url.has_value())
-            {
-                assert(false);
-                return S_OK;
-            }
+            const auto url = self->url();
 
             auto fire = [url](impl *self)
             {
-                self->events.get<event::navigated>().fire(url.value());
+                self->events.get<event::navigated>().fire(url);
             };
 
             self->parent->post(utils::defer(self->platform->lease, fire));
@@ -198,7 +192,7 @@ namespace saucer
             return err(hash);
         }
 
-        return fs::temp_directory_path() / std::format(L"saucer-{}", hash.value());
+        return fs::temp_directory_path() / std::format(L"saucer-{}", *hash);
     }
 
     result<ComPtr<ICoreWebView2Environment>> native::create_environment(application *parent, const environment_options &options)
@@ -293,14 +287,14 @@ namespace saucer
 
         auto parsed = url::parse(utils::narrow(raw.get()));
 
-        if (!parsed)
+        if (!parsed.has_value())
         {
             return S_OK;
         }
 
-        self->events.get<event::request>().fire(parsed.value());
+        self->events.get<event::request>().fire(*parsed);
 
-        return scheme_handler(self, {.raw = args, .request = std::move(request), .url = std::move(parsed.value())});
+        return scheme_handler(self, {.raw = args, .request = std::move(request), .url = std::move(*parsed)});
     }
 
     HRESULT native::on_dom(impl *self, ICoreWebView2 *, ICoreWebView2DOMContentLoadedEventArgs *)

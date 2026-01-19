@@ -1,3 +1,4 @@
+#include "url.hpp"
 #include "wkg.url.impl.hpp"
 
 #include "gtk.utils.hpp"
@@ -5,7 +6,7 @@
 
 namespace saucer
 {
-    url::url() : m_impl(std::move(make({}).m_impl)) {}
+    url::url() : m_impl(std::move(make({.scheme = "about", .path = "blank"}).m_impl)) {}
 
     url::url(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
@@ -91,6 +92,16 @@ namespace saucer
         }
 
         return rtn;
+    }
+
+    bool url::operator==(const url &other) const
+    {
+        return string() == other.string();
+    }
+
+    bool url::operator==(std::string_view other) const
+    {
+        return string() == other;
     }
 
     result<url> url::from(const fs::path &file)
