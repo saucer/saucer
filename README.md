@@ -27,7 +27,7 @@ Learn how to create your first _saucer_ app [here](https://saucer.github.io/gett
 
 ### Community
 
-Get in touch: [Discord](https://discord.gg/ndhmQE4225), [Matrix](https://matrix.to/#/#saucer:matrix.org)
+Get in touch: [Discord](https://discord.gg/VCF4hNVkn5), [Matrix](https://matrix.to/#/#saucer:matrix.org)
 
 ### Mirrors
 
