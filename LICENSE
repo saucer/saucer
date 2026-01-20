@@ -24,10 +24,11 @@ SOFTWARE.
 
 DISCLAIMER:
 
-This project may optionally use WebView2 or Qt libraries depending on which 
-backend is selected by the user. When combined with these libraries, 
-the resulting combined work can no longer be licensed under MIT and 
-must comply with the license terms of those libraries.
+This project may optionally use Qt libraries depending on which ackend is 
+selected by the user. 
+
+When combined with these libraries, the resulting combined work can no longer 
+be licensed under MIT and must comply with the license terms of those libraries.
 
 The MIT license above applies only to the original code in this project, 
 not to any combined or derivative works that include these third-party libraries.
