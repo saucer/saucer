@@ -24,7 +24,7 @@ SOFTWARE.
 
 DISCLAIMER:
 
-This project may optionally use Qt libraries depending on which ackend is 
+This project may optionally use Qt libraries depending on which backend is 
 selected by the user. 
 
 When combined with these libraries, the resulting combined work can no longer 
