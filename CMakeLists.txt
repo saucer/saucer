@@ -13,7 +13,7 @@ option(saucer_examples         "Build examples"                                 
 option(saucer_tests            "Build tests"                                                         OFF)
 
 option(saucer_msvc_hack        "Fix mutex crash on mismatching runtimes. See VS2022 17.10 changelog" OFF)
-option(saucer_unexpected_hack  "Fixes an issue when compiling with zig related to std::unexpected"   OFF)
+option(saucer_unexpected_hack  "Fix std::unexpected ambiguity issues when compiling with zig"        OFF)
 option(saucer_private_webkit   "Enable private api usage for wkwebview"                               ON)
 
 option(saucer_no_version_check "Skip compiler version check"                                         OFF)
