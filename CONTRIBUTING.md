@@ -23,8 +23,8 @@ We're always grateful for your contributions :) We just want to make sure your h
 
 <br/>
 <div align="center">
-  <a href="https://discord.gg/ndhmQE4225">
-    <img src="https://invidget.switchblade.xyz/ndhmQE4225" alt="Discord Invite"/>
+  <a href="https://discord.gg/VCF4hNVkn5">
+    <img src="https://invidget.switchblade.xyz/VCF4hNVkn5" alt="Discord Invite"/>
   </a>
 </div>
 <br/>

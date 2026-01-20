@@ -8,4 +8,4 @@
 
 ## Reporting a Vulnerability
 
-You can reach out to us via mail at `saucer-project@protonmail.com` or via [Discord](https://discord.gg/ndhmQE4225).
+You can reach out to us via mail at `saucer-project@protonmail.com` or via [Discord](https://discord.gg/VCF4hNVkn5) or [Matrix](https://matrix.to/#/#saucer:matrix.org).
