@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(saucer LANGUAGES CXX VERSION 8.0.4)
+project(saucer LANGUAGES CXX VERSION 8.1.0)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Library switches                                                                                      |
@@ -13,6 +13,7 @@ option(saucer_examples         "Build examples"                                 
 option(saucer_tests            "Build tests"                                                         OFF)
 
 option(saucer_msvc_hack        "Fix mutex crash on mismatching runtimes. See VS2022 17.10 changelog" OFF)
+option(saucer_unexpected_hack  "Fixes an issue when compiling with zig related to std::unexpected"   OFF)
 option(saucer_private_webkit   "Enable private api usage for wkwebview"                               ON)
 
 option(saucer_no_version_check "Skip compiler version check"                                         OFF)
@@ -179,6 +180,14 @@ endif()
 
 if (saucer_private_webkit)
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_WEBKIT_PRIVATE)
+endif()
+
+# +-------------------------------------------------------------------------------------------------------+
+# | Setup precompiled headers                                                                             |
+# +-------------------------------------------------------------------------------------------------------+
+
+if (saucer_unexpected_hack)
+  target_precompile_headers(${PROJECT_NAME} PUBLIC "cmake/toolchain/zig.fix.hpp")
 endif()
 
 # +-------------------------------------------------------------------------------------------------------+
