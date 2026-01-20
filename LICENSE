@@ -22,11 +22,11 @@ SOFTWARE.
 
 ---
 
-ADDITIONAL NOTICE:
+PLEASE NOTE:
 
-This software may optionally be built and used with WebKit, WebKitGtk, WebView2, or Qt libraries.
-When combined with these libraries, the resulting combined work must comply 
-with the license terms of those libraries. 
+This project may optionally use WebKit, WebView2, WebKitGtk & GTK, or Qt libraries 
+depending on which backend is selected by the user. When combined with these libraries, 
+the resulting combined work must comply with the license terms of those libraries. 
 
 The MIT license above applies only to the original code in this project, 
 not to any combined or derivative works that include these third-party libraries.
