@@ -19,3 +19,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+ADDITIONAL NOTICE:
+
+This software may optionally be built and used with WebKit, WebKitGtk, WebView2, or Qt libraries.
+When combined with these libraries, the resulting combined work must comply 
+with the license terms of those libraries. 
+
+The MIT license above applies only to the original code in this project, 
+not to any combined or derivative works that include these third-party libraries.

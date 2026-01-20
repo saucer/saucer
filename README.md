@@ -45,7 +45,6 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 ## 🛸 Features
 
 - ⚖️ FOSS
-  > Licensed under MIT!
 
 - 🪶 Lightweight
   > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
