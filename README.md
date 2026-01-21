@@ -45,6 +45,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 ## 🛸 Features
 
 - ⚖️ FOSS
+  > Licensed under MIT[^4]!
 
 - 🪶 Lightweight
   > By using the operating systems native web renderer[^1], it is possible to create binaries as small as ~250KB
@@ -129,6 +130,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 [^2]: For lack of a better word
 
 [^3]: Saucer catches exceptions thrown in exposed functions - **if not compiled with** `-fno-exceptions` - by default. This can be explicitly disabled via `set(saucer_exceptions OFF)`
+
+[^4]: Cannot be licensed under MIT when using the Qt Backend, see [LICENSE](./LICENSE) 
 
 ## 📦 Installation
 
