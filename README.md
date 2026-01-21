@@ -131,7 +131,7 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 [^3]: Saucer catches exceptions thrown in exposed functions - **if not compiled with** `-fno-exceptions` - by default. This can be explicitly disabled via `set(saucer_exceptions OFF)`
 
-[^4]: Cannot be licensed under MIT when using the Qt Backend, see [LICENSE](./LICENSE) 
+[^4]: Cannot be licensed under MIT when using the Qt Backend, see [LICENSE](https://github.com/saucer/saucer/blob/master/LICENSE) 
 
 ## 📦 Installation
 
