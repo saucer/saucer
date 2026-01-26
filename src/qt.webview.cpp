@@ -105,7 +105,14 @@ namespace saucer
         platform->on_load = platform->web_view->connect(platform->web_view.get(), &QWebEngineView::loadStarted,
                                                         [this]
                                                         {
+                                                            if (!platform->initial)
+                                                            {
+                                                                events.get<event::unload>().fire();
+                                                            }
+
+                                                            platform->initial    = false;
                                                             platform->dom_loaded = false;
+
                                                             events.get<event::load>().fire(state::started);
                                                         });
 

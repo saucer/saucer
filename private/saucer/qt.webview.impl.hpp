@@ -53,6 +53,7 @@ namespace saucer
         std::unordered_map<std::size_t, qt_script> scripts;
 
       public:
+        bool initial{true};
         bool dom_loaded{false};
         std::vector<std::string> pending;
 

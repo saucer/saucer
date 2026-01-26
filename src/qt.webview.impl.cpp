@@ -123,22 +123,15 @@ namespace saucer
         {
             auto request = navigation{navigation::impl{&req}};
 
-            if (self->events.get<event::navigate>().fire(request).find(policy::block))
-            {
-                if constexpr (std::is_same_v<T, QWebEngineNavigationRequest>)
-                {
-                    req.reject();
-                }
-
-                return;
-            }
-
-            if (self->url() == saucer::url{})
+            if (!self->events.get<event::navigate>().fire(request).find(policy::block))
             {
                 return;
             }
 
-            self->events.get<event::unload>().fire();
+            if constexpr (std::is_same_v<T, QWebEngineNavigationRequest>)
+            {
+                req.reject();
+            }
         };
 
         const auto new_id = web_page->connect(web_page.get(), &QWebEnginePage::newWindowRequested, handler);
@@ -193,10 +186,8 @@ namespace saucer
     }
 
     template <>
-    void native::setup<event::unload>(impl *self)
+    void native::setup<event::unload>(impl *)
     {
-        // TODO: setup navigation event unconditionally (?)
-        setup<event::navigate>(self);
     }
 
     template <>
