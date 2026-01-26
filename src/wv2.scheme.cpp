@@ -1,5 +1,6 @@
 #include "wv2.scheme.impl.hpp"
 
+#include "error.impl.hpp"
 #include "win32.utils.hpp"
 
 namespace saucer::scheme
