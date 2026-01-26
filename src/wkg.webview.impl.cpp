@@ -308,7 +308,6 @@ namespace saucer
         if (event == WEBKIT_LOAD_COMMITTED && !self->platform->initial)
         {
             self->events.get<event::unload>().fire();
-            return;
         }
 
         if (event == WEBKIT_LOAD_COMMITTED)
