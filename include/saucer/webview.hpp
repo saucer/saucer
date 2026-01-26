@@ -84,6 +84,7 @@ namespace saucer
             message,
             request,
             favicon,
+            unload,
             title,
             load,
         };
@@ -98,6 +99,7 @@ namespace saucer
             ereignis::event<event::message, status(std::string_view)>,                                //
             ereignis::event<event::request, void(const saucer::url &)>,                               //
             ereignis::event<event::favicon, void(const icon &)>,                                      //
+            ereignis::event<event::unload, void()>,                                                   //
             ereignis::event<event::title, void(std::string_view)>,                                    //
             ereignis::event<event::load, void(const state &)>                                         //
             >;

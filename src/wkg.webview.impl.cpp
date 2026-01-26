@@ -246,6 +246,11 @@ namespace saucer
     }
 
     template <>
+    void native::setup<event::unload>(impl *)
+    {
+    }
+
+    template <>
     void native::setup<event::title>(impl *self)
     {
         auto &event = self->events.get<event::title>();
@@ -298,6 +303,12 @@ namespace saucer
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
     {
+        if (event == WEBKIT_LOAD_COMMITTED && self->url() != saucer::url{})
+        {
+            self->events.get<event::unload>().fire();
+            return;
+        }
+
         if (event == WEBKIT_LOAD_COMMITTED)
         {
             self->events.get<event::navigated>().fire(self->url());

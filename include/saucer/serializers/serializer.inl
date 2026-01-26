@@ -220,9 +220,14 @@ namespace saucer
         using reader           = detail::reader<Interface, T>;
         using exception_reader = detail::reader<Interface, std::string>;
 
-        return [promise = std::move(promise)](std::unique_ptr<result_data> data) mutable
+        return [promise = std::move(promise)](result<std::unique_ptr<result_data>> data) mutable
         {
-            const auto &res = *static_cast<Interface::result_data *>(data.get());
+            if (!data.has_value())
+            {
+                return promise.set_value(std::unexpected{data.error()});
+            }
+
+            const auto &res = *static_cast<Interface::result_data *>(data->get());
 
             if (!res.exception) [[likely]]
             {

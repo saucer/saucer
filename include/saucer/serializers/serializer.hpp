@@ -40,7 +40,7 @@ namespace saucer
         using result = std::expected<T, std::string>;
 
       public:
-        using resolver = std::move_only_function<void(std::unique_ptr<result_data>)>;
+        using resolver = std::move_only_function<void(result<std::unique_ptr<result_data>>)>;
         using function = std::move_only_function<void(std::unique_ptr<function_data>, executor)>;
 
       public:

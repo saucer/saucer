@@ -33,6 +33,7 @@ namespace saucer
         utils::lease<webview::impl *> lease;
 
       public:
+        void on_unload();
         status on_message(std::string_view);
 
       public:
@@ -60,6 +61,7 @@ namespace saucer
             .clearable = false,
         });
 
+        on<event::unload>({{.func = std::bind_front(&impl::on_unload, m_impl.get()), .clearable = false}});
         on<event::message>({{.func = std::bind_front(&impl::on_message, m_impl.get()), .clearable = false}});
     }
 
@@ -90,6 +92,20 @@ namespace saucer
         };
 
         return std::visit(visitor, parsed);
+    }
+
+    void smartview_base::impl::on_unload()
+    {
+        // TODO: errors need a slight re-work. It would be nice to differentiate between JavaScript and Internal Errors here...
+
+        auto locked = evaluations.write();
+
+        for (auto &[_, resolver] : *locked)
+        {
+            resolver(std::unexpected{"cancelled"});
+        }
+
+        locked->clear();
     }
 
     void smartview_base::impl::call(std::unique_ptr<function_data> message)
