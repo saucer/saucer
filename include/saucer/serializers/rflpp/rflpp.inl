@@ -44,13 +44,17 @@ namespace saucer::serializers::rflpp
         }
 
         template <typename T, typename U>
-        serializer::result<T> read(U &&value)
+        result<T> read(U &&value)
         {
             auto rtn = read_impl<T>(std::forward<U>(value));
 
             if (!rtn.has_value())
             {
-                return std::unexpected{rtn.error().what()};
+                return saucer::err(error{
+                    .code    = static_cast<int>(serializer_error::parsing_failed),
+                    .message = rtn.error().what(),
+                    .kind    = serializer_domain(),
+                });
             }
 
             return *rtn;
@@ -64,19 +68,19 @@ namespace saucer::serializers::rflpp
     }
 
     template <Readable T>
-    serializer::result<T> serializer::read(std::string_view value)
+    result<T> serializer::read(std::string_view value)
     {
         return detail::read<T>(value);
     }
 
     template <Readable T>
-    serializer::result<T> serializer::read(const result_data &data)
+    result<T> serializer::read(const result_data &data)
     {
         return detail::read<T>(data.result);
     }
 
     template <Readable T>
-    serializer::result<T> serializer::read(const function_data &data)
+    result<T> serializer::read(const function_data &data)
     {
         return detail::read<T>(data.params);
     }

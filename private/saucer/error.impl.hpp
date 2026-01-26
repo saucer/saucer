@@ -2,60 +2,36 @@
 
 #include <saucer/error/error.hpp>
 
-#include <system_error>
-
 namespace saucer
 {
-    struct error::impl
+    struct contract_domain_t : error::domain
     {
-        std::source_location location;
-
-      public:
-        virtual ~impl() = default;
-
-      public:
-        [[nodiscard]] virtual int code() const;
-        [[nodiscard]] virtual category type() const;
-
-      public:
-        [[nodiscard]] virtual std::string message() const;
+        [[nodiscard]] std::string name() const override;
     };
 
-    template <>
-    struct error::of<std::error_code> : error::impl
+    struct platform_domain_t : error::domain
     {
-        std::error_code value;
-
-      public:
-        of(std::error_code);
-
-      public:
-        [[nodiscard]] int code() const override;
-        [[nodiscard]] category type() const override;
-
-      public:
-        [[nodiscard]] std::string message() const override;
+        [[nodiscard]] std::string name() const override;
     };
 
-    template <>
-    struct error::of<std::errc> : error::of<std::error_code>
+    struct unknown_domain_t : error::domain
     {
-        of(std::errc);
+        [[nodiscard]] std::string name() const override;
     };
 
-    template <>
-    struct error::of<contract_error> : error::impl
+    struct serializer_domain_t : error::domain
     {
-        contract_error value;
-
-      public:
-        of(contract_error);
-
-      public:
-        [[nodiscard]] int code() const override;
-        [[nodiscard]] category type() const override;
-
-      public:
-        [[nodiscard]] std::string message() const override;
+        [[nodiscard]] std::string name() const override;
     };
+
+    template <typename T>
+    concept Unwrappable = requires(T value) {
+        { value.has_value() } -> std::same_as<bool>;
+        requires std::default_initializable<typename std::remove_cvref_t<T>::value_type>;
+    };
+
+    template <Unwrappable T>
+    auto unwrap_safe(T &&value);
 } // namespace saucer
+
+#include "error.impl.inl"

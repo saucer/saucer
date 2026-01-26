@@ -227,7 +227,6 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
     "src/error.cpp"
-    "src/error.impl.cpp"
 
     "src/request.cpp"
     "src/module/unstable.cpp"
@@ -279,12 +278,6 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           polo
-  VERSION        1.0.2
-  GIT_REPOSITORY "https://github.com/Curve/polo"
-)
-
-CPMFindPackage(
   NAME           saucer-fill
   VERSION        1.3.0
   GIT_REPOSITORY "https://github.com/saucer/fill"
@@ -298,7 +291,7 @@ CPMFindPackage(
 )
 
 saucer_link_libraries(${PROJECT_NAME}         cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis cr::polo saucer::fill)
+target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis saucer::fill)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Setup Backends                                                                                        |
@@ -484,5 +477,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;polo 1.0.2;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;saucer-fill 1.3.0;${SERIALIZER_DEP}"
 )

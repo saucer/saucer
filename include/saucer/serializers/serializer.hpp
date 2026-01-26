@@ -1,13 +1,13 @@
 #pragma once
 
 #include "data.hpp"
+
 #include "../executor.hpp"
+#include "../error/error.hpp"
 
 #include <memory>
-#include <functional>
-
 #include <variant>
-#include <expected>
+#include <functional>
 
 #include <string>
 #include <string_view>
@@ -34,10 +34,6 @@ namespace saucer
     {
         using parse_result = std::variant<std::unique_ptr<function_data>, std::unique_ptr<result_data>, std::monostate>;
         using executor     = saucer::executor<std::string_view>;
-
-      public:
-        template <typename T>
-        using result = std::expected<T, std::string>;
 
       public:
         using resolver = std::move_only_function<void(result<std::unique_ptr<result_data>>)>;
@@ -90,6 +86,14 @@ namespace saucer
 
     template <Serializer Serializer, typename... Ts>
     using format_string = std::format_string<std::enable_if_t<Writable<Ts, Serializer>, std::string>...>;
+
+    enum class serializer_error : std::uint8_t
+    {
+        parsing_failed     = 1,
+        signature_mismatch = 2,
+    };
+
+    error::domain *serializer_domain();
 } // namespace saucer
 
 #include "serializer.inl"

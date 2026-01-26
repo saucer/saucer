@@ -96,13 +96,12 @@ namespace saucer
 
     void smartview_base::impl::on_unload()
     {
-        // TODO: errors need a slight re-work. It would be nice to differentiate between JavaScript and Internal Errors here...
-
         auto locked = evaluations.write();
+        auto error  = err(contract_error::broken_promise);
 
         for (auto &[_, resolver] : *locked)
         {
-            resolver(std::unexpected{"cancelled"});
+            resolver(error);
         }
 
         locked->clear();

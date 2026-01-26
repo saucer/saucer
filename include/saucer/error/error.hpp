@@ -1,78 +1,85 @@
 #pragma once
 
-#include <expected>
-#include <source_location>
-
 #include <string>
 #include <cstdint>
 
-#include <polo/polo.hpp>
+#include <expected>
+#include <source_location>
+
+#include <system_error>
 
 namespace saucer
 {
+    namespace detail
+    {
+        template <typename T>
+        struct is_expected;
+
+        template <typename T>
+        concept Expected = is_expected<T>::value;
+    } // namespace detail
+
     struct error
     {
-        struct impl;
-        enum class category : std::uint8_t;
-
-      public:
         template <typename T>
         struct of;
-
-      private:
-        cr::polo<impl> m_impl;
+        struct domain;
 
       public:
-        error();
-        error(cr::polo<impl>, std::source_location);
+        int code;
+        std::string message;
 
       public:
-        error(const error &);
-        error(error &&) noexcept;
-
-      public:
-        ~error();
-
-      public:
-        error &operator=(const error &);
-        error &operator=(error &&) noexcept;
-
-      public:
-        [[nodiscard]] int code() const;
-        [[nodiscard]] category type() const;
-
-      public:
-        [[nodiscard]] std::string message() const;
-        [[nodiscard]] std::source_location location() const;
+        const domain *kind;
+        std::source_location location;
     };
 
-    enum class error::category : std::uint8_t
+    struct error::domain
     {
-        invalid,
-        unknown,
-        platform,
-        contract,
+        virtual ~domain()                              = default;
+        [[nodiscard]] virtual std::string name() const = 0;
     };
+
+    error::domain *contract_domain();
+    error::domain *unknown_domain();
+    error::domain *platform_domain();
 
     enum class contract_error : std::uint8_t
     {
         instance_exists  = 1,
         required_invalid = 2,
+        broken_promise   = 3,
+    };
+
+    template <>
+    struct error::of<contract_error>
+    {
+        static error operator()(contract_error);
+    };
+
+    template <>
+    struct error::of<std::errc>
+    {
+        static error operator()(std::errc);
+    };
+
+    template <>
+    struct error::of<std::error_code>
+    {
+        static error operator()(std::error_code);
     };
 
     template <typename T = void>
     using result = std::expected<T, error>;
 
-    template <typename T>
-    concept Unwrappable = requires(T value) {
-        { value.has_value() } -> std::same_as<bool>;
-        requires std::default_initializable<typename std::remove_cvref_t<T>::value_type>;
-    };
-
-    template <Unwrappable T>
-    auto unwrap_safe(T &&);
+    inline auto err(error);
 
     template <typename T>
+        requires(detail::Expected<std::remove_cvref_t<T>>)
+    auto err(T &&);
+
+    template <typename T>
+        requires(not detail::Expected<std::remove_cvref_t<T>>)
     auto err(T &&, std::source_location = std::source_location::current());
 } // namespace saucer
 

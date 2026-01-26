@@ -1,43 +1,78 @@
 #include "error.impl.hpp"
 
-#include <utility>
-
 namespace saucer
 {
-    error::error() : m_impl(impl{}) {}
-
-    error::error(cr::polo<impl> data, std::source_location location) : m_impl(std::move(data))
+    std::string name_of(contract_error error)
     {
-        m_impl->location = location;
+        switch (error)
+        {
+            using enum contract_error;
+
+        case instance_exists:
+            return "Instance already exists";
+        case required_invalid:
+            return "Required value invalid";
+        case broken_promise:
+            return "Broken Promise";
+        }
     }
 
-    error::error(const error &) = default;
-
-    error::error(error &&) noexcept = default;
-
-    error::~error() = default;
-
-    error &error::operator=(const error &) = default;
-
-    error &error::operator=(error &&) noexcept = default;
-
-    int error::code() const
+    error error::of<contract_error>::operator()(contract_error error)
     {
-        return m_impl->code();
+        return {.code = static_cast<int>(error), .message = name_of(error), .kind = contract_domain()};
     }
 
-    error::category error::type() const
+    error error::of<std::errc>::operator()(std::errc error)
     {
-        return m_impl->type();
+        return error::of<std::error_code>{}(std::make_error_code(error));
     }
 
-    std::string error::message() const
+    error error::of<std::error_code>::operator()(std::error_code error)
     {
-        return m_impl->message();
+        return {.code = error.value(), .message = error.message(), .kind = platform_domain()};
     }
 
-    std::source_location error::location() const
+    std::string contract_domain_t::name() const
     {
-        return m_impl->location;
+        return "saucer::contract";
+    }
+
+    std::string platform_domain_t::name() const
+    {
+        return std::generic_category().name();
+    }
+
+    std::string unknown_domain_t::name() const
+    {
+        return "unknown";
+    }
+
+    std::string serializer_domain_t::name() const
+    {
+        return "saucer::serializer";
+    }
+
+    error::domain *contract_domain()
+    {
+        static auto rtn = contract_domain_t{};
+        return &rtn;
+    }
+
+    error::domain *platform_domain()
+    {
+        static auto rtn = platform_domain_t{};
+        return &rtn;
+    }
+
+    error::domain *unknown_domain()
+    {
+        static auto rtn = unknown_domain_t{};
+        return &rtn;
+    }
+
+    error::domain *serializer_domain()
+    {
+        static auto rtn = serializer_domain_t{};
+        return &rtn;
     }
 } // namespace saucer

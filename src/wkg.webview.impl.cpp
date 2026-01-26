@@ -1,5 +1,7 @@
 #include "wkg.webview.impl.hpp"
 
+#include "error.impl.hpp"
+
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
 

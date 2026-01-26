@@ -1,7 +1,5 @@
 #include "qt.url.impl.hpp"
 
-#include "qt.error.hpp"
-
 namespace saucer
 {
     url::url() : m_impl(std::move(make({.scheme = "about", .path = "blank"}).m_impl)) {}
@@ -108,7 +106,12 @@ namespace saucer
 
         if (!rtn.isValid())
         {
-            return err(rtn.errorString().toStdString());
+            return err(error{
+                .code     = -1,
+                .message  = rtn.errorString().toStdString(),
+                .kind     = unknown_domain(),
+                .location = std::source_location::current(),
+            });
         }
 
         return impl{rtn};
@@ -125,7 +128,12 @@ namespace saucer
 
         if (!rtn.isValid())
         {
-            return err(rtn.errorString().toStdString());
+            return err(error{
+                .code     = -1,
+                .message  = rtn.errorString().toStdString(),
+                .kind     = unknown_domain(),
+                .location = std::source_location::current(),
+            });
         }
 
         return impl{rtn};

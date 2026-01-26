@@ -14,9 +14,6 @@ namespace saucer
 {
     namespace detail
     {
-        template <typename T>
-        using result = serializer_core::result<T>;
-
         template <typename T, typename Interface>
         struct is_writable : std::false_type
         {
@@ -51,7 +48,7 @@ namespace saucer
 
         template <typename T, typename Interface, typename Buffer>
         concept Readable = requires(Buffer value) {
-            { Interface::template read<T>(value) } -> std::same_as<serializer_core::result<T>>;
+            { Interface::template read<T>(value) } -> std::same_as<result<T>>;
         };
 
         template <typename T, typename Interface, typename Buffer>
@@ -222,9 +219,9 @@ namespace saucer
 
         return [promise = std::move(promise)](result<std::unique_ptr<result_data>> data) mutable
         {
-            if (!data.has_value())
+            if (!data.has_value()) [[unlikely]]
             {
-                return promise.set_value(std::unexpected{data.error()});
+                return promise.set_value(err(std::move(data)));
             }
 
             const auto &res = *static_cast<Interface::result_data *>(data->get());
@@ -235,9 +232,17 @@ namespace saucer
             }
 
             auto exception = exception_reader::read(res);
-            auto error     = exception.has_value() ? *exception : exception.error();
 
-            promise.set_value(std::unexpected{error});
+            if (!exception.has_value())
+            {
+                return promise.set_value(err(std::move(exception)));
+            }
+
+            promise.set_value(err(error{
+                .code    = -1,
+                .message = std::move(*exception),
+                .kind    = unknown_domain(),
+            }));
         };
     }
 
