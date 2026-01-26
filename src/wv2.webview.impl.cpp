@@ -127,6 +127,28 @@ namespace saucer
     }
 
     template <>
+    void native::setup<event::unload>(impl *self)
+    {
+        auto &event = self->events.get<event::navigated>();
+
+        if (!event.empty())
+        {
+            return;
+        }
+
+        auto handler = [self](auto...)
+        {
+            self->parent->post(utils::defer(self->platform->lease, [](impl *self) { self->events.get<event::unload>().fire(); }));
+            return S_OK;
+        };
+
+        EventRegistrationToken token;
+        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
+
+        event.on_clear([this, token] { web_view->remove_SourceChanged(token); });
+    }
+
+    template <>
     void native::setup<event::title>(impl *self)
     {
         auto &event = self->events.get<event::title>();
