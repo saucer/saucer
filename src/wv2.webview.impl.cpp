@@ -129,7 +129,7 @@ namespace saucer
     template <>
     void native::setup<event::unload>(impl *self)
     {
-        auto &event = self->events.get<event::navigated>();
+        auto &event = self->events.get<event::unload>();
 
         if (!event.empty())
         {
