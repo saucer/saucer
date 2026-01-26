@@ -37,6 +37,7 @@ namespace saucer
         std::unordered_map<std::size_t, wkg_script> scripts;
 
       public:
+        bool initial{true};
         bool dom_loaded{false};
         std::vector<std::string> pending;
 

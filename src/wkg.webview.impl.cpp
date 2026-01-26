@@ -303,7 +303,7 @@ namespace saucer
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
     {
-        if (event == WEBKIT_LOAD_COMMITTED && self->url() != saucer::url{})
+        if (event == WEBKIT_LOAD_COMMITTED && !self->platform->initial)
         {
             self->events.get<event::unload>().fire();
             return;
@@ -311,6 +311,7 @@ namespace saucer
 
         if (event == WEBKIT_LOAD_COMMITTED)
         {
+            self->platform->initial = false;
             self->events.get<event::navigated>().fire(self->url());
             return;
         }
