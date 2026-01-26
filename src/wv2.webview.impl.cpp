@@ -127,25 +127,8 @@ namespace saucer
     }
 
     template <>
-    void native::setup<event::unload>(impl *self)
+    void native::setup<event::unload>(impl *)
     {
-        auto &event = self->events.get<event::unload>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto handler = [self](auto...)
-        {
-            self->parent->post(utils::defer(self->platform->lease, [](impl *self) { self->events.get<event::unload>().fire(); }));
-            return S_OK;
-        };
-
-        EventRegistrationToken token;
-        web_view->add_SourceChanged(Callback<SourceChanged>(handler).Get(), &token);
-
-        event.on_clear([this, token] { web_view->remove_SourceChanged(token); });
     }
 
     template <>
@@ -323,6 +306,12 @@ namespace saucer
     {
         using enum script::time;
 
+        if (!self->platform->initial)
+        {
+            self->events.get<event::unload>().fire();
+        }
+
+        self->platform->initial    = false;
         self->platform->dom_loaded = true;
 
         for (const auto &[id, script] : self->platform->scripts)
@@ -353,9 +342,6 @@ namespace saucer
             self->events.get<event::load>().fire(state::started);
         };
 
-        self->platform->dom_loaded = false;
-        self->parent->post(utils::defer(self->platform->lease, fire));
-
         auto nav = navigation{navigation::impl{
             .request = args,
         }};
@@ -363,7 +349,11 @@ namespace saucer
         if (self->events.get<event::navigate>().fire(nav).find(policy::block))
         {
             args->put_Cancel(true);
+            return S_OK;
         }
+
+        self->platform->dom_loaded = false;
+        self->parent->post(utils::defer(self->platform->lease, fire));
 
         return S_OK;
     }

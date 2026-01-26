@@ -65,6 +65,7 @@ namespace saucer
         icon favicon;
 
       public:
+        bool initial{true};
         bool dom_loaded{false};
         std::vector<std::string> pending;
 
