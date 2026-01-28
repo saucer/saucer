@@ -58,4 +58,35 @@ namespace saucer::scheme
 
     using executor = saucer::executor<response, error>;
     using resolver = std::function<void(request, executor)>;
+
+    struct stream_response
+    {
+        std::string mime;
+        std::map<std::string, std::string> headers;
+        int status{200};
+    };
+
+    class stream_writer
+    {
+      public:
+        struct impl;
+
+      private:
+        std::shared_ptr<impl> m_impl;
+
+      public:
+        stream_writer(std::shared_ptr<impl>);
+        stream_writer(const stream_writer &);
+        stream_writer(stream_writer &&) noexcept;
+        ~stream_writer();
+
+      public:
+        void start(const stream_response &);
+        void write(stash data);
+        void finish();
+        void reject(error err);
+        [[nodiscard]] bool valid() const;
+    };
+
+    using stream_resolver = std::function<void(request, stream_writer)>;
 } // namespace saucer::scheme

@@ -64,6 +64,7 @@ namespace saucer
       public:
         std::unique_ptr<request_interceptor> interceptor;
         std::unordered_map<std::string, scheme::handler> schemes;
+        std::unordered_map<std::string, scheme::stream_handler> stream_schemes;
 
       public:
         template <event>

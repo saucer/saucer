@@ -69,5 +69,6 @@ namespace saucer
       public:
         static WebKitSettings *make_settings(const options &);
         static inline std::unordered_map<std::string, std::unique_ptr<scheme::handler>> schemes;
+        static inline std::unordered_map<std::string, std::unique_ptr<scheme::stream_handler>> stream_schemes;
     };
 } // namespace saucer

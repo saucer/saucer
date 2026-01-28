@@ -461,6 +461,21 @@ namespace saucer
                                                                                 COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
     }
 
+    void impl::handle_stream_scheme(const std::string &name, scheme::stream_resolver &&resolver) // NOLINT(*-function-const)
+    {
+        if (platform->stream_schemes.contains(name))
+        {
+            return;
+        }
+
+        platform->stream_schemes.emplace(name, std::move(resolver));
+
+        const auto pattern = utils::widen(std::format("{}*", name));
+
+        platform->web_view->AddWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                                COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+    }
+
     void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
         auto it = platform->schemes.find(name);
@@ -476,6 +491,23 @@ namespace saucer
                                                                                    COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
 
         platform->schemes.erase(it);
+    }
+
+    void impl::remove_stream_scheme(const std::string &name) // NOLINT(*-function-const)
+    {
+        auto it = platform->stream_schemes.find(name);
+
+        if (it == platform->stream_schemes.end())
+        {
+            return;
+        }
+
+        const auto pattern = utils::widen(std::format("{}*", name));
+
+        platform->web_view->RemoveWebResourceRequestedFilterWithRequestSourceKinds(pattern.c_str(), COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+                                                                                   COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL);
+
+        platform->stream_schemes.erase(it);
     }
 
     void impl::register_scheme(const std::string &name)

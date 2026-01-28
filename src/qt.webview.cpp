@@ -391,6 +391,17 @@ namespace saucer
         platform->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);
     }
 
+    void impl::handle_stream_scheme(const std::string &name, scheme::stream_resolver &&resolver) // NOLINT(*-function-const)
+    {
+        if (platform->stream_schemes.contains(name))
+        {
+            return;
+        }
+
+        auto &scheme = platform->stream_schemes.emplace(name, std::move(resolver)).first->second;
+        platform->web_view->page()->profile()->installUrlSchemeHandler(QByteArray::fromStdString(name), &scheme);
+    }
+
     void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
         const auto it = platform->schemes.find(name);
@@ -402,6 +413,19 @@ namespace saucer
 
         platform->web_view->page()->profile()->removeUrlSchemeHandler(&it->second);
         platform->schemes.erase(it);
+    }
+
+    void impl::remove_stream_scheme(const std::string &name) // NOLINT(*-function-const)
+    {
+        const auto it = platform->stream_schemes.find(name);
+
+        if (it == platform->stream_schemes.end())
+        {
+            return;
+        }
+
+        platform->web_view->page()->profile()->removeUrlSchemeHandler(&it->second);
+        platform->stream_schemes.erase(it);
     }
 
     void impl::register_scheme(const std::string &name)

@@ -359,8 +359,28 @@ namespace saucer
         [native::schemes[name].get() add_callback:std::move(resolver) webview:platform->web_view.get()];
     }
 
+    void impl::handle_stream_scheme(const std::string &name, scheme::stream_resolver &&resolver) // NOLINT(*-function-const)
+    {
+        if (!native::schemes.contains(name))
+        {
+            return;
+        }
+
+        [native::schemes[name].get() add_stream_callback:std::move(resolver) webview:platform->web_view.get()];
+    }
+
     void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
+        [native::schemes[name].get() del_callback:platform->web_view.get()];
+    }
+
+    void impl::remove_stream_scheme(const std::string &name) // NOLINT(*-function-const)
+    {
+        if (!native::schemes.contains(name))
+        {
+            return;
+        }
+
         [native::schemes[name].get() del_callback:platform->web_view.get()];
     }
 

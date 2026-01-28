@@ -406,13 +406,8 @@ namespace saucer
 
     HRESULT native::scheme_handler(impl *self, const scheme_options &opts)
     {
-        auto &schemes = self->platform->schemes;
-        auto scheme   = schemes.find(opts.url.scheme());
-
-        if (scheme == schemes.end())
-        {
-            return S_OK;
-        }
+        auto &stream_schemes = self->platform->stream_schemes;
+        auto stream_scheme   = stream_schemes.find(opts.url.scheme());
 
         ComPtr<ICoreWebView2Environment> environment;
 
@@ -433,6 +428,32 @@ namespace saucer
         if (auto status = opts.request->get_Content(&content); !SUCCEEDED(status))
         {
             return status;
+        }
+
+        if (stream_scheme != stream_schemes.end())
+        {
+            auto *buffer     = new scheme::stream_buffer();
+            auto writer_impl = std::make_shared<scheme::stream_writer::impl>();
+
+            writer_impl->args        = opts.raw;
+            writer_impl->deferral    = deferral;
+            writer_impl->environment = environment;
+            writer_impl->buffer      = buffer;
+
+            auto writer = scheme::stream_writer{writer_impl};
+            auto req    = scheme::request{{.request = opts.request, .body = content}};
+
+            stream_scheme->second(std::move(req), std::move(writer));
+
+            return S_OK;
+        }
+
+        auto &schemes = self->platform->schemes;
+        auto scheme   = schemes.find(opts.url.scheme());
+
+        if (scheme == schemes.end())
+        {
+            return S_OK;
         }
 
         auto resolve = [environment, deferral, request = opts.raw](const scheme::response &response)

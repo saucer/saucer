@@ -85,6 +85,11 @@ namespace saucer
             remove_scheme(name);
         }
 
+        for (const auto &[name, _] : native::stream_schemes)
+        {
+            remove_stream_scheme(name);
+        }
+
         g_signal_handler_disconnect(platform->web_view, platform->id_context);
         g_signal_handler_disconnect(platform->web_view, platform->id_load);
 
@@ -343,6 +348,26 @@ namespace saucer
         native::schemes[name]->add_callback(platform->web_view, std::move(resolver));
     }
 
+    void impl::handle_stream_scheme(const std::string &name, scheme::stream_resolver &&resolver) // NOLINT(*-function-const)
+    {
+        if (!native::stream_schemes.contains(name))
+        {
+            auto *const context  = webkit_web_context_get_default();
+            auto *const security = webkit_web_context_get_security_manager(context);
+
+            auto handler  = std::make_unique<scheme::stream_handler>();
+            auto callback = reinterpret_cast<WebKitURISchemeRequestCallback>(&scheme::stream_handler::handle);
+
+            webkit_web_context_register_uri_scheme(context, name.c_str(), callback, handler.get(), nullptr);
+            native::stream_schemes.emplace(name, std::move(handler));
+
+            webkit_security_manager_register_uri_scheme_as_secure(security, name.c_str());
+            webkit_security_manager_register_uri_scheme_as_cors_enabled(security, name.c_str());
+        }
+
+        native::stream_schemes[name]->add_callback(platform->web_view, std::move(resolver));
+    }
+
     void impl::remove_scheme(const std::string &name) // NOLINT(*-function-const)
     {
         if (!native::schemes.contains(name))
@@ -351,6 +376,16 @@ namespace saucer
         }
 
         native::schemes[name]->del_callback(platform->web_view);
+    }
+
+    void impl::remove_stream_scheme(const std::string &name) // NOLINT(*-function-const)
+    {
+        if (!native::stream_schemes.contains(name))
+        {
+            return;
+        }
+
+        native::stream_schemes[name]->del_callback(platform->web_view);
     }
 
     void impl::register_scheme(const std::string &name)

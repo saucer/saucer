@@ -110,6 +110,11 @@ namespace saucer
         return utils::invoke<&impl::handle_scheme>(m_impl.get(), name, std::move(handler));
     }
 
+    void webview::handle_stream_scheme(const std::string &name, scheme::stream_resolver &&handler)
+    {
+        return utils::invoke<&impl::handle_stream_scheme>(m_impl.get(), name, std::move(handler));
+    }
+
     void impl::reject(std::size_t id, std::string_view reason)
     {
         static constexpr auto code = R"(
@@ -299,6 +304,11 @@ namespace saucer
     void webview::remove_scheme(const std::string &name)
     {
         return utils::invoke<&impl::remove_scheme>(m_impl.get(), name);
+    }
+
+    void webview::remove_stream_scheme(const std::string &name)
+    {
+        return utils::invoke<&impl::remove_stream_scheme>(m_impl.get(), name);
     }
 
     void webview::off(event event)

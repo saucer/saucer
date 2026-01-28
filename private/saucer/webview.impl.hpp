@@ -38,6 +38,7 @@ namespace saucer
       public:
         void handle_embed(const scheme::request &, const scheme::executor &);
         void handle_scheme(const std::string &, scheme::resolver &&);
+        void handle_stream_scheme(const std::string &, scheme::stream_resolver &&);
 
       public:
         void reject(std::size_t, std::string_view);
@@ -94,6 +95,7 @@ namespace saucer
 
       public:
         void remove_scheme(const std::string &);
+        void remove_stream_scheme(const std::string &);
         static void register_scheme(const std::string &);
 
       public:

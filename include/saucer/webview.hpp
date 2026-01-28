@@ -198,6 +198,10 @@ namespace saucer
         [[sc::thread_safe]] void remove_scheme(const std::string &name);
 
       public:
+        [[sc::thread_safe]] void handle_stream_scheme(const std::string &name, scheme::stream_resolver &&handler);
+        [[sc::thread_safe]] void remove_stream_scheme(const std::string &name);
+
+      public:
         template <event Event>
         [[sc::thread_safe]] auto on(events::event<Event>::listener);
 

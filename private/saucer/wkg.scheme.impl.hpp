@@ -24,4 +24,24 @@ namespace saucer::scheme
       public:
         static void handle(WebKitURISchemeRequest *, handler *);
     };
+
+    class stream_handler
+    {
+        std::unordered_map<WebKitWebView *, scheme::stream_resolver> m_callbacks;
+
+      public:
+        void add_callback(WebKitWebView *, scheme::stream_resolver);
+        void del_callback(WebKitWebView *);
+
+      public:
+        static void handle(WebKitURISchemeRequest *, stream_handler *);
+    };
+
+    struct stream_writer::impl
+    {
+        utils::g_object_ptr<WebKitURISchemeRequest> request;
+        int write_fd{-1};
+        std::atomic<bool> started{false};
+        std::atomic<bool> finished{false};
+    };
 } // namespace saucer::scheme
