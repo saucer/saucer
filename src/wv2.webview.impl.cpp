@@ -333,7 +333,6 @@ namespace saucer
             return S_OK;
         }
 
-        self->platform->dom_loaded = false;
         self->parent->post(utils::defer(self->platform->lease, fire));
 
         return S_OK;

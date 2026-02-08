@@ -122,12 +122,12 @@ namespace saucer
         };
 
         platform->web_view->add_ContainsFullScreenElementChanged(Callback<Fullscreen>(bind(&native::on_fullscreen)).Get(), nullptr);
+        platform->web_view->add_NavigationStarting(Callback<NavigationStarting>(bind(&native::on_navigation)).Get(), nullptr);
         platform->web_view->add_WebResourceRequested(Callback<ResourceRequested>(bind(&native::on_resource)).Get(), nullptr);
         platform->web_view->add_WebMessageReceived(Callback<WebMessageHandler>(bind(&native::on_message)).Get(), nullptr);
         platform->web_view->add_NewWindowRequested(Callback<NewWindowRequest>(bind(&native::on_window)).Get(), nullptr);
-        platform->web_view->add_NavigationStarting(Callback<NavigationStarting>(bind(&native::on_navigation)).Get(), nullptr);
-        platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
         platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
+        platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
 
         auto on_resize = [this, parent_window](int width, int height)
         {
@@ -369,12 +369,6 @@ namespace saucer
 
     void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
-        if (!platform->dom_loaded)
-        {
-            platform->pending.emplace_back(code);
-            return;
-        }
-
         platform->web_view->ExecuteScript(utils::widen(code).c_str(), nullptr);
     }
 

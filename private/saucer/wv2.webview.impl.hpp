@@ -65,11 +65,6 @@ namespace saucer
         icon favicon;
 
       public:
-        bool initial{true};
-        bool dom_loaded{false};
-        std::vector<std::string> pending;
-
-      public:
         std::size_t id_counter{0};
         std::map<std::size_t, wv2_script> scripts;
         std::unordered_map<std::string, scheme::resolver> schemes;
