@@ -1,5 +1,7 @@
 #include "error.impl.hpp"
 
+#include <utility>
+
 namespace saucer
 {
     std::string name_of(contract_error error)
@@ -15,6 +17,8 @@ namespace saucer
         case broken_promise:
             return "Broken Promise";
         }
+
+        std::unreachable();
     }
 
     error error::of<contract_error>::operator()(contract_error error)
