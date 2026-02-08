@@ -72,9 +72,11 @@ namespace saucer::serializers::glaze
 
         if (auto err = glz::read<detail::opts>(json, data); err)
         {
+            const auto name = rebind::utils::find_enum_name(err.ec).value_or("Unknown");
+
             return saucer::err{
                 parsing_failed,
-                rebind::utils::find_enum_name(err.ec).value_or("Unknown"),
+                std::string{name},
             };
         }
 
