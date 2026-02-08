@@ -66,7 +66,7 @@ namespace saucer
         [impl->window.contentView addSubview:platform->web_view.get()];
 
         platform->appearance = impl->window.appearance;
-        window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
+        platform->on_closed  = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
 
         return {};
     }
@@ -80,10 +80,12 @@ namespace saucer
             remove_scheme(name);
         }
 
+        set_dev_tools(false);
+        window->off(window::event::closed, platform->on_closed);
+
         [platform->controller removeAllScriptMessageHandlers];
         [platform->controller removeAllUserScripts];
 
-        set_dev_tools(false);
         [platform->web_view.get() removeFromSuperview];
     }
 

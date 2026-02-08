@@ -53,6 +53,7 @@ namespace saucer
         std::unordered_map<std::size_t, qt_script> scripts;
 
       public:
+        std::size_t on_closed;
         QMetaObject::Connection on_fullscreen;
 
       public:

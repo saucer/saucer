@@ -32,6 +32,9 @@ namespace saucer
         WKUserContentController *controller;
 
       public:
+        std::size_t on_closed;
+
+      public:
         bool force_dark{false};
         bool context_menu{true};
 

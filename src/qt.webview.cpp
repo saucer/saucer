@@ -115,7 +115,11 @@ namespace saucer
                                             return request.accept();
                                         });
 
-        window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
+        platform->on_closed = window->on<window::event::closed>({{
+            .func      = [this] { set_dev_tools(false); },
+            .clearable = false,
+        }});
+
         window->native<false>()->platform->add_widget(platform->web_view.get());
 
         reset_bounds();
@@ -137,8 +141,9 @@ namespace saucer
         }
 
         set_dev_tools(false);
-        platform->web_page->disconnect(platform->on_fullscreen);
+        window->off(window::event::closed, platform->on_closed);
 
+        platform->web_page->disconnect(platform->on_fullscreen);
         window->native<false>()->platform->remove_widget(platform->web_view.get());
     }
 
