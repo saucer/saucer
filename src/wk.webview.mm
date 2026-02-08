@@ -66,7 +66,7 @@ namespace saucer
         [impl->window.contentView addSubview:platform->web_view.get()];
 
         platform->appearance = impl->window.appearance;
-        platform->on_closed  = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
+        window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
 
         return {};
     }
@@ -84,8 +84,6 @@ namespace saucer
         [platform->controller removeAllUserScripts];
 
         set_dev_tools(false);
-        window->off(window::event::closed, platform->on_closed);
-
         [platform->web_view.get() removeFromSuperview];
     }
 
@@ -295,13 +293,6 @@ namespace saucer
     void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};
-
-        if (!platform->dom_loaded)
-        {
-            platform->pending.emplace_back(code);
-            return;
-        }
-
         [platform->web_view.get() evaluateJavaScript:[NSString stringWithUTF8String:code.c_str()] completionHandler:nil];
     }
 

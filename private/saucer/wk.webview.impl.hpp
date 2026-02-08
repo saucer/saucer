@@ -40,13 +40,6 @@ namespace saucer
         std::map<std::size_t, script> scripts;
 
       public:
-        bool dom_loaded{false};
-        std::vector<std::string> pending;
-
-      public:
-        std::size_t on_closed;
-
-      public:
         template <event>
         void setup(impl *);
 

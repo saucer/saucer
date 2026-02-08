@@ -259,17 +259,7 @@ using namespace saucer;
 
     if (message == "dom_loaded")
     {
-        me->platform->dom_loaded = true;
-
-        for (const auto &pending : me->platform->pending)
-        {
-            me->execute(pending);
-        }
-
-        me->platform->pending.clear();
-        me->events.get<event::dom_ready>().fire();
-
-        return;
+        return me->events.get<event::dom_ready>().fire();
     }
 
     me->events.get<event::message>().fire(message).find(status::handled);
@@ -352,7 +342,6 @@ using namespace saucer;
 
 - (void)webView:(WKWebView *)webview didStartProvisionalNavigation:(WKNavigation *)navigation
 {
-    me->platform->dom_loaded = false;
     me->events.get<event::load>().fire(state::started);
 }
 
