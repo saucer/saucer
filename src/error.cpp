@@ -57,25 +57,25 @@ namespace saucer
         return "saucer::serializer";
     }
 
-    error::domain *contract_domain()
+    const error::domain *contract_domain()
     {
         static auto rtn = contract_domain_t{};
         return &rtn;
     }
 
-    error::domain *platform_domain()
+    const error::domain *platform_domain()
     {
         static auto rtn = platform_domain_t{};
         return &rtn;
     }
 
-    error::domain *unknown_domain()
+    const error::domain *unknown_domain()
     {
         static auto rtn = unknown_domain_t{};
         return &rtn;
     }
 
-    error::domain *serializer_domain()
+    const error::domain *serializer_domain()
     {
         static auto rtn = serializer_domain_t{};
         return &rtn;

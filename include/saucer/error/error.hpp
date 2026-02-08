@@ -40,10 +40,10 @@ namespace saucer
         [[nodiscard]] virtual std::string name() const = 0;
     };
 
-    error::domain *unknown_domain();
-    error::domain *platform_domain();
-    error::domain *contract_domain();
-    error::domain *serializer_domain();
+    const error::domain *unknown_domain();
+    const error::domain *platform_domain();
+    const error::domain *contract_domain();
+    const error::domain *serializer_domain();
 
     enum class contract_error : std::uint8_t
     {
