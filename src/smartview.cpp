@@ -165,11 +165,25 @@ namespace saucer
 
     void smartview_base::add_evaluation(resolver &&resolve, std::string_view code)
     {
-        const auto id      = m_impl->id_counter++;
+        const auto id = m_impl->id_counter++;
+        {
+            auto locked = m_impl->evaluations.write();
+            locked->emplace(id, std::move(resolve));
+        }
         const auto pending = webview::execute(std::format("window.saucer.internal.resolve({}, async () => {})", id, code));
 
         auto locked = m_impl->evaluations.write();
-        locked->emplace(id, evaluation{.resolve = std::move(resolve), .pending = pending});
+        auto it     = locked->find(id);
+
+        if (it == locked->end())
+        {
+            return;
+        }
+
+        // We register the resolver with the given id *before* we actually execute the script. Then, after we know the pending-id, we set it
+        // accordingly.
+
+        it->second.pending = pending;
     }
 
     void smartview_base::unexpose()
