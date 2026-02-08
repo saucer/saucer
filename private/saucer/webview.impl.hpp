@@ -2,6 +2,8 @@
 
 #include <saucer/webview.hpp>
 
+#include <map>
+
 namespace saucer
 {
     struct webview::impl
@@ -18,6 +20,14 @@ namespace saucer
       public:
         bool attributes;
         embedded_files embedded;
+
+      public:
+        bool dom_ready{false};
+        std::size_t last_pending{0};
+
+      public:
+        std::size_t pending_counter{0};
+        std::map<std::size_t, std::string> pending;
 
       public:
         std::unique_ptr<native> platform;
@@ -85,8 +95,11 @@ namespace saucer
         void reload();
 
       public:
-        void execute(cstring_view);
         std::size_t inject(const script &);
+
+      public:
+        void execute(cstring_view);
+        std::optional<std::size_t> execute_safe(cstring_view);
 
       public:
         void uninject();
@@ -95,6 +108,10 @@ namespace saucer
       public:
         void remove_scheme(const std::string &);
         static void register_scheme(const std::string &);
+
+      public:
+        void on_load(state);
+        void on_dom_ready();
 
       public:
         status on_message(std::string_view);

@@ -55,7 +55,9 @@ namespace saucer
             return err(status);
         }
 
+        rtn.on<event::dom_ready>({{.func = std::bind_front(&impl::on_dom_ready, impl), .clearable = false}});
         rtn.on<event::message>({{.func = std::bind_front(&impl::on_message, impl), .clearable = false}});
+        rtn.on<event::load>({{.func = std::bind_front(&impl::on_load, impl), .clearable = false}});
 
         rtn.inject({.code = impl::creation_script(), .run_at = script::time::creation, .clearable = false});
         rtn.inject({.code = impl::ready_script(), .run_at = script::time::ready, .clearable = false});
@@ -79,7 +81,7 @@ namespace saucer
         return utils::invoke<&impl::setup<Event>>(m_impl.get());
     }
 
-    void webview::impl::handle_embed(const scheme::request &request, const scheme::executor &exec)
+    void impl::handle_embed(const scheme::request &request, const scheme::executor &exec)
     {
         const auto &[resolve, reject] = exec;
         const auto url                = request.url();
@@ -274,9 +276,23 @@ namespace saucer
         return utils::invoke([file](auto *impl) { impl->embedded.erase(file); }, m_impl.get());
     }
 
-    void webview::execute(cstring_view code)
+    std::optional<std::size_t> webview::execute(cstring_view code)
     {
-        return utils::invoke<&impl::execute>(m_impl.get(), code);
+        return utils::invoke<&impl::execute_safe>(m_impl.get(), code);
+    }
+
+    std::optional<std::size_t> impl::execute_safe(cstring_view code)
+    {
+        if (dom_ready)
+        {
+            execute(code);
+            return std::nullopt;
+        }
+
+        const auto id = ++pending_counter;
+        pending.emplace(id, code);
+
+        return id;
     }
 
     std::size_t webview::inject(const script &script)

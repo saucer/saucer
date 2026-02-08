@@ -248,11 +248,6 @@ namespace saucer
     }
 
     template <>
-    void native::setup<event::unload>(impl *)
-    {
-    }
-
-    template <>
     void native::setup<event::title>(impl *self)
     {
         auto &event = self->events.get<event::title>();
@@ -287,17 +282,7 @@ namespace saucer
 
         if (message == "dom_loaded")
         {
-            self->platform->dom_loaded = true;
-
-            for (const auto &pending : self->platform->pending)
-            {
-                self->execute(pending);
-            }
-
-            self->platform->pending.clear();
-            self->events.get<event::dom_ready>().fire();
-
-            return;
+            return self->events.get<event::dom_ready>().fire();
         }
 
         self->events.get<event::message>().fire(message).find(status::handled);
@@ -305,14 +290,8 @@ namespace saucer
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
     {
-        if (event == WEBKIT_LOAD_COMMITTED && !self->platform->initial)
-        {
-            self->events.get<event::unload>().fire();
-        }
-
         if (event == WEBKIT_LOAD_COMMITTED)
         {
-            self->platform->initial = false;
             self->events.get<event::navigated>().fire(self->url());
             return;
         }
@@ -328,7 +307,6 @@ namespace saucer
             return;
         }
 
-        self->platform->dom_loaded = false;
         self->events.get<event::load>().fire(state::started);
     }
 

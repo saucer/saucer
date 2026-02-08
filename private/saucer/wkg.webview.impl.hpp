@@ -5,8 +5,6 @@
 #include "gtk.utils.hpp"
 #include "wkg.scheme.impl.hpp"
 
-#include <vector>
-
 #include <webkit/webkit.h>
 
 namespace saucer
@@ -35,11 +33,6 @@ namespace saucer
       public:
         std::size_t id_counter{0};
         std::unordered_map<std::size_t, wkg_script> scripts;
-
-      public:
-        bool initial{true};
-        bool dom_loaded{false};
-        std::vector<std::string> pending;
 
       public:
         std::size_t id_context;

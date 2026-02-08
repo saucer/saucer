@@ -276,12 +276,6 @@ namespace saucer
 
     void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
-        if (!platform->dom_loaded)
-        {
-            platform->pending.emplace_back(code);
-            return;
-        }
-
         webkit_web_view_evaluate_javascript(platform->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 

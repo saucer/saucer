@@ -102,20 +102,6 @@ namespace saucer
         }
         platform->web_page->scripts().insert(ready_script);
 
-        platform->on_load = platform->web_view->connect(platform->web_view.get(), &QWebEngineView::loadStarted,
-                                                        [this]
-                                                        {
-                                                            if (!platform->initial)
-                                                            {
-                                                                events.get<event::unload>().fire();
-                                                            }
-
-                                                            platform->initial    = false;
-                                                            platform->dom_loaded = false;
-
-                                                            events.get<event::load>().fire(state::started);
-                                                        });
-
         platform->on_fullscreen =
             platform->web_page->connect(platform->web_page.get(), &QWebEnginePage::fullScreenRequested,
                                         [this](QWebEngineFullScreenRequest request)
@@ -129,11 +115,10 @@ namespace saucer
                                             return request.accept();
                                         });
 
-        platform->on_closed = window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
-
+        window->on<window::event::closed>({{.func = [this] { set_dev_tools(false); }, .clearable = false}});
         window->native<false>()->platform->add_widget(platform->web_view.get());
-        reset_bounds();
 
+        reset_bounds();
         platform->web_view->show();
 
         return {};
@@ -146,10 +131,12 @@ namespace saucer
             return;
         }
 
-        set_dev_tools(false);
-        window->off(window::event::closed, platform->on_closed);
+        for (const auto &[name, _] : platform->schemes)
+        {
+            remove_scheme(name);
+        }
 
-        platform->web_view->disconnect(platform->on_load);
+        set_dev_tools(false);
         platform->web_page->disconnect(platform->on_fullscreen);
 
         window->native<false>()->platform->remove_widget(platform->web_view.get());
@@ -300,12 +287,6 @@ namespace saucer
 
     void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
-        if (!platform->dom_loaded)
-        {
-            platform->pending.emplace_back(code);
-            return;
-        }
-
         platform->web_view->page()->runJavaScript(QString::fromUtf8(code));
     }
 

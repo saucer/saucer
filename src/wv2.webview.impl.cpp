@@ -127,11 +127,6 @@ namespace saucer
     }
 
     template <>
-    void native::setup<event::unload>(impl *)
-    {
-    }
-
-    template <>
     void native::setup<event::title>(impl *self)
     {
         auto &event = self->events.get<event::title>();
@@ -306,14 +301,6 @@ namespace saucer
     {
         using enum script::time;
 
-        if (!self->platform->initial)
-        {
-            self->events.get<event::unload>().fire();
-        }
-
-        self->platform->initial    = false;
-        self->platform->dom_loaded = true;
-
         for (const auto &[id, script] : self->platform->scripts)
         {
             if (script.run_at != ready)
@@ -324,12 +311,6 @@ namespace saucer
             self->execute(script.code);
         }
 
-        for (const auto &pending : self->platform->pending)
-        {
-            self->execute(pending);
-        }
-
-        self->platform->pending.clear();
         self->parent->post(utils::defer(self->platform->lease, [](impl *self) { self->events.get<event::dom_ready>().fire(); }));
 
         return S_OK;

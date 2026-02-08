@@ -84,7 +84,6 @@ namespace saucer
             message,
             request,
             favicon,
-            unload,
             title,
             load,
         };
@@ -99,7 +98,6 @@ namespace saucer
             ereignis::event<event::message, status(std::string_view)>,                                //
             ereignis::event<event::request, void(const saucer::url &)>,                               //
             ereignis::event<event::favicon, void(const icon &)>,                                      //
-            ereignis::event<event::unload, void()>,                                                   //
             ereignis::event<event::title, void(std::string_view)>,                                    //
             ereignis::event<event::load, void(const state &)>                                         //
             >;
@@ -187,8 +185,8 @@ namespace saucer
         [[sc::thread_safe]] void unembed(const fs::path &);
 
       public:
-        [[sc::thread_safe]] void execute(cstring_view);
         [[sc::thread_safe]] std::size_t inject(const script &);
+        [[sc::thread_safe]] std::optional<std::size_t> execute(cstring_view);
 
       public:
         [[sc::thread_safe]] void uninject();

@@ -7,6 +7,31 @@ namespace saucer
 {
     using impl = webview::impl;
 
+    void impl::on_load(state state)
+    {
+        using enum state;
+
+        if (state != started)
+        {
+            return;
+        }
+
+        dom_ready = false;
+    }
+
+    void impl::on_dom_ready()
+    {
+        dom_ready    = true;
+        last_pending = pending.empty() ? pending_counter + 1 : pending.begin()->first;
+
+        for (const auto &[_, script] : pending)
+        {
+            execute(script);
+        }
+
+        pending.clear();
+    }
+
     status impl::on_message(std::string_view message)
     {
         if (!attributes)
