@@ -78,6 +78,11 @@ namespace saucer
 
     smartview_base::~smartview_base()
     {
+        if (!m_impl)
+        {
+            return;
+        }
+
         m_impl->lease.value()->last_pending = std::numeric_limits<std::size_t>::max();
         m_impl->on_dom_ready();
     }
