@@ -40,6 +40,9 @@ namespace saucer
 
       public:
         void on_dom_ready();
+        std::vector<resolver> expired();
+
+      public:
         status on_message(std::string_view);
 
       public:
@@ -73,7 +76,11 @@ namespace saucer
 
     smartview_base::smartview_base(smartview_base &&) noexcept = default;
 
-    smartview_base::~smartview_base() = default;
+    smartview_base::~smartview_base()
+    {
+        m_impl->lease.value()->last_pending = std::numeric_limits<std::size_t>::max();
+        m_impl->on_dom_ready();
+    }
 
     status smartview_base::impl::on_message(std::string_view message)
     {
@@ -102,6 +109,16 @@ namespace saucer
 
     void smartview_base::impl::on_dom_ready()
     {
+        static auto expire = [](auto &resolve)
+        {
+            resolve(err{contract_error::broken_promise});
+        };
+        std::ranges::for_each(expired(), expire);
+    }
+
+    std::vector<resolver> smartview_base::impl::expired()
+    {
+        auto rtn         = std::vector<resolver>{};
         auto locked      = evaluations.write();
         auto *const impl = lease.value();
 
@@ -115,9 +132,11 @@ namespace saucer
                 continue;
             }
 
-            resolve(err(contract_error::broken_promise));
+            rtn.emplace_back(std::move(it->second.resolve));
             it = locked->erase(it);
         }
+
+        return rtn;
     }
 
     void smartview_base::impl::call(std::unique_ptr<function_data> message)
