@@ -18,9 +18,9 @@ namespace saucer
     };
 
     template <>
-    struct err<void> : error
+    struct err<void> : std::unexpected<error>
     {
-        err(error value) : error{std::move(value)} {}
+        err(saucer::error value) : std::unexpected<saucer::error>{std::move(value)} {}
     };
     err(error) -> err<void>;
 

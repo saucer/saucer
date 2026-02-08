@@ -41,6 +41,11 @@ namespace saucer
         {
         };
 
+        template <typename Interface>
+        struct is_writable<error, Interface> : std::true_type
+        {
+        };
+
         template <typename T, typename Interface, typename Buffer>
         struct is_readable : std::false_type
         {
@@ -112,19 +117,6 @@ namespace saucer
             return Interface::template write<T>(std::forward<T>(value));
         }
 
-        template <typename Interface>
-        std::string write(unquoted_t &&value) // NOLINT(*-not-moved)
-        {
-            return std::move(value.str);
-        }
-
-        template <typename Interface>
-        std::string write(unquoted_t &)
-        {
-            static_assert(false, "Do not pass `saucer::unquoted` as l-value reference!");
-            return {};
-        }
-
         template <typename Interface, typename... Ts>
         std::string write(arguments<Ts...> value)
         {
@@ -138,6 +130,25 @@ namespace saucer
             std::apply(unpack, std::move(value.tuple));
 
             return rtn | std::views::join_with(',') | std::ranges::to<std::string>();
+        }
+
+        template <typename Interface>
+        std::string write(unquoted_t &&value) // NOLINT(*-not-moved)
+        {
+            return std::move(value.str);
+        }
+
+        template <typename Interface>
+        std::string write(unquoted_t &)
+        {
+            static_assert(false, "Do not pass `saucer::unquoted` as l-value reference!");
+            return {};
+        }
+
+        template <typename Interface>
+        std::string write(error value)
+        {
+            return write<Interface>(std::move(value.message));
         }
     } // namespace detail
 
@@ -168,7 +179,7 @@ namespace saucer
 
             if (!parsed.has_value())
             {
-                return exec.reject(detail::write<Interface>(parsed.error()));
+                return exec.reject(detail::write<Interface>(std::move(parsed.error())));
             }
 
             auto resolve = [resolve = std::move(exec.resolve)]<typename... Ts>(Ts &&...value)
@@ -238,11 +249,11 @@ namespace saucer
                 return promise.set_value(err(std::move(exception)));
             }
 
-            promise.set_value(err(error{
+            promise.set_value(saucer::err{error{
                 .code    = -1,
                 .message = std::move(*exception),
                 .kind    = unknown_domain(),
-            }));
+            }});
         };
     }
 
