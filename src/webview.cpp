@@ -289,7 +289,7 @@ namespace saucer
             return std::nullopt;
         }
 
-        const auto id = ++pending_counter;
+        const auto id = pending_counter++;
         pending.emplace(id, code);
 
         return id;

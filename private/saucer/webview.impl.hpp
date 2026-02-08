@@ -23,7 +23,7 @@ namespace saucer
 
       public:
         bool dom_ready{false};
-        std::size_t last_pending{std::numeric_limits<std::size_t>::max()};
+        std::size_t last_pending{0};
 
       public:
         std::size_t pending_counter{0};
