@@ -22,6 +22,11 @@ namespace saucer
         return {.code = static_cast<int>(error), .message = name_of(error), .kind = contract_domain()};
     }
 
+    error error::of<serializer_error>::operator()(serializer_error error, std::string message)
+    {
+        return {.code = static_cast<int>(error), .message = std::move(message), .kind = serializer_domain()};
+    }
+
     error error::of<std::errc>::operator()(std::errc error)
     {
         return error::of<std::error_code>{}(std::make_error_code(error));

@@ -59,6 +59,8 @@ namespace saucer::serializers::glaze
     template <Readable T>
     result<T> serializer::read(std::string_view data)
     {
+        using enum serializer_error;
+
         T rtn{};
 
         if (auto error = glz::read<detail::opts>(rtn, data); !error) [[likely]]
@@ -70,20 +72,16 @@ namespace saucer::serializers::glaze
 
         if (auto err = glz::read<detail::opts>(json, data); err)
         {
-            const auto name = rebind::utils::find_enum_name(err.ec).value_or("Unknown");
-
-            return saucer::err(error{
-                .code    = static_cast<int>(serializer_error::parsing_failed),
-                .message = std::string{name},
-                .kind    = serializer_domain(),
-            });
+            return saucer::err{
+                parsing_failed,
+                rebind::utils::find_enum_name(err.ec).value_or("Unknown"),
+            };
         }
 
-        return saucer::err(error{
-            .code    = static_cast<int>(serializer_error::signature_mismatch),
-            .message = detail::mismatch(rtn, json).value_or("Unknown Mismatch"),
-            .kind    = serializer_domain(),
-        });
+        return saucer::err{
+            signature_mismatch,
+            detail::mismatch(rtn, json).value_or("Unknown Mismatch"),
+        };
     }
 
     template <Readable T>

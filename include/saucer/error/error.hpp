@@ -16,7 +16,7 @@ namespace saucer
         struct is_expected;
 
         template <typename T>
-        concept Expected = is_expected<T>::value;
+        concept Expected = is_expected<std::remove_cvref_t<T>>::value;
     } // namespace detail
 
     struct error
@@ -40,9 +40,10 @@ namespace saucer
         [[nodiscard]] virtual std::string name() const = 0;
     };
 
-    error::domain *contract_domain();
     error::domain *unknown_domain();
     error::domain *platform_domain();
+    error::domain *contract_domain();
+    error::domain *serializer_domain();
 
     enum class contract_error : std::uint8_t
     {
@@ -51,10 +52,22 @@ namespace saucer
         broken_promise   = 3,
     };
 
+    enum class serializer_error : std::uint8_t
+    {
+        parsing_failed     = 1,
+        signature_mismatch = 2,
+    };
+
     template <>
     struct error::of<contract_error>
     {
         static error operator()(contract_error);
+    };
+
+    template <>
+    struct error::of<serializer_error>
+    {
+        static error operator()(serializer_error, std::string);
     };
 
     template <>
@@ -72,15 +85,8 @@ namespace saucer
     template <typename T = void>
     using result = std::expected<T, error>;
 
-    inline auto err(error);
-
-    template <typename T>
-        requires(detail::Expected<std::remove_cvref_t<T>>)
-    auto err(T &&);
-
-    template <typename T>
-        requires(not detail::Expected<std::remove_cvref_t<T>>)
-    auto err(T &&, std::source_location = std::source_location::current());
+    template <typename T, typename... Ts>
+    struct err;
 } // namespace saucer
 
 #include "error.inl"

@@ -86,14 +86,6 @@ namespace saucer
 
     template <Serializer Serializer, typename... Ts>
     using format_string = std::format_string<std::enable_if_t<Writable<Ts, Serializer>, std::string>...>;
-
-    enum class serializer_error : std::uint8_t
-    {
-        parsing_failed     = 1,
-        signature_mismatch = 2,
-    };
-
-    error::domain *serializer_domain();
 } // namespace saucer
 
 #include "serializer.inl"

@@ -17,27 +17,43 @@ namespace saucer
     {
     };
 
-    inline auto err(error value)
+    template <>
+    struct err<void> : error
     {
-        return std::unexpected{std::move(value)};
-    }
+        err(error value) : error{std::move(value)} {}
+    };
+    err(error) -> err<void>;
 
-    template <typename T>
-        requires(detail::Expected<std::remove_cvref_t<T>>)
-    auto err(T &&value)
+    template <typename T, typename E>
+    struct err<std::expected<T, E>> : std::unexpected<E>
     {
-        return std::unexpected{std::forward<T>(value).error()};
-    }
+        template <detail::Expected U>
+        err(U &&value) : std::unexpected<E>{std::forward<U>(value).error()}
+        {
+        }
+    };
+    template <detail::Expected T>
+    err(T &&) -> err<std::remove_cvref_t<T>>;
 
-    template <typename T>
-        requires(not detail::Expected<std::remove_cvref_t<T>>)
-    auto err(T &&value, std::source_location location)
+    template <typename T, typename... Ts>
+    struct err : std::unexpected<error>
     {
-        auto rtn     = saucer::error::of<std::remove_cvref_t<T>>{}(std::forward<T>(value));
-        rtn.location = location;
+        static auto make(std::source_location location, T value, Ts... params)
+        {
+            auto rtn     = saucer::error::of<std::remove_cvref_t<T>>{}(std::forward<T>(value), std::forward<Ts>(params)...);
+            rtn.location = location;
 
-        return std::unexpected{std::move(rtn)};
-    }
+            return rtn;
+        }
+
+      public:
+        err(T value, Ts... params, std::source_location location = std::source_location::current())
+            : std::unexpected<saucer::error>{make(location, std::forward<T>(value), std::forward<Ts>(params)...)}
+        {
+        }
+    };
+    template <typename T, typename... Ts>
+    err(T &&, Ts &&...) -> err<T, Ts...>;
 } // namespace saucer
 
 template <>

@@ -46,15 +46,16 @@ namespace saucer::serializers::rflpp
         template <typename T, typename U>
         result<T> read(U &&value)
         {
+            using enum serializer_error;
+
             auto rtn = read_impl<T>(std::forward<U>(value));
 
             if (!rtn.has_value())
             {
-                return saucer::err(error{
-                    .code    = static_cast<int>(serializer_error::parsing_failed),
-                    .message = rtn.error().what(),
-                    .kind    = serializer_domain(),
-                });
+                return saucer::err{
+                    parsing_failed,
+                    rtn.error().what(),
+                };
             }
 
             return *rtn;
