@@ -290,7 +290,7 @@ namespace saucer
                                               : WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES;
 
         auto *const user_script = webkit_user_script_new(script.code.c_str(), frame, time, nullptr, nullptr);
-        const auto id           = platform->id_counter++;
+        const auto id           = ++platform->id_counter;
 
         webkit_user_content_manager_add_script(platform->manager.get(), user_script);
         platform->scripts.emplace(id, wkg_script{.ref = user_script, .clearable = script.clearable});

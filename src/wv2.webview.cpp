@@ -373,7 +373,7 @@ namespace saucer
         using enum script::time;
 
         auto script   = wv2_script{raw};
-        const auto id = platform->id_counter++;
+        const auto id = ++platform->id_counter;
 
         if (script.no_frames)
         {

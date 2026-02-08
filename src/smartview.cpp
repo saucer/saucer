@@ -165,7 +165,7 @@ namespace saucer
 
     void smartview_base::add_evaluation(resolver &&resolve, std::string_view code)
     {
-        const auto id      = m_impl->id_counter++;
+        const auto id      = ++m_impl->id_counter;
         const auto pending = webview::execute(std::format("window.saucer.internal.resolve({}, async () => {})", id, code));
 
         auto locked = m_impl->evaluations.write();
