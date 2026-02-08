@@ -93,8 +93,7 @@ namespace saucer
 
         overload visitor = {
             [](std::monostate &)
-            {
-                //
+            {//
                 return status::unhandled;
             },
             [this](std::unique_ptr<function_data> &parsed)
