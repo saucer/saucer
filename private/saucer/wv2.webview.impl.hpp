@@ -85,6 +85,9 @@ namespace saucer
         void setup(impl *);
 
       public:
+        void update_bounds(int, int);
+
+      public:
         static ComPtr<ICoreWebView2EnvironmentOptions> env_options();
 
       public:

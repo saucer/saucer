@@ -129,16 +129,6 @@ namespace saucer
         platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
         platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
 
-        auto on_resize = [this, parent_window](int width, int height)
-        {
-            const auto bounds = platform->bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
-
-            const auto [x, y] = parent_window->scale<mode::add>({.w = bounds.x, .h = bounds.y});
-            const auto [w, h] = parent_window->scale<mode::add>({.w = bounds.w, .h = bounds.h});
-
-            platform->controller->put_Bounds({x, y, x + w, y + h});
-        };
-
         auto on_minimize = [this](bool minimized)
         {
             platform->controller->put_IsVisible(!minimized);
@@ -150,7 +140,7 @@ namespace saucer
         auto &events = window->native<false>()->events;
 
         events.get<window::event::resize>().update(platform->on_resize, {{
-                                                                            .func      = on_resize,
+                                                                            .func = std::bind_front(&native::update_bounds, platform.get()),
                                                                             .clearable = false,
                                                                         }});
 
@@ -161,8 +151,8 @@ namespace saucer
 
         auto [width, height] = window->size();
 
-        on_resize(width, height);
         on_minimize(window->minimized());
+        platform->update_bounds(width, height);
 
         return {};
     }
@@ -344,12 +334,18 @@ namespace saucer
 
     void impl::reset_bounds() // NOLINT(*-function-const)
     {
+        const auto [width, height] = window->size();
+
         platform->bounds.reset();
+        platform->update_bounds(width, height);
     }
 
     void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
     {
+        const auto [width, height] = window->size();
+
         platform->bounds.emplace(bounds);
+        platform->update_bounds(width, height);
     }
 
     void impl::back() // NOLINT(*-function-const)

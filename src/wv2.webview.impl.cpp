@@ -1,7 +1,9 @@
 #include "wv2.webview.impl.hpp"
 
-#include "win32.error.hpp"
 #include "win32.app.impl.hpp"
+#include "win32.window.impl.hpp"
+
+#include "win32.error.hpp"
 #include "win32.icon.impl.hpp"
 
 #include "wv2.scheme.impl.hpp"
@@ -175,6 +177,17 @@ namespace saucer
         web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
 
         event.on_clear([this, token] { web_view->remove_NavigationCompleted(token); });
+    }
+
+    void native::update_bounds(int width, int height)
+    {
+        auto *const parent = lease.value()->window->native<false>()->platform.get();
+        const auto bb      = bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
+
+        const auto [x, y] = parent->scale<mode::add>({.w = bb.x, .h = bb.y});
+        const auto [w, h] = parent->scale<mode::add>({.w = bb.w, .h = bb.h});
+
+        controller->put_Bounds({x, y, x + w, y + h});
     }
 
     ComPtr<ICoreWebView2EnvironmentOptions> native::env_options()
