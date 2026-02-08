@@ -7,11 +7,11 @@ namespace saucer
 {
     using impl = webview::impl;
 
-    void impl::on_load(state state)
+    void impl::on_load(state load)
     {
         using enum state;
 
-        if (state != started)
+        if (load != started)
         {
             return;
         }
