@@ -298,7 +298,7 @@ namespace saucer
 
     std::size_t impl::inject(const script &script) // NOLINT(*-function-const)
     {
-        const auto id = ++platform->id_counter;
+        const auto id = platform->id_counter++;
 
         // The order of the scripts is important as they might depend on each other, as we need to clear all scripts to remove one specific
         // one, we have to re-inject all of the scripts as well - thus we have to preserve the order in which they were added. Using

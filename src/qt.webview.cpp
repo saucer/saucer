@@ -321,7 +321,7 @@ namespace saucer
         platform->web_page->scripts().remove(original);
         platform->web_page->scripts().insert(replacement);
 
-        const auto id = ++platform->id_counter;
+        const auto id = platform->id_counter++;
         platform->scripts.emplace(id, qt_script{.id = identifier, .run_at = script.run_at, .clearable = script.clearable});
 
         return id;
