@@ -259,6 +259,34 @@ namespace saucer
         gtk_widget_set_margin_bottom(widget, height - bounds.y - bounds.h);
     }
 
+    void impl::raise() // NOLINT(*-function-const)
+    {
+        auto *const self   = GTK_WIDGET(platform->web_view);
+        auto *const parent = gtk_widget_get_parent(self);
+        auto *const next   = gtk_widget_get_next_sibling(self);
+
+        if (!next)
+        {
+            return;
+        }
+
+        gtk_widget_insert_after(self, parent, next);
+    }
+
+    void impl::lower() // NOLINT(*-function-const)
+    {
+        auto *const self   = GTK_WIDGET(platform->web_view);
+        auto *const parent = gtk_widget_get_parent(self);
+        auto *const prev   = gtk_widget_get_prev_sibling(self);
+
+        if (!prev)
+        {
+            return;
+        }
+
+        gtk_widget_insert_before(self, parent, prev);
+    }
+
     void impl::back() // NOLINT(*-function-const)
     {
         webkit_web_view_go_back(platform->web_view);

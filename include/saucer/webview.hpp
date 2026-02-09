@@ -170,6 +170,10 @@ namespace saucer
         [[sc::thread_safe]] void set_bounds(saucer::bounds);
 
       public:
+        [[sc::thread_safe]] void raise();
+        [[sc::thread_safe]] void lower();
+
+      public:
         [[sc::thread_safe]] void back();
         [[sc::thread_safe]] void forward();
 

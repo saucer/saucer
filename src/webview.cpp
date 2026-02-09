@@ -229,6 +229,16 @@ namespace saucer
         return utils::invoke<&impl::set_bounds>(m_impl.get(), bounds);
     }
 
+    void webview::raise()
+    {
+        return utils::invoke<&impl::raise>(m_impl.get());
+    }
+
+    void webview::lower()
+    {
+        return utils::invoke<&impl::lower>(m_impl.get());
+    }
+
     void webview::back()
     {
         return utils::invoke<&impl::back>(m_impl.get());

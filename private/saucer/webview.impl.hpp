@@ -88,6 +88,10 @@ namespace saucer
         void set_bounds(saucer::bounds);
 
       public:
+        void raise();
+        void lower();
+
+      public:
         void back();
         void forward();
 

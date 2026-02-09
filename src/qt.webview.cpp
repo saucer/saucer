@@ -275,6 +275,16 @@ namespace saucer
         platform->web_view->setGeometry({bounds.x, bounds.y, bounds.w, bounds.h});
     }
 
+    void impl::raise() // NOLINT(*-function-const)
+    {
+        platform->web_view->raise();
+    }
+
+    void impl::lower() // NOLINT(*-function-const)
+    {
+        platform->web_view->lower();
+    }
+
     void impl::back() // NOLINT(*-function-const)
     {
         platform->web_view->back();
