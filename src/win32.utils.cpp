@@ -125,14 +125,13 @@ namespace saucer
 
     std::vector<HWND> utils::child_windows(HWND parent)
     {
-        static auto callback = [](HWND hwnd, LPARAM data)
-        {
-            reinterpret_cast<std::vector<HWND> *>(data)->emplace_back(hwnd);
-            return TRUE;
-        };
+        auto *child = GetWindow(parent, GW_CHILD);
+        auto rtn    = std::vector<HWND>{};
 
-        std::vector<HWND> rtn;
-        EnumChildWindows(parent, callback, reinterpret_cast<LPARAM>(&rtn));
+        for (; child; child = GetWindow(child, GW_HWNDNEXT))
+        {
+            rtn.emplace_back(child);
+        }
 
         return rtn;
     }

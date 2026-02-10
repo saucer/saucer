@@ -67,6 +67,7 @@ namespace saucer
 
         auto *const parent_window = window->native<false>()->platform.get();
         auto *const hwnd          = parent_window->hwnd.get();
+        const auto before         = utils::child_windows(hwnd);
 
         auto controller = native::create_controller(parent, hwnd, environment->Get());
 
@@ -74,6 +75,16 @@ namespace saucer
         {
             return err(controller);
         }
+
+        // WebView2 does not allow retrieving the HWND of a WebView (https://github.com/MicrosoftEdge/WebView2Feedback/issues/2907)
+        // While we could use the Composition API, it comes with lots of drawbacks imo, as we need forward mouse- & pointer-events
+        // and properly translate them for the WebView, which is currently quite cumbersome. There is an experimental interface
+        // that makes this more convenient, but it's still experimental and we would still have to take care of cursor changes as
+        // well as drag & drop manually. So it's easiest if we just grab the HWND like this...
+
+        const auto after = utils::child_windows(hwnd)                                                                         //
+                           | std::views::filter([&](const auto &element) { return !std::ranges::contains(before, element); }) //
+                           | std::ranges::to<std::vector>();
 
         ComPtr<ICoreWebView2> raw;
 
@@ -94,6 +105,12 @@ namespace saucer
         platform->controller = std::move(*controller);
         platform->web_view   = std::move(web_view);
         platform->lease      = utils::lease<webview::impl *>{this};
+
+        if (!after.empty())
+        {
+            platform->browser_hwnd = after.front();
+            SetWindowPos(platform->browser_hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOSIZE);
+        }
 
         if (!opts.storage_path.has_value() && !opts.persistent_cookies)
         {
@@ -283,7 +300,7 @@ namespace saucer
         platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
-    void impl::set_html(cstring_view html)
+    void impl::set_html(cstring_view html) // NOLINT(*-function-const)
     {
         platform->web_view->NavigateToString(utils::widen(html).c_str());
     }
@@ -346,6 +363,35 @@ namespace saucer
 
         platform->bounds.emplace(bounds);
         platform->update_bounds(width, height);
+    }
+
+    void impl::raise() // NOLINT(*-function-const)
+    {
+        const auto children = utils::child_windows(window->native<false>()->platform->hwnd.get());
+        const auto current  = std::ranges::find(children, platform->browser_hwnd);
+
+        if (current == children.begin())
+        {
+            return;
+        }
+
+        auto *const next = *std::prev(current);
+
+        SetWindowPos(platform->browser_hwnd, GetNextWindow(next, GW_HWNDPREV), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOSIZE);
+    }
+
+    void impl::lower() // NOLINT(*-function-const)
+    {
+        const auto children = utils::child_windows(window->native<false>()->platform->hwnd.get());
+        const auto current  = std::ranges::find(children, platform->browser_hwnd);
+        const auto next     = std::next(current);
+
+        if (next == children.end())
+        {
+            return;
+        }
+
+        SetWindowPos(*next, GetNextWindow(platform->browser_hwnd, GW_HWNDPREV), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOSIZE);
     }
 
     void impl::back() // NOLINT(*-function-const)

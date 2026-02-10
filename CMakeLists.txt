@@ -371,7 +371,7 @@ if (saucer_backend STREQUAL "WebView2")
     ALTERNATIVES "unofficial-webview2|unofficial::webview2::webview2"
   )
 
-  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2)
+  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi Comctl32 gdiplus webview2)
 endif()
 
 # +-------------------------------------------------------------------------------------------------------+

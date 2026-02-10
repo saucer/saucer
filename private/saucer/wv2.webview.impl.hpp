@@ -74,6 +74,7 @@ namespace saucer
         std::optional<saucer::bounds> bounds;
 
       public:
+        HWND browser_hwnd;
         std::uint32_t browser_pid;
         std::optional<fs::path> cleanup;
 
