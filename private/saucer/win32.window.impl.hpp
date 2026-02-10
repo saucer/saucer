@@ -7,6 +7,7 @@
 #include <optional>
 
 #include <windows.h>
+#include <commctrl.h>
 
 namespace saucer
 {

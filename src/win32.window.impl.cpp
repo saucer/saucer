@@ -2,8 +2,6 @@
 
 #include "win32.app.impl.hpp"
 
-#include <commctrl.h>
-
 namespace saucer
 {
     using native = window::impl::native;
