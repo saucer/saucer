@@ -2,6 +2,8 @@
 
 #include "win32.app.impl.hpp"
 
+#include <commctrl.h>
+
 namespace saucer
 {
     using native = window::impl::native;
@@ -98,15 +100,10 @@ namespace saucer
     template size native::offset<mode::add>(saucer::size) const;
     template size native::offset<mode::sub>(saucer::size) const;
 
-    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) // NOLINT(*-recursion)
+    // NOLINTNEXTLINE(*-recursion)
+    LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param, UINT_PTR data, DWORD_PTR unused)
     {
-        const auto atom = application::impl::native::ATOM_WINDOW.get();
-        auto *self      = reinterpret_cast<impl *>(GetPropW(hwnd, MAKEINTATOM(atom)));
-
-        if (!self)
-        {
-            return DefWindowProcW(hwnd, msg, w_param, l_param);
-        }
+        auto *const self = reinterpret_cast<impl *>(data);
 
         switch (msg)
         {
@@ -191,7 +188,7 @@ namespace saucer
             {
                 // This fixes a bug where event::minimized(false) event is
                 // not fired when a maximized window is restored from the taskbar.
-                wnd_proc(hwnd, WM_SIZE, SIZE_RESTORED, -1);
+                wnd_proc(hwnd, WM_SIZE, SIZE_RESTORED, -1, data, unused);
             }
             break;
         case WM_SIZE: {
@@ -229,7 +226,7 @@ namespace saucer
             const auto [w, h] = self->platform->scale<mode::sub>({.w = width, .h = height});
 
             self->events.get<event::resize>().fire(w, h);
-            self->platform->window_target.Root().Size({static_cast<float>(width), static_cast<float>(height)});
+            self->platform->root.Size({static_cast<float>(width), static_cast<float>(height)});
 
             break;
         }
@@ -274,6 +271,6 @@ namespace saucer
             return 0;
         }
 
-        return CallWindowProcW(self->platform->hook.original(), hwnd, msg, w_param, l_param);
+        return DefSubclassProc(hwnd, msg, w_param, l_param);
     }
 } // namespace saucer

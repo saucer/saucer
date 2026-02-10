@@ -20,6 +20,7 @@ namespace saucer::utils
 {
     using dispatch_controller = winrt::Windows::System::DispatcherQueueController;
     using compositor          = winrt::Windows::UI::Composition::Compositor;
+    using container           = winrt::Windows::UI::Composition::ContainerVisual;
     using brush               = winrt::Windows::UI::Composition::CompositionColorBrush;
     using window_target       = winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget;
 
@@ -33,26 +34,6 @@ namespace saucer::utils
     // https://en.wikipedia.org/wiki/Windows_11_version_history
     static constexpr auto windows_11_build = 22000;
 
-    class wnd_proc_hook
-    {
-        HWND m_hwnd{nullptr};
-        WNDPROC m_original{nullptr};
-
-      public:
-        wnd_proc_hook();
-        wnd_proc_hook(HWND, WNDPROC);
-
-      public:
-        wnd_proc_hook(wnd_proc_hook &&) noexcept;
-        wnd_proc_hook &operator=(wnd_proc_hook &&) noexcept;
-
-      public:
-        ~wnd_proc_hook();
-
-      public:
-        [[nodiscard]] WNDPROC original() const;
-    };
-
     void set_dpi_awareness();
     void set_immersive_dark(HWND, bool);
     void extend_frame(HWND, std::array<int, 4>);
@@ -62,6 +43,7 @@ namespace saucer::utils
     [[nodiscard]] std::wstring widen(std::string_view);
     [[nodiscard]] std::string narrow(std::wstring_view);
 
+    [[nodiscard]] std::vector<HWND> child_windows(HWND);
     [[nodiscard]] std::vector<std::uint8_t> read(IStream *);
 
     [[nodiscard]] result<dispatch_controller> create_dispatch_controller();

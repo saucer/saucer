@@ -58,19 +58,24 @@ namespace saucer
         platform = std::make_unique<native>();
 
         platform->hwnd          = std::move(hwnd);
+        platform->compositor    = std::move(compositor);
         platform->window_target = std::move(*window_target);
         platform->dpi           = GetDpiForWindow(platform->hwnd.get());
-        platform->background    = compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
-        platform->hook          = {platform->hwnd.get(), native::wnd_proc};
+        platform->root          = platform->compositor.CreateContainerVisual();
+        platform->background    = platform->compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
 
-        const auto atom = application::impl::native::ATOM_WINDOW.get();
-        SetPropW(platform->hwnd.get(), MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
-
-        auto root = compositor.CreateSpriteVisual();
+        if (!SetWindowSubclass(platform->hwnd.get(), &native::wnd_proc, reinterpret_cast<UINT_PTR>(this), 0))
         {
-            root.Brush(platform->background);
+            return err{GetLastError()};
         }
-        platform->window_target.Root(root);
+
+        auto sprite = platform->compositor.CreateSpriteVisual();
+        {
+            sprite.Brush(platform->background);
+            sprite.RelativeSizeAdjustment({1.f, 1.f});
+            platform->root.Children().InsertAtBottom(sprite);
+        }
+        platform->window_target.Root(platform->root);
 
         set_resizable(true);
 
@@ -86,8 +91,7 @@ namespace saucer
 
         close();
 
-        const auto atom = application::impl::native::ATOM_WINDOW.get();
-        RemovePropW(platform->hwnd.get(), MAKEINTATOM(atom));
+        RemoveWindowSubclass(platform->hwnd.get(), &native::wnd_proc, reinterpret_cast<UINT_PTR>(this));
     }
 
     template <window::event Event>

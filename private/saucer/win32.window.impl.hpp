@@ -37,6 +37,10 @@ namespace saucer
         utils::window_handle hwnd;
 
       public:
+        utils::compositor compositor{nullptr};
+        utils::window_target window_target{nullptr};
+
+      public:
         UINT dpi;
         UINT prev_state;
 
@@ -45,14 +49,13 @@ namespace saucer
         std::optional<WINDOWPLACEMENT> prev_placement;
 
       public:
+        utils::container root{nullptr};
         utils::brush background{nullptr};
-        utils::window_target window_target{nullptr};
 
       public:
         window_flags flags;
 
       public:
-        utils::wnd_proc_hook hook;
         utils::handle<HICON, DestroyIcon> icon;
         std::optional<saucer::size> max_size, min_size;
 
@@ -65,6 +68,6 @@ namespace saucer
 
       public:
         static inline std::size_t windows_build;
-        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
     };
 } // namespace saucer
