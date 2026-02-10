@@ -7,7 +7,7 @@
 #include "cocoa.window.impl.hpp"
 
 #include <map>
-#include <vector>
+#include <array>
 #include <unordered_map>
 
 #import <WebKit/WebKit.h>
@@ -55,6 +55,24 @@ namespace saucer
 
       public:
         static inline std::unordered_map<std::string, utils::objc_ptr<SchemeHandler>> schemes;
+    };
+
+    class zsorter
+    {
+        bool once{false};
+
+      private:
+        NSComparisonResult order;
+        std::array<NSView *, 2> targets;
+
+      public:
+        zsorter(NSView *, NSView *, NSComparisonResult);
+
+      public:
+        [[nodiscard]] operator void *() &;
+
+      public:
+        static NSComparisonResult sort(__kindof NSView *, __kindof NSView *, void *);
     };
 } // namespace saucer
 

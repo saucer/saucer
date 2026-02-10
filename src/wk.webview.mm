@@ -274,6 +274,54 @@ namespace saucer
                                             {.width = static_cast<CGFloat>(bounds.w), .height = static_cast<CGFloat>(bounds.h)}}];
     }
 
+    void impl::raise() // NOLINT(*-function-const)
+    {
+        const utils::autorelease_guard guard{};
+
+        auto *const view     = window->native<false>()->platform->window.contentView;
+        auto *const subviews = view.subviews;
+
+        auto *const target = platform->web_view.get();
+        const auto idx     = [view.subviews indexOfObject:target];
+
+        if (idx == subviews.count - 1)
+        {
+            return;
+        }
+
+        auto sort = zsorter{
+            platform->web_view.get(),
+            [subviews objectAtIndex:idx + 1],
+            NSOrderedAscending,
+        };
+
+        [view sortSubviewsUsingFunction:&zsorter::sort context:sort];
+    }
+
+    void impl::lower() // NOLINT(*-function-const)
+    {
+        const utils::autorelease_guard guard{};
+
+        auto *const view     = window->native<false>()->platform->window.contentView;
+        auto *const subviews = view.subviews;
+
+        auto *const target = platform->web_view.get();
+        const auto idx     = [view.subviews indexOfObject:target];
+
+        if (idx == 0)
+        {
+            return;
+        }
+
+        auto sort = zsorter{
+            platform->web_view.get(),
+            [subviews objectAtIndex:idx - 1],
+            NSOrderedDescending,
+        };
+
+        [view sortSubviewsUsingFunction:&zsorter::sort context:sort];
+    }
+
     void impl::back() // NOLINT(*-function-const)
     {
         const utils::autorelease_guard guard{};

@@ -231,6 +231,30 @@ namespace saucer
 
         return [[NSUUID alloc] init];
     }
+
+    zsorter::zsorter(NSView *target, NSView *other, NSComparisonResult order) : order{order}, targets{target, other} {}
+
+    zsorter::operator void *() &
+    {
+        return static_cast<void *>(this);
+    }
+
+    NSComparisonResult zsorter::sort(__kindof NSView *first, __kindof NSView *second, void *ctx)
+    {
+        auto *const self = reinterpret_cast<zsorter *>(ctx);
+
+        if (!std::ranges::contains(self->targets, first) || !std::ranges::contains(self->targets, second))
+        {
+            return NSOrderedSame;
+        }
+
+        if (std::exchange(self->once, true))
+        {
+            return NSOrderedSame;
+        }
+
+        return first == self->targets.front() ? static_cast<NSComparisonResult>(-self->order) : self->order;
+    }
 } // namespace saucer
 
 using namespace saucer;
