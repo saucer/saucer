@@ -367,6 +367,11 @@ namespace saucer
 
     void impl::raise() // NOLINT(*-function-const)
     {
+        if (!platform->browser_hwnd)
+        {
+            return;
+        }
+
         const auto children = utils::child_windows(window->native<false>()->platform->hwnd.get());
         const auto current  = std::ranges::find(children, platform->browser_hwnd);
 
@@ -382,6 +387,11 @@ namespace saucer
 
     void impl::lower() // NOLINT(*-function-const)
     {
+        if (!platform->browser_hwnd)
+        {
+            return;
+        }
+
         const auto children = utils::child_windows(window->native<false>()->platform->hwnd.get());
         const auto current  = std::ranges::find(children, platform->browser_hwnd);
         const auto next     = std::next(current);
