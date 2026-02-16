@@ -319,6 +319,11 @@ namespace saucer
         self->events.get<event::load>().fire(state::started);
     }
 
+    void native::on_error(WebKitWebView *, WebKitLoadEvent, gchar *, GError *, impl *)
+    {
+        self->events.get<event::load>().fire(state::failed);
+    }
+
     void native::on_click(GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)
     {
         auto *const controller = GTK_EVENT_CONTROLLER(gesture);

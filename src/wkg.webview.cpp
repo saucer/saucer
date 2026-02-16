@@ -50,6 +50,7 @@ namespace saucer
 
         platform->id_context = utils::connect(platform->web_view, "context-menu", native::on_context, this);
         platform->id_load    = utils::connect(platform->web_view, "load-changed", native::on_load, this);
+        platform->id_error   = utils::connect(platform->web_view, "load-error", native::on_error, this);
 
         // The ContentManager is ref'd to prevent it from being destroyed early when using multiple webviews
         platform->manager = content_manager_ptr::ref(webkit_web_view_get_user_content_manager(platform->web_view));

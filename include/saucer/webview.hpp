@@ -40,6 +40,7 @@ namespace saucer
     {
         started,
         finished,
+        failed,
     };
 
     enum class status : std::uint8_t

@@ -43,6 +43,7 @@ namespace saucer
       public:
         std::size_t id_context;
         std::size_t id_load;
+        std::size_t id_error;
 
       public:
         std::size_t id_message;
@@ -61,6 +62,7 @@ namespace saucer
       public:
         static void on_message(WebKitWebView *, JSCValue *, impl *);
         static void on_load(WebKitWebView *, WebKitLoadEvent, impl *);
+        static void on_error(WebKitWebView *, WebKitLoadEvent, gchar *, GError *, impl *);
 
       public:
         static void on_click(GtkGestureClick *, gint, gdouble, gdouble, impl *);

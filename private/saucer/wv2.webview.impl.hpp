@@ -67,6 +67,7 @@ namespace saucer
       public:
         bool dom_loaded{false};
         std::vector<std::string> pending;
+        std::optional<uint64_t> navigation_id;
 
       public:
         std::size_t id_counter{0};

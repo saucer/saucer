@@ -160,14 +160,27 @@ namespace saucer
             return;
         }
 
-        static constexpr auto fire = [](impl *self)
+        static constexpr auto fire = [](state state, impl *self)
         {
-            self->events.get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(state);
         };
 
-        auto handler = [self](auto...)
+        auto handler = [self](ICoreWebView2 *, ICoreWebView2NavigationCompletedEventArgs *args)
         {
-            self->parent->post(utils::defer(self->platform->lease, fire));
+            UINT64 navigation_id;
+            args->get_NavigationId(&navigation_id);
+
+            if (self->platform->navigation_id.has_value() && self->platform->navigation_id.value() == navigation_id)
+            {
+                BOOL success;
+                args->get_IsSuccess(&success);
+
+                state state = success ? state::finished : state::failed;
+                self->parent->post(utils::defer(self->platform->lease, std::bind_front(fire, state)));
+
+                self->platform->navigation_id.reset();
+            }
+
             return S_OK;
         };
 
@@ -326,11 +339,20 @@ namespace saucer
 
     HRESULT native::on_navigation(impl *self, ICoreWebView2 *, ICoreWebView2NavigationStartingEventArgs *args)
     {
+        if (self->platform->navigation_id.has_value())
+        {
+            return S_OK;
+        }
+
         static constexpr auto fire = [](impl *self)
         {
             self->events.get<event::load>().fire(state::started);
         };
 
+        UINT64 navigation_id;
+        args->get_NavigationId(&navigation_id);
+
+        self->platform->navigation_id = navigation_id;
         self->platform->dom_loaded = false;
         self->parent->post(utils::defer(self->platform->lease, fire));
 

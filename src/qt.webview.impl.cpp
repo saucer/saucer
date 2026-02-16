@@ -214,9 +214,9 @@ namespace saucer
             return;
         }
 
-        auto handler = [self](auto...)
+        auto handler = [self](const bool ok)
         {
-            self->events.get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(ok ? state::finished : state::failed);
         };
 
         const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);

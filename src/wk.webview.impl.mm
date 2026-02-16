@@ -378,6 +378,12 @@ using namespace saucer;
 {
     me->events.get<event::load>().fire(state::finished);
 }
+
+- (void)webView:(WKWebView *)webview didFail:(WKNavigation *)navigation withError:(WKError)error
+{
+    me->events.get<event::load>().fire(state::failed);
+}
+
 @end
 
 @implementation SaucerView
