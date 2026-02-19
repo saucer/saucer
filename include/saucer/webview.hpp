@@ -40,6 +40,7 @@ namespace saucer
     {
         started,
         finished,
+        failed,
     };
 
     enum class status : std::uint8_t
@@ -99,7 +100,7 @@ namespace saucer
             ereignis::event<event::request, void(const saucer::url &)>,                               //
             ereignis::event<event::favicon, void(const icon &)>,                                      //
             ereignis::event<event::title, void(std::string_view)>,                                    //
-            ereignis::event<event::load, void(const state &)>                                         //
+            ereignis::event<event::load, void(const state &, const saucer::url &)>                    //
             >;
 
       protected:

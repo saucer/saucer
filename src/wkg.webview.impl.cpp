@@ -290,24 +290,54 @@ namespace saucer
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
     {
-        if (event == WEBKIT_LOAD_COMMITTED)
-        {
-            self->events.get<event::navigated>().fire(self->url());
-            return;
-        }
+        using enum state;
 
-        if (event == WEBKIT_LOAD_FINISHED)
-        {
-            self->events.get<event::load>().fire(state::finished);
-            return;
-        }
-
-        if (event != WEBKIT_LOAD_STARTED)
+        if (event != WEBKIT_LOAD_COMMITTED && event != WEBKIT_LOAD_FINISHED)
         {
             return;
         }
 
-        self->events.get<event::load>().fire(state::started);
+        const auto url   = self->url();
+        const auto state = event == WEBKIT_LOAD_COMMITTED ? started : finished;
+
+        const auto it       = std::ranges::find(self->platform->failed, url);
+        const auto contains = it != self->platform->failed.end();
+
+        if (contains && state == finished)
+        {
+            self->platform->failed.erase(it);
+        }
+
+        if (contains)
+        {
+            return;
+        }
+
+        self->events.get<event::load>().fire(state, url);
+
+        if (state != finished)
+        {
+            return;
+        }
+
+        self->events.get<event::navigated>().fire(url);
+    }
+
+    // NOLINTNEXTLINE(readability-non-const-*)
+    gboolean native::on_load_failed(WebKitWebView *, WebKitLoadEvent, gchar *raw, GError *err, impl *self)
+    {
+        if (g_error_matches(err, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)) // Mostly caching related
+        {
+            return false;
+        }
+
+        if (auto url = saucer::url::parse(raw); url.has_value())
+        {
+            self->events.get<event::load>().fire(state::failed, *url);
+            self->platform->failed.emplace_back(std::move(*url));
+        }
+
+        return false;
     }
 
     void native::on_click(GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)
