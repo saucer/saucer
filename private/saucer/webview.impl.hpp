@@ -114,7 +114,7 @@ namespace saucer
         static void register_scheme(const std::string &);
 
       public:
-        void on_load(state);
+        void on_load(state, const saucer::url &);
         void on_dom_ready();
 
       public:
