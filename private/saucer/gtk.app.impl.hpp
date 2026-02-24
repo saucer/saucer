@@ -5,13 +5,13 @@
 
 #include <unordered_map>
 
-#include <adwaita.h>
+#include <gtk/gtk.h>
 
 namespace saucer
 {
     struct application::impl::native
     {
-        utils::g_object_ptr<AdwApplication> application;
+        utils::g_object_ptr<GtkApplication> application;
 
       public:
         int argc;

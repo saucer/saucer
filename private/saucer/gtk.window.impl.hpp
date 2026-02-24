@@ -8,7 +8,7 @@
 
 #include <optional>
 
-#include <adwaita.h>
+#include <gtk/gtk.h>
 
 namespace saucer
 {
@@ -51,8 +51,8 @@ namespace saucer
         std::optional<decoration> prev_decoration;
 
       public:
+        GtkWidget *header;
         GtkOverlay *content;
-        AdwHeaderBar *header;
 
       public:
         GtkEventController *motion_controller;

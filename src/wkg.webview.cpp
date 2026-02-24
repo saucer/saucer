@@ -11,6 +11,8 @@
 
 #include <cassert>
 
+#include <adwaita.h>
+
 namespace saucer
 {
     using impl = webview::impl;
