@@ -315,7 +315,7 @@ namespace saucer
 
         self->events.get<event::load>().fire(state, url);
 
-        if (state != finished)
+        if (state != started)
         {
             return;
         }
