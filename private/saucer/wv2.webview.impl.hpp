@@ -63,6 +63,7 @@ namespace saucer
 
       public:
         icon favicon;
+        std::optional<UINT64> last_navigation;
 
       public:
         std::size_t id_counter{0};
