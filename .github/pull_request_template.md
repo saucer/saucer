@@ -17,9 +17,7 @@
     - [ ] Linux / Qt
     - [ ] MacOS / WebKit
 
----
-
-I confirm that...
+### ✅ I confirm that...
 
 - [ ] I have not used AI in any way while working on this PR
 - [ ] I have read and acknowledged the [Contribution Guidelines](../CONTRIBUTING.md) 
