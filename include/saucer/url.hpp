@@ -59,7 +59,7 @@ namespace saucer
 
       public:
         [[nodiscard]] bool operator==(const url &) const;
-        [[nodiscard]] bool operator==(std::string_view) const;
+        [[nodiscard]] bool operator==(cstring_view) const;
 
       public:
         static result<url> parse(cstring_view input);

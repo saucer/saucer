@@ -106,8 +106,14 @@ namespace saucer
     }
 
     template <typename T, typename Traits>
+    constexpr std::basic_string_view<T, Traits> basic_cstring_view<T, Traits>::view() const noexcept
+    {
+        return {m_data, m_size};
+    }
+
+    template <typename T, typename Traits>
     constexpr basic_cstring_view<T, Traits>::operator std::basic_string_view<T, Traits>() const noexcept
     {
-        return m_data;
+        return view();
     }
 } // namespace saucer

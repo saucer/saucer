@@ -95,9 +95,9 @@ namespace saucer
         return string() == other.string();
     }
 
-    bool url::operator==(std::string_view other) const
+    bool url::operator==(cstring_view other) const
     {
-        return string() == other;
+        return string() == url::parse(other);
     }
 
     result<url> url::from(const fs::path &file)
@@ -119,7 +119,7 @@ namespace saucer
 
     result<url> url::parse(cstring_view input)
     {
-        if (std::string_view{input}.empty())
+        if (input.view().empty())
         {
             return url{};
         }
