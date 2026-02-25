@@ -369,6 +369,11 @@ using namespace saucer;
     me->events.get<event::load>().fire(state::started);
 }
 
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error
+{
+    me->events.get<event::load>().fire(state::failed);
+}
+
 - (void)webView:(WKWebView *)webview
     decidePolicyForNavigationAction:(WKNavigationAction *)action
                     decisionHandler:(void (^)(enum WKNavigationActionPolicy))handler
@@ -390,6 +395,11 @@ using namespace saucer;
 - (void)webView:(WKWebView *)webview didFinishNavigation:(WKNavigation *)navigation
 {
     me->events.get<event::load>().fire(state::finished);
+}
+
+- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error
+{
+    me->events.get<event::load>().fire(state::failed);
 }
 @end
 
