@@ -7,7 +7,7 @@ namespace saucer
 {
     using impl = webview::impl;
 
-    void impl::on_load(state load, const saucer::url &)
+    void impl::on_load(state load)
     {
         using enum state;
 

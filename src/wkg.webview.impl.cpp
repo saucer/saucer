@@ -313,7 +313,12 @@ namespace saucer
             return;
         }
 
-        self->events.get<event::load>().fire(state, url);
+        if (std::exchange(self->platform->last_failed, false) && url == saucer::url{})
+        {
+            return;
+        }
+
+        self->events.get<event::load>().fire(state);
 
         if (state != started)
         {
@@ -331,11 +336,17 @@ namespace saucer
             return false;
         }
 
-        if (auto url = saucer::url::parse(raw); url.has_value())
+        auto url = saucer::url::parse(raw);
+
+        if (!url.has_value())
         {
-            self->events.get<event::load>().fire(state::failed, *url);
-            self->platform->failed.emplace_back(std::move(*url));
+            return false;
         }
+
+        self->events.get<event::load>().fire(state::failed);
+
+        self->platform->last_failed = true;
+        self->platform->failed.emplace_back(std::move(*url));
 
         return false;
     }

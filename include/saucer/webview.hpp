@@ -100,7 +100,7 @@ namespace saucer
             ereignis::event<event::request, void(const saucer::url &)>,                               //
             ereignis::event<event::favicon, void(const icon &)>,                                      //
             ereignis::event<event::title, void(std::string_view)>,                                    //
-            ereignis::event<event::load, void(const state &, const saucer::url &)>                    //
+            ereignis::event<event::load, void(const state &)>                                         //
             >;
 
       protected:

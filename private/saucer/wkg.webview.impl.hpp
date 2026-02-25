@@ -41,6 +41,9 @@ namespace saucer
       public:
         std::size_t id_load;
         std::size_t id_load_failed;
+
+      public:
+        bool last_failed{false};
         std::vector<saucer::url> failed;
 
       public:
