@@ -42,7 +42,7 @@ namespace saucer
 
             ComPtr<ICoreWebView2Deferral> deferral;
 
-            if (auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
+            if (const auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
             {
                 return status;
             }
@@ -162,14 +162,35 @@ namespace saucer
             return;
         }
 
-        static constexpr auto fire = [](impl *self)
+        static constexpr auto fire = [](impl *self, state value)
         {
-            self->events.get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(value);
         };
 
-        auto handler = [self](auto...)
+        auto handler = [self](auto, ICoreWebView2NavigationCompletedEventArgs *args)
         {
-            self->parent->post(utils::defer(self->platform->lease, fire));
+            BOOL success{false};
+
+            if (const auto status = args->get_IsSuccess(&success); !SUCCEEDED(status))
+            {
+                return status;
+            }
+
+            UINT64 id{};
+
+            if (const auto status = args->get_NavigationId(&id); !SUCCEEDED(status))
+            {
+                return status;
+            }
+
+            if (id != self->platform->last_navigation)
+            {
+                return S_OK;
+            }
+
+            const auto value = success ? state::finished : state::failed;
+            self->parent->post(std::bind_front(utils::defer(self->platform->lease, fire), value));
+
             return S_OK;
         };
 
@@ -221,7 +242,7 @@ namespace saucer
         const auto &[storage_path, opts] = options;
         const auto callback              = Callback<EnvironmentCompleted>(completed);
 
-        auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get());
+        const auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get());
 
         if (!SUCCEEDED(status))
         {
@@ -248,7 +269,7 @@ namespace saucer
 
         const auto callback = Callback<ControllerCompleted>(created);
 
-        if (auto status = env->CreateCoreWebView2Controller(hwnd, callback.Get()); !SUCCEEDED(status))
+        if (const auto status = env->CreateCoreWebView2Controller(hwnd, callback.Get()); !SUCCEEDED(status))
         {
             return err(status);
         }
@@ -265,7 +286,7 @@ namespace saucer
     {
         utils::string_handle raw;
 
-        if (auto status = args->TryGetWebMessageAsString(&raw.reset()); !SUCCEEDED(status))
+        if (const auto status = args->TryGetWebMessageAsString(&raw.reset()); !SUCCEEDED(status))
         {
             return status;
         }
@@ -286,14 +307,14 @@ namespace saucer
     {
         ComPtr<ICoreWebView2WebResourceRequest> request;
 
-        if (auto status = args->get_Request(&request); !SUCCEEDED(status))
+        if (const auto status = args->get_Request(&request); !SUCCEEDED(status))
         {
             return status;
         }
 
         utils::string_handle raw;
 
-        if (auto status = request->get_Uri(&raw.reset()); !SUCCEEDED(status))
+        if (const auto status = request->get_Uri(&raw.reset()); !SUCCEEDED(status))
         {
             return status;
         }
@@ -336,6 +357,20 @@ namespace saucer
             self->events.get<event::load>().fire(state::started);
         };
 
+        UINT64 id{};
+
+        if (const auto status = args->get_NavigationId(&id); !SUCCEEDED(status))
+        {
+            return status;
+        };
+
+        if (id == self->platform->last_navigation)
+        {
+            return S_OK;
+        }
+
+        self->platform->last_navigation.emplace(id);
+
         auto nav = navigation{navigation::impl{
             .request = args,
         }};
@@ -371,7 +406,7 @@ namespace saucer
     {
         BOOL fullscreen{false};
 
-        if (auto status = self->platform->web_view->get_ContainsFullScreenElement(&fullscreen); !SUCCEEDED(status))
+        if (const auto status = self->platform->web_view->get_ContainsFullScreenElement(&fullscreen); !SUCCEEDED(status))
         {
             return status;
         }
@@ -388,7 +423,7 @@ namespace saucer
     {
         ComPtr<ICoreWebView2Deferral> deferral;
 
-        if (auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
+        if (const auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
         {
             return status;
         }
@@ -421,21 +456,21 @@ namespace saucer
 
         ComPtr<ICoreWebView2Environment> environment;
 
-        if (auto status = self->platform->web_view->get_Environment(&environment); !SUCCEEDED(status))
+        if (const auto status = self->platform->web_view->get_Environment(&environment); !SUCCEEDED(status))
         {
             return status;
         }
 
         ComPtr<ICoreWebView2Deferral> deferral;
 
-        if (auto status = opts.raw->GetDeferral(&deferral); !SUCCEEDED(status))
+        if (const auto status = opts.raw->GetDeferral(&deferral); !SUCCEEDED(status))
         {
             return status;
         }
 
         ComPtr<IStream> content;
 
-        if (auto status = opts.request->get_Content(&content); !SUCCEEDED(status))
+        if (const auto status = opts.request->get_Content(&content); !SUCCEEDED(status))
         {
             return status;
         }
