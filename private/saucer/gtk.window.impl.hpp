@@ -85,4 +85,8 @@ namespace saucer
         void update_region(impl *) const;
         void update_decorations(impl *) const;
     };
+
+    struct SaucerWindow;
+
+    SaucerWindow *saucer_window_new(GtkApplication *, window::impl *);
 } // namespace saucer

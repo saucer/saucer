@@ -18,18 +18,17 @@ namespace saucer
         platform = std::make_unique<native>();
 
         auto *const application = GTK_APPLICATION(parent->native<false>()->platform->application.get());
-
-#ifdef SAUCER_ADWAITA
-        platform->window.reset(GTK_WINDOW(adw_application_window_new(application)));
-        platform->header = GTK_WIDGET(adw_header_bar_new());
-#else
-        platform->window.reset(GTK_WINDOW(gtk_application_window_new(application)));
-        platform->header = GTK_WIDGET(gtk_header_bar_new());
-#endif
+        platform->window.reset(GTK_WINDOW(saucer_window_new(application, this)));
 
         platform->style   = gtk_css_provider_new();
         platform->content = GTK_OVERLAY(gtk_overlay_new());
         platform->lease   = utils::lease{this};
+
+#ifdef SAUCER_ADWAITA
+        platform->header = GTK_WIDGET(adw_header_bar_new());
+#else
+        platform->header = GTK_WIDGET(gtk_header_bar_new());
+#endif
 
         auto *const box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
         gtk_box_append(box, GTK_WIDGET(platform->content));
@@ -154,8 +153,8 @@ namespace saucer
 
     size impl::size() const
     {
-        int width{}, height{};
-        gtk_window_get_default_size(platform->window.get(), &width, &height);
+        auto width  = gtk_widget_get_size(GTK_WIDGET(platform->window.get()), GTK_ORIENTATION_HORIZONTAL);
+        auto height = gtk_widget_get_size(GTK_WIDGET(platform->window.get()), GTK_ORIENTATION_VERTICAL);
 
         return platform->offset<offset::sub>({.w = width, .h = height});
     }

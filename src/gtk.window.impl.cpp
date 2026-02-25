@@ -4,10 +4,66 @@
 
 #include <algorithm>
 
+#ifdef SAUCER_ADWAITA
+#include <adwaita.h>
+#endif
+
 namespace saucer
 {
     using native = window::impl::native;
     using event  = window::event;
+
+    struct SaucerWindow
+    {
+#ifdef SAUCER_ADWAITA
+        AdwApplicationWindow parent_instance;
+#else
+        GtkApplicationWindow parent_instance;
+#endif
+
+      public:
+        window::impl *self;
+    };
+
+    struct SaucerWindowClass
+    {
+#ifdef SAUCER_ADWAITA
+        AdwApplicationWindowClass parent_class;
+#else
+        GtkApplicationWindowClass parent_class;
+#endif
+    };
+
+#ifdef SAUCER_ADWAITA
+    G_DEFINE_TYPE(SaucerWindow, saucer_window, ADW_TYPE_APPLICATION_WINDOW);
+#else
+    G_DEFINE_TYPE(SaucerWindow, saucer_window, GTK_TYPE_APPLICATION_WINDOW);
+#endif
+
+    void saucer_window_resize(GtkWidget *widget, int width, int height, int baseline)
+    {
+        GTK_WIDGET_CLASS(saucer_window_parent_class)->size_allocate(widget, width, height, baseline);
+        auto *const self = reinterpret_cast<SaucerWindow *>(widget)->self;
+        self->events.get<event::resize>().fire(width, height);
+    }
+
+    void saucer_window_class_init(SaucerWindowClass *klass)
+    {
+        auto *widget          = GTK_WIDGET_CLASS(klass);
+        widget->size_allocate = saucer_window_resize;
+    }
+
+    void saucer_window_init(SaucerWindow *)
+    {
+        // Boilerplate
+    }
+
+    SaucerWindow *saucer_window_new(GtkApplication *application, window::impl *self)
+    {
+        auto *const rtn = reinterpret_cast<SaucerWindow *>(g_object_new(saucer_window_get_type(), "application", application, NULL));
+        rtn->self       = self;
+        return rtn;
+    }
 
     std::optional<event_data> native::prev_data() const
     {
@@ -44,30 +100,8 @@ namespace saucer
     }
 
     template <>
-    void native::setup<event::resize>(impl *self)
+    void native::setup<event::resize>(impl *)
     {
-        auto &event = self->events.get<event::resize>();
-
-        if (!event.empty())
-        {
-            return;
-        }
-
-        auto callback = [](void *, GParamSpec *, impl *self)
-        {
-            auto [width, height] = self->size();
-            self->events.get<event::resize>().fire(width, height);
-        };
-
-        const auto width  = utils::connect(window.get(), "notify::default-width", +callback, self);
-        const auto height = utils::connect(window.get(), "notify::default-height", +callback, self);
-
-        event.on_clear(
-            [this, width, height]
-            {
-                g_signal_handler_disconnect(window.get(), width);
-                g_signal_handler_disconnect(window.get(), height);
-            });
     }
 
     template <>
