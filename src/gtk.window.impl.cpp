@@ -126,6 +126,9 @@ namespace saucer
     template <offset T>
     saucer::size native::offset(saucer::size size) const
     {
+#ifndef SAUCER_ADWAITA
+        return size;
+#else
         auto *const widget = GTK_WIDGET(header);
 
         if (!gtk_widget_is_visible(widget))
@@ -146,6 +149,7 @@ namespace saucer
         }
 
         return size;
+#endif
     }
 
     template saucer::size native::offset<offset::add>(saucer::size) const;
@@ -267,7 +271,7 @@ namespace saucer
             auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
 
-            if (prev.has_value() && *prev == current)
+            if (prev == current)
             {
                 return;
             }
