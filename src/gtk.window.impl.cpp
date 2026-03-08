@@ -13,13 +13,19 @@ namespace saucer
     using native = window::impl::native;
     using event  = window::event;
 
+#ifdef SAUCER_ADWAITA
+    using application_window               = AdwApplicationWindow;
+    using application_window_class         = AdwApplicationWindowClass;
+    static const auto application_window_t = ADW_TYPE_APPLICATION_WINDOW;
+#else
+    using application_window               = GtkApplicationWindow;
+    using application_window_class         = GtkApplicationWindowClass;
+    static const auto application_window_t = GTK_TYPE_APPLICATION_WINDOW;
+#endif
+
     struct SaucerWindow
     {
-#ifdef SAUCER_ADWAITA
-        AdwApplicationWindow parent_instance;
-#else
-        GtkApplicationWindow parent_instance;
-#endif
+        application_window parent_instance;
 
       public:
         window::impl *self;
@@ -27,18 +33,10 @@ namespace saucer
 
     struct SaucerWindowClass
     {
-#ifdef SAUCER_ADWAITA
-        AdwApplicationWindowClass parent_class;
-#else
-        GtkApplicationWindowClass parent_class;
-#endif
+        application_window_class parent_class;
     };
 
-#ifdef SAUCER_ADWAITA
-    G_DEFINE_TYPE(SaucerWindow, saucer_window, ADW_TYPE_APPLICATION_WINDOW);
-#else
-    G_DEFINE_TYPE(SaucerWindow, saucer_window, GTK_TYPE_APPLICATION_WINDOW);
-#endif
+    G_DEFINE_TYPE(SaucerWindow, saucer_window, application_window_t);
 
     void saucer_window_resize(GtkWidget *widget, int width, int height, int baseline)
     {
@@ -160,12 +158,9 @@ namespace saucer
     template <offset T>
     saucer::size native::offset(saucer::size size) const
     {
-#ifndef SAUCER_ADWAITA
-        return size;
-#else
-        auto *const widget = GTK_WIDGET(header);
+        auto *const widget = GTK_WIDGET(header.get());
 
-        if (!gtk_widget_is_visible(widget))
+        if (!gtk_widget_get_parent(widget))
         {
             return size;
         }
@@ -183,7 +178,6 @@ namespace saucer
         }
 
         return size;
-#endif
     }
 
     template saucer::size native::offset<offset::add>(saucer::size) const;
