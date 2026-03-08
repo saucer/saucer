@@ -31,13 +31,13 @@ namespace saucer
 #endif
 
         auto *const box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
-        gtk_box_append(box, GTK_WIDGET(platform->content));
+        gtk_box_append(box, GTK_WIDGET(platform->content.get()));
 
-        gtk_widget_set_vexpand(GTK_WIDGET(platform->content), true);
-        gtk_widget_set_hexpand(GTK_WIDGET(platform->content), true);
+        gtk_widget_set_vexpand(GTK_WIDGET(platform->content.get()), true);
+        gtk_widget_set_hexpand(GTK_WIDGET(platform->content.get()), true);
 
 #ifdef SAUCER_ADWAITA
-        gtk_box_prepend(box, platform->header);
+        gtk_box_prepend(box, platform->header.get());
         adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(box));
 #else
         gtk_window_set_child(GTK_WINDOW(platform->window.get()), GTK_WIDGET(box));
@@ -121,7 +121,7 @@ namespace saucer
 
     bool impl::click_through() const
     {
-        return platform->motion_controller;
+        return platform->motion_controller.get();
     }
 
     std::string impl::title() const
@@ -143,7 +143,7 @@ namespace saucer
             return none;
         }
 
-        if (!gtk_widget_get_visible(GTK_WIDGET(platform->header)))
+        if (!gtk_widget_get_visible(GTK_WIDGET(platform->header.get())))
         {
             return partial;
         }
@@ -295,7 +295,7 @@ namespace saucer
         }
 
         auto *const widget = GTK_WIDGET(platform->window.get());
-        gtk_widget_remove_controller(widget, platform->motion_controller);
+        gtk_widget_remove_controller(widget, platform->motion_controller.get());
 
         platform->motion_controller = nullptr;
         platform->region.reset();
@@ -330,7 +330,7 @@ namespace saucer
 #endif
 
         gtk_window_set_decorated(platform->window.get(), decorated);
-        gtk_widget_set_visible(GTK_WIDGET(platform->header), visible);
+        gtk_widget_set_visible(GTK_WIDGET(platform->header.get()), visible);
     }
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)

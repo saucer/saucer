@@ -51,11 +51,11 @@ namespace saucer
         std::optional<decoration> prev_decoration;
 
       public:
-        GtkWidget *header;
-        GtkOverlay *content;
+        utils::g_widget_ptr<GtkWidget> header;
+        utils::g_widget_ptr<GtkOverlay> content;
 
       public:
-        GtkEventController *motion_controller;
+        utils::g_widget_ptr<GtkEventController> motion_controller;
         utils::handle<cairo_region_t *, cairo_region_destroy> region;
 
       public:

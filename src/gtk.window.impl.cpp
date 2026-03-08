@@ -191,12 +191,12 @@ namespace saucer
 
     void native::add_widget(GtkWidget *widget) const
     {
-        gtk_overlay_add_overlay(content, widget);
+        gtk_overlay_add_overlay(content.get(), widget);
     }
 
     void native::remove_widget(GtkWidget *widget) const
     {
-        gtk_overlay_remove_overlay(content, widget);
+        gtk_overlay_remove_overlay(content.get(), widget);
     }
 
     void native::track(impl *self) const
@@ -294,8 +294,8 @@ namespace saucer
             gdk_surface_set_input_region(surface, self->platform->region.get());
         };
 
-        utils::connect(motion_controller, "motion", +callback, self);
-        gtk_widget_add_controller(GTK_WIDGET(self->platform->window.get()), motion_controller);
+        utils::connect(motion_controller.get(), "motion", +callback, self);
+        gtk_widget_add_controller(GTK_WIDGET(self->platform->window.get()), motion_controller.get());
     }
 
     void native::update_decorations(impl *self) const
@@ -316,10 +316,10 @@ namespace saucer
 
         auto fullscreen = [](void *, GParamSpec *, impl *self)
         {
-            gtk_widget_set_visible(GTK_WIDGET(self->platform->header), !self->fullscreen());
+            gtk_widget_set_visible(GTK_WIDGET(self->platform->header.get()), !self->fullscreen());
         };
 
-        utils::connect(header, "notify::visible", +decorated, self);
+        utils::connect(header.get(), "notify::visible", +decorated, self);
         utils::connect(window.get(), "notify::decorated", +decorated, self);
         utils::connect(window.get(), "notify::fullscreened", +fullscreen, self);
     }
