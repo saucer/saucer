@@ -174,7 +174,7 @@ namespace saucer
 
     bounds impl::bounds() const
     {
-        auto [width, height] = window->size();
+        auto [width, height] = window->native<false>()->platform->offset<offset::add>(window->size());
         auto *const widget   = GTK_WIDGET(platform->web_view);
 
         const auto x = gtk_widget_get_margin_start(widget);
