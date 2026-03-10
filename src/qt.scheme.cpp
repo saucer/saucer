@@ -1,15 +1,39 @@
 #include "qt.scheme.impl.hpp"
 
+#include "error.impl.hpp"
 #include "qt.url.impl.hpp"
 
 #include <ranges>
 
 #include <QMap>
-#include <QBuffer>
-#include <QIODevice>
+#include <QByteArray>
 
 namespace saucer::scheme
 {
+    struct writer
+    {
+        std::shared_ptr<stash_stream::native> platform;
+
+      public:
+        bool operator()(stash::span);
+    };
+
+    bool writer::operator()(stash::span data)
+    {
+        platform->device->append(data);
+        return true;
+    }
+
+    result<stream> response::stream()
+    {
+        auto rtn         = stash(std::make_unique<stash_stream>());
+        auto *const impl = static_cast<stash_stream *>(rtn.native<false>());
+
+        return scheme::stream{
+            .stash = std::move(rtn),
+            .write = writer{impl->platform},
+        };
+    }
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::request(const request &other) : request(*other.m_impl) {}
@@ -49,97 +73,5 @@ namespace saucer::scheme
         return headers                            //
                | std::views::transform(transform) //
                | std::ranges::to<std::map<std::string, std::string>>();
-    }
-
-    handler::handler(scheme::resolver resolver) : resolver(std::move(resolver)) {}
-
-    handler::handler(handler &&other) noexcept : resolver(std::move(other.resolver)) {}
-
-    void handler::requestStarted(QWebEngineUrlRequestJob *raw)
-    {
-        if (!resolver)
-        {
-            return;
-        }
-
-        auto request = std::make_shared<lockpp::lock<QWebEngineUrlRequestJob *>>(raw);
-        auto content = QByteArray{};
-
-        auto *const body = raw->requestBody();
-
-        if (body && body->open(QIODevice::OpenModeFlag::ReadOnly))
-        {
-            content = body->readAll();
-        }
-
-        auto resolve = [request](const scheme::response &response)
-        {
-            const auto req = request->write();
-
-            if (!req.value())
-            {
-                return;
-            }
-
-            auto to_array = [](auto &item)
-            {
-                return std::make_pair(QByteArray::fromStdString(item.first), QByteArray::fromStdString(item.second));
-            };
-
-            const auto headers   = std::views::transform(response.headers, to_array);
-            const auto converted = QMultiMap<QByteArray, QByteArray>{{headers.begin(), headers.end()}};
-
-            req.value()->setAdditionalResponseHeaders(converted);
-
-            const auto data = response.data;
-            auto *buffer    = new QBuffer{};
-
-            buffer->open(QIODevice::WriteOnly);
-            buffer->write(reinterpret_cast<const char *>(data.data()), static_cast<std::int64_t>(data.size()));
-            buffer->close();
-
-            connect(req.value(), &QObject::destroyed, buffer, &QObject::deleteLater);
-            req.value()->reply(QString::fromStdString(response.mime).toUtf8(), buffer);
-        };
-
-        auto reject = [request](const scheme::error &error)
-        {
-            const auto req = request->write();
-
-            if (!req.value())
-            {
-                return;
-            }
-
-            QWebEngineUrlRequestJob::Error err{};
-
-            switch (error)
-            {
-                using enum scheme::error;
-                using enum QWebEngineUrlRequestJob::Error;
-
-            case not_found:
-                err = UrlNotFound;
-                break;
-            case invalid:
-                err = UrlInvalid;
-                break;
-            case denied:
-                err = RequestDenied;
-                break;
-            case failed:
-                err = RequestFailed;
-                break;
-            }
-
-            req.value()->fail(err);
-        };
-
-        auto executor = scheme::executor{std::move(resolve), std::move(reject)};
-        auto req      = scheme::request{{.request = request, .body = std::move(content)}};
-
-        connect(raw, &QObject::destroyed, [request]() { request->assign(nullptr); });
-
-        return resolver(std::move(req), std::move(executor));
     }
 } // namespace saucer::scheme

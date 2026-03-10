@@ -72,9 +72,10 @@ namespace saucer
 
     result<icon> icon::from(const stash &ico)
     {
-        QPixmap rtn{};
+        auto rtn        = QPixmap{};
+        const auto data = ico.data();
 
-        if (!rtn.loadFromData(ico.data(), ico.size()))
+        if (!rtn.loadFromData(data.data(), data.size()))
         {
             return err(std::error_code{});
         }

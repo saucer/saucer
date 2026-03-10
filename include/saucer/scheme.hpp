@@ -23,7 +23,7 @@ namespace saucer::scheme
     struct stream
     {
         saucer::stash stash;
-        std::function<bool(saucer::stash::span)> write;
+        std::function<bool(stash::span)> write;
     };
 
     struct response

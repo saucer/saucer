@@ -1,6 +1,7 @@
 #include "smartview.hpp"
 
 #include "webview.impl.hpp"
+#include "utils/overload.hpp"
 
 #include "lease.hpp"
 #include "scripts.hpp"
