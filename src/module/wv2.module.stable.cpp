@@ -5,6 +5,7 @@
 #include "win32.window.impl.hpp"
 
 #include "wv2.url.impl.hpp"
+#include "wv2.scheme.impl.hpp"
 #include "wv2.webview.impl.hpp"
 #include "wv2.permission.impl.hpp"
 
@@ -44,5 +45,16 @@ namespace saucer
     natives<icon, true> icon::native<true>() const
     {
         return {.icon = m_impl->bitmap.get()};
+    }
+
+    template <>
+    natives<stash, true> stash::native<true>() const
+    {
+        if (m_impl->type() != impl::id_of<scheme::stash_stream>())
+        {
+            return {};
+        }
+
+        return {.stream = static_cast<scheme::stash_stream *>(m_impl.get())->platform->stream.Get()};
     }
 } // namespace saucer

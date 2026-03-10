@@ -34,6 +34,7 @@ namespace saucer::scheme
             .write = writer{impl->platform},
         };
     }
+
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::request(const request &other) : request(*other.m_impl) {}

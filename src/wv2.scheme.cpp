@@ -4,6 +4,30 @@
 
 namespace saucer::scheme
 {
+    struct writer
+    {
+        std::shared_ptr<stash_stream::native> platform;
+
+      public:
+        bool operator()(stash::span) const;
+    };
+
+    bool writer::operator()(stash::span data) const
+    {
+        return platform->stream->append(data);
+    }
+
+    result<stream> response::stream()
+    {
+        auto rtn         = stash(std::make_unique<stash_stream>());
+        auto *const impl = static_cast<stash_stream *>(rtn.native<false>());
+
+        return scheme::stream{
+            .stash = std::move(rtn),
+            .write = writer{impl->platform},
+        };
+    }
+
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::request(const request &other) : request(*other.m_impl) {}

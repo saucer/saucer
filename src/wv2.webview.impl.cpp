@@ -4,9 +4,11 @@
 #include "win32.app.impl.hpp"
 #include "win32.icon.impl.hpp"
 
-#include "wv2.scheme.impl.hpp"
 #include "wv2.permission.impl.hpp"
 #include "wv2.navigation.impl.hpp"
+
+#include "wv2.scheme.impl.hpp"
+#include "modules/stable/webview2.hpp"
 
 #include <cassert>
 
@@ -404,6 +406,20 @@ namespace saucer
         return S_OK;
     }
 
+    ComPtr<IStream> stream_of(const stash &stash)
+    {
+        if (auto *const stream = stash.native().stream; stream)
+        {
+            return stream;
+        }
+
+        const auto data = stash.data();
+        const auto size = static_cast<const UINT>(data.size());
+        const auto *raw = reinterpret_cast<const BYTE *>(data.data());
+
+        return SHCreateMemStream(raw, size);
+    }
+
     HRESULT native::scheme_handler(impl *self, const scheme_options &opts)
     {
         auto &schemes = self->platform->schemes;
@@ -437,10 +453,7 @@ namespace saucer
 
         auto resolve = [environment, deferral, request = opts.raw](const scheme::response &response)
         {
-            const auto *raw = reinterpret_cast<const BYTE *>(response.data.data());
-            const auto size = static_cast<const UINT>(response.data.size());
-
-            ComPtr<IStream> buffer            = SHCreateMemStream(raw, size);
+            const auto stream                 = stream_of(response.data);
             std::vector<std::wstring> headers = {std::format(L"Content-Type: {}", utils::widen(response.mime))};
 
             for (const auto &[name, value] : response.headers)
@@ -451,7 +464,7 @@ namespace saucer
             const auto combined = headers | std::views::join_with('\n') | std::ranges::to<std::wstring>();
 
             ComPtr<ICoreWebView2WebResourceResponse> result;
-            environment->CreateWebResourceResponse(buffer.Get(), response.status, L"OK", combined.c_str(), &result);
+            environment->CreateWebResourceResponse(stream.Get(), response.status, L"OK", combined.c_str(), &result);
 
             request->put_Response(result.Get());
             deferral->Complete();

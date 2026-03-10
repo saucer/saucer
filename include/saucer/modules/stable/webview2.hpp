@@ -51,4 +51,10 @@ namespace saucer
     {
         Gdiplus::Bitmap *icon;
     };
+
+    template <>
+    struct stable_natives<stash>
+    {
+        IStream *stream;
+    };
 } // namespace saucer

@@ -79,8 +79,10 @@ namespace saucer
 
     result<icon> icon::from(const stash &ico)
     {
-        ComPtr<IStream> data = SHCreateMemStream(ico.data(), static_cast<DWORD>(ico.size()));
-        auto bitmap          = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromStream(data.Get())};
+        const auto data   = ico.data();
+        const auto stream = ComPtr<IStream>{SHCreateMemStream(data.data(), static_cast<DWORD>(data.size()))};
+
+        auto bitmap = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromStream(stream.Get())};
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {
