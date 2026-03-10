@@ -65,8 +65,10 @@ namespace saucer
 
     result<icon> icon::from(const stash &ico)
     {
+        const auto data  = ico.data();
+        const auto bytes = utils::g_bytes_ptr{g_bytes_new(data.data(), data.size())};
+
         auto error          = utils::g_error_ptr{};
-        const auto bytes    = utils::g_bytes_ptr{g_bytes_new(ico.data(), ico.size())};
         auto *const texture = gdk_texture_new_from_bytes(bytes.get(), &error.reset());
 
         if (!texture)

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "url.hpp"
+#include "stash.hpp"
 #include "executor.hpp"
-#include "stash/stash.hpp"
 
 #include <memory>
 #include <cstdint>
@@ -20,6 +20,12 @@ namespace saucer::scheme
         failed    = -1,
     };
 
+    struct stream
+    {
+        saucer::stash stash;
+        std::function<bool(saucer::stash::span)> write;
+    };
+
     struct response
     {
         stash data;
@@ -28,6 +34,9 @@ namespace saucer::scheme
 
       public:
         int status{200};
+
+      public:
+        [[nodiscard]] static result<scheme::stream> stream();
     };
 
     struct request

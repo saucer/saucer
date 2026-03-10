@@ -1,5 +1,9 @@
 #include "app.hpp"
+#include "icon.hpp"
 #include "window.hpp"
+
+#include "url.hpp"
+#include "stash.hpp"
 #include "webview.hpp"
 
 namespace saucer
@@ -36,6 +40,12 @@ namespace saucer
 
     template <>
     natives<icon, false> icon::native<false>() const
+    {
+        return m_impl.get();
+    }
+
+    template <>
+    natives<stash, false> stash::native<false>() const
     {
         return m_impl.get();
     }

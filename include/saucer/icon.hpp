@@ -2,8 +2,8 @@
 
 #include "modules/module.hpp"
 
+#include "stash.hpp"
 #include "error/error.hpp"
-#include "stash/stash.hpp"
 
 #include <memory>
 #include <filesystem>
