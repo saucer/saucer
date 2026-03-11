@@ -28,6 +28,7 @@ namespace saucer
         platform->header = GTK_WIDGET(adw_header_bar_new());
 #else
         platform->header = GTK_WIDGET(gtk_header_bar_new());
+        g_object_ref_sink(platform->header.get()); // We will only use this when needed, let's not keep it potentially floating
 #endif
 
         auto *const box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
@@ -41,7 +42,7 @@ namespace saucer
         adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(box));
 #else
         gtk_window_set_child(GTK_WINDOW(platform->window.get()), GTK_WIDGET(box));
-        gtk_css_provider_load_from_string(platform->style.get(), "webview { border-radius: 0; }");
+        gtk_css_provider_load_from_string(platform->style.get(), "window.background { border-radius: 0; }");
 #endif
 
         gtk_window_set_hide_on_close(platform->window.get(), true);
@@ -326,7 +327,7 @@ namespace saucer
         const auto visible   = decoration == decoration::full;
 
 #ifndef SAUCER_ADWAITA
-        gtk_window_set_titlebar(platform->window.get(), visible ? nullptr : platform->header);
+        gtk_window_set_titlebar(platform->window.get(), visible ? nullptr : platform->header.get());
 #endif
 
         gtk_window_set_decorated(platform->window.get(), decorated);
