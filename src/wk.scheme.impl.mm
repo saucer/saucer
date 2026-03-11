@@ -75,10 +75,13 @@ void stash_stream::native::attach(deferred_task &&deferred)
     {
         const utils::autorelease_guard guard{};
 
-        auto tasks = self->m_tasks.write();
-        auto task  = tasks->find(handle);
+        auto task = [&]
+        {
+            auto locked = self->m_tasks.write();
+            locked->extract(handle)
+        }();
 
-        if (task == tasks->end())
+        if (!task)
         {
             return;
         }
@@ -91,8 +94,7 @@ void stash_stream::native::attach(deferred_task &&deferred)
             [headers setObject:[NSString stringWithUTF8String:value.c_str()] forKey:[NSString stringWithUTF8String:key.c_str()]];
         }
 
-        auto deferred = deferred_task{std::move(task->second)};
-        tasks->erase(task);
+        auto deferred = deferred_task{std::move(task.mapped())};
 
         const auto stash  = response.data;
         const auto stream = stash.native<false>()->type() == stash::impl::id_of<stash_stream>();
