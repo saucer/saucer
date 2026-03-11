@@ -78,7 +78,7 @@ void stash_stream::native::attach(deferred_task &&deferred)
         auto task = [&]
         {
             auto locked = self->m_tasks.write();
-            locked->extract(handle)
+            return locked->extract(handle);
         }();
 
         if (!task)
