@@ -3,6 +3,8 @@
 #include "scripts.hpp"
 #include "request.hpp"
 
+#include "utils/overload.hpp"
+
 namespace saucer
 {
     using impl = webview::impl;

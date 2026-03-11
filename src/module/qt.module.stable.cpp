@@ -5,6 +5,7 @@
 #include "qt.window.impl.hpp"
 
 #include "qt.url.impl.hpp"
+#include "qt.scheme.impl.hpp"
 #include "qt.webview.impl.hpp"
 #include "qt.permission.impl.hpp"
 
@@ -44,5 +45,16 @@ namespace saucer
     natives<icon, true> icon::native<true>() const
     {
         return {.icon = m_impl->icon};
+    }
+
+    template <>
+    natives<stash, true> stash::native<true>() const
+    {
+        if (m_impl->type() != impl::id_of<scheme::stash_stream>())
+        {
+            return {};
+        }
+
+        return {.device = &static_cast<scheme::stash_stream *>(m_impl.get())->platform->device};
     }
 } // namespace saucer

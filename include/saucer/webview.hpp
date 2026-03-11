@@ -7,10 +7,9 @@
 #include "utils/cstring.hpp"
 #include "utils/required.hpp"
 
-#include "stash/stash.hpp"
-
 #include "url.hpp"
 #include "icon.hpp"
+#include "stash.hpp"
 #include "script.hpp"
 #include "permission.hpp"
 

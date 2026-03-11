@@ -2,6 +2,7 @@
 
 #include <saucer/scheme.hpp>
 
+#include "stash.impl.hpp"
 #include "cocoa.utils.hpp"
 
 #import <WebKit/WebKit.h>
@@ -14,6 +15,50 @@ namespace saucer::scheme
     struct request::impl
     {
         task_ref task;
+    };
+
+    struct deferred_task
+    {
+        deferred_task(task_ref);
+
+      public:
+        deferred_task(const deferred_task &)     = delete;
+        deferred_task(deferred_task &&) noexcept = default;
+
+      public:
+        ~deferred_task();
+
+      public:
+        task_ref task;
+    };
+
+    struct stash_stream : stash::impl
+    {
+        struct native;
+
+      public:
+        std::shared_ptr<native> platform;
+
+      public:
+        stash_stream();
+
+      public:
+        [[nodiscard]] stash::span data() const override;
+
+      public:
+        [[nodiscard]] std::size_t type() const override;
+        [[nodiscard]] std::unique_ptr<impl> clone() const override;
+    };
+
+    struct stash_stream::native
+    {
+        using variant = std::variant<stash::vec, deferred_task>;
+
+      public:
+        lockpp::lock<variant> data;
+
+      public:
+        void attach(deferred_task &&);
     };
 } // namespace saucer::scheme
 

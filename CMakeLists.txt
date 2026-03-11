@@ -228,6 +228,9 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE
     "src/error.cpp"
 
+    "src/stash.cpp"
+    "src/stash.impl.cpp"
+
     "src/request.cpp"
     "src/module/unstable.cpp"
 
@@ -343,11 +346,12 @@ if (saucer_backend STREQUAL "WebKitGtk")
   find_package(PkgConfig REQUIRED)
 
   pkg_check_modules(gtk        REQUIRED gtk4>=4.12)
+  pkg_check_modules(gunix      REQUIRED IMPORTED_TARGET gio-unix-2.0)
   pkg_check_modules(libadwaita REQUIRED IMPORTED_TARGET libadwaita-1)
   pkg_check_modules(json-glib  REQUIRED IMPORTED_TARGET json-glib-1.0)
   pkg_check_modules(webkitgtk  REQUIRED IMPORTED_TARGET webkitgtk-6.0)
 
-  saucer_link_libraries(${PROJECT_NAME} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib)
+  saucer_link_libraries(${PROJECT_NAME} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib PkgConfig::gunix)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")

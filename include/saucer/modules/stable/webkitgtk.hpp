@@ -46,4 +46,10 @@ namespace saucer
     {
         GdkTexture *icon;
     };
+
+    template <>
+    struct stable_natives<stash>
+    {
+        GInputStream *stream;
+    };
 } // namespace saucer

@@ -37,16 +37,17 @@ namespace saucer
         return !m_impl->icon.get().isValid;
     }
 
-    stash icon::data() const
+    stash::vec icon::data() const
     {
         const utils::autorelease_guard guard{};
 
         auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
         auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
-        auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
 
-        const auto *raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
-        return stash::from({raw, raw + data.length});
+        auto *const data      = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+        const auto *const raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
+
+        return {raw, raw + data.length};
     }
 
     void icon::save(const fs::path &path) const
@@ -63,12 +64,12 @@ namespace saucer
         [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:0 error:&error];
     }
 
-    result<icon> icon::from(const stash &ico)
+    result<icon> icon::from(stash::span ico)
     {
         const utils::autorelease_guard guard{};
 
-        auto *const data  = [NSData dataWithBytes:ico.data() length:ico.size()];
-        auto *const image = [[NSImage alloc] initWithData:data];
+        auto *const bytes = [NSData dataWithBytes:ico.data() length:ico.size()];
+        auto *const image = [[NSImage alloc] initWithData:bytes];
 
         if (!image)
         {

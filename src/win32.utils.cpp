@@ -123,6 +123,20 @@ namespace saucer
         return out;
     }
 
+    stash::vec utils::read(IStream *stream)
+    {
+        auto stats = STATSTG{};
+        auto data  = stash::vec{};
+
+        stream->Stat(&stats, STATFLAG_DEFAULT);
+        data.resize(stats.cbSize.QuadPart);
+
+        ULONG read{};
+        stream->Read(data.data(), static_cast<ULONG>(data.size()), &read);
+
+        return data;
+    }
+
     std::vector<HWND> utils::child_windows(HWND parent)
     {
         auto *child = GetWindow(parent, GW_CHILD);
@@ -134,20 +148,6 @@ namespace saucer
         }
 
         return rtn;
-    }
-
-    std::vector<std::uint8_t> utils::read(IStream *stream)
-    {
-        STATSTG stats;
-        stream->Stat(&stats, STATFLAG_DEFAULT);
-
-        std::vector<std::uint8_t> data;
-        data.resize(stats.cbSize.QuadPart);
-
-        ULONG read{};
-        stream->Read(data.data(), static_cast<ULONG>(data.size()), &read);
-
-        return data;
     }
 
     result<utils::dispatch_controller> utils::create_dispatch_controller()

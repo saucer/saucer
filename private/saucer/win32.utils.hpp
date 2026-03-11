@@ -1,15 +1,15 @@
 #pragma once
 
+#include <saucer/stash.hpp>
 #include <saucer/error/error.hpp>
 
 #include "handle.hpp"
 
-#include <string>
-#include <cstdint>
-
 #include <span>
 #include <array>
-#include <vector>
+
+#include <string>
+#include <cstdint>
 
 #include <windows.h>
 
@@ -43,8 +43,8 @@ namespace saucer::utils
     [[nodiscard]] std::wstring widen(std::string_view);
     [[nodiscard]] std::string narrow(std::wstring_view);
 
+    [[nodiscard]] stash::vec read(IStream *);
     [[nodiscard]] std::vector<HWND> child_windows(HWND);
-    [[nodiscard]] std::vector<std::uint8_t> read(IStream *);
 
     [[nodiscard]] result<dispatch_controller> create_dispatch_controller();
     [[nodiscard]] result<window_target> create_window_target(const compositor &, HWND);
