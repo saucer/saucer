@@ -47,6 +47,7 @@ suite<"regression"> regression_suite = []
         webview.set_url("https://codeberg.org/saucer/saucer");
 
         saucer::tests::wait_for([&order] { return order.size() == 4; }, duration);
+        expect(eq(order.size(), 4));
 
         expect(eq(order.at(0), 1));
         expect(eq(order.at(1), 2));
