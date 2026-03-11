@@ -217,7 +217,7 @@ namespace saucer
         return rtn;
     }
 
-    result<std::wstring> utils::hash(stash::span value)
+    result<std::wstring> utils::hash(std::span<std::uint8_t> value)
     {
         static constexpr auto size = 32;
 

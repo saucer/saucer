@@ -5,7 +5,9 @@
 
 #include "handle.hpp"
 
+#include <span>
 #include <array>
+
 #include <string>
 #include <cstdint>
 
@@ -65,5 +67,5 @@ namespace saucer::utils
     [[nodiscard]] result<dispatch_controller> create_dispatch_controller();
     [[nodiscard]] result<window_target> create_window_target(const compositor &, HWND);
 
-    [[nodiscard]] result<std::wstring> hash(stash::span);
+    [[nodiscard]] result<std::wstring> hash(std::span<std::uint8_t>);
 } // namespace saucer::utils
