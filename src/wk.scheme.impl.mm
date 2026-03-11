@@ -5,6 +5,32 @@ using namespace saucer::scheme;
 
 deferred_task::deferred_task(task_ref task) : task(std::move(task)) {}
 
+// Instead of building complex logic where we track the currently active scheme tasks
+// and notify them that they are being stopped from `stopURLSchemeTask`, we simply catch the thrown `NSInternalInconsistencyException` and
+// release the currently held task. This saves us from writing a convoluted thread-safe cancelling mechanism which would also required the
+// deferred_task to cleanup after itself inside of the SchemeHandlers active task map.
+
+template <typename T>
+bool deferred_task::invoke(T &&callable)
+{
+    @try
+    {
+        std::forward<T>(callable)();
+    }
+    @catch (NSException *ex)
+    {
+        if (![ex.name isEqualToString:NSInternalInconsistencyException])
+        {
+            @throw;
+        }
+
+        task.reset();
+        return false;
+    }
+
+    return true;
+}
+
 deferred_task::~deferred_task()
 {
     if (!task)
@@ -12,7 +38,17 @@ deferred_task::~deferred_task()
         return;
     }
 
-    [task.get() didFinish];
+    invoke([&] { [task.get() didFinish]; });
+}
+
+bool deferred_task::append(stash::span data)
+{
+    if (!task)
+    {
+        return false;
+    }
+
+    return invoke([&] { [task.get() didReceiveData:[NSData dataWithBytes:data.data() length:data.size()]]; });
 }
 
 stash_stream::stash_stream() : platform(std::make_shared<native>()) {}
@@ -38,7 +74,7 @@ void stash_stream::native::attach(deferred_task &&deferred)
 
     if (const auto data = std::move(std::get<0>(*locked)); !data.empty())
     {
-        [deferred.task.get() didReceiveData:[NSData dataWithBytes:data.data() length:data.size()]];
+        deferred.append(data);
     }
 
     locked->emplace<1>(std::move(deferred));
@@ -75,13 +111,13 @@ void stash_stream::native::attach(deferred_task &&deferred)
     {
         const utils::autorelease_guard guard{};
 
-        auto task = [&]
+        auto extracted = [&]
         {
             auto locked = self->m_tasks.write();
             return locked->extract(handle);
         }();
 
-        if (!task)
+        if (!extracted)
         {
             return;
         }
@@ -94,7 +130,7 @@ void stash_stream::native::attach(deferred_task &&deferred)
             [headers setObject:[NSString stringWithUTF8String:value.c_str()] forKey:[NSString stringWithUTF8String:key.c_str()]];
         }
 
-        auto deferred = deferred_task{std::move(task.mapped())};
+        auto deferred = deferred_task{std::move(extracted.mapped())};
 
         const auto stash  = response.data;
         const auto stream = stash.native<false>()->type() == stash::impl::id_of<stash_stream>();
@@ -121,26 +157,27 @@ void stash_stream::native::attach(deferred_task &&deferred)
             return static_cast<stash_stream *>(stash.native<false>())->platform->attach(std::move(deferred));
         }
 
-        [deferred.task.get() didReceiveData:[NSData dataWithBytes:data.data() length:size]];
+        deferred.append(data);
     };
 
     auto reject = [self, handle](const scheme::error &error)
     {
         const utils::autorelease_guard guard{};
 
-        auto tasks = self->m_tasks.write();
-        auto task  = tasks->find(handle);
+        auto task = [&]
+        {
+            auto locked = self->m_tasks.write();
+            return locked->extract(handle);
+        }();
 
-        if (task == tasks->end())
+        if (!task)
         {
             return;
         }
 
-        [task->second.get() didFailWithError:[NSError errorWithDomain:NSURLErrorDomain //
-                                                                 code:std::to_underlying(error)
-                                                             userInfo:nil]];
-
-        tasks->erase(task);
+        [task.mapped().get() didFailWithError:[NSError errorWithDomain:NSURLErrorDomain //
+                                                                  code:std::to_underlying(error)
+                                                              userInfo:nil]];
     };
 
     auto req      = scheme::request{{std::move(ref)}};
@@ -152,8 +189,7 @@ void stash_stream::native::attach(deferred_task &&deferred)
 - (void)webView:(nonnull WKWebView *)webview stopURLSchemeTask:(nonnull id<WKURLSchemeTask>)task
 {
     const saucer::utils::autorelease_guard guard{};
-
-    auto tasks = m_tasks.write();
-    tasks->erase(task.hash);
+    auto locked = m_tasks.write();
+    locked->erase(task.hash);
 }
 @end

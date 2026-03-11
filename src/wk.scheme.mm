@@ -17,14 +17,16 @@ namespace saucer::scheme
     {
         auto locked = platform->data.write();
 
-        std::visit(
-            overload{
-                [&](stash::vec &vec) { vec.insert_range(vec.end(), data); },
-                [&](deferred_task &def) { [def.task.get() didReceiveData:[NSData dataWithBytes:data.data() length:data.size()]]; },
+        auto visitor = overload{
+            [&](stash::vec &vec)
+            {
+                vec.insert_range(vec.end(), data);
+                return true;
             },
-            *locked);
+            [&](deferred_task &def) { return def.append(data); },
+        };
 
-        return true;
+        return std::visit(visitor, *locked);
     }
 
     result<stream> response::stream()

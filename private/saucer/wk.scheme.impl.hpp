@@ -19,17 +19,24 @@ namespace saucer::scheme
 
     struct deferred_task
     {
+        task_ref task;
+
+      public:
         deferred_task(task_ref);
 
       public:
         deferred_task(const deferred_task &)     = delete;
         deferred_task(deferred_task &&) noexcept = default;
 
+      private:
+        template <typename T>
+        bool invoke(T &&);
+
       public:
         ~deferred_task();
 
       public:
-        task_ref task;
+        bool append(stash::span);
     };
 
     struct stash_stream : stash::impl
