@@ -45,4 +45,10 @@ namespace saucer
     {
         return {.icon = m_impl->icon.get()};
     }
+
+    template <>
+    natives<stash, true> stash::native<true>() const
+    {
+        return {};
+    }
 } // namespace saucer
