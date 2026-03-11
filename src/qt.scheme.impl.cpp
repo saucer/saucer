@@ -8,7 +8,7 @@
 
 namespace saucer::scheme
 {
-    stash_stream::stash_stream() : platform(std::make_shared<native>(std::make_unique<stream_device>())) {}
+    stash_stream::stash_stream() : platform(std::make_shared<native>()) {}
 
     std::size_t stash_stream::type() const
     {

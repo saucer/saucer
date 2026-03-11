@@ -20,7 +20,7 @@ namespace saucer::scheme
 
     bool writer::operator()(stash::span data)
     {
-        platform->device->append(data);
+        platform->device.append(data);
         return true;
     }
 

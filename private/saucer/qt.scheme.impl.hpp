@@ -53,7 +53,7 @@ namespace saucer::scheme
 
     struct stash_stream::native
     {
-        std::unique_ptr<stream_device> device;
+        stream_device device;
     };
 
     class handler : public QWebEngineUrlSchemeHandler

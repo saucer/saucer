@@ -55,6 +55,6 @@ namespace saucer
             return {};
         }
 
-        return {.device = static_cast<scheme::stash_stream *>(m_impl.get())->platform->device.get()};
+        return {.device = &static_cast<scheme::stash_stream *>(m_impl.get())->platform->device};
     }
 } // namespace saucer
