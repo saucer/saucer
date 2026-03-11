@@ -47,7 +47,7 @@ namespace saucer::scheme
             return err(static_cast<std::errc>(errno));
         }
 
-        auto rtn         = stash(std::make_unique<stash_stream>(fd[0], fd[1]));
+        auto rtn         = stash{std::make_unique<stash_stream>(fd[0], fd[1])};
         auto *const impl = static_cast<stash_stream *>(rtn.native<false>());
 
         return scheme::stream{

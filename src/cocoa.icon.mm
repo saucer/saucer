@@ -43,9 +43,10 @@ namespace saucer
 
         auto *const tiff = [m_impl->icon.get() TIFFRepresentation];
         auto *const rep  = [NSBitmapImageRep imageRepWithData:tiff];
-        auto *const data = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
 
-        const auto *raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
+        auto *const data      = [rep representationUsingType:NSBitmapImageFileTypePNG properties:[NSDictionary dictionary]];
+        const auto *const raw = reinterpret_cast<const std::uint8_t *>(data.bytes);
+
         return stash::from({raw, raw + data.length});
     }
 
@@ -67,8 +68,9 @@ namespace saucer
     {
         const utils::autorelease_guard guard{};
 
-        auto *const data  = [NSData dataWithBytes:ico.data() length:ico.size()];
-        auto *const image = [[NSImage alloc] initWithData:data];
+        const auto data   = ico.data();
+        auto *const bytes = [NSData dataWithBytes:data.data() length:data.size()];
+        auto *const image = [[NSImage alloc] initWithData:bytes];
 
         if (!image)
         {

@@ -19,7 +19,7 @@ namespace saucer::scheme
 
     result<stream> response::stream()
     {
-        auto rtn         = stash(std::make_unique<stash_stream>());
+        auto rtn         = stash{std::make_unique<stash_stream>()};
         auto *const impl = static_cast<stash_stream *>(rtn.native<false>());
 
         return scheme::stream{
