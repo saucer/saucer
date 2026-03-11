@@ -214,7 +214,7 @@ saucer_include_directories(${PROJECT_NAME} "private")
 # +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 6.4.0")
+  set(SERIALIZER_DEP "glaze 7.2.0")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
