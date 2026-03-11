@@ -7,23 +7,20 @@ deferred_task::deferred_task(task_ref task) : task(std::move(task)) {}
 
 // Instead of building complex logic where we track the currently active scheme tasks
 // and notify them that they are being stopped from `stopURLSchemeTask`, we simply catch the thrown `NSInternalInconsistencyException` and
-// release the currently held task. This saves us from writing a convoluted thread-safe cancelling mechanism which would also required the
+// release the currently held task. This saves us from writing a convoluted thread-safe cancelling mechanism which would also require the
 // deferred_task to cleanup after itself inside of the SchemeHandlers active task map.
 
 template <typename T>
 bool deferred_task::invoke(T &&callable)
 {
+    const saucer::utils::autorelease_guard guard{};
+
     @try
     {
         std::forward<T>(callable)();
     }
-    @catch (NSException *ex)
+    @catch (NSException *)
     {
-        if (![ex.name isEqualToString:NSInternalInconsistencyException])
-        {
-            @throw;
-        }
-
         task.reset();
         return false;
     }
