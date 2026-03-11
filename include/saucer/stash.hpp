@@ -40,6 +40,7 @@ namespace saucer
 
       public:
         [[nodiscard]] span data() const;
+        [[nodiscard]] stash duplicate() const;
         [[nodiscard]] std::string_view str() const;
 
       public:

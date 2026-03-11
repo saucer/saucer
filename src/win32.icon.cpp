@@ -43,18 +43,18 @@ namespace saucer
         return !m_impl->bitmap || m_impl->bitmap->GetLastStatus() != Gdiplus::Status::Ok;
     }
 
-    stash icon::data() const
+    stash::vec icon::data() const
     {
         if (!m_impl->bitmap)
         {
-            return stash::empty();
+            return {};
         }
 
         ComPtr<IStream> stream;
 
         if (!SUCCEEDED(CreateStreamOnHGlobal(nullptr, true, &stream)))
         {
-            return stash::empty();
+            return {};
         }
 
         m_impl->bitmap->Save(stream.Get(), &png_encoder);
@@ -64,7 +64,7 @@ namespace saucer
 
         stream->Seek(pos, STREAM_SEEK_SET, nullptr);
 
-        return stash::from(utils::read(stream.Get()));
+        return utils::read(stream.Get());
     }
 
     void icon::save(const fs::path &path) const
@@ -77,12 +77,10 @@ namespace saucer
         m_impl->bitmap->Save(path.wstring().c_str(), &png_encoder);
     }
 
-    result<icon> icon::from(const stash &ico)
+    result<icon> icon::from(stash::span ico)
     {
-        const auto data   = ico.data();
-        const auto stream = ComPtr<IStream>{SHCreateMemStream(data.data(), static_cast<DWORD>(data.size()))};
-
-        auto bitmap = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromStream(stream.Get())};
+        const auto stream = ComPtr<IStream>{SHCreateMemStream(ico.data(), static_cast<DWORD>(ico.size()))};
+        auto bitmap       = std::shared_ptr<Gdiplus::Bitmap>{Gdiplus::Bitmap::FromStream(stream.Get())};
 
         if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Status::Ok)
         {

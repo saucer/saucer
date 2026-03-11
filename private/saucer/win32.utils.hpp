@@ -1,15 +1,13 @@
 #pragma once
 
+#include <saucer/stash.hpp>
 #include <saucer/error/error.hpp>
 
 #include "handle.hpp"
 
+#include <array>
 #include <string>
 #include <cstdint>
-
-#include <span>
-#include <array>
-#include <vector>
 
 #include <windows.h>
 
@@ -62,10 +60,10 @@ namespace saucer::utils
     [[nodiscard]] std::wstring widen(std::string_view);
     [[nodiscard]] std::string narrow(std::wstring_view);
 
-    [[nodiscard]] std::vector<std::uint8_t> read(IStream *);
+    [[nodiscard]] stash::vec read(IStream *);
 
     [[nodiscard]] result<dispatch_controller> create_dispatch_controller();
     [[nodiscard]] result<window_target> create_window_target(const compositor &, HWND);
 
-    [[nodiscard]] result<std::wstring> hash(std::span<std::uint8_t>);
+    [[nodiscard]] result<std::wstring> hash(stash::span);
 } // namespace saucer::utils

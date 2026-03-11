@@ -164,12 +164,12 @@ namespace saucer
         return out;
     }
 
-    std::vector<std::uint8_t> utils::read(IStream *stream)
+    stash::vec utils::read(IStream *stream)
     {
-        STATSTG stats;
-        stream->Stat(&stats, STATFLAG_DEFAULT);
+        auto stats = STATSTG{};
+        auto data  = stash::vec{};
 
-        std::vector<std::uint8_t> data;
+        stream->Stat(&stats, STATFLAG_DEFAULT);
         data.resize(stats.cbSize.QuadPart);
 
         ULONG read{};
@@ -217,7 +217,7 @@ namespace saucer
         return rtn;
     }
 
-    result<std::wstring> utils::hash(std::span<std::uint8_t> value)
+    result<std::wstring> utils::hash(stash::span value)
     {
         static constexpr auto size = 32;
 

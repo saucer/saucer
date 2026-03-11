@@ -21,6 +21,11 @@ namespace saucer
         return m_impl->data();
     }
 
+    stash stash::duplicate() const
+    {
+        return from({std::from_range, data()});
+    }
+
     stash stash::from(std::vector<std::uint8_t> data)
     {
         return {std::make_unique<impl::owng>(std::move(data))};

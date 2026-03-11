@@ -85,7 +85,7 @@ namespace saucer::scheme
 
         static constexpr auto chunk_size = 4096;
 
-        std::vector<std::uint8_t> content;
+        auto content = stash::vec{};
         content.reserve(chunk_size);
 
         gssize read{};

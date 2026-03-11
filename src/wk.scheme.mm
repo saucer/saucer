@@ -66,7 +66,7 @@ namespace saucer::scheme
         }
 
         const auto *raw = reinterpret_cast<const std::uint8_t *>(body.bytes);
-        return stash::from({raw, raw + body.length});
+        return stash::view({raw, raw + body.length});
     }
 
     std::map<std::string, std::string> request::headers() const
