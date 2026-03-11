@@ -160,7 +160,7 @@ namespace saucer
     {
         auto *const widget = GTK_WIDGET(header.get());
 
-        if (!gtk_widget_get_parent(widget))
+        if (!!gtk_widget_is_visible(widget) || !gtk_widget_get_parent(widget))
         {
             return size;
         }
