@@ -18,10 +18,15 @@
 
 namespace saucer::utils
 {
+    using event_token         = winrt::event_token;
     using dispatch_controller = winrt::Windows::System::DispatcherQueueController;
-    using compositor          = winrt::Windows::UI::Composition::Compositor;
-    using brush               = winrt::Windows::UI::Composition::CompositionColorBrush;
-    using window_target       = winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget;
+
+    using compositor    = winrt::Windows::UI::Composition::Compositor;
+    using brush         = winrt::Windows::UI::Composition::CompositionColorBrush;
+    using window_target = winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget;
+    using color         = winrt::Windows::UI::Color;
+    using settings      = winrt::Windows::UI::ViewManagement::UISettings;
+    using color_type    = winrt::Windows::UI::ViewManagement::UIColorType;
 
     using string_handle  = utils::handle<LPWSTR, CoTaskMemFree>;
     using module_handle  = utils::handle<HMODULE, FreeLibrary>;
@@ -54,8 +59,10 @@ namespace saucer::utils
     };
 
     void set_dpi_awareness();
-    void set_immersive_dark(HWND, bool);
     void extend_frame(HWND, std::array<int, 4>);
+
+    void set_immersive_dark(HWND, bool);
+    [[nodiscard]] bool is_color_light(const color &);
 
     [[nodiscard]] OSVERSIONINFOEXW version();
 

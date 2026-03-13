@@ -11,6 +11,7 @@
 #include <cassert>
 
 #include <dwmapi.h>
+#include <winrt/windows.foundation.h>
 #include <winrt/windows.ui.viewmanagement.core.h>
 
 namespace saucer
@@ -21,8 +22,6 @@ namespace saucer
 
     result<> impl::init_platform()
     {
-        using namespace winrt::Windows::UI::ViewManagement;
-
         if (static auto once{true}; once)
         {
             native::windows_build = utils::version().dwBuildNumber;
@@ -57,11 +56,12 @@ namespace saucer
 
         platform = std::make_unique<native>();
 
-        platform->hwnd          = std::move(hwnd);
-        platform->window_target = std::move(*window_target);
-        platform->dpi           = GetDpiForWindow(platform->hwnd.get());
-        platform->background    = compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
-        platform->hook          = {platform->hwnd.get(), native::wnd_proc};
+        platform->hwnd               = std::move(hwnd);
+        platform->window_target      = std::move(*window_target);
+        platform->dpi                = GetDpiForWindow(platform->hwnd.get());
+        platform->background         = compositor.CreateColorBrush(platform->settings.GetColorValue(utils::color_type::Background));
+        platform->hook               = {platform->hwnd.get(), native::wnd_proc};
+        platform->theme_change_token = platform->settings.ColorValuesChanged([this](auto &&...) { platform->update_dark_mode(); });
 
         const auto atom = application::impl::native::ATOM_WINDOW.get();
         SetPropW(platform->hwnd.get(), MAKEINTATOM(atom), reinterpret_cast<HANDLE>(this));
@@ -73,6 +73,7 @@ namespace saucer
         platform->window_target.Root(root);
 
         set_resizable(true);
+        platform->update_dark_mode();
 
         return {};
     }
@@ -84,6 +85,7 @@ namespace saucer
             return;
         }
 
+        platform->settings.ColorValuesChanged(platform->theme_change_token);
         close();
 
         const auto atom = application::impl::native::ATOM_WINDOW.get();

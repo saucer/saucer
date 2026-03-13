@@ -2,6 +2,8 @@
 
 #include "win32.app.impl.hpp"
 
+#include <winrt/windows.ui.viewmanagement.core.h>
+
 namespace saucer
 {
     using native = window::impl::native;
@@ -93,6 +95,17 @@ namespace saucer
         }
 
         return size;
+    }
+
+    void native::update_dark_mode(const std::optional<bool> &value) const
+    {
+        using enum utils::color_type;
+
+        const auto dark = value
+                              .or_else([this] -> std::optional<bool> { return utils::is_color_light(settings.GetColorValue(Foreground)); })
+                              .value();
+
+        utils::set_immersive_dark(hwnd.get(), dark);
     }
 
     template size native::offset<mode::add>(saucer::size) const;
