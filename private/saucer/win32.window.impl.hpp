@@ -38,23 +38,25 @@ namespace saucer
         utils::window_handle hwnd;
 
       public:
-        utils::compositor compositor{nullptr};
-        utils::window_target window_target{nullptr};
-
-      public:
         UINT dpi;
         UINT prev_state;
+        window_flags flags;
 
       public:
         std::optional<decoration> prev_decoration;
         std::optional<WINDOWPLACEMENT> prev_placement;
 
       public:
-        utils::container root{nullptr};
-        utils::brush background{nullptr};
+        utils::settings settings{};
+        utils::event_token theme_change_token;
 
       public:
-        window_flags flags;
+        utils::compositor compositor{nullptr};
+        utils::window_target window_target{nullptr};
+
+      public:
+        utils::container root{nullptr};
+        utils::brush background{nullptr};
 
       public:
         utils::handle<HICON, DestroyIcon> icon;
@@ -66,6 +68,9 @@ namespace saucer
 
         template <mode>
         [[nodiscard]] saucer::size offset(saucer::size) const;
+
+      public:
+        void update_dark_mode(const std::optional<bool> & = std::nullopt) const;
 
       public:
         static inline std::size_t windows_build;

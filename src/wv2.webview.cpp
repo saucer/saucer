@@ -324,7 +324,7 @@ namespace saucer
 
     void impl::set_force_dark(bool enabled) // NOLINT(*-function-const)
     {
-        utils::set_immersive_dark(window->native<false>()->platform->hwnd.get(), enabled);
+        window->native<false>()->platform->update_dark_mode(enabled);
 
         ComPtr<ICoreWebView2Profile> profile;
 

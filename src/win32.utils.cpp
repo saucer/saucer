@@ -45,6 +45,22 @@ namespace saucer
         call_as<decltype(SetProcessDPIAware)>(func);
     }
 
+    void utils::extend_frame(HWND hwnd, std::array<int, 4> area)
+    {
+        auto dwmapi = module_handle{LoadLibraryW(L"Dwmapi.dll")};
+        auto *func  = GetProcAddress(dwmapi.get(), "DwmExtendFrameIntoClientArea");
+
+        if (!func)
+        {
+            return;
+        }
+
+        const auto &[left, right, top, bottom] = area;
+        const auto margins                     = MARGINS{left, right, top, bottom};
+
+        call_as<decltype(DwmExtendFrameIntoClientArea)>(func, hwnd, &margins);
+    }
+
     void utils::set_immersive_dark(HWND hwnd, bool enabled)
     {
         auto dwmapi = module_handle{LoadLibraryW(L"Dwmapi.dll")};
@@ -61,20 +77,10 @@ namespace saucer
         call_as<decltype(DwmSetWindowAttribute)>(func, hwnd, immersive_dark, &enable_immersive_dark, sizeof(BOOL));
     }
 
-    void utils::extend_frame(HWND hwnd, std::array<int, 4> area)
+    bool utils::is_color_light(const color &col)
     {
-        auto dwmapi = module_handle{LoadLibraryW(L"Dwmapi.dll")};
-        auto *func  = GetProcAddress(dwmapi.get(), "DwmExtendFrameIntoClientArea");
-
-        if (!func)
-        {
-            return;
-        }
-
-        const auto &[left, right, top, bottom] = area;
-        const auto margins                     = MARGINS{left, right, top, bottom};
-
-        call_as<decltype(DwmExtendFrameIntoClientArea)>(func, hwnd, &margins);
+        // Taken from: https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/ui/apply-windows-themes
+        return (((5 * col.G) + (2 * col.R) + col.B) > (8 * 128));
     }
 
     OSVERSIONINFOEXW utils::version()

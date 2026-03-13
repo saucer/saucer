@@ -11,6 +11,7 @@
 #include <cassert>
 
 #include <dwmapi.h>
+#include <winrt/windows.foundation.h>
 #include <winrt/windows.ui.viewmanagement.core.h>
 
 namespace saucer
@@ -21,7 +22,7 @@ namespace saucer
 
     result<> impl::init_platform()
     {
-        using namespace winrt::Windows::UI::ViewManagement;
+        using enum utils::color_type;
 
         if (static auto once{true}; once)
         {
@@ -57,12 +58,13 @@ namespace saucer
 
         platform = std::make_unique<native>();
 
-        platform->hwnd          = std::move(hwnd);
-        platform->compositor    = std::move(compositor);
-        platform->window_target = std::move(*window_target);
-        platform->dpi           = GetDpiForWindow(platform->hwnd.get());
-        platform->root          = platform->compositor.CreateContainerVisual();
-        platform->background    = platform->compositor.CreateColorBrush(UISettings{}.GetColorValue(UIColorType::Background));
+        platform->hwnd               = std::move(hwnd);
+        platform->compositor         = std::move(compositor);
+        platform->window_target      = std::move(*window_target);
+        platform->dpi                = GetDpiForWindow(platform->hwnd.get());
+        platform->root               = platform->compositor.CreateContainerVisual();
+        platform->background         = platform->compositor.CreateColorBrush(platform->settings.GetColorValue(Background));
+        platform->theme_change_token = platform->settings.ColorValuesChanged([this](auto &&...) { platform->update_dark_mode(); });
 
         if (!SetWindowSubclass(platform->hwnd.get(), &native::wnd_proc, reinterpret_cast<UINT_PTR>(this), 0))
         {
@@ -78,6 +80,7 @@ namespace saucer
         platform->window_target.Root(platform->root);
 
         set_resizable(true);
+        platform->update_dark_mode();
 
         return {};
     }
@@ -91,6 +94,7 @@ namespace saucer
 
         close();
 
+        platform->settings.ColorValuesChanged(platform->theme_change_token);
         RemoveWindowSubclass(platform->hwnd.get(), &native::wnd_proc, reinterpret_cast<UINT_PTR>(this));
     }
 
