@@ -8,13 +8,13 @@ function(nuget_setup OUTPUT)
 
     if (NOT EXISTS "${nuget_PATH}")
         find_program(NUGET nuget)
-    endif()
 
-    if (NUGET MATCHES "NOTFOUND")
-        file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${nuget_PATH}")
-        nuget_message(STATUS "Downloading to '${nuget_PATH}'")
-    else()
-        set(nuget_PATH "${NUGET}")
+        if (NUGET MATCHES "NOTFOUND")
+            file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${nuget_PATH}")
+            nuget_message(STATUS "Downloading to '${nuget_PATH}'")
+        else()
+            set(nuget_PATH "${NUGET}")
+        endif()
     endif()
 
     # Ensure that the default NuGet-Sources are present
