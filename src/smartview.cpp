@@ -1,6 +1,7 @@
 #include "smartview.hpp"
 
 #include "webview.impl.hpp"
+#include "utils/overload.hpp"
 
 #include "lease.hpp"
 #include "scripts.hpp"
@@ -17,6 +18,12 @@ namespace saucer
     using resolver = serializer_core::resolver;
     using function = serializer_core::function;
 
+    struct evaluation
+    {
+        resolver resolve;
+        std::optional<std::size_t> pending;
+    };
+
     struct smartview_base::impl
     {
         using exposed = std::shared_ptr<function>;
@@ -27,10 +34,14 @@ namespace saucer
 
       public:
         lock<std::unordered_map<std::string, exposed>> functions;
-        lock<std::unordered_map<std::size_t, resolver>> evaluations;
+        lock<std::unordered_map<std::size_t, evaluation>> evaluations;
 
       public:
         utils::lease<webview::impl *> lease;
+
+      public:
+        void on_dom_ready();
+        std::vector<resolver> expired();
 
       public:
         status on_message(std::string_view);
@@ -61,11 +72,21 @@ namespace saucer
         });
 
         on<event::message>({{.func = std::bind_front(&impl::on_message, m_impl.get()), .clearable = false}});
+        on<event::dom_ready>({{.func = std::bind_front(&impl::on_dom_ready, m_impl.get()), .clearable = false}});
     }
 
     smartview_base::smartview_base(smartview_base &&) noexcept = default;
 
-    smartview_base::~smartview_base() = default;
+    smartview_base::~smartview_base()
+    {
+        if (!m_impl)
+        {
+            return;
+        }
+
+        m_impl->lease.value()->last_pending = std::numeric_limits<std::size_t>::max();
+        m_impl->on_dom_ready();
+    }
 
     status smartview_base::impl::on_message(std::string_view message)
     {
@@ -73,8 +94,7 @@ namespace saucer
 
         overload visitor = {
             [](std::monostate &)
-            {
-                //
+            {//
                 return status::unhandled;
             },
             [this](std::unique_ptr<function_data> &parsed)
@@ -90,6 +110,38 @@ namespace saucer
         };
 
         return std::visit(visitor, parsed);
+    }
+
+    void smartview_base::impl::on_dom_ready()
+    {
+        static auto expire = [](auto &resolve)
+        {
+            resolve(err{contract_error::broken_promise});
+        };
+        std::ranges::for_each(expired(), expire);
+    }
+
+    std::vector<resolver> smartview_base::impl::expired()
+    {
+        auto rtn         = std::vector<resolver>{};
+        auto locked      = evaluations.write();
+        auto *const impl = lease.value();
+
+        for (auto it = locked->begin(); it != locked->end();)
+        {
+            auto &[resolve, pending] = it->second;
+
+            if (pending && pending >= impl->last_pending)
+            {
+                ++it;
+                continue;
+            }
+
+            rtn.emplace_back(std::move(it->second.resolve));
+            it = locked->erase(it);
+        }
+
+        return rtn;
     }
 
     void smartview_base::impl::call(std::unique_ptr<function_data> message)
@@ -115,18 +167,18 @@ namespace saucer
 
     void smartview_base::impl::resolve(std::unique_ptr<result_data> message)
     {
-        resolver evaluation;
+        auto resolve = resolver{};
 
         if (auto locked = evaluations.write(); auto node = locked->extract(message->id))
         {
-            evaluation = std::move(node.mapped());
+            resolve = std::move(node.mapped().resolve);
         }
         else
         {
             return;
         }
 
-        evaluation(std::move(message));
+        resolve(std::move(message));
     }
 
     void smartview_base::add_function(std::string name, function &&resolve)
@@ -137,14 +189,25 @@ namespace saucer
 
     void smartview_base::add_evaluation(resolver &&resolve, std::string_view code)
     {
-        auto id = m_impl->id_counter++;
-
+        const auto id = m_impl->id_counter++;
         {
             auto locked = m_impl->evaluations.write();
             locked->emplace(id, std::move(resolve));
         }
+        const auto pending = webview::execute(std::format("window.saucer.internal.resolve({}, async () => {})", id, code));
 
-        webview::execute(std::format("window.saucer.internal.resolve({}, async () => {})", id, code));
+        auto locked = m_impl->evaluations.write();
+        auto it     = locked->find(id);
+
+        if (it == locked->end())
+        {
+            return;
+        }
+
+        // We register the resolver with the given id *before* we actually execute the script. Then, after we know the pending-id, we set it
+        // accordingly.
+
+        it->second.pending = pending;
     }
 
     void smartview_base::unexpose()

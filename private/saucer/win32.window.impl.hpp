@@ -7,6 +7,7 @@
 #include <optional>
 
 #include <windows.h>
+#include <commctrl.h>
 
 namespace saucer
 {
@@ -47,12 +48,15 @@ namespace saucer
 
       public:
         utils::settings settings{};
-        utils::brush background{nullptr};
+        utils::event_token theme_change_token;
+
+      public:
+        utils::compositor compositor{nullptr};
         utils::window_target window_target{nullptr};
 
       public:
-        utils::wnd_proc_hook hook;
-        utils::event_token theme_change_token;
+        utils::container root{nullptr};
+        utils::brush background{nullptr};
 
       public:
         utils::handle<HICON, DestroyIcon> icon;
@@ -70,6 +74,6 @@ namespace saucer
 
       public:
         static inline std::size_t windows_build;
-        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM);
+        static LRESULT CALLBACK wnd_proc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
     };
 } // namespace saucer

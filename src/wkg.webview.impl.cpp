@@ -1,5 +1,7 @@
 #include "wkg.webview.impl.hpp"
 
+#include "error.impl.hpp"
+
 #include "gtk.window.impl.hpp"
 #include "wkg.scheme.impl.hpp"
 
@@ -280,17 +282,7 @@ namespace saucer
 
         if (message == "dom_loaded")
         {
-            self->platform->dom_loaded = true;
-
-            for (const auto &pending : self->platform->pending)
-            {
-                self->execute(pending);
-            }
-
-            self->platform->pending.clear();
-            self->events.get<event::dom_ready>().fire();
-
-            return;
+            return self->events.get<event::dom_ready>().fire();
         }
 
         self->events.get<event::message>().fire(message).find(status::handled);
@@ -298,25 +290,65 @@ namespace saucer
 
     void native::on_load(WebKitWebView *, WebKitLoadEvent event, impl *self)
     {
-        if (event == WEBKIT_LOAD_COMMITTED)
-        {
-            self->events.get<event::navigated>().fire(self->url());
-            return;
-        }
+        using enum state;
 
-        if (event == WEBKIT_LOAD_FINISHED)
-        {
-            self->events.get<event::load>().fire(state::finished);
-            return;
-        }
-
-        if (event != WEBKIT_LOAD_STARTED)
+        if (event != WEBKIT_LOAD_COMMITTED && event != WEBKIT_LOAD_FINISHED)
         {
             return;
         }
 
-        self->platform->dom_loaded = false;
-        self->events.get<event::load>().fire(state::started);
+        const auto url   = self->url();
+        const auto state = event == WEBKIT_LOAD_COMMITTED ? started : finished;
+
+        const auto it       = std::ranges::find(self->platform->failed, url);
+        const auto contains = it != self->platform->failed.end();
+
+        if (contains && state == finished)
+        {
+            self->platform->failed.erase(it);
+        }
+
+        if (contains)
+        {
+            return;
+        }
+
+        if (std::exchange(self->platform->last_failed, false) && url == saucer::url{})
+        {
+            return;
+        }
+
+        self->events.get<event::load>().fire(state);
+
+        if (state != started)
+        {
+            return;
+        }
+
+        self->events.get<event::navigated>().fire(url);
+    }
+
+    // NOLINTNEXTLINE(readability-non-const-*)
+    gboolean native::on_load_failed(WebKitWebView *, WebKitLoadEvent, gchar *raw, GError *err, impl *self)
+    {
+        if (g_error_matches(err, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)) // Mostly caching related
+        {
+            return false;
+        }
+
+        auto url = saucer::url::parse(raw);
+
+        if (!url.has_value())
+        {
+            return false;
+        }
+
+        self->events.get<event::load>().fire(state::failed);
+
+        self->platform->last_failed = true;
+        self->platform->failed.emplace_back(std::move(*url));
+
+        return false;
     }
 
     void native::on_click(GtkGestureClick *gesture, gint, gdouble, gdouble, impl *self)

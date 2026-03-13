@@ -6,6 +6,7 @@
 #include <saucer/window.hpp>
 #include <saucer/webview.hpp>
 
+#include <QIODevice>
 #include <QMainWindow>
 #include <QWebEngineView>
 
@@ -45,5 +46,11 @@ namespace saucer
     struct stable_natives<icon>
     {
         QIcon icon;
+    };
+
+    template <>
+    struct stable_natives<stash>
+    {
+        QIODevice *device;
     };
 } // namespace saucer

@@ -8,30 +8,20 @@
 namespace saucer
 {
     template <>
-    struct error::of<DWORD> : error::of<std::error_code>
+    struct error::of<DWORD>
     {
-        of(DWORD);
+        static error operator()(DWORD);
     };
 
     template <>
-    struct error::of<HRESULT> : error::of<DWORD>
+    struct error::of<HRESULT>
     {
-        of(HRESULT);
+        static error operator()(HRESULT);
     };
 
     template <>
-    struct error::of<Gdiplus::Status> : error::impl
+    struct error::of<Gdiplus::Status>
     {
-        Gdiplus::Status value;
-
-      public:
-        of(Gdiplus::Status);
-
-      public:
-        [[nodiscard]] int code() const override;
-        [[nodiscard]] category type() const override;
-
-      public:
-        [[nodiscard]] std::string message() const override;
+        static error operator()(Gdiplus::Status);
     };
 } // namespace saucer

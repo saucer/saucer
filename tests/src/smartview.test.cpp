@@ -20,7 +20,7 @@ suite<"smartview"> smartview_suite = []
         auto range_error = webview.evaluate<std::vector<int>>("Array(-1).fill(1)").get();
 
         expect(not range_error.has_value());
-        expect(range_error.error().contains("RangeError"));
+        expect(range_error.error().message.contains("RangeError"));
 
         webview.expose("test1", [](int value) { return value; });
         webview.expose("test2", [](std::string value) -> std::expected<int, std::string> { return std::unexpected{std::move(value)}; });

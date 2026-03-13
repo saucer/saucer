@@ -53,12 +53,7 @@ namespace saucer
         std::unordered_map<std::size_t, qt_script> scripts;
 
       public:
-        bool dom_loaded{false};
-        std::vector<std::string> pending;
-
-      public:
         std::size_t on_closed;
-        QMetaObject::Connection on_load;
         QMetaObject::Connection on_fullscreen;
 
       public:

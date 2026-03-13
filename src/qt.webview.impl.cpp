@@ -25,17 +25,7 @@ namespace saucer
 
         if (message == "dom_loaded")
         {
-            impl->platform->dom_loaded = true;
-
-            for (const auto &pending : impl->platform->pending)
-            {
-                impl->execute(pending);
-            }
-
-            impl->platform->pending.clear();
-            impl->events.get<event::dom_ready>().fire();
-
-            return;
+            return impl->events.get<event::dom_ready>().fire();
         }
 
         impl->events.get<event::message>().fire(message).find(status::handled);
@@ -214,13 +204,25 @@ namespace saucer
             return;
         }
 
-        auto handler = [self](auto...)
+        auto start = [self](auto...)
         {
-            self->events.get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(state::started);
         };
 
-        const auto id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, handler);
-        event.on_clear([this, id] { web_view->disconnect(id); });
+        auto finish = [self](bool ok)
+        {
+            self->events.get<event::load>().fire(ok ? state::finished : state::failed);
+        };
+
+        const auto start_id  = web_view->connect(web_view.get(), &QWebEngineView::loadStarted, start);
+        const auto finish_id = web_view->connect(web_view.get(), &QWebEngineView::loadFinished, finish);
+
+        event.on_clear(
+            [this, start_id, finish_id]
+            {
+                web_view->disconnect(start_id);
+                web_view->disconnect(finish_id);
+            });
     }
 
     QWebEngineScript native::find(const char *name) const

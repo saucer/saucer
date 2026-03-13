@@ -12,47 +12,6 @@
 
 namespace saucer
 {
-    using wnd_proc_hook = utils::wnd_proc_hook;
-
-    wnd_proc_hook::wnd_proc_hook() = default;
-
-    wnd_proc_hook::wnd_proc_hook(HWND hwnd, WNDPROC proc) : m_hwnd(hwnd)
-    {
-        auto ptr   = reinterpret_cast<LONG_PTR>(proc);
-        m_original = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ptr));
-    }
-
-    wnd_proc_hook::wnd_proc_hook(wnd_proc_hook &&other) noexcept
-        : m_hwnd(std::exchange(other.m_hwnd, nullptr)), m_original(std::exchange(other.m_original, nullptr))
-    {
-    }
-
-    wnd_proc_hook &wnd_proc_hook::operator=(wnd_proc_hook &&other) noexcept
-    {
-        if (this != &other)
-        {
-            m_hwnd     = std::exchange(other.m_hwnd, nullptr);
-            m_original = std::exchange(other.m_original, nullptr);
-        }
-
-        return *this;
-    }
-
-    wnd_proc_hook::~wnd_proc_hook()
-    {
-        if (!m_hwnd)
-        {
-            return;
-        }
-
-        SetWindowLongPtrW(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_original));
-    }
-
-    WNDPROC wnd_proc_hook::original() const
-    {
-        return m_original;
-    }
-
     template <typename T, typename U, typename... Us>
     auto call_as(U func, Us &&...args)
     {
@@ -170,18 +129,31 @@ namespace saucer
         return out;
     }
 
-    std::vector<std::uint8_t> utils::read(IStream *stream)
+    stash::vec utils::read(IStream *stream)
     {
-        STATSTG stats;
-        stream->Stat(&stats, STATFLAG_DEFAULT);
+        auto stats = STATSTG{};
+        auto data  = stash::vec{};
 
-        std::vector<std::uint8_t> data;
+        stream->Stat(&stats, STATFLAG_DEFAULT);
         data.resize(stats.cbSize.QuadPart);
 
         ULONG read{};
         stream->Read(data.data(), static_cast<ULONG>(data.size()), &read);
 
         return data;
+    }
+
+    std::vector<HWND> utils::child_windows(HWND parent)
+    {
+        auto *child = GetWindow(parent, GW_CHILD);
+        auto rtn    = std::vector<HWND>{};
+
+        for (; child; child = GetWindow(child, GW_HWNDNEXT))
+        {
+            rtn.emplace_back(child);
+        }
+
+        return rtn;
     }
 
     result<utils::dispatch_controller> utils::create_dispatch_controller()

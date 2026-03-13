@@ -64,6 +64,7 @@ namespace saucer
         [[nodiscard]] constexpr size_type length() const noexcept;
 
       public:
+        constexpr std::basic_string_view<T, Traits> view() const noexcept;
         constexpr operator std::basic_string_view<T, Traits>() const noexcept;
     };
 

@@ -28,11 +28,15 @@ struct glz::meta<saucer::serializers::glaze::result_data>
 
 namespace saucer::serializers::glaze
 {
-    static constexpr auto opts = glz::opts{
+    struct opts_t : glz::opts
+    {
+        bool raw_string{false};
+    };
+
+    static constexpr auto opts = opts_t{{
         .error_on_unknown_keys = true,
         .error_on_missing_keys = true,
-        .raw_string            = false,
-    };
+    }};
 
     serializer::~serializer() = default;
 

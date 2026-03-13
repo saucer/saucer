@@ -5,8 +5,6 @@
 #include "gtk.utils.hpp"
 #include "wkg.scheme.impl.hpp"
 
-#include <vector>
-
 #include <webkit/webkit.h>
 
 namespace saucer
@@ -37,15 +35,16 @@ namespace saucer
         std::unordered_map<std::size_t, wkg_script> scripts;
 
       public:
-        bool dom_loaded{false};
-        std::vector<std::string> pending;
-
-      public:
         std::size_t id_context;
-        std::size_t id_load;
+        std::size_t id_message;
 
       public:
-        std::size_t id_message;
+        std::size_t id_load;
+        std::size_t id_load_failed;
+
+      public:
+        bool last_failed{false};
+        std::vector<saucer::url> failed;
 
       public:
         std::size_t id_click;
@@ -57,10 +56,11 @@ namespace saucer
 
       public:
         static gboolean on_context(WebKitWebView *, WebKitContextMenu *, WebKitHitTestResult *, impl *);
+        static void on_message(WebKitWebView *, JSCValue *, impl *);
 
       public:
-        static void on_message(WebKitWebView *, JSCValue *, impl *);
         static void on_load(WebKitWebView *, WebKitLoadEvent, impl *);
+        static gboolean on_load_failed(WebKitWebView *, WebKitLoadEvent, gchar *, GError *, impl *);
 
       public:
         static void on_click(GtkGestureClick *, gint, gdouble, gdouble, impl *);

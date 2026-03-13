@@ -1,7 +1,61 @@
 #include "wkg.scheme.impl.hpp"
 
+#include "error.impl.hpp"
+
 namespace saucer::scheme
 {
+    struct writer
+    {
+        std::shared_ptr<stash_stream::native> platform;
+
+      public:
+        bool operator()(stash::span);
+    };
+
+    bool writer::operator()(stash::span data)
+    {
+        const auto *raw = data.data();
+        auto remaining  = data.size();
+
+        while (remaining)
+        {
+            auto written = write(platform->write_fd, raw, remaining);
+
+            if (written < 0 && errno == EINTR)
+            {
+                continue;
+            }
+
+            if (written < 0)
+            {
+                return false;
+            }
+
+            raw += written;
+            remaining -= written;
+        }
+
+        return true;
+    }
+
+    result<stream> response::stream()
+    {
+        int fd[2]{};
+
+        if (pipe(fd) != 0)
+        {
+            return err(static_cast<std::errc>(errno));
+        }
+
+        auto rtn         = stash{std::make_unique<stash_stream>(fd[0], fd[1])};
+        auto *const impl = static_cast<stash_stream *>(rtn.native<false>());
+
+        return scheme::stream{
+            .stash = std::move(rtn),
+            .write = writer{impl->platform},
+        };
+    }
+
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::request(const request &other) : request(*other.m_impl) {}
@@ -31,7 +85,7 @@ namespace saucer::scheme
 
         static constexpr auto chunk_size = 4096;
 
-        std::vector<std::uint8_t> content;
+        auto content = stash::vec{};
         content.reserve(chunk_size);
 
         gssize read{};

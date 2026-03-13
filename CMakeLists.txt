@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(saucer LANGUAGES CXX VERSION 8.1.0)
+project(saucer LANGUAGES CXX VERSION 8.2.0)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Library switches                                                                                      |
@@ -214,7 +214,7 @@ saucer_include_directories(${PROJECT_NAME} "private")
 # +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 6.4.0")
+  set(SERIALIZER_DEP "glaze 7.0.2")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
@@ -227,7 +227,9 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
     "src/error.cpp"
-    "src/error.impl.cpp"
+
+    "src/stash.cpp"
+    "src/stash.impl.cpp"
 
     "src/request.cpp"
     "src/module/unstable.cpp"
@@ -279,12 +281,6 @@ CPMFindPackage(
 )
 
 CPMFindPackage(
-  NAME           polo
-  VERSION        1.0.2
-  GIT_REPOSITORY "https://github.com/Curve/polo"
-)
-
-CPMFindPackage(
   NAME           saucer-fill
   VERSION        1.3.0
   GIT_REPOSITORY "https://github.com/saucer/fill"
@@ -298,7 +294,7 @@ CPMFindPackage(
 )
 
 saucer_link_libraries(${PROJECT_NAME}         cr::lockpp cr::flagpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis cr::polo saucer::fill)
+target_link_libraries(${PROJECT_NAME} PUBLIC  cr::coco cr::rebind cr::ereignis saucer::fill)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Setup Backends                                                                                        |
@@ -350,11 +346,12 @@ if (saucer_backend STREQUAL "WebKitGtk")
   find_package(PkgConfig REQUIRED)
 
   pkg_check_modules(gtk        REQUIRED gtk4>=4.12)
+  pkg_check_modules(gunix      REQUIRED IMPORTED_TARGET gio-unix-2.0)
   pkg_check_modules(libadwaita REQUIRED IMPORTED_TARGET libadwaita-1)
   pkg_check_modules(json-glib  REQUIRED IMPORTED_TARGET json-glib-1.0)
   pkg_check_modules(webkitgtk  REQUIRED IMPORTED_TARGET webkitgtk-6.0)
 
-  saucer_link_libraries(${PROJECT_NAME} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib)
+  saucer_link_libraries(${PROJECT_NAME} PkgConfig::libadwaita PkgConfig::webkitgtk PkgConfig::json-glib PkgConfig::gunix)
 endif()
 
 if (saucer_backend STREQUAL "WebView2")
@@ -378,7 +375,7 @@ if (saucer_backend STREQUAL "WebView2")
     ALTERNATIVES "unofficial-webview2|unofficial::webview2::webview2"
   )
 
-  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi gdiplus webview2)
+  saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi Comctl32 gdiplus webview2)
 endif()
 
 # +-------------------------------------------------------------------------------------------------------+
@@ -388,7 +385,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        6.4.0
+    VERSION        7.0.2
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
   )
 
@@ -484,5 +481,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;polo 1.0.2;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;saucer-fill 1.3.0;${SERIALIZER_DEP}"
 )

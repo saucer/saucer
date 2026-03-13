@@ -1,5 +1,6 @@
 #include "wv2.navigation.impl.hpp"
 
+#include "error.impl.hpp"
 #include "win32.utils.hpp"
 #include "utils/overload.hpp"
 

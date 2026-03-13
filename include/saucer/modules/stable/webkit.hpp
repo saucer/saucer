@@ -47,4 +47,9 @@ namespace saucer
     {
         NSImage *icon;
     };
+
+    template <>
+    struct stable_natives<stash>
+    {
+    };
 } // namespace saucer

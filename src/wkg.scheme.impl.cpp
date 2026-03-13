@@ -1,11 +1,52 @@
 #include "wkg.scheme.impl.hpp"
 
 #include "handle.hpp"
+#include "modules/stable/webkitgtk.hpp"
 
 #include <rebind/utils/enum.hpp>
 
 namespace saucer::scheme
 {
+    stash_stream::stash_stream(int read, int write) : platform(std::make_shared<native>())
+    {
+        platform->read_fd  = read;
+        platform->write_fd = write;
+        platform->stream   = G_UNIX_INPUT_STREAM(g_unix_input_stream_new(read, true));
+    }
+
+    std::size_t stash_stream::type() const
+    {
+        return id_of<stash_stream>();
+    }
+
+    std::unique_ptr<stash::impl> stash_stream::clone() const
+    {
+        return std::make_unique<stash_stream>(*this);
+    }
+
+    stash::span stash_stream::data() const
+    {
+        return {};
+    }
+
+    stash_stream::native::~native()
+    {
+        close(write_fd);
+    }
+
+    std::pair<utils::g_object_ptr<GInputStream>, gint64> stream_of(const stash &stash)
+    {
+        if (auto *const stream = stash.native().stream; stream)
+        {
+            return {stream, -1};
+        }
+
+        const auto data  = stash.data();
+        const auto bytes = utils::g_bytes_ptr{g_bytes_new(data.data(), data.size())};
+
+        return {g_memory_input_stream_new_from_bytes(bytes.get()), static_cast<gint64>(data.size())};
+    }
+
     void handler::add_callback(WebKitWebView *id, scheme::resolver callback)
     {
         m_callbacks.emplace(id, std::move(callback));
@@ -28,13 +69,11 @@ namespace saucer::scheme
 
         auto resolve = [request](const scheme::response &response)
         {
-            const auto data = response.data;
-            const auto size = static_cast<gssize>(data.size());
+            const auto stash = response.data;
 
-            auto bytes  = utils::g_bytes_ptr{g_bytes_new(data.data(), size)};
-            auto stream = utils::g_object_ptr<GInputStream>{g_memory_input_stream_new_from_bytes(bytes.get())};
-
+            auto [stream, size] = stream_of(stash);
             auto res            = utils::g_object_ptr<WebKitURISchemeResponse>{webkit_uri_scheme_response_new(stream.get(), size)};
+
             auto *const headers = soup_message_headers_new(SOUP_MESSAGE_HEADERS_RESPONSE);
 
             for (const auto &[name, value] : response.headers)

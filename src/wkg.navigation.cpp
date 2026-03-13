@@ -1,5 +1,7 @@
 #include "wkg.navigation.impl.hpp"
 
+#include "error.impl.hpp"
+
 namespace saucer
 {
     navigation::navigation(impl data) : m_impl(std::make_unique<impl>(data)) {}

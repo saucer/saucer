@@ -1,12 +1,16 @@
 #include "wv2.webview.impl.hpp"
 
-#include "win32.error.hpp"
 #include "win32.app.impl.hpp"
+#include "win32.window.impl.hpp"
+
+#include "win32.error.hpp"
 #include "win32.icon.impl.hpp"
 
-#include "wv2.scheme.impl.hpp"
 #include "wv2.permission.impl.hpp"
 #include "wv2.navigation.impl.hpp"
+
+#include "wv2.scheme.impl.hpp"
+#include "modules/stable/webview2.hpp"
 
 #include <cassert>
 
@@ -40,7 +44,7 @@ namespace saucer
 
             ComPtr<ICoreWebView2Deferral> deferral;
 
-            if (auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
+            if (const auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
             {
                 return status;
             }
@@ -160,14 +164,35 @@ namespace saucer
             return;
         }
 
-        static constexpr auto fire = [](impl *self)
+        static constexpr auto fire = [](impl *self, state value)
         {
-            self->events.get<event::load>().fire(state::finished);
+            self->events.get<event::load>().fire(value);
         };
 
-        auto handler = [self](auto...)
+        auto handler = [self](auto, ICoreWebView2NavigationCompletedEventArgs *args)
         {
-            self->parent->post(utils::defer(self->platform->lease, fire));
+            BOOL success{false};
+
+            if (const auto status = args->get_IsSuccess(&success); !SUCCEEDED(status))
+            {
+                return status;
+            }
+
+            UINT64 id{};
+
+            if (const auto status = args->get_NavigationId(&id); !SUCCEEDED(status))
+            {
+                return status;
+            }
+
+            if (id != self->platform->last_navigation)
+            {
+                return S_OK;
+            }
+
+            const auto value = success ? state::finished : state::failed;
+            self->parent->post(std::bind_front(utils::defer(self->platform->lease, fire), value));
+
             return S_OK;
         };
 
@@ -175,6 +200,17 @@ namespace saucer
         web_view->add_NavigationCompleted(Callback<NavigationComplete>(handler).Get(), &token);
 
         event.on_clear([this, token] { web_view->remove_NavigationCompleted(token); });
+    }
+
+    void native::update_bounds(int width, int height)
+    {
+        auto *const parent = lease.value()->window->native<false>()->platform.get();
+        const auto bb      = bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
+
+        const auto [x, y] = parent->scale<mode::add>({.w = bb.x, .h = bb.y});
+        const auto [w, h] = parent->scale<mode::add>({.w = bb.w, .h = bb.h});
+
+        controller->put_Bounds({x, y, x + w, y + h});
     }
 
     ComPtr<ICoreWebView2EnvironmentOptions> native::env_options()
@@ -208,7 +244,7 @@ namespace saucer
         const auto &[storage_path, opts] = options;
         const auto callback              = Callback<EnvironmentCompleted>(completed);
 
-        auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get());
+        const auto status = CreateCoreWebView2EnvironmentWithOptions(nullptr, storage_path.c_str(), opts, callback.Get());
 
         if (!SUCCEEDED(status))
         {
@@ -235,7 +271,7 @@ namespace saucer
 
         const auto callback = Callback<ControllerCompleted>(created);
 
-        if (auto status = env->CreateCoreWebView2Controller(hwnd, callback.Get()); !SUCCEEDED(status))
+        if (const auto status = env->CreateCoreWebView2Controller(hwnd, callback.Get()); !SUCCEEDED(status))
         {
             return err(status);
         }
@@ -252,7 +288,7 @@ namespace saucer
     {
         utils::string_handle raw;
 
-        if (auto status = args->TryGetWebMessageAsString(&raw.reset()); !SUCCEEDED(status))
+        if (const auto status = args->TryGetWebMessageAsString(&raw.reset()); !SUCCEEDED(status))
         {
             return status;
         }
@@ -273,14 +309,14 @@ namespace saucer
     {
         ComPtr<ICoreWebView2WebResourceRequest> request;
 
-        if (auto status = args->get_Request(&request); !SUCCEEDED(status))
+        if (const auto status = args->get_Request(&request); !SUCCEEDED(status))
         {
             return status;
         }
 
         utils::string_handle raw;
 
-        if (auto status = request->get_Uri(&raw.reset()); !SUCCEEDED(status))
+        if (const auto status = request->get_Uri(&raw.reset()); !SUCCEEDED(status))
         {
             return status;
         }
@@ -301,8 +337,6 @@ namespace saucer
     {
         using enum script::time;
 
-        self->platform->dom_loaded = true;
-
         for (const auto &[id, script] : self->platform->scripts)
         {
             if (script.run_at != ready)
@@ -313,12 +347,6 @@ namespace saucer
             self->execute(script.code);
         }
 
-        for (const auto &pending : self->platform->pending)
-        {
-            self->execute(pending);
-        }
-
-        self->platform->pending.clear();
         self->parent->post(utils::defer(self->platform->lease, [](impl *self) { self->events.get<event::dom_ready>().fire(); }));
 
         return S_OK;
@@ -331,8 +359,19 @@ namespace saucer
             self->events.get<event::load>().fire(state::started);
         };
 
-        self->platform->dom_loaded = false;
-        self->parent->post(utils::defer(self->platform->lease, fire));
+        UINT64 id{};
+
+        if (const auto status = args->get_NavigationId(&id); !SUCCEEDED(status))
+        {
+            return status;
+        };
+
+        if (id == self->platform->last_navigation)
+        {
+            return S_OK;
+        }
+
+        self->platform->last_navigation.emplace(id);
 
         auto nav = navigation{navigation::impl{
             .request = args,
@@ -341,7 +380,10 @@ namespace saucer
         if (self->events.get<event::navigate>().fire(nav).find(policy::block))
         {
             args->put_Cancel(true);
+            return S_OK;
         }
+
+        self->parent->post(utils::defer(self->platform->lease, fire));
 
         return S_OK;
     }
@@ -366,7 +408,7 @@ namespace saucer
     {
         BOOL fullscreen{false};
 
-        if (auto status = self->platform->web_view->get_ContainsFullScreenElement(&fullscreen); !SUCCEEDED(status))
+        if (const auto status = self->platform->web_view->get_ContainsFullScreenElement(&fullscreen); !SUCCEEDED(status))
         {
             return status;
         }
@@ -383,7 +425,7 @@ namespace saucer
     {
         ComPtr<ICoreWebView2Deferral> deferral;
 
-        if (auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
+        if (const auto status = args->GetDeferral(&deferral); !SUCCEEDED(status))
         {
             return status;
         }
@@ -404,6 +446,20 @@ namespace saucer
         return S_OK;
     }
 
+    ComPtr<IStream> stream_of(const stash &stash)
+    {
+        if (auto *const stream = stash.native().stream; stream)
+        {
+            return stream;
+        }
+
+        const auto data = stash.data();
+        const auto size = static_cast<const UINT>(data.size());
+        const auto *raw = reinterpret_cast<const BYTE *>(data.data());
+
+        return SHCreateMemStream(raw, size);
+    }
+
     HRESULT native::scheme_handler(impl *self, const scheme_options &opts)
     {
         auto &schemes = self->platform->schemes;
@@ -416,31 +472,28 @@ namespace saucer
 
         ComPtr<ICoreWebView2Environment> environment;
 
-        if (auto status = self->platform->web_view->get_Environment(&environment); !SUCCEEDED(status))
+        if (const auto status = self->platform->web_view->get_Environment(&environment); !SUCCEEDED(status))
         {
             return status;
         }
 
         ComPtr<ICoreWebView2Deferral> deferral;
 
-        if (auto status = opts.raw->GetDeferral(&deferral); !SUCCEEDED(status))
+        if (const auto status = opts.raw->GetDeferral(&deferral); !SUCCEEDED(status))
         {
             return status;
         }
 
         ComPtr<IStream> content;
 
-        if (auto status = opts.request->get_Content(&content); !SUCCEEDED(status))
+        if (const auto status = opts.request->get_Content(&content); !SUCCEEDED(status))
         {
             return status;
         }
 
         auto resolve = [environment, deferral, request = opts.raw](const scheme::response &response)
         {
-            const auto *raw = reinterpret_cast<const BYTE *>(response.data.data());
-            const auto size = static_cast<const UINT>(response.data.size());
-
-            ComPtr<IStream> buffer            = SHCreateMemStream(raw, size);
+            const auto stream                 = stream_of(response.data);
             std::vector<std::wstring> headers = {std::format(L"Content-Type: {}", utils::widen(response.mime))};
 
             for (const auto &[name, value] : response.headers)
@@ -451,7 +504,7 @@ namespace saucer
             const auto combined = headers | std::views::join_with('\n') | std::ranges::to<std::wstring>();
 
             ComPtr<ICoreWebView2WebResourceResponse> result;
-            environment->CreateWebResourceResponse(buffer.Get(), response.status, L"OK", combined.c_str(), &result);
+            environment->CreateWebResourceResponse(stream.Get(), response.status, L"OK", combined.c_str(), &result);
 
             request->put_Response(result.Get());
             deferral->Complete();

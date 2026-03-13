@@ -1,13 +1,13 @@
 #pragma once
 
 #include "data.hpp"
+
 #include "../executor.hpp"
+#include "../error/error.hpp"
 
 #include <memory>
-#include <functional>
-
 #include <variant>
-#include <expected>
+#include <functional>
 
 #include <string>
 #include <string_view>
@@ -36,11 +36,7 @@ namespace saucer
         using executor     = saucer::executor<std::string_view>;
 
       public:
-        template <typename T>
-        using result = std::expected<T, std::string>;
-
-      public:
-        using resolver = std::move_only_function<void(std::unique_ptr<result_data>)>;
+        using resolver = std::move_only_function<void(result<std::unique_ptr<result_data>>)>;
         using function = std::move_only_function<void(std::unique_ptr<function_data>, executor)>;
 
       public:

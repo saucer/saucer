@@ -1,7 +1,5 @@
 #include "qt.url.impl.hpp"
 
-#include "qt.error.hpp"
-
 namespace saucer
 {
     url::url() : m_impl(std::move(make({.scheme = "about", .path = "blank"}).m_impl)) {}
@@ -97,9 +95,9 @@ namespace saucer
         return string() == other.string();
     }
 
-    bool url::operator==(std::string_view other) const
+    bool url::operator==(cstring_view other) const
     {
-        return string() == other;
+        return string() == url::parse(other);
     }
 
     result<url> url::from(const fs::path &file)
@@ -108,7 +106,12 @@ namespace saucer
 
         if (!rtn.isValid())
         {
-            return err(rtn.errorString().toStdString());
+            return err(error{
+                .code     = -1,
+                .message  = rtn.errorString().toStdString(),
+                .kind     = unknown_domain(),
+                .location = std::source_location::current(),
+            });
         }
 
         return impl{rtn};
@@ -116,7 +119,7 @@ namespace saucer
 
     result<url> url::parse(cstring_view input)
     {
-        if (std::string_view{input}.empty())
+        if (input.view().empty())
         {
             return url{};
         }
@@ -125,7 +128,12 @@ namespace saucer
 
         if (!rtn.isValid())
         {
-            return err(rtn.errorString().toStdString());
+            return err(error{
+                .code     = -1,
+                .message  = rtn.errorString().toStdString(),
+                .kind     = unknown_domain(),
+                .location = std::source_location::current(),
+            });
         }
 
         return impl{rtn};

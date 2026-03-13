@@ -2,8 +2,8 @@
 
 #include "modules/module.hpp"
 
+#include "stash.hpp"
 #include "error/error.hpp"
-#include "stash/stash.hpp"
 
 #include <memory>
 #include <filesystem>
@@ -40,13 +40,13 @@ namespace saucer
 
       public:
         [[nodiscard]] bool empty() const;
-        [[nodiscard]] stash data() const;
+        [[nodiscard]] stash::vec data() const;
 
       public:
         void save(const fs::path &path) const;
 
       public:
-        [[nodiscard]] static result<icon> from(const stash &ico);
+        [[nodiscard]] static result<icon> from(stash::span ico);
         [[nodiscard]] static result<icon> from(const fs::path &file);
     };
 } // namespace saucer

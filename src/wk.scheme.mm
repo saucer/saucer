@@ -1,9 +1,45 @@
 #include "wk.scheme.impl.hpp"
 
 #include "wk.url.impl.hpp"
+#include "utils/overload.hpp"
 
 namespace saucer::scheme
 {
+    struct writer
+    {
+        std::shared_ptr<stash_stream::native> platform;
+
+      public:
+        bool operator()(stash::span) const;
+    };
+
+    bool writer::operator()(stash::span data) const
+    {
+        auto locked = platform->data.write();
+
+        auto visitor = overload{
+            [&](stash::vec &vec)
+            {
+                vec.insert_range(vec.end(), data);
+                return true;
+            },
+            [&](deferred_task &def) { return def.append(data); },
+        };
+
+        return std::visit(visitor, *locked);
+    }
+
+    result<stream> response::stream()
+    {
+        auto rtn         = stash{std::make_unique<stash_stream>()};
+        auto *const impl = static_cast<stash_stream *>(rtn.native<false>());
+
+        return scheme::stream{
+            .stash = std::move(rtn),
+            .write = writer{impl->platform},
+        };
+    }
+
     request::request(impl data) : m_impl(std::make_unique<impl>(std::move(data))) {}
 
     request::request(const request &other) : request(*other.m_impl) {}
@@ -32,14 +68,13 @@ namespace saucer::scheme
         }
 
         const auto *raw = reinterpret_cast<const std::uint8_t *>(body.bytes);
-        return stash::from({raw, raw + body.length});
+        return stash::view({raw, raw + body.length});
     }
 
     std::map<std::string, std::string> request::headers() const
     {
         auto *const headers = m_impl->task.get().request.allHTTPHeaderFields;
-
-        std::map<std::string, std::string> rtn;
+        auto rtn            = std::map<std::string, std::string>{};
 
         [headers enumerateKeysAndObjectsUsingBlock:[&rtn](NSString *key, NSString *value, BOOL *)
                  {

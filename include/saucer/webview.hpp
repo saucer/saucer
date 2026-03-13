@@ -7,10 +7,9 @@
 #include "utils/cstring.hpp"
 #include "utils/required.hpp"
 
-#include "stash/stash.hpp"
-
 #include "url.hpp"
 #include "icon.hpp"
+#include "stash.hpp"
 #include "script.hpp"
 #include "permission.hpp"
 
@@ -40,6 +39,7 @@ namespace saucer
     {
         started,
         finished,
+        failed,
     };
 
     enum class status : std::uint8_t
@@ -170,6 +170,10 @@ namespace saucer
         [[sc::thread_safe]] void set_bounds(saucer::bounds);
 
       public:
+        [[sc::thread_safe]] void raise();
+        [[sc::thread_safe]] void lower();
+
+      public:
         [[sc::thread_safe]] void back();
         [[sc::thread_safe]] void forward();
 
@@ -185,8 +189,8 @@ namespace saucer
         [[sc::thread_safe]] void unembed(const fs::path &);
 
       public:
-        [[sc::thread_safe]] void execute(cstring_view);
         [[sc::thread_safe]] std::size_t inject(const script &);
+        [[sc::thread_safe]] std::optional<std::size_t> execute(cstring_view);
 
       public:
         [[sc::thread_safe]] void uninject();

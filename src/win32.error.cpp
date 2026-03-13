@@ -2,23 +2,7 @@
 
 namespace saucer
 {
-    error::of<DWORD>::of(DWORD value) : error::of<std::error_code>({static_cast<int>(value), std::system_category()}) {}
-
-    error::of<HRESULT>::of(HRESULT value) : error::of<DWORD>(static_cast<DWORD>(value)) {}
-
-    error::of<Gdiplus::Status>::of(Gdiplus::Status value) : value(value) {}
-
-    int error::of<Gdiplus::Status>::code() const
-    {
-        return std::to_underlying(value);
-    }
-
-    error::category error::of<Gdiplus::Status>::type() const
-    {
-        return category::platform;
-    }
-
-    std::string error::of<Gdiplus::Status>::message() const
+    std::string name_of(Gdiplus::Status value)
     {
         switch (value)
         {
@@ -87,5 +71,20 @@ namespace saucer
         }
 
         std::unreachable();
+    }
+
+    error error::of<DWORD>::operator()(DWORD value)
+    {
+        return error::of<std::error_code>{}({static_cast<int>(value), std::system_category()});
+    }
+
+    error error::of<HRESULT>::operator()(HRESULT value)
+    {
+        return error::of<DWORD>{}(static_cast<DWORD>(value));
+    }
+
+    error error::of<Gdiplus::Status>::operator()(Gdiplus::Status value)
+    {
+        return {.code = static_cast<int>(value), .message = name_of(value), .kind = platform_domain()};
     }
 } // namespace saucer

@@ -231,6 +231,30 @@ namespace saucer
 
         return [[NSUUID alloc] init];
     }
+
+    zsorter::zsorter(NSView *target, NSView *other, NSComparisonResult order) : order{order}, targets{target, other} {}
+
+    zsorter::operator void *() &
+    {
+        return static_cast<void *>(this);
+    }
+
+    NSComparisonResult zsorter::sort(__kindof NSView *first, __kindof NSView *second, void *ctx)
+    {
+        auto *const self = reinterpret_cast<zsorter *>(ctx);
+
+        if (!std::ranges::contains(self->targets, first) || !std::ranges::contains(self->targets, second))
+        {
+            return NSOrderedSame;
+        }
+
+        if (std::exchange(self->once, true))
+        {
+            return NSOrderedSame;
+        }
+
+        return first == self->targets.front() ? static_cast<NSComparisonResult>(-self->order) : self->order;
+    }
 } // namespace saucer
 
 using namespace saucer;
@@ -259,17 +283,7 @@ using namespace saucer;
 
     if (message == "dom_loaded")
     {
-        me->platform->dom_loaded = true;
-
-        for (const auto &pending : me->platform->pending)
-        {
-            me->execute(pending);
-        }
-
-        me->platform->pending.clear();
-        me->events.get<event::dom_ready>().fire();
-
-        return;
+        return me->events.get<event::dom_ready>().fire();
     }
 
     me->events.get<event::message>().fire(message).find(status::handled);
@@ -352,8 +366,12 @@ using namespace saucer;
 
 - (void)webView:(WKWebView *)webview didStartProvisionalNavigation:(WKNavigation *)navigation
 {
-    me->platform->dom_loaded = false;
     me->events.get<event::load>().fire(state::started);
+}
+
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error
+{
+    me->events.get<event::load>().fire(state::failed);
 }
 
 - (void)webView:(WKWebView *)webview
@@ -377,6 +395,11 @@ using namespace saucer;
 - (void)webView:(WKWebView *)webview didFinishNavigation:(WKNavigation *)navigation
 {
     me->events.get<event::load>().fire(state::finished);
+}
+
+- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error
+{
+    me->events.get<event::load>().fire(state::failed);
 }
 @end
 

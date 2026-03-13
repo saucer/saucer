@@ -48,8 +48,9 @@ namespace saucer
             webkit_cookie_manager_set_persistent_storage(manager, path.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
         }
 
-        platform->id_context = utils::connect(platform->web_view, "context-menu", native::on_context, this);
-        platform->id_load    = utils::connect(platform->web_view, "load-changed", native::on_load, this);
+        platform->id_context     = utils::connect(platform->web_view, "context-menu", native::on_context, this);
+        platform->id_load        = utils::connect(platform->web_view, "load-changed", native::on_load, this);
+        platform->id_load_failed = utils::connect(platform->web_view, "load-failed", native::on_load_failed, this);
 
         // The ContentManager is ref'd to prevent it from being destroyed early when using multiple webviews
         platform->manager = content_manager_ptr::ref(webkit_web_view_get_user_content_manager(platform->web_view));
@@ -87,6 +88,7 @@ namespace saucer
 
         g_signal_handler_disconnect(platform->web_view, platform->id_context);
         g_signal_handler_disconnect(platform->web_view, platform->id_load);
+        g_signal_handler_disconnect(platform->web_view, platform->id_load_failed);
 
         g_signal_handler_disconnect(platform->manager.get(), platform->id_message);
 
@@ -259,6 +261,34 @@ namespace saucer
         gtk_widget_set_margin_bottom(widget, height - bounds.y - bounds.h);
     }
 
+    void impl::raise() // NOLINT(*-function-const)
+    {
+        auto *const self   = GTK_WIDGET(platform->web_view);
+        auto *const parent = gtk_widget_get_parent(self);
+        auto *const next   = gtk_widget_get_next_sibling(self);
+
+        if (!next)
+        {
+            return;
+        }
+
+        gtk_widget_insert_after(self, parent, next);
+    }
+
+    void impl::lower() // NOLINT(*-function-const)
+    {
+        auto *const self   = GTK_WIDGET(platform->web_view);
+        auto *const parent = gtk_widget_get_parent(self);
+        auto *const prev   = gtk_widget_get_prev_sibling(self);
+
+        if (!prev)
+        {
+            return;
+        }
+
+        gtk_widget_insert_before(self, parent, prev);
+    }
+
     void impl::back() // NOLINT(*-function-const)
     {
         webkit_web_view_go_back(platform->web_view);
@@ -276,12 +306,6 @@ namespace saucer
 
     void impl::execute(cstring_view code) // NOLINT(*-function-const)
     {
-        if (!platform->dom_loaded)
-        {
-            platform->pending.emplace_back(code);
-            return;
-        }
-
         webkit_web_view_evaluate_javascript(platform->web_view, code.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 

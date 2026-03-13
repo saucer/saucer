@@ -37,8 +37,7 @@ namespace saucer
         static BOOL CALLBACK enum_monitor(HMONITOR, HDC, LPRECT, LPARAM);
 
       public:
-        static constexpr auto WM_SAFE_CALL                 = WM_USER + 1;
-        static inline const utils::atom_handle ATOM_WINDOW = GlobalAddAtomW(L"saucer-window");
+        static constexpr auto WM_SAFE_CALL = WM_USER + 1;
     };
 
     class safe_message

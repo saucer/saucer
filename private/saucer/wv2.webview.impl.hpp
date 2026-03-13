@@ -63,10 +63,7 @@ namespace saucer
 
       public:
         icon favicon;
-
-      public:
-        bool dom_loaded{false};
-        std::vector<std::string> pending;
+        std::optional<UINT64> last_navigation;
 
       public:
         std::size_t id_counter{0};
@@ -78,6 +75,7 @@ namespace saucer
         std::optional<saucer::bounds> bounds;
 
       public:
+        HWND browser_hwnd;
         std::uint32_t browser_pid;
         std::optional<fs::path> cleanup;
 
@@ -87,6 +85,9 @@ namespace saucer
       public:
         template <event>
         void setup(impl *);
+
+      public:
+        void update_bounds(int, int);
 
       public:
         static ComPtr<ICoreWebView2EnvironmentOptions> env_options();

@@ -61,9 +61,13 @@ namespace saucer::utils
     template <detail::callback Callback, typename T, typename... Ts>
     constexpr auto invoke(T *self, Ts &&...args)
     {
-        static constexpr auto name = rebind::member_name<Callback.value>;
-        static constexpr auto pure = name.substr(0, name.find_first_of("(<"));
-        static_assert(pure == Callback.name, "Name of implementation does not match interface");
+        static constexpr auto raw  = rebind::member_name<Callback.value>;
+        static constexpr auto pure = raw.substr(0, raw.find_first_of("(<"));
+
+        static constexpr auto suffix = pure.find("_safe");
+        static constexpr auto name   = pure.substr(0, suffix);
+
+        static_assert(name == Callback.name, "Name of implementation does not match interface");
 
         return invoke(Callback.value, self, std::forward<Ts>(args)...);
     }

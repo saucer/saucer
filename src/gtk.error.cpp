@@ -2,22 +2,19 @@
 
 namespace saucer
 {
-    error::of<utils::g_error_ptr>::of(utils::g_error_ptr value) : value(std::move(value)) {}
-
-    error::of<utils::g_error_ptr>::of(const of &other) : of(g_error_copy(other.value.get())) {}
-
-    int error::of<utils::g_error_ptr>::code() const
+    error error::of<utils::g_error_ptr>::operator()(const utils::g_error_ptr &error)
     {
-        return value.get()->code;
+        return {.code = error.get()->code, .message = error.get()->message, .kind = g_error_domain()};
     }
 
-    error::category error::of<utils::g_error_ptr>::type() const
+    std::string g_error_domain_t::name() const
     {
-        return category::platform;
+        return "g_error";
     }
 
-    std::string error::of<utils::g_error_ptr>::message() const
+    error::domain *g_error_domain()
     {
-        return value.get()->message;
+        static auto rtn = g_error_domain_t{};
+        return &rtn;
     }
 } // namespace saucer

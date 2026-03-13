@@ -5,6 +5,7 @@
 #include "gtk.window.impl.hpp"
 
 #include "wkg.url.impl.hpp"
+#include "wkg.scheme.impl.hpp"
 #include "wkg.webview.impl.hpp"
 #include "wkg.permission.impl.hpp"
 
@@ -44,5 +45,16 @@ namespace saucer
     natives<icon, true> icon::native<true>() const
     {
         return {.icon = m_impl->texture.get()};
+    }
+
+    template <>
+    natives<stash, true> stash::native<true>() const
+    {
+        if (m_impl->type() != impl::id_of<scheme::stash_stream>())
+        {
+            return {};
+        }
+
+        return {.stream = G_INPUT_STREAM(static_cast<scheme::stash_stream *>(m_impl.get())->platform->stream.get())};
     }
 } // namespace saucer

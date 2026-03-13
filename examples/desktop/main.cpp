@@ -30,11 +30,8 @@ coco::stray start(saucer::application *app)
     auto window  = saucer::window::create(app).value();
     auto webview = saucer::smartview::create({.window = window});
 
-    webview->expose("pick_folder", [&](saucer::modules::picker::options opts)
-                    { return desktop.pick<type::folder>(std::move(opts)).transform_error(&saucer::error::message); });
-
-    webview->expose("pick_file", [&](saucer::modules::picker::options opts)
-                    { return desktop.pick<type::file>(std::move(opts)).transform_error(&saucer::error::message); });
+    webview->expose("pick_folder", [&](saucer::modules::picker::options opts) { return desktop.pick<type::folder>(std::move(opts)); });
+    webview->expose("pick_file", [&](saucer::modules::picker::options opts) { return desktop.pick<type::file>(std::move(opts)); });
 
     webview->expose("open", [&](const std::string &url) { desktop.open(url); });
     webview->expose("mouse_position", [&] { return desktop.mouse_position(); });

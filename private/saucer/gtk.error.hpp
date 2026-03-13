@@ -6,21 +6,15 @@
 namespace saucer
 {
     template <>
-    struct error::of<utils::g_error_ptr> : error::impl
+    struct error::of<utils::g_error_ptr>
     {
-        utils::g_error_ptr value;
-
-      public:
-        of(utils::g_error_ptr);
-
-      public:
-        of(const of &);
-
-      public:
-        [[nodiscard]] int code() const override;
-        [[nodiscard]] category type() const override;
-
-      public:
-        [[nodiscard]] std::string message() const override;
+        static error operator()(const utils::g_error_ptr &);
     };
+
+    struct g_error_domain_t : error::domain
+    {
+        [[nodiscard]] std::string name() const override;
+    };
+
+    error::domain *g_error_domain();
 } // namespace saucer

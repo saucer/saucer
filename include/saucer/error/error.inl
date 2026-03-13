@@ -7,52 +7,53 @@
 
 namespace saucer
 {
-    namespace detail
-    {
-        template <typename T>
-        struct is_expected : std::false_type
-        {
-        };
-
-        template <typename T, typename E>
-        struct is_expected<std::expected<T, E>> : std::true_type
-        {
-        };
-
-        template <typename T>
-        concept Expected = is_expected<T>::value;
-    } // namespace detail
-
-    template <Unwrappable T>
-    auto unwrap_safe(T &&value)
-    {
-        using value_t = std::remove_cvref_t<T>::value_type;
-
-        if (!value.has_value())
-        {
-            return value_t{};
-        }
-
-        return *std::forward<T>(value);
-    }
-
     template <typename T>
-    auto err(T &&value, std::source_location location)
+    struct detail::is_expected : std::false_type
     {
-        using U = std::remove_cvref_t<T>;
+    };
 
-        if constexpr (detail::Expected<U>)
+    template <typename T, typename E>
+    struct detail::is_expected<std::expected<T, E>> : std::true_type
+    {
+    };
+
+    template <>
+    struct err<void> : std::unexpected<error>
+    {
+        err(saucer::error value) : std::unexpected<saucer::error>{std::move(value)} {}
+    };
+    err(error) -> err<void>;
+
+    template <typename T, typename E>
+    struct err<std::expected<T, E>> : std::unexpected<E>
+    {
+        template <detail::Expected U>
+        err(U &&value) : std::unexpected<E>{std::forward<U>(value).error()}
         {
-            return std::unexpected{value.error()};
         }
-        else
+    };
+    template <detail::Expected T>
+    err(T &&) -> err<std::remove_cvref_t<T>>;
+
+    template <typename T, typename... Ts>
+    struct err : std::unexpected<error>
+    {
+        static auto make(std::source_location location, T value, Ts... params)
         {
-            return std::unexpected{error{
-                cr::polo<error::impl>{std::in_place_type_t<error::of<U>>{}, std::forward<T>(value)},
-                location,
-            }};
+            auto rtn     = saucer::error::of<std::remove_cvref_t<T>>{}(std::forward<T>(value), std::forward<Ts>(params)...);
+            rtn.location = location;
+
+            return rtn;
         }
-    }
+
+      public:
+        err(T value, Ts... params, std::source_location location = std::source_location::current())
+            : std::unexpected<saucer::error>{make(location, std::forward<T>(value), std::forward<Ts>(params)...)}
+        {
+        }
+    };
+    template <typename T, typename... Ts>
+    err(T &&, Ts &&...) -> err<T, Ts...>;
 } // namespace saucer
 
 template <>
@@ -60,7 +61,7 @@ struct std::formatter<saucer::error> : std::formatter<std::string_view>
 {
     std::format_context::iterator format(const saucer::error &error, std::format_context &ctx) const
     {
-        const auto format = std::format("Error at {}:{}: {}", error.location().file_name(), error.location().line(), error.message());
+        const auto format = std::format("Error at {}:{}: {}", error.location.file_name(), error.location.line(), error.message);
         return std::formatter<string_view>::format(format, ctx);
     }
 };
