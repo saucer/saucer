@@ -122,7 +122,7 @@ namespace saucer
             auto &prev         = self->platform->prev_decoration;
             const auto current = self->decorations();
 
-            if (prev.has_value() && *prev == current)
+            if (prev == current)
             {
                 break;
             }

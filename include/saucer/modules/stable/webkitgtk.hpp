@@ -6,7 +6,7 @@
 #include <saucer/window.hpp>
 #include <saucer/webview.hpp>
 
-#include <adwaita.h>
+#include <gtk/gtk.h>
 #include <webkit/webkit.h>
 
 namespace saucer
@@ -14,7 +14,7 @@ namespace saucer
     template <>
     struct stable_natives<application>
     {
-        AdwApplication *application;
+        GtkApplication *application;
     };
 
     template <>

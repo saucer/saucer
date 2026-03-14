@@ -2,6 +2,10 @@
 
 #include <format>
 
+#ifdef SAUCER_ADWAITA
+#include <adwaita.h>
+#endif
+
 namespace saucer
 {
     using impl = application::impl;
@@ -19,7 +23,11 @@ namespace saucer
             id = std::format("app.saucer.{}", native::fix_id(id));
         }
 
-        platform->application = adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
+#ifdef SAUCER_ADWAITA
+        platform->application = GTK_APPLICATION(adw_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS));
+#else
+        platform->application = gtk_application_new(id.c_str(), G_APPLICATION_DEFAULT_FLAGS);
+#endif
 
         platform->argc                       = opts.argc.value_or(0);
         platform->argv                       = opts.argv.value_or(nullptr);

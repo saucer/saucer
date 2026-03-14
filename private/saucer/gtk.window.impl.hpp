@@ -8,7 +8,7 @@
 
 #include <optional>
 
-#include <adwaita.h>
+#include <gtk/gtk.h>
 
 namespace saucer
 {
@@ -51,11 +51,11 @@ namespace saucer
         std::optional<decoration> prev_decoration;
 
       public:
-        GtkOverlay *content;
-        AdwHeaderBar *header;
+        utils::g_widget_ptr<GtkWidget> header;
+        utils::g_widget_ptr<GtkOverlay> content;
 
       public:
-        GtkEventController *motion_controller;
+        utils::g_widget_ptr<GtkEventController> motion_controller;
         utils::handle<cairo_region_t *, cairo_region_destroy> region;
 
       public:
@@ -85,4 +85,8 @@ namespace saucer
         void update_region(impl *) const;
         void update_decorations(impl *) const;
     };
+
+    struct SaucerWindow;
+
+    SaucerWindow *saucer_window_new(GtkApplication *, window::impl *);
 } // namespace saucer

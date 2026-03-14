@@ -12,6 +12,7 @@ option(saucer_exceptions       "Enable exception support (Respects -fno-exceptio
 option(saucer_examples         "Build examples"                                                      OFF)
 option(saucer_tests            "Build tests"                                                         OFF)
 
+option(saucer_adwaita          "Use LibAdwaita when using the WebKitGtk backend"                      ON)
 option(saucer_msvc_hack        "Fix mutex crash on mismatching runtimes. See VS2022 17.10 changelog" OFF)
 option(saucer_unexpected_hack  "Fix std::unexpected ambiguity issues when compiling with zig"        OFF)
 option(saucer_private_webkit   "Enable private api usage for wkwebview"                               ON)
@@ -172,6 +173,10 @@ endif()
 
 if (NOT saucer_exceptions)
   target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_NO_EXCEPTIONS)
+endif()
+
+if (saucer_adwaita)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC SAUCER_ADWAITA)
 endif()
 
 if (saucer_msvc_hack)
