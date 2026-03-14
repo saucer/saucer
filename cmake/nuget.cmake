@@ -2,20 +2,30 @@ function(nuget_message LEVEL MESSAGE)
     message(${LEVEL} "NuGet: ${MESSAGE}")
 endfunction()
 
-function(nuget_setup OUTPUT)
+function(nuget_find OUTPUT)
     set(nuget_PATH "${CMAKE_CURRENT_BINARY_DIR}")
     cmake_path(APPEND nuget_PATH "nuget" "bin" "nuget.exe")
 
-    if (NOT EXISTS "${nuget_PATH}")
-        find_program(NUGET nuget)
+    if (EXISTS "${nuget_PATH}")
+        set(${OUTPUT} "${nuget_PATH}" PARENT_SCOPE)
+        return()
     endif()
 
-    if (NUGET MATCHES "NOTFOUND")
-        file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${nuget_PATH}")
-        nuget_message(STATUS "Downloading to '${nuget_PATH}'")
-    else()
-        set(nuget_PATH "${NUGET}")
+    find_program(NUGET nuget)
+
+    if (NOT NUGET MATCHES "NOTFOUND")
+        set(${OUTPUT} "${NUGET}" PARENT_SCOPE)
+        return()
     endif()
+
+    nuget_message(STATUS "Downloading to '${nuget_PATH}'")
+    file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${nuget_PATH}")
+
+    set(${OUTPUT} "${nuget_PATH}" PARENT_SCOPE)
+endfunction()
+
+function(nuget_setup OUTPUT)
+    nuget_find(nuget_PATH)
 
     # Ensure that the default NuGet-Sources are present
 
