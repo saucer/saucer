@@ -1,5 +1,14 @@
 <hr>
 
+<div align="right">
+    <a href="https://notbyai.fyi/" target="_blank">
+      <img src="https://raw.githubusercontent.com/saucer/saucer.github.io/refs/heads/v7/src/assets/badge.svg" />
+    </a>
+
+[^4]
+
+</div>
+
 <div align="center">
     <img src="https://github.com/saucer/saucer.github.io/blob/v7/src/assets/logo-alt.svg?raw=true" height="312" />
 </div>
@@ -131,6 +140,8 @@ It supports all three major desktop operating systems (Windows, Linux, MacOS) an
 
 [^3]: Saucer catches exceptions thrown in exposed functions - **if not compiled with** `-fno-exceptions` - by default. This can be explicitly disabled via `set(saucer_exceptions OFF)`
 
+[^4]: Saucer is 100% human written. No AI-Tools were used in the creation, development process or any other aspect of the project.
+
 ## 📦 Installation
 
 <table>
@@ -253,8 +264,3 @@ Saucer is a passion project and I develop it in my free-time. If you'd like to s
 
 ---
 
-> Saucer is 100% human written. No AI-Tools were used in the development process.
-
-<a href="https://notbyai.fyi/" target="_blank">
-  <img align="right" src="https://raw.githubusercontent.com/saucer/saucer.github.io/refs/heads/v7/src/assets/badge.svg" />
-</a>
