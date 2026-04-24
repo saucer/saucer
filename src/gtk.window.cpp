@@ -331,7 +331,7 @@ namespace saucer
 #endif
 
         gtk_window_set_decorated(platform->window.get(), decorated);
-        gtk_widget_set_visible(GTK_WIDGET(platform->header.get()), visible);
+        gtk_widget_set_visible(GTK_WIDGET(platform->header.get()), !visible);
     }
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
