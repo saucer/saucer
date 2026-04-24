@@ -3,6 +3,10 @@
 #include "instantiate.hpp"
 #include "gtk.app.impl.hpp"
 
+#ifdef SAUCER_ADWAITA
+#include <adwaita.h>
+#endif
+
 namespace saucer
 {
     using impl = window::impl;
@@ -14,24 +18,32 @@ namespace saucer
         platform = std::make_unique<native>();
 
         auto *const application = GTK_APPLICATION(parent->native<false>()->platform->application.get());
-        platform->window.reset(GTK_WINDOW(adw_application_window_new(application)));
+        platform->window.reset(GTK_WINDOW(saucer_window_new(application, this)));
 
         platform->style   = gtk_css_provider_new();
-        platform->header  = ADW_HEADER_BAR(adw_header_bar_new());
         platform->content = GTK_OVERLAY(gtk_overlay_new());
         platform->lease   = utils::lease{this};
 
+#ifdef SAUCER_ADWAITA
+        platform->header = GTK_WIDGET(adw_header_bar_new());
+#else
+        platform->header = GTK_WIDGET(gtk_header_bar_new());
+        g_object_ref_sink(platform->header.get()); // We will only use this when needed, let's not keep it potentially floating
+#endif
+
         auto *const box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
-        auto *const bin = ADW_BIN(adw_bin_new());
+        gtk_box_append(box, GTK_WIDGET(platform->content.get()));
 
-        gtk_box_append(box, GTK_WIDGET(platform->header));
-        gtk_box_append(box, GTK_WIDGET(platform->content));
+        gtk_widget_set_vexpand(GTK_WIDGET(platform->content.get()), true);
+        gtk_widget_set_hexpand(GTK_WIDGET(platform->content.get()), true);
 
-        gtk_widget_set_vexpand(GTK_WIDGET(bin), true);
-        gtk_widget_set_hexpand(GTK_WIDGET(bin), true);
-
-        gtk_overlay_set_child(platform->content, GTK_WIDGET(bin));
+#ifdef SAUCER_ADWAITA
+        gtk_box_prepend(box, platform->header.get());
         adw_application_window_set_content(ADW_APPLICATION_WINDOW(platform->window.get()), GTK_WIDGET(box));
+#else
+        gtk_window_set_child(GTK_WINDOW(platform->window.get()), GTK_WIDGET(box));
+        gtk_css_provider_load_from_string(platform->style.get(), "window.background { border-radius: 0; }");
+#endif
 
         gtk_window_set_hide_on_close(platform->window.get(), true);
 
@@ -110,7 +122,7 @@ namespace saucer
 
     bool impl::click_through() const
     {
-        return platform->motion_controller;
+        return platform->motion_controller.get();
     }
 
     std::string impl::title() const
@@ -132,7 +144,7 @@ namespace saucer
             return none;
         }
 
-        if (!gtk_widget_get_visible(GTK_WIDGET(platform->header)))
+        if (!gtk_widget_get_visible(GTK_WIDGET(platform->header.get())))
         {
             return partial;
         }
@@ -142,8 +154,8 @@ namespace saucer
 
     size impl::size() const
     {
-        int width{}, height{};
-        gtk_window_get_default_size(platform->window.get(), &width, &height);
+        auto width  = gtk_widget_get_size(GTK_WIDGET(platform->window.get()), GTK_ORIENTATION_HORIZONTAL);
+        auto height = gtk_widget_get_size(GTK_WIDGET(platform->window.get()), GTK_ORIENTATION_VERTICAL);
 
         return platform->offset<offset::sub>({.w = width, .h = height});
     }
@@ -284,7 +296,7 @@ namespace saucer
         }
 
         auto *const widget = GTK_WIDGET(platform->window.get());
-        gtk_widget_remove_controller(widget, platform->motion_controller);
+        gtk_widget_remove_controller(widget, platform->motion_controller.get());
 
         platform->motion_controller = nullptr;
         platform->region.reset();
@@ -314,8 +326,12 @@ namespace saucer
         const auto decorated = decoration != decoration::none;
         const auto visible   = decoration == decoration::full;
 
+#ifndef SAUCER_ADWAITA
+        gtk_window_set_titlebar(platform->window.get(), visible ? nullptr : platform->header.get());
+#endif
+
         gtk_window_set_decorated(platform->window.get(), decorated);
-        gtk_widget_set_visible(GTK_WIDGET(platform->header), visible);
+        gtk_widget_set_visible(GTK_WIDGET(platform->header.get()), visible);
     }
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
