@@ -124,11 +124,19 @@ namespace saucer
                               .value();
 
         utils::set_immersive_dark(hwnd.get(), dark);
+
+        if (background.Comment() == L"saucer:explicit")
+        {
+            return;
+        }
+
+        background.Color(settings.GetColorValue(Background));
     }
 
     template size native::offset<mode::add>(saucer::size) const;
     template size native::offset<mode::sub>(saucer::size) const;
 
+    // NOLINTNEXTLINE(*-recursion)
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param, UINT_PTR data, DWORD_PTR unused)
     {
         auto *const self = reinterpret_cast<impl *>(data);

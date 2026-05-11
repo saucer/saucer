@@ -392,6 +392,7 @@ namespace saucer
     {
         auto [r, g, b, a] = color;
         platform->background.Color({.A = a, .R = r, .G = g, .B = b});
+        platform->background.Comment(winrt::hstring{L"saucer:explicit"});
     }
 
     void impl::set_decorations(decoration decoration) // NOLINT(*-function-const)
