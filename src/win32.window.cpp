@@ -172,25 +172,27 @@ namespace saucer
 
     size impl::size() const
     {
-        RECT rect;
-        GetClientRect(platform->hwnd.get(), &rect);
-        return platform->scale<mode::sub>({.w = rect.right - rect.left, .h = rect.bottom - rect.top});
+        return platform->scale<mode::sub>(platform->client_size());
     }
 
     size impl::max_size() const
     {
-        const auto width  = GetSystemMetrics(SM_CXMAXTRACK);
-        const auto height = GetSystemMetrics(SM_CYMAXTRACK);
+        if (platform->max_size)
+        {
+            return platform->max_size->original;
+        }
 
-        return platform->scale<mode::sub>(platform->offset<mode::sub>(platform->max_size.value_or({.w = width, .h = height})));
+        return platform->client_size<mode::sub>({.w = GetSystemMetrics(SM_CXMAXTRACK), .h = GetSystemMetrics(SM_CYMAXTRACK)}).value;
     }
 
     size impl::min_size() const
     {
-        const auto width  = GetSystemMetrics(SM_CXMINTRACK);
-        const auto height = GetSystemMetrics(SM_CYMINTRACK);
+        if (platform->min_size)
+        {
+            return platform->min_size->original;
+        }
 
-        return platform->scale<mode::sub>(platform->offset<mode::sub>(platform->min_size.value_or({.w = width, .h = height})));
+        return platform->client_size<mode::sub>({.w = GetSystemMetrics(SM_CXMINTRACK), .h = GetSystemMetrics(SM_CYMINTRACK)}).value;
     }
 
     position impl::position() const
@@ -400,18 +402,18 @@ namespace saucer
 
     void impl::set_size(saucer::size size) // NOLINT(*-function-const)
     {
-        auto [width, height] = platform->offset<mode::add>(platform->scale<mode::add>(size));
+        auto [width, height] = platform->client_size<mode::add>(size).value;
         SetWindowPos(platform->hwnd.get(), nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
     void impl::set_max_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->max_size = platform->offset<mode::add>(platform->scale<mode::add>(size));
+        platform->max_size = platform->client_size<mode::add>(size);
     }
 
     void impl::set_min_size(saucer::size size) // NOLINT(*-function-const)
     {
-        platform->min_size = platform->offset<mode::add>(platform->scale<mode::add>(size));
+        platform->min_size = platform->client_size<mode::add>(size);
     }
 
     void impl::set_position(saucer::position position) // NOLINT(*-function-const)

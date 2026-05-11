@@ -32,6 +32,12 @@ namespace saucer
         sub
     };
 
+    struct dpi_size
+    {
+        size value;
+        size original;
+    };
+
     struct window::impl::native
     {
         utils::window_handle hwnd;
@@ -54,7 +60,10 @@ namespace saucer
       public:
         utils::wnd_proc_hook hook;
         utils::handle<HICON, DestroyIcon> icon;
-        std::optional<saucer::size> max_size, min_size;
+        std::optional<dpi_size> max_size, min_size;
+
+      public:
+        [[nodiscard]] saucer::size client_size() const;
 
       public:
         template <mode>
@@ -62,6 +71,9 @@ namespace saucer
 
         template <mode>
         [[nodiscard]] saucer::size offset(saucer::size) const;
+
+        template <mode>
+        [[nodiscard]] dpi_size client_size(saucer::size) const;
 
       public:
         static inline std::size_t windows_build;

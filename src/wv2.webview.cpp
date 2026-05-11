@@ -129,10 +129,16 @@ namespace saucer
         platform->web_view->add_DOMContentLoaded(Callback<DOMLoaded>(bind(&native::on_dom)).Get(), nullptr);
         platform->web_view->add_FaviconChanged(Callback<FaviconChanged>(bind(&native::on_favicon)).Get(), nullptr);
 
-        auto on_resize = [this, parent_window](int width, int height)
+        auto on_resize = [this, parent_window](int, int)
         {
-            const auto bounds = platform->bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
+            if (!platform->bounds.has_value())
+            {
+                const auto [w, h] = parent_window->client_size();
+                platform->controller->put_Bounds({0, 0, w, h});
+                return;
+            }
 
+            const auto bounds = *platform->bounds;
             const auto [x, y] = parent_window->scale<mode::add>({.w = bounds.x, .h = bounds.y});
             const auto [w, h] = parent_window->scale<mode::add>({.w = bounds.w, .h = bounds.h});
 
@@ -159,9 +165,7 @@ namespace saucer
                                                                                 .clearable = false,
                                                                             }});
 
-        auto [width, height] = window->size();
-
-        on_resize(width, height);
+        on_resize(0, 0);
         on_minimize(window->minimized());
 
         return {};
@@ -293,7 +297,7 @@ namespace saucer
         platform->web_view->Navigate(utils::widen(url.string()).c_str());
     }
 
-    void impl::set_html(cstring_view html)
+    void impl::set_html(cstring_view html) // NOLINT(*-function-const)
     {
         platform->web_view->NavigateToString(utils::widen(html).c_str());
     }

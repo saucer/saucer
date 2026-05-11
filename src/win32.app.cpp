@@ -9,6 +9,8 @@ namespace saucer
 
     result<> impl::init_platform(const options &opts)
     {
+        utils::set_dpi_awareness();
+
         auto controller = utils::create_dispatch_controller();
 
         if (!controller.has_value())
@@ -52,7 +54,6 @@ namespace saucer
             return err(GetLastError());
         }
 
-        utils::set_dpi_awareness();
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
         Gdiplus::GdiplusStartupInput input{};
