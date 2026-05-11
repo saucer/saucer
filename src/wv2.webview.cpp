@@ -157,7 +157,7 @@ namespace saucer
         auto &events = window->native<false>()->events;
 
         events.get<window::event::resize>().update(platform->on_resize, {{
-                                                                            .func = std::bind_front(&native::update_bounds, platform.get()),
+                                                                            .func      = [this](auto...) { platform->update_bounds(); },
                                                                             .clearable = false,
                                                                         }});
 
@@ -166,10 +166,8 @@ namespace saucer
                                                                                 .clearable = false,
                                                                             }});
 
-        auto [width, height] = window->size();
-
+        platform->update_bounds();
         on_minimize(window->minimized());
-        platform->update_bounds(width, height);
 
         return {};
     }

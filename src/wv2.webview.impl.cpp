@@ -202,13 +202,18 @@ namespace saucer
         event.on_clear([this, token] { web_view->remove_NavigationCompleted(token); });
     }
 
-    void native::update_bounds(int width, int height)
+    void native::update_bounds()
     {
         auto *const parent = lease.value()->window->native<false>()->platform.get();
-        const auto bb      = bounds.value_or({.x = 0, .y = 0, .w = width, .h = height});
 
-        const auto [x, y] = parent->scale<mode::add>({.w = bb.x, .h = bb.y});
-        const auto [w, h] = parent->scale<mode::add>({.w = bb.w, .h = bb.h});
+        const auto client = parent->client_size();
+        auto [x, y, w, h] = platform->bounds.value_or({.x = 0, .y = 0, .w = client.w, .h = client.h});
+
+        if (platform->bounds.has_value())
+        {
+            std::tie(x, y) = parent->scale<mode::add>({.w = bb.x, .h = bb.y});
+            std::tie(w, h) = parent->scale<mode::add>({.w = bb.w, .h = bb.h});
+        }
 
         controller->put_Bounds({x, y, x + w, y + h});
     }

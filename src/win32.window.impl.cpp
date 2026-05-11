@@ -3,6 +3,7 @@
 #include "win32.app.impl.hpp"
 
 #include <winrt/windows.ui.viewmanagement.core.h>
+#include <cmath>
 
 namespace saucer
 {
@@ -44,20 +45,27 @@ namespace saucer
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, extended);
     }
 
+    size native::client_size() const
+    {
+        RECT rect;
+        GetClientRect(hwnd.get(), &rect);
+        return {.w = rect.right - rect.left, .h = rect.bottom - rect.top};
+    }
+
     template <mode T>
     size native::scale(saucer::size size) const
     {
-        const auto factor = static_cast<float>(dpi) / 96.f;
+        const auto factor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
         if constexpr (T == mode::add)
         {
-            size.w = static_cast<int>(static_cast<float>(size.w) * factor);
-            size.h = static_cast<int>(static_cast<float>(size.h) * factor);
+            size.w = static_cast<int>(std::nearbyint(static_cast<float>(size.w) * factor));
+            size.h = static_cast<int>(std::nearbyint(static_cast<float>(size.h) * factor));
         }
         else
         {
-            size.w = static_cast<int>(static_cast<float>(size.w) / factor);
-            size.h = static_cast<int>(static_cast<float>(size.h) / factor);
+            size.w = static_cast<int>(std::nearbyint(static_cast<float>(size.w) / factor));
+            size.h = static_cast<int>(std::nearbyint(static_cast<float>(size.h) / factor));
         }
 
         return size;
@@ -97,6 +105,15 @@ namespace saucer
         return size;
     }
 
+    template <mode T>
+    dpi_size native::client_size(saucer::size size) const
+    {
+        return {.value = offset<T>(scale<T>(size)), .original = size};
+    }
+
+    template dpi_size native::client_size<mode::add>(saucer::size) const;
+    template dpi_size native::client_size<mode::sub>(saucer::size) const;
+
     void native::update_dark_mode(const std::optional<bool> &value) const
     {
         using enum utils::color_type;
@@ -111,7 +128,6 @@ namespace saucer
     template size native::offset<mode::add>(saucer::size) const;
     template size native::offset<mode::sub>(saucer::size) const;
 
-    // NOLINTNEXTLINE(*-recursion)
     LRESULT CALLBACK native::wnd_proc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param, UINT_PTR data, DWORD_PTR unused)
     {
         auto *const self = reinterpret_cast<impl *>(data);
@@ -179,13 +195,13 @@ namespace saucer
 
             if (auto min_size = self->platform->min_size; min_size.has_value())
             {
-                auto [min_x, min_y]  = *min_size;
+                auto [min_x, min_y]  = min_size->value;
                 info->ptMinTrackSize = {.x = min_x, .y = min_y};
             }
 
             if (auto max_size = self->platform->max_size; max_size.has_value())
             {
-                auto [max_x, max_y]  = *max_size;
+                auto [max_x, max_y]  = max_size->value;
                 info->ptMaxTrackSize = {.x = max_x, .y = max_y};
             }
 
@@ -274,12 +290,22 @@ namespace saucer
             const auto size     = self->size();
             self->platform->dpi = HIWORD(w_param);
 
-            self->set_size(size);
+            if (auto &size = self->platform->min_size; size)
+            {
+                size = self->platform->client_size<mode::add>(size->original);
+            }
+
+            if (auto &size = self->platform->max_size; size)
+            {
+                size = self->platform->client_size<mode::add>(size->original);
+            }
 
             auto *const rect = reinterpret_cast<RECT *>(l_param);
+
+            self->set_size(size);
             self->set_position({.x = rect->left, .y = rect->top});
 
-            return 0;
+            break;
         }
 
         return DefSubclassProc(hwnd, msg, w_param, l_param);

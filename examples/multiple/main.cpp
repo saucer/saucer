@@ -1,4 +1,5 @@
 #include <saucer/smartview.hpp>
+#include <cmath>
 
 coco::stray start(saucer::application *app)
 {
@@ -10,20 +11,22 @@ coco::stray start(saucer::application *app)
     window->on<saucer::window::event::resize>(
         [&](auto width, auto height)
         {
-            auto w = first && second ? width / 2 : width;
-            auto o = first ? w : 0;
-
-            if (first)
-            {
-                first->set_bounds({.x = 0, .y = 0, .w = w, .h = height});
-            }
-
-            if (!second)
+            if (!first && !second)
             {
                 return;
             }
 
-            second->set_bounds({.x = o, .y = 0, .w = w, .h = height});
+            if (!first || !second)
+            {
+                auto &ref = first ? *first : *second;
+                ref.set_bounds({.x = 0, .y = 0, .w = width, .h = height});
+            }
+
+            const auto left  = std::floor(static_cast<float>(width) / 2.f);
+            const auto right = std::ceil(width - left);
+
+            first->set_bounds({.x = 0, .y = 0, .w = static_cast<int>(left), .h = height});
+            first->set_bounds({.x = 0, .y = 0, .w = static_cast<int>(right), .h = height});
         });
 
     first->expose("remove", [&] { first.reset(); });
