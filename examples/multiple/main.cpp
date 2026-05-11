@@ -26,7 +26,7 @@ coco::stray start(saucer::application *app)
             const auto right = std::ceil(width - left);
 
             first->set_bounds({.x = 0, .y = 0, .w = static_cast<int>(left), .h = height});
-            first->set_bounds({.x = 0, .y = 0, .w = static_cast<int>(right), .h = height});
+            second->set_bounds({.x = static_cast<int>(left), .y = 0, .w = static_cast<int>(right), .h = height});
         });
 
     first->expose("remove", [&] { first.reset(); });
