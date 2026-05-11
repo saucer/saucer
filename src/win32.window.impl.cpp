@@ -2,8 +2,9 @@
 
 #include "win32.app.impl.hpp"
 
-#include <winrt/windows.ui.viewmanagement.core.h>
 #include <cmath>
+
+#include <winrt/windows.ui.viewmanagement.core.h>
 
 namespace saucer
 {

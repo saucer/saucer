@@ -13,8 +13,9 @@
 #include "modules/stable/webview2.hpp"
 
 #include <cassert>
-
 #include <format>
+
+#include <tuple>
 #include <ranges>
 
 #include <winerror.h>
@@ -207,12 +208,13 @@ namespace saucer
         auto *const parent = lease.value()->window->native<false>()->platform.get();
 
         const auto client = parent->client_size();
-        auto [x, y, w, h] = platform->bounds.value_or({.x = 0, .y = 0, .w = client.w, .h = client.h});
+        auto [x, y, w, h] = bounds.value_or({.x = 0, .y = 0, .w = client.w, .h = client.h});
 
-        if (platform->bounds.has_value())
+        if (bounds.has_value())
         {
-            std::tie(x, y) = parent->scale<mode::add>({.w = bb.x, .h = bb.y});
-            std::tie(w, h) = parent->scale<mode::add>({.w = bb.w, .h = bb.h});
+            auto [sx, sy]        = parent->scale<mode::add>({.w = x, .h = y});
+            auto [sw, sh]        = parent->scale<mode::add>({.w = w, .h = h});
+            std::tie(x, y, w, h) = {sx, sy, sw, sh};
         }
 
         controller->put_Bounds({x, y, x + w, y + h});

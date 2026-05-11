@@ -349,18 +349,14 @@ namespace saucer
 
     void impl::reset_bounds() // NOLINT(*-function-const)
     {
-        const auto [width, height] = window->size();
-
         platform->bounds.reset();
-        platform->update_bounds(width, height);
+        platform->update_bounds();
     }
 
     void impl::set_bounds(saucer::bounds bounds) // NOLINT(*-function-const)
     {
-        const auto [width, height] = window->size();
-
         platform->bounds.emplace(bounds);
-        platform->update_bounds(width, height);
+        platform->update_bounds();
     }
 
     void impl::raise() // NOLINT(*-function-const)
