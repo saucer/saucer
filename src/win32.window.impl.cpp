@@ -310,9 +310,8 @@ namespace saucer
             }
 
             auto *const rect = reinterpret_cast<RECT *>(l_param);
-
-            self->set_size(size);
             self->set_position({.x = rect->left, .y = rect->top});
+            self->set_size(size); // We need to set the size after the position to avoid feedback loops
 
             break;
         }
