@@ -47,8 +47,56 @@ function(nuget_setup OUTPUT)
     set(${OUTPUT} "${nuget_PATH}" PARENT_SCOPE)
 endfunction()
 
+function(NuGetCreateLibrary)
+    cmake_parse_arguments(nuget "" "NAME;VERSION;INCLUDE;LIBRARY" "" ${ARGN})
+
+    add_library(${nuget_NAME} STATIC IMPORTED)
+
+    set_target_properties(${nuget_NAME} PROPERTIES
+        IMPORTED_LOCATION             "${nuget_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${nuget_INCLUDE}"
+    )
+
+    if (NOT saucer_install)
+        return()
+    endif()
+
+    include(CMakePackageConfigHelpers)
+    include(GNUInstallDirs)
+
+    install(
+        FILES       ${nuget_LIBRARY}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${nuget_NAME}-${nuget_VERSION}
+    )
+
+    install(
+        DIRECTORY   ${nuget_INCLUDE}/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${nuget_NAME}-${nuget_VERSION}
+    )
+
+    cmake_path(GET nuget_LIBRARY FILENAME package_LIBRARY)
+
+    configure_package_config_file(
+        cmake/nugetConfig.cmake.in
+        ${PROJECT_BINARY_DIR}/${nuget_NAME}Config.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${nuget_NAME}-${nuget_VERSION}
+        PATH_VARS CMAKE_INSTALL_LIBDIR CMAKE_INSTALL_INCLUDEDIR
+    )
+
+    write_basic_package_version_file(
+        ${PROJECT_BINARY_DIR}/${nuget_NAME}ConfigVersion.cmake
+        VERSION ${nuget_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    install(
+        FILES ${PROJECT_BINARY_DIR}/${nuget_NAME}Config.cmake ${PROJECT_BINARY_DIR}/${nuget_NAME}ConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${nuget_NAME}-${nuget_VERSION}
+    )
+endfunction()
+
 function(NugetAddPackage)
-    cmake_parse_arguments(nuget "" "NAME;PACKAGE;VERSION" "LIBRARIES;INCLUDES;ALTERNATIVES" ${ARGN})
+    cmake_parse_arguments(nuget "" "NAME;PACKAGE;VERSION;INSTALL" "LIBRARY;INCLUDE;ALTERNATIVES" ${ARGN})
 
     nuget_setup(nuget_PATH)
     nuget_message(STATUS "Adding package ${nuget_PACKAGE}@${nuget_VERSION}")
@@ -70,17 +118,17 @@ function(NugetAddPackage)
     set(${nuget_NAME}_PATH "${package_PATH}" PARENT_SCOPE)
 
     set(package_GLOB "${package_PATH}")
-    cmake_path(APPEND package_GLOB ${nuget_LIBRARIES})
-    file(GLOB_RECURSE package_LIBRARIES "${package_GLOB}")
+    cmake_path(APPEND package_GLOB ${nuget_LIBRARY})
+    file(GLOB_RECURSE package_LIBRARY "${package_GLOB}")
 
-    set(package_INCLUDES "${package_PATH}")
-    cmake_path(APPEND package_INCLUDES ${nuget_INCLUDES})
+    set(package_INCLUDE "${package_PATH}")
+    cmake_path(APPEND package_INCLUDE ${nuget_INCLUDE})
 
-    add_library(${nuget_NAME} STATIC IMPORTED)
-
-    set_target_properties(${nuget_NAME} PROPERTIES
-        IMPORTED_LOCATION "${package_LIBRARIES}"
-        INTERFACE_INCLUDE_DIRECTORIES "${package_INCLUDES}"
+    NuGetCreateLibrary(
+        NAME      ${nuget_NAME}
+        VERSION   ${nuget_VERSION}
+        INCLUDE   ${package_INCLUDE}
+        LIBRARY   ${package_LIBRARY}
     )
 endfunction()
 

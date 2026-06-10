@@ -11,6 +11,7 @@ option(saucer_exceptions       "Enable exception support (Respects -fno-exceptio
 
 option(saucer_examples         "Build examples"                                                      OFF)
 option(saucer_tests            "Build tests"                                                         OFF)
+option(saucer_install          "Generate install target"                                              ON)
 
 option(saucer_adwaita          "Use LibAdwaita when using the WebKitGtk backend"                      ON)
 option(saucer_msvc_hack        "Fix mutex crash on mismatching runtimes. See VS2022 17.10 changelog" OFF)
@@ -219,7 +220,7 @@ saucer_include_directories(${PROJECT_NAME} "private")
 # +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 7.4.0")
+  set(SERIALIZER_DEP "glaze 7.8.0")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
@@ -262,7 +263,7 @@ CPMFindPackage(
 
 CPMFindPackage(
   NAME           coco
-  VERSION        4.3.0
+  VERSION        4.7.0
   GIT_REPOSITORY "https://github.com/Curve/coco"
   OPTIONS        "coco_exceptions ${saucer_exceptions}"
 )
@@ -375,11 +376,12 @@ if (saucer_backend STREQUAL "WebView2")
     NAME         webview2
     PACKAGE      "Microsoft.Web.WebView2"
     VERSION      "${saucer_webview2_version}"
-    INCLUDES     "build" "native" "include"
-    LIBRARIES    "build" "native" "${saucer_webview2_arch}" "WebView2LoaderStatic.lib"
+    INCLUDE      "build" "native" "include"
+    LIBRARY      "build" "native" "${saucer_webview2_arch}" "WebView2LoaderStatic.lib"
     ALTERNATIVES "unofficial-webview2|unofficial::webview2::webview2"
   )
 
+  set(SYSTEM_DEP "webview2 ${saucer_webview2_version}")
   saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi Comctl32 gdiplus webview2)
 endif()
 
@@ -390,8 +392,9 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        7.4.0
+    VERSION        7.8.0
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
+    OPTIONS        "glaze_INSTALL ON"
   )
 
   file(GLOB_RECURSE glaze_sources
@@ -464,6 +467,10 @@ endif()
 # | Package Config                                                                                        |
 # +-------------------------------------------------------------------------------------------------------+
 
+if (NOT saucer_install)
+  return()
+endif()
+
 set(saucer_blacklist "reflectcpp" "nontype_functional" "jthread")
 
 foreach(target IN LISTS saucer_blacklist)
@@ -486,5 +493,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.3.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;saucer-fill 1.3.0;${SERIALIZER_DEP}"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.7.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;saucer-fill 1.3.0;${SERIALIZER_DEP};${SYSTEM_DEP};"
 )
