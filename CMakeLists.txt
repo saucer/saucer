@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 4.3)
 project(saucer LANGUAGES CXX VERSION 8.1.0)
 
 # +-------------------------------------------------------------------------------------------------------+
@@ -160,13 +160,11 @@ endif()
 # We are not using `CMAKE_CXX_COMPILER_FRONTEND_VARIANT` here because ClangCL behaves kind of weird
 # and expects flags to disable warnings in GNU fashion regardless of whether it is in MSVC- or GNU-CLI mode
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  target_compile_options(${PROJECT_NAME} PUBLIC -Wno-attributes=sc::)
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  target_compile_options(${PROJECT_NAME} PUBLIC /wd5030 /Zc:preprocessor /utf-8)
-else()
-  target_compile_options(${PROJECT_NAME} PUBLIC -Wno-unknown-attributes)
-endif()
+target_compile_options(${PROJECT_NAME} PUBLIC
+  $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes=sc::>
+  $<$<CXX_COMPILER_ID:MSVC>:/wd5030 /Zc:preprocessor /utf-8>
+  $<$<BOOL:$<STRING:MATCH,${CMAKE_CXX_COMPILER_ID},Clang>>:-Wno-unknown-attributes>
+)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Setup Compile Definitions                                                                             |
