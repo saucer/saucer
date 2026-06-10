@@ -220,7 +220,7 @@ saucer_include_directories(${PROJECT_NAME} "private")
 # +-------------------------------------------------------------------------------------------------------+
 
 if (saucer_serializer STREQUAL "Glaze")
-  set(SERIALIZER_DEP "glaze 7.8.0")
+  set(SERIALIZER_DEP "glaze 7.7.1")
 endif()
 
 if (saucer_serializer STREQUAL "Rflpp")
@@ -392,7 +392,7 @@ endif()
 if (saucer_serializer STREQUAL "Glaze")
   CPMFindPackage(
     NAME           glaze
-    VERSION        7.8.0
+    VERSION        7.7.1
     GIT_REPOSITORY "https://github.com/stephenberry/glaze"
     OPTIONS        "glaze_INSTALL ON"
   )
