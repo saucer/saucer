@@ -144,25 +144,22 @@ else()
   add_library(${PROJECT_NAME} SHARED)
 endif()
 
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-
 if (PROJECT_IS_TOP_LEVEL AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -pedantic -pedantic-errors -Wfatal-errors)
 endif()
 
-if (NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
-  target_compile_options(${PROJECT_NAME} PRIVATE -Wno-unknown-warning-option -Wno-missing-field-initializers -Wno-cast-function-type)
-endif()
+add_library(saucer::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<NOT:$<CXX_COMPILER_FRONTEND_VARIANT:MSVC>>:-Wno-unknown-warning-option;-Wno-missing-field-initializers;-Wno-cast-function-type>)
 
 # We are not using `CMAKE_CXX_COMPILER_FRONTEND_VARIANT` here because ClangCL behaves kind of weird
 # and expects flags to disable warnings in GNU fashion regardless of whether it is in MSVC- or GNU-CLI mode
 
 target_compile_options(${PROJECT_NAME} PUBLIC
   $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes=sc::>
-  $<$<CXX_COMPILER_ID:MSVC>:/wd5030 /Zc:preprocessor /utf-8>
+  $<$<CXX_COMPILER_ID:MSVC>:/wd5030;/Zc:preprocessor;/utf-8>
   $<$<BOOL:$<STRING:MATCH,${CMAKE_CXX_COMPILER_ID},Clang>>:-Wno-unknown-attributes>
 )
 
