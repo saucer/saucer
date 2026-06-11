@@ -376,7 +376,7 @@ if (saucer_backend STREQUAL "WebView2")
     ALTERNATIVES "unofficial-webview2|unofficial::webview2::webview2"
   )
 
-  set(SYSTEM_DEP "webview2 ${saucer_webview2_version}")
+  set(BACKEND_DEP "webview2 ${saucer_webview2_version}")
   saucer_link_libraries(${PROJECT_NAME} CoreMessaging RuntimeObject Wininet Shlwapi Comctl32 gdiplus webview2)
 endif()
 
@@ -488,5 +488,5 @@ packageProject(
   BINARY_DIR ${PROJECT_BINARY_DIR}
   INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
-  DEPENDENCIES "lockpp 3.2.0;coco 4.7.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;saucer-fill 1.3.0;${SERIALIZER_DEP};${SYSTEM_DEP};"
+  DEPENDENCIES "lockpp 3.2.0;coco 4.7.0;rebind 5.3.1;ereignis 6.3.0;flagpp 3.1.0;saucer-fill 1.3.0;${SERIALIZER_DEP};${BACKEND_DEP};"
 )
