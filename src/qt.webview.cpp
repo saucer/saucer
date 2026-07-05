@@ -74,7 +74,7 @@ namespace saucer
 
         platform->profile     = std::move(profile);
         platform->web_view    = utils::make_deferred<QWebEngineView>();
-        platform->web_page    = std::make_unique<QWebEnginePage>();
+        platform->web_page    = std::make_unique<QWebEnginePage>(platform->profile.get());
         platform->channel     = std::make_unique<QWebChannel>();
         platform->channel_obj = std::make_unique<web_class>(this);
 
