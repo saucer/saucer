@@ -260,7 +260,7 @@ Saucer is a passion project and I develop it in my free-time. If you'd like to s
 
 ## ⭐ Star History
 
-![](https://api.star-history.com/svg?repos=saucer/saucer&type=Date)
+![](https://raw.githubusercontent.com/saucer/stars/star-tracker-data/charts/star-history.svg)
 
 ---
 
