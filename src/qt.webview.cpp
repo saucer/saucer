@@ -73,7 +73,7 @@ namespace saucer
         platform = std::make_unique<native>();
 
         platform->profile     = std::move(profile);
-        platform->web_view    = utils::make_deferred<QWebEngineView>();
+        platform->web_view    = utils::make_deferred<web_view>(this);
         platform->web_page    = std::make_unique<QWebEnginePage>(platform->profile.get());
         platform->channel     = std::make_unique<QWebChannel>();
         platform->channel_obj = std::make_unique<web_class>(this);
@@ -221,26 +221,39 @@ namespace saucer
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
-        if (!platform->dev_page && !enabled)
-        {
-            return;
-        }
-
         if (!enabled)
         {
             platform->web_page->setDevToolsPage(nullptr);
             platform->dev_page.reset();
-
             return;
         }
 
         if (!platform->dev_page)
         {
             platform->dev_page = std::make_unique<QWebEngineView>();
-            platform->web_page->setDevToolsPage(platform->dev_page->page());
         }
 
-        platform->dev_page->show();
+        platform->web_page->setDevToolsPage(platform->dev_page->page());
+    }
+
+    void impl::show_dev_tools(bool enabled) // NOLINT(*-function-const)
+    {
+        if (enabled)
+        {
+            set_dev_tools(enabled);
+        }
+
+        if (!platform->dev_page)
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            return platform->dev_page->show();
+        }
+
+        platform->dev_page->close();
     }
 
     void impl::set_context_menu(bool enabled) // NOLINT(*-function-const)

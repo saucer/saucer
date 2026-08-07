@@ -204,6 +204,11 @@ namespace saucer
         return utils::invoke<&impl::set_dev_tools>(m_impl.get(), value);
     }
 
+    void webview::show_dev_tools(bool value)
+    {
+        return utils::invoke<&impl::show_dev_tools>(m_impl.get(), value);
+    }
+
     void webview::set_context_menu(bool value)
     {
         return utils::invoke<&impl::set_context_menu>(m_impl.get(), value);

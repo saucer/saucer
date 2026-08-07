@@ -202,18 +202,19 @@ namespace saucer
 
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
-        auto *const settings  = webkit_web_view_get_settings(platform->web_view);
-        auto *const inspector = webkit_web_view_get_inspector(platform->web_view);
-
+        auto *const settings = webkit_web_view_get_settings(platform->web_view);
         webkit_settings_set_enable_developer_extras(settings, enabled);
+    }
 
-        if (!enabled)
+    void impl::show_dev_tools(bool enabled)
+    {
+        if (enabled)
         {
-            webkit_web_inspector_close(inspector);
-            return;
+            set_dev_tools(enabled);
         }
 
-        webkit_web_inspector_show(inspector);
+        auto *const inspector = webkit_web_view_get_inspector(platform->web_view);
+        (enabled ? webkit_web_inspector_show : webkit_web_inspector_close)(inspector);
     }
 
     void impl::set_context_menu(bool enabled) // NOLINT(*-function-const)

@@ -21,6 +21,7 @@
 
 namespace saucer
 {
+    struct web_view;
     struct web_class;
     struct request_interceptor;
 
@@ -38,7 +39,7 @@ namespace saucer
         std::unique_ptr<QWebEngineProfile> profile;
 
       public:
-        utils::deferred_ptr<QWebEngineView> web_view;
+        utils::deferred_ptr<web_view> web_view;
 
       public:
         std::unique_ptr<QWebEnginePage> web_page;
@@ -75,6 +76,20 @@ namespace saucer
         static constexpr const auto *ready_script      = "saucer_ready";
         static constexpr const auto *creation_script   = "saucer_creation";
         static constexpr const auto *script_identifier = "//@saucer-script:{}";
+    };
+
+    struct web_view : QWebEngineView
+    {
+        Q_OBJECT
+
+      private:
+        webview::impl *impl;
+
+      public:
+        web_view(webview::impl *);
+
+      protected:
+        void contextMenuEvent(QContextMenuEvent *event) override;
     };
 
     struct web_class : QObject

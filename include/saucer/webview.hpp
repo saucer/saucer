@@ -159,6 +159,7 @@ namespace saucer
 
       public:
         [[sc::thread_safe]] void set_dev_tools(bool);
+        [[sc::thread_safe]] void show_dev_tools(bool);
         [[sc::thread_safe]] void set_context_menu(bool);
 
       public:

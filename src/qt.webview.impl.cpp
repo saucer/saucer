@@ -9,6 +9,9 @@
 #include <QFile>
 #include <QBuffer>
 
+#include <QMenu>
+#include <QContextMenuEvent>
+
 #include <QWebEngineUrlRequestJob>
 #include <QWebEngineScriptCollection>
 
@@ -16,6 +19,24 @@ namespace saucer
 {
     using native = webview::impl::native;
     using event  = webview::event;
+
+    web_view::web_view(webview::impl *impl) : impl(impl) {}
+
+    void web_view::contextMenuEvent(QContextMenuEvent *event)
+    {
+        if (!impl->platform->dev_page)
+        {
+            return QWebEngineView::contextMenuEvent(event);
+        }
+
+        auto *const menu = createStandardContextMenu();
+
+        menu->addSeparator();
+        menu->addAction("Open Dev-Tools", [this] { impl->show_dev_tools(true); });
+
+        menu->exec(event->pos());
+        menu->deleteLater();
+    }
 
     web_class::web_class(webview::impl *impl) : impl(impl) {}
 

@@ -77,6 +77,7 @@ namespace saucer
 
       public:
         void set_dev_tools(bool);
+        void show_dev_tools(bool);
         void set_context_menu(bool);
 
       public:
