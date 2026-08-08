@@ -6,8 +6,6 @@
 #include "qt.scheme.impl.hpp"
 
 #include <string>
-#include <vector>
-
 #include <unordered_map>
 
 #include <QMetaObject>
@@ -37,9 +35,7 @@ namespace saucer
     struct webview::impl::native
     {
         std::unique_ptr<QWebEngineProfile> profile;
-
-      public:
-        utils::deferred_ptr<web_view> web_view;
+        utils::deferred_ptr<saucer::web_view> web_view;
 
       public:
         std::unique_ptr<QWebEnginePage> web_page;
