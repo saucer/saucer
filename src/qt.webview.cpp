@@ -238,11 +238,6 @@ namespace saucer
 
     void impl::show_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
-        if (enabled)
-        {
-            set_dev_tools(enabled);
-        }
-
         if (!platform->dev_page)
         {
             return;

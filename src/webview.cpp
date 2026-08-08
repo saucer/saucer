@@ -206,6 +206,11 @@ namespace saucer
 
     void webview::show_dev_tools(bool value)
     {
+        if (value)
+        {
+            set_dev_tools(true);
+        }
+
         return utils::invoke<&impl::show_dev_tools>(m_impl.get(), value);
     }
 

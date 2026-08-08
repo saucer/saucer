@@ -306,7 +306,10 @@ namespace saucer
     void impl::set_dev_tools(bool enabled) // NOLINT(*-function-const)
     {
         platform->settings->put_AreDevToolsEnabled(enabled);
+    }
 
+    void impl::show_dev_tools(bool enabled) // NOLINT(*-function-const)
+    {
         if (!enabled)
         {
             return;

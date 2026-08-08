@@ -208,11 +208,6 @@ namespace saucer
 
     void impl::show_dev_tools(bool enabled)
     {
-        if (enabled)
-        {
-            set_dev_tools(enabled);
-        }
-
         auto *const inspector = webkit_web_view_get_inspector(platform->web_view);
         (enabled ? webkit_web_inspector_show : webkit_web_inspector_close)(inspector);
     }
