@@ -197,7 +197,14 @@ namespace saucer
 #ifdef SAUCER_WEBKIT_PRIVATE
         auto *const settings = platform->config.get().preferences;
         [settings setValue:[NSNumber numberWithBool:static_cast<BOOL>(enabled)] forKey:@"developerExtrasEnabled"];
+#endif
+    }
 
+    void impl::show_dev_tools([[maybe_unused]] bool enabled) // NOLINT(*-function-const)
+    {
+        const utils::autorelease_guard guard{};
+
+#ifdef SAUCER_WEBKIT_PRIVATE
         // https://github.com/WebKit/WebKit/blob/0ba313f0755d90540c9c97a08e481c192f78c295/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L2694
         // https://github.com/WebKit/WebKit/blob/0ba313f0755d90540c9c97a08e481c192f78c295/Source/WebKit/UIProcess/API/Cocoa/_WKInspector.mm#L138
 
